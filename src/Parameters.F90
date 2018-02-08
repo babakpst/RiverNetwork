@@ -63,20 +63,20 @@ Character(144), Parameter, Public :: Fmt_Element2="('Error in the element type. 
 
 ! Unit NUMBERS OF EXTERNAL FILES ==================================================================
 ! Address file
-Integer (Kind=Smll), Parameter, Public  :: Un_ADR         =500; ! Address file to save the Name of input file and directories (.txt)
+Integer (Kind=Smll), Parameter, Public  :: Un_ADR=500; ! Address file to save the model name & directories (.txt)
 
 ! Input files
-Integer (Kind=Smll), Parameter, Public  :: UnInptMdl      =501; ! Input file (.txt for serial and PIC code - .dataModel for PTC code)
-Integer (Kind=Smll), Parameter, Public  :: UnInptXYZ      =502; ! the Input file for node coordinates (.XYZ)
-Integer (Kind=Smll), Parameter, Public  :: UnInptCnn      =503; ! Input file for connectivities of elements (.Cnn)
-Integer (Kind=Smll), Parameter, Public  :: UnInptCnt      =504; ! Input file for node constraints (.Cnt)
+Integer (Kind=Smll), Parameter, Public  :: UnInptMdl=501; ! Input file (.dataModel)
+Integer (Kind=Smll), Parameter, Public  :: UnInptXYZ=502; ! Input file for node coordinates (.XYZ)
+Integer (Kind=Smll), Parameter, Public  :: UnInptCnn=503; ! Input file for connectivities of elements (.Cnn)
+Integer (Kind=Smll), Parameter, Public  :: UnInptCnt=504; ! Input file for node constraints (.Cnt)
 
 ! Debugging files
-Integer (Kind=Smll), Parameter, Public  :: Un_CHK         =599; ! Scratch file for debugging (.Chk)
+Integer (Kind=Smll), Parameter, Public  :: Un_CHK=599; ! Scratch file for debugging (.Chk)
 
 !Output files
-Integer (Kind=Smll), Parameter, Public  :: UnInf          =600; ! Model information file (.Inf)
-Integer (Kind=Smll), Parameter, Public  :: Un_Out         =601; ! Output file for basic and general data of PIC (.data)
+Integer (Kind=Smll), Parameter, Public  :: UnInf=600; ! Model information file (.Inf)
+
 
 ! Analysis case number ============================================================================
 !Integer (Kind=Smll), Parameter, Public :: ACN_LI_ST=21; ! Linear Static Analysis
@@ -84,12 +84,11 @@ Integer (Kind=Smll), Parameter, Public  :: Un_Out         =601; ! Output file fo
 
 ! Element Types Number ============================================================================
 ! Solid Element
-!Integer (Kind=Tiny), Parameter, Public  :: El2d4NSldPS  =1; ! Element: 2D-4 noded-Solid - PLANE STress (quadrilateral )
+!Integer (Kind=Tiny), Parameter, Public  :: El2d4NSldPS  =1; ! Element: 2D-4 noded-Solid
 
 ! PML Elements
 
 ! Spectral Element
-
 
 ! =================================================================================================
 
@@ -97,4 +96,3 @@ Contains
 
 
 End Module Parameters ;
-
