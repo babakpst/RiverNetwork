@@ -39,15 +39,17 @@ Call GETDAT(Year, Month, Day) ;
 Call GETTIM(Hour, Minute, Seconds, S100th) ;
 
 ! Write some inFormation on screen
-Write(*,*)"<<<<<<<<<<<<<    Start analysis ...  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" ;
-
+Write(*,*)" Numerical simulation of 2D Shallow water Equation" ;
+Write(*,*)
 
 ! Directories, input, and output Files ============================================================
 ! Address File ------------------------------------------------------------------------------------
+Write(*,fmt="(A)") " -Reading Address.txt file ...";
+
 UnFile=File_Address ;
-Open(Unit=UnFile, File='ADDRESS_PTC.TXT', Err=1001, IOStat=IO_File, Access='SEQUENTIAL', &
+Open(Unit=UnFile, File='ADDRESS.txt', Err=1001, IOStat=IO_File, Access='SEQUENTIAL', &
      Action='READ', Asynchronous='NO', Blank='NULL', BLOCKSize=0, DisPOSE='Keep', &
-     Form='FormATTED', Position='ASIS', Status='OLD') ;
+     Form='FormATTED', Position='ASIS', Status='old') ;
 
 ! Read the input fine name and directories Form "ADDRESS_File.txt" in the current directory -------
 Read(UN_ADR,*) ;
@@ -67,17 +69,12 @@ Read(UN_ADR,*) NumberOfAnalyses ;
 Ana_InDir  =Trim(AdjustL (Model_InDir))//'/'//Trim(AdjustL (ModelName))//'/'//'Analysis' ;
 Model_InDir=Trim(AdjustL (Model_InDir))//'/'//Trim(AdjustL (ModelName))//'/'//'Model' ;
 
-Write (*,*)"Model_InDir", Model_InDir ;
-Write (*,*)"Ana_InDir", Ana_InDir ;
-
-! Model Data File ---------------------------------------------------------------------------------
-UnFile=File_Input_Model ;
-Open (Unit=UnFile, File=Trim(ModelName)//'_'//Trim(AdjustL(IndexSize))//'_'//Trim(AdjustL(IndexRank))//'.dataModel', &
-      Err=1001, IOStat=IO_File, Access='SEQUENTIAL', ACTION='READ', Asynchronous='NO', &
-      Blank='NULL', BLOCKSize=0, DEFAULTFile=Trim(Model_InDir), DisPOSE='Keep', Form='Formatted', &
-      Position='ASIS', Status='Old' ) ;
+Write (*,fmt="(2A)")" The model directory is: ", Model_InDir ;
+Write (*,fmt="(2A)")" The analysis name is:", Ana_InDir ;
 
 ! Create the results folder -----------------------------------------------------------------------
+Write(*,fmt="(A)") " -Creating the output folders ...";
+
 Directory=MakeDirQQ (Trim(AdjustL (OutDir))//'/'//Trim(AdjustL (ModelName))  ) ;
   If (Directory) Then ;
      Write (*     ,*) 'New subdirectory successfully created - results folder' ;
@@ -96,15 +93,33 @@ Directory=MakeDirQQ (Trim(AdjustL (InlDir))//'/'//Trim(AdjustL (ModelName))) ;
 OutDir=Trim(AdjustL (OutDir))//'/'//Trim(AdjustL (ModelName)) ;
 InlDir=Trim(AdjustL (InlDir))//'/'//Trim(AdjustL (ModelName)) ;
 
-Write (*,*)"OutDir", OutDir ;
-Write (*,*)"InlDir", InlDir ;
+Write (*,fmt="(2A)")" The output folder is: ", OutDir ;
 
 ! Opening the inFormation File --------------------------------------------------------------------
+Write(*,fmt="(A)") " -Creating the info.txt file in the output folder ...";
+
 UnFile=File_Info ;
 Open (Unit=UnFile, File=Trim(ModelName)//'_'//Trim(AdjustL(IndexSize))//'_'//Trim(AdjustL(IndexRank))//'.infM', &
       Err=1001, IOStat=IO_File, Access='SEQUENTIAL', Action='Write', Asynchronous='NO', &
       Blank='NULL', BLOCKSize=0, DEFAULTFile=Trim(OutDir), DisPOSE='Keep', Form='FormATTED', &
       Position='ASIS', Status='REPLACE' ) ;
+
+
+
+
+
+
+
+
+! Model Data File ---------------------------------------------------------------------------------
+UnFile=File_Input_Model ;
+Open (Unit=UnFile, File=Trim(ModelName)//'_'//Trim(AdjustL(IndexSize))//'_'//Trim(AdjustL(IndexRank))//'.dataModel', &
+      Err=1001, IOStat=IO_File, Access='SEQUENTIAL', ACTION='READ', Asynchronous='NO', &
+      Blank='NULL', BLOCKSize=0, DEFAULTFile=Trim(Model_InDir), DisPOSE='Keep', Form='Formatted', &
+      Position='ASIS', Status='old' ) ;
+
+
+
 
 ! Writing down the time signature =================================================================
 Call Info(Year, Month, Day, Hour, Minute, Seconds, S100th, ModelName, Ana_InDir, OutDir, InlDir) ;
@@ -197,7 +212,7 @@ Write (*,*)"Ananlysis Name: ",AnaName ;
 UnFile=UnInptAna ;
 Open (Unit=UnFile, File=Trim(AnaName)//'.txt', Err= 1001, IOStat=IO_File, Access='SEQUENTIAL', &
       Action='READ', Asynchronous='NO', Blank='NULL', BLOCKSize=0, DEFAULTFile=Trim(Ana_InDir), &
-      DisPOSE='Keep', FORM='FormATTED', Position='ASIS', Status='Old') ;
+      DisPOSE='Keep', FORM='FormATTED', Position='ASIS', Status='old') ;
 
 ! Creating the output File directory --------------------------------------------------------------
 Directory=MakeDirQQ (Trim(AdjustL (OutDir))//'/'//Trim(AdjustL (AnaName))  ) ;
