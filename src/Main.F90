@@ -21,7 +21,7 @@
 !##################################################################################################
 
 
-program SVE;
+program Shallow_Water_Equation;
 
 
 ! Libraries =======================================================================================
@@ -242,12 +242,9 @@ InlDirAna=Trim(AdjustL (InlDir))//'/'//Trim(AdjustL (AnaName)) ;
       Write(UnInf,*)" Type OF ANALYSIS IS NOT AVAILABLE IN THE MAIN SELECT CASE - CHECK THE Input File" ;
       Write(*,*) ;
       Write(UnInf,*) ;
-      Write(*,*)' Simulation terminated due to some technical Error' ;
-      Write(*,*)' Check the .inf File for further inFormation' ;
-      !#Call BEEP_FAIL ;
+      Write(*,*)" Simulation terminated due to some technical Error" ;
+      Write(*,*)" Check the .inf File for further information" ;
       Write(*, Fmt_End) ; Read(*,*) ;  Stop ;
-      !Read(*," ('PRESS ENTER TO End ...') " ) ;
-      !Stop
 
   End SELECT ;
 
@@ -291,14 +288,12 @@ Stop ;
 
 ! Opening statement Errors
 1001  If ( IO_File > 0 ) Then ;
-        Write(*, Fmt_Err1_OPEN) UnFile, IO_File  ;  Write(UnInf, Fmt_Err1_OPEN) UnFile, IO_File  ;
+        Write(*, Fmt_Err1_OPEN) UnFile, IO_File  ;  Write(UnInf, Fmt_Err1_OPEN) UnFile, IO_File;
         Write(*, Fmt_FL) ; Write(UnInf, Fmt_FL) ;
-        !#Call BEEP_FAIL ;
         Write(*, Fmt_End) ; Read(*,*) ;  Stop ;
       Else If ( IO_File < 0 ) Then ;
         Write(*, Fmt_Err1_OPEN) UnFile, IO_File  ;
-        Write(UnInf, Fmt_Err1_OPEN) UnFile, IO_File  ;  Write(*, Fmt_FL) ; Write(UnInf, Fmt_FL) ;
-        !#Call BEEP_FAIL ;
+        Write(UnInf, Fmt_Err1_OPEN) UnFile, IO_File  ;  Write(*, Fmt_FL) ; Write(UnInf, Fmt_FL);
         Write(*, Fmt_End) ; Read(*,*) ;  Stop ;
       End If ;
 
@@ -307,8 +302,7 @@ Stop ;
 1002  If ( IO_File > 0 ) Then ;
         Write(*, Fmt_Err1_Close) UnFile, IO_File  ;  Write(UnInf, Fmt_Err1_Close) UnFile, IO_File ;
         Write(*, Fmt_FL) ; Write(UnInf, Fmt_FL) ;
-        !Call BEEP_FAIL ;
         Write(*, Fmt_End) ; Read(*,*) ; ; Stop ;
       End If ;
 
-end program SVE;
+end program Shallow_Water_Equation;
