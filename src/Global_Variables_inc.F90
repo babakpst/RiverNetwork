@@ -20,11 +20,8 @@ Integer (Kind=Lng )  :: ;                        !
 
 
 ! - Real Variables ----------------------------------------------------------------------------------------------------------------------------------
-Real (Kind=DBL)      :: TimeS, TimeE ;           ! TIME Variables for total runtime
+Real (Kind=DBL)      :: TimeS, TimeE ;           ! TIME Variables for total run time
 Real (Kind=DBL)      :: TimeInputS, TimeInputE ; ! TIME Variables for reading input files
-Real (Kind=DBL)      :: TimeAssemS, TimeAssemE ; ! TIME Variables for forming global matrices
-Real (Kind=DBL)      :: TimeIndexS, TimeIndexE ; ! TIME Variables for object definition and Indexing
-Real (Kind=DBL)      :: TimeEStiffS, TimeEStiffE;! TIME Variables for Effective Stiffness
 Real (Kind=DBL)      :: TimeSolveS, TimeSolveE ; ! TIME Variables for Effective Stiffness
 
 ! - Logical Variable --------------------------------------------------------------------------------------------------------------------------------

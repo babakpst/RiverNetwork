@@ -55,7 +55,7 @@ Open(Unit=UnFile, File='ADDRESS.txt', Err=1001, IOStat=IO_File, Access='SEQUENTI
 Read(UN_ADR,*) ;
 Read(UN_ADR,*) ModelName ;
 Read(UN_ADR,*) ;
-Read(UN_ADR,*) NAT, Output_Type ;
+Read(UN_ADR,*) AnalysisType, Output_Type ;
 Read(UN_ADR,*) ;
 Read(UN_ADR,*) Model_InDir ;
 Read(UN_ADR,*) ;
@@ -99,7 +99,7 @@ Write (*,fmt="(2A)")" The output folder is: ", OutDir ;
 Write(*,fmt="(A)") " -Creating the info.txt file in the output folder ...";
 
 UnFile=File_Info ;
-Open (Unit=UnFile, File=Trim(ModelName)//'_'//Trim(AdjustL(IndexSize))//'_'//Trim(AdjustL(IndexRank))//'.infM', &
+Open (Unit=UnFile, File=Trim(ModelName)//.infM', &
       Err=1001, IOStat=IO_File, Access='SEQUENTIAL', Action='Write', Asynchronous='NO', &
       Blank='NULL', BLOCKSize=0, DEFAULTFile=Trim(OutDir), DisPOSE='Keep', Form='FormATTED', &
       Position='ASIS', Status='REPLACE' ) ;
@@ -107,54 +107,21 @@ Open (Unit=UnFile, File=Trim(ModelName)//'_'//Trim(AdjustL(IndexSize))//'_'//Tri
 ! Writing down the simulation time
 Call Info(Year, Month, Day, Hour, Minute, Seconds, S100th, ModelName, Ana_InDir, OutDir, InlDir) ;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-! Model Data File ---------------------------------------------------------------------------------
+! Reading model data ==============================================================================
+Write(*,fmt="(A)") " -Opening the input file ...";
 
 UnFile=File_Input_Model ;
-Open (Unit=UnFile, File=Trim(ModelName)//'_'//Trim(AdjustL(IndexSize))//'_'//Trim(AdjustL(IndexRank))//'.dataModel', &
+Open (Unit=UnFile, File=Trim(ModelName)//'.dataModel', &
       Err=1001, IOStat=IO_File, Access='SEQUENTIAL', ACTION='READ', Asynchronous='NO', &
       Blank='NULL', BLOCKSize=0, DEFAULTFile=Trim(Model_InDir), DisPOSE='Keep', Form='Formatted', &
       Position='ASIS', Status='old' ) ;
 
 
-
-
-
-
-
-
-
-
-! Reading model data ==============================================================================
-
-! Reading Input File ------------------------------------------------------------------------------
 Call CPU_TIME( TimeInputS ) ;
 
 ! Reading basic data: Ordinary Files OR HDF5 Files ------------------------------------------------
-! Reads data from an ordinary Format based on PTC_Input sub:Input_BASIC-This input generates by PIC
+Write(*,fmt="(A)") " -Reading the initial data file ...";
+
   If ( Output_Type == 0 .OR. Output_Type == 2 ) Then ;
     Call Input (                                                         &
                                                                          & ! Integer (1) Variables
@@ -182,6 +149,8 @@ Call CPU_TIME( TimeInputS ) ;
   End If ;
 
 ! Allocating required arrays
+Write(*,fmt="(A)") " -Allocating the required arrays ...";
+
 Allocate ( ,
            STAT=Err_Alloc) ;
   If ( Err_Alloc /= 0 ) Then ;
@@ -192,7 +161,9 @@ Allocate ( ,
 ! Open required Files -----------------------------------------------------------------------------
 Include 'Open_Inc.F90'
 
-! Reading input arrays
+! Reading input arrays ----------------------------------------------------------------------------
+Write(*,fmt="(A)") " -Reading arrays form data file ...";
+
   If ( Output_Type == 0 ) Then ;
     Call Input (                                                         &
                                                                          & ! Integer (1) Variables
@@ -221,41 +192,52 @@ Include 'Open_Inc.F90'
 Call CPU_TIME( TimeInputE ) ;
 
 ! Close Input File --------------------------------------------------------------------------------
+! Close ADDRESS File
+UnFile= UN_ADR ;
+Close ( Unit=UnFile, Status='Keep', Err=1002, IOStat=IO_File ) ;
 
-Include 'PTC_Close_Inc.F90'
+! Close data File
+UnFile= UnInptAna ;
+Close(Unit=UnFile, Status='Keep', Err=1002, IOStat=IO_File) ;
 
+! close check File
+!UnFile= Un_CHK ;
+!Close (Unit=UnFile, Status='Keep', Err=1002, IOStat=IO_File) ;
 
 ! Simulations =====================================================================================
-
-
 Write (*,*)"Ananlysis Number: ", IAnalysis ;
-Read(UN_ADR,*) AnaName ;
-Write (*,*)"Ananlysis Name: ",AnaName ;
 
-! Analysis Data File
+Read(UN_ADR,*) AnaName ;
+Write (*,fmt="(2A)")"Ananlysis Name: ",AnaName ;
+
+! Opening the input file for this specific simulation
+Write (*,fmt="(A)") " -Opening the analysis file ..." ;
+
 UnFile=UnInptAna ;
 Open (Unit=UnFile, File=Trim(AnaName)//'.txt', Err= 1001, IOStat=IO_File, Access='SEQUENTIAL', &
       Action='READ', Asynchronous='NO', Blank='NULL', BLOCKSize=0, DEFAULTFile=Trim(Ana_InDir), &
       DisPOSE='Keep', FORM='FormATTED', Position='ASIS', Status='old') ;
 
-! Creating the output File directory --------------------------------------------------------------
+! Creating the output file directory for this analysis --------------------------------------------
+Write(*,fmt="(A)") " -Creating the output folder for this analysis ...";
+
 Directory=MakeDirQQ (Trim(AdjustL (OutDir))//'/'//Trim(AdjustL (AnaName))  ) ;
   If (Directory) Then ;
-     Write (*     ,*) 'New subdirectory successfully created' ;
-     Write (UnInf,*) 'New subdirectory successfully created' ;
+     Write (*     ,*) 'New subdirectory successfully created.' ;
+     Write (UnInf,*) 'New subdirectory successfully created.' ;
   Else ;
-     Write (*    ,*) 'Subdirectory already exists' ;
-     Write (UnInf,*) 'Subdirectory already exists' ;
+     Write (*    ,*) 'Subdirectory already exists.' ;
+     Write (UnInf,*) 'Subdirectory already exists.' ;
   End If ;
 
 ! Creating the internal File directory ------------------------------------------------------------
 Directory=MakeDirQQ (Trim(AdjustL (InlDir))//'/'//Trim(AdjustL (AnaName))  ) ;
   If (Directory) Then ;
-     Write (*    ,*) 'New subdirectory successfully created  - Check folders' ;
-     Write (UnInf,*) 'New subdirectory successfully created  - Check folders' ;
+     Write (*    ,*) 'New subdirectory successfully created.' ;
+     Write (UnInf,*) 'New subdirectory successfully created.' ;
   Else ;
-     Write (*    ,*) 'Subdirectory already exists' ;
-     Write (UnInf,*) 'Subdirectory already exists' ;
+     Write (*    ,*) 'Subdirectory already exists.' ;
+     Write (UnInf,*) 'Subdirectory already exists.' ;
   End If ;
 
 OutDirAna=Trim(AdjustL (OutDir))//'/'//Trim(AdjustL (AnaName)) ;
@@ -268,53 +250,48 @@ InlDirAna=Trim(AdjustL (InlDir))//'/'//Trim(AdjustL (AnaName)) ;
 !     Blank='NULL', BLOCKSize=0, DEFAULTFile=Trim(InlDirAna), DisPOSE='Keep', Form='FormATTED', &
 !     Position='ASIS', Status='REPLACE' ) ;
 
+
 ! Analysis ========================================================================================
-  SELECT CASE ( NAT ) ;
+  SELECT CASE ( AnalysisType ) ;
 
-    CASE ( ACN_Analytical_DRM ) ;    ! # 73
+    CASE (N_1D_SWE) ;    ! # 1
 
-      Include 'PTC_Case_Anal_DRM.F90'
+      Include '1D_Shallow_Water.F90'
 
     ! Error in analysis numbering
     CASE DEFAULT ;
-      Write(*,*)" Type OF ANALYSIS IS NOT AVAILABLE IN THE MAIN SELECT CASE - CHECK THE Input File" ;
-      Write(UnInf,*)" Type OF ANALYSIS IS NOT AVAILABLE IN THE MAIN SELECT CASE - CHECK THE Input File" ;
+      Write(*,*)" The analysis type  is not available in this code. Modify the analysis type." ;
+      Write(UnInf,*)" The analysis type  is not available in this code. Modify the analysis type." ;
       Write(*,*) ;
       Write(UnInf,*) ;
-      Write(*,*)" Simulation terminated due to some technical Error" ;
-      Write(*,*)" Check the .inf File for further information" ;
+      Write(*,*)" Simulation terminated with error." ;
       Write(*, Fmt_End) ; Read(*,*) ;  Stop ;
 
   End SELECT ;
 
-DeAllocate ( Param%IntL ,Param%RealL ) ;
+! Deallocating arrays
+DEAllocate( ,      STAT = ERR_DeAlloc ) ;
+  IF ( ERR_DeAlloc /= 0 ) Then ;
+    Write (*, Fmt_DEALLCT) ERR_DeAlloc ;  Write (UnInf, Fmt_DEALLCT) ERR_DeAlloc ;
+    Write(*, Fmt_FL) ;  Write(UnInf, Fmt_FL) ; Write(*, Fmt_End) ; Read(*,*) ;  STOP ;
+  End If ;
+
 
 ! RUNNING TIME OF THE CODE ========================================================================
 Call CPU_TIME ( TimeE ) ;
-Call Info(NEl, TimeE, TimeS, TimeInputE, TimeInputS, TimeIndexE, TimeIndexS, TimeAssemE, &
-          TimeAssemS, TimeEStiffE, TimeEStiffS, TimeSolveE, TimeSolveS ) ;
+Call Info(NEl, TimeE, TimeS, TimeInputE, TimeInputS, TimeSolveE, TimeSolveS ) ;
 
-! End Simulation  =================================================================================
-
-Write (*,*)"Simulation done successfully for:" ;
+Write (*,*)"Simulation was conductued successfully for:" ;
 Write (*,"(' Model Name: ',A30,'Analysis Name: ', A30)")ModelName, AnaName ;
 Write (*,*) ;
 
 ! Close Files -------------------------------------------------------------------------------------
-! Close data File
-UnFile= UnInptAna ;
-Close(Unit=UnFile, Status='Keep', Err=1002, IOStat=IO_File) ;
-
-! close check File
-UnFile= Un_CHK ;
-Close (Unit=UnFile, Status='Keep', Err=1002, IOStat=IO_File) ;
-
-! Close ADDRESS File
-UnFile= UN_ADR ;
+! Close information File
+UnFile= UnInf ;
 Close ( Unit=UnFile, Status='Keep', Err=1002, IOStat=IO_File ) ;
 
-! Close inFormation File
-UnFile= UnInf ;
+
+UnFile= UnInptAna ;
 Close ( Unit=UnFile, Status='Keep', Err=1002, IOStat=IO_File ) ;
 
 ! End the code ====================================================================================
@@ -325,6 +302,9 @@ Write (*, Fmt_End) ;
 !#Read(*,*);
 Stop ;
 
+
+! =================================================================================================
+! =================================================================================================
 ! Opening statement Errors
 1001  If ( IO_File > 0 ) Then ;
         Write(*, Fmt_Err1_OPEN) UnFile, IO_File  ;  Write(UnInf, Fmt_Err1_OPEN) UnFile, IO_File;
