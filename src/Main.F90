@@ -95,7 +95,7 @@ InlDir=Trim(AdjustL (InlDir))//'/'//Trim(AdjustL (ModelName)) ;
 
 Write (*,fmt="(2A)")" The output folder is: ", OutDir ;
 
-! Opening the inFormation File --------------------------------------------------------------------
+! Opening the information File --------------------------------------------------------------------
 Write(*,fmt="(A)") " -Creating the info.txt file in the output folder ...";
 
 UnFile=File_Info ;
@@ -103,6 +103,26 @@ Open (Unit=UnFile, File=Trim(ModelName)//'_'//Trim(AdjustL(IndexSize))//'_'//Tri
       Err=1001, IOStat=IO_File, Access='SEQUENTIAL', Action='Write', Asynchronous='NO', &
       Blank='NULL', BLOCKSize=0, DEFAULTFile=Trim(OutDir), DisPOSE='Keep', Form='FormATTED', &
       Position='ASIS', Status='REPLACE' ) ;
+
+! Writing down the simulation time
+Call Info(Year, Month, Day, Hour, Minute, Seconds, S100th, ModelName, Ana_InDir, OutDir, InlDir) ;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -112,6 +132,7 @@ Open (Unit=UnFile, File=Trim(ModelName)//'_'//Trim(AdjustL(IndexSize))//'_'//Tri
 
 
 ! Model Data File ---------------------------------------------------------------------------------
+
 UnFile=File_Input_Model ;
 Open (Unit=UnFile, File=Trim(ModelName)//'_'//Trim(AdjustL(IndexSize))//'_'//Trim(AdjustL(IndexRank))//'.dataModel', &
       Err=1001, IOStat=IO_File, Access='SEQUENTIAL', ACTION='READ', Asynchronous='NO', &
@@ -121,8 +142,11 @@ Open (Unit=UnFile, File=Trim(ModelName)//'_'//Trim(AdjustL(IndexSize))//'_'//Tri
 
 
 
-! Writing down the time signature =================================================================
-Call Info(Year, Month, Day, Hour, Minute, Seconds, S100th, ModelName, Ana_InDir, OutDir, InlDir) ;
+
+
+
+
+
 
 ! Reading model data ==============================================================================
 
