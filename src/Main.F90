@@ -9,11 +9,11 @@
 ! The University of Texas at Austin
 !
 ! ================================ V E R S I O N ==================================================
-! V0.0: 08/02/2018  - Initiation.
+! V0.1: 02/13/2018  - Initiation.
 !
 ! File version $Id
 !
-! Last update: 08/02/2018
+! Last update: 02/13/2018
 !
 ! ================================ Global   V A R I A B L E S =====================================
 !  . . . . . . . . . . . . . . . . Variables . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -83,17 +83,17 @@ Write(*,fmt="(A)") " -Creating the output folders ..."
 
 Directory=MakeDirQQ (Trim(AdjustL(ModelInfo%OutputDir))//'/'//Trim(AdjustL(ModelInfo%ModelName)))
   If (Directory) Then
-    Write(*,*) "The result folder is created."
+    Write(*,fmt="(A)") "The result folder is created."
   Else
-     Write (*,*) "The result folder already exists."
+     Write (*,fmt="(A)") "The result folder already exists."
   End If
 
 ! Internal folder
 Directory=MakeDirQQ (Trim(AdjustL (ModelInfo%IntDir))//'/'//Trim(AdjustL (ModelInfo%ModelName)))
   If (Directory) Then
-     Write (*,*) "The internal folder is created."
+     Write (*,fmt="(2A)") "The internal folder is created."
   Else ;
-     Write (*,*) "The internal folder already exists."
+     Write (*,fmt="(2A)") "The internal folder already exists."
   End If ;
 
 ModelInfo%OutputDir=Trim(AdjustL (ModelInfo%OutputDir))//'/'//Trim(AdjustL (ModelInfo%ModelName))
@@ -114,7 +114,7 @@ Open (Unit=UnFile, File=Trim(ModelInfo%ModelName)//.infM', &
 Call Info(TimeDate, ModelInfo)
 
 ! Reading model data ==============================================================================
-Write(*,         fmt="(A)") " -Opening the input file ..."
+Write(*,        fmt="(A)") " -Opening the input file ..."
 Write(FileInfo, fmt="(A)") " -Opening the input file ..."
 
 UnFile=File_Input_Model ;
@@ -127,7 +127,7 @@ Open (Unit=UnFile, File=Trim(ModelInfo%ModelName)//'.dataModel', &
 Call CPU_TIME( TimeInputS ) ;
 
 ! Reading basic data: Ordinary OR HDF5 ------------------------------------------------------------
-Write(*,         fmt="(A)") " -Reading the initial data file ..."
+Write(*,        fmt="(A)") " -Reading the initial data file ..."
 Write(FileInfo, fmt="(A)") " -Reading the initial data file ..."
 
   If (ModelInfo%OutputType==0_Smll) Then ! Ordinary
@@ -157,7 +157,7 @@ Write(FileInfo, fmt="(A)") " -Reading the initial data file ..."
   End If
 
 ! Allocating required arrays
-Write(*,         fmt="(A)") " -Allocating the required arrays ..."
+Write(*,        fmt="(A)") " -Allocating the required arrays ..."
 Write(FileInfo, fmt="(A)") " -Allocating the required arrays ..."
 
 Allocate ( ,
@@ -168,12 +168,12 @@ Allocate ( ,
   End If
 
 ! Open required Files -----------------------------------------------------------------------------
-Write(*,         fmt="(A)") " -Opening the input files ..."
+Write(*,        fmt="(A)") " -Opening the input files ..."
 Write(FileInfo, fmt="(A)") " -Opening the input files ..."
 Include 'Open_File_Inc.F90'
 
 ! Reading input arrays ----------------------------------------------------------------------------
-Write(*,         fmt="(A)") " -Reading arrays form data file ..."
+Write(*,        fmt="(A)") " -Reading arrays form data file ..."
 Write(FileInfo, fmt="(A)") " -Reading arrays form data file ..."
 
   If (ModelInfo%OutputType==0_Smll) Then
@@ -204,7 +204,7 @@ Write(FileInfo, fmt="(A)") " -Reading arrays form data file ..."
 Call CPU_TIME( TimeInputE )
 
 ! Close Input File --------------------------------------------------------------------------------
-Write(*,         fmt="(A)") " -Closing input files ..."
+Write(*,        fmt="(A)") " -Closing input files ..."
 Write(FileInfo, fmt="(A)") " -Closing input files ..."
 
 ! Close ADDRESS File
@@ -220,15 +220,15 @@ Close(Unit=UnFile, Status='Keep', Err=1002, IOStat=IO_File)
 !Close (Unit=UnFile, Status='Keep', Err=1002, IOStat=IO_File) ;
 
 ! Simulations =====================================================================================
-Write (*,         fmt="(A,I5)")"  Ananlysis Number: ", IAnalysis
-Write (FileInfo, fmt="(A,I5)")"  Ananlysis Number: ", IAnalysis
+Write (*,        fmt="(A,I5)")"  Analysis Number: ", IAnalysis
+Write (FileInfo, fmt="(A,I5)")"  Analysis Number: ", IAnalysis
 
 Read(FileAdr,*) ModelInfo%AnalysisName ;
-Write (*,         fmt="(2A)")"Ananlysis Name: ", ModelInfo%AnalysisName
-Write (FileInfo, fmt="(2A)")"Ananlysis Name: ", ModelInfo%AnalysisName
+Write (*,        fmt="(2A)")"Analysis Name: ", ModelInfo%AnalysisName
+Write (FileInfo, fmt="(2A)")"Analysis Name: ", ModelInfo%AnalysisName
 
 ! Opening the input file for this specific simulation
-Write (FileInfo, fmt="(A)") " -Opening the analysis file ..."
+Write (*,        fmt="(A)") " -Opening the analysis file ..."
 Write (FileInfo, fmt="(A)") " -Opening the analysis file ..."
 
 UnFile=UnInptAna ;
@@ -237,30 +237,30 @@ Open (Unit=UnFile, File=Trim(ModelInfo%AnalysisName)//'.txt', Err= 1001, IOStat=
       DisPOSE='Keep', FORM='FormATTED', Position='ASIS', Status='old') ;
 
 ! Creating the output file directory for this analysis --------------------------------------------
-Write(*,         fmt="(A)") " -Creating the output folder for this analysis ..."
+Write(*,        fmt="(A)") " -Creating the output folder for this analysis ..."
 Write(FileInfo, fmt="(A)") " -Creating the output folder for this analysis ..."
 
 Directory=MakeDirQQ (Trim(AdjustL (ModelInfo%OutputDir))//'/'//Trim(AdjustL (ModelInfo%AnalysisName))  ) ;
   If (Directory) Then ;
-     Write (*     ,*) "New subdirectory successfully created." ;
-     Write (FileInfo,*) "New subdirectory successfully created." ;
+     Write (*,       fmt="(A)") "The output folder for this analysis created." ;
+     Write (FileInfo,fmt="(A)") "The output folder for this analysis created." ;
   Else ;
-     Write (*    ,*) "Subdirectory already exists." ;
-     Write (FileInfo,*) "Subdirectory already exists." ;
+     Write (*,        fmt="(A)") "The output folder for this analysis already exists." ;
+     Write (FileInfo, fmt="(A)") "The output folder for this analysis already exists." ;
   End If ;
 
 ! Creating the internal File directory ------------------------------------------------------------
 Directory=MakeDirQQ (Trim(AdjustL(ModelInfo%IntDir))//'/'//Trim(AdjustL(ModelInfo%AnalysisName))) ;
   If (Directory) Then
-     Write (*    ,*) "New subdirectory successfully created."
-     Write (FileInfo,*) "New subdirectory successfully created."
+     Write (*,        fmt="(A)") "The internal folder for this analysis created."
+     Write (FileInfo, fmt="(A)") "The internal folder for this analysis created."
   Else
-     Write (*    ,*) "Subdirectory already exists."
-     Write (FileInfo,*) "Subdirectory already exists."
+     Write (*,        fmt="(A)") "The internal folder for this analysis already exists."
+     Write (FileInfo, fmt="(A)") "The internal folder for this analysis already exists."
   End If
 
-ModelInfo%AnalysisOutputDir=Trim(AdjustL (ModelInfo%OutputDir))//'/'//Trim(AdjustL (ModelInfo%AnalysisName))
-ModelInfo%AnalysisIntDir=Trim(AdjustL (ModelInfo%IntDir))//'/'//Trim(AdjustL (ModelInfo%AnalysisName))
+ModelInfo%AnalysisOutputDir=Trim(AdjustL(ModelInfo%OutputDir))//'/'//Trim(AdjustL(ModelInfo%AnalysisName))
+ModelInfo%AnalysisIntDir=Trim(AdjustL(ModelInfo%IntDir))//'/'//Trim(AdjustL(ModelInfo%AnalysisName))
 
 ! Test File ---------------------------------------------------------------------------------------
 !UnFile=UN_CHK ;
@@ -300,7 +300,7 @@ DEAllocate( ,      STAT = ERR_DeAlloc ) ;
 Call CPU_TIME ( TimeE ) ;
 Call Info(NEl, TimeE, TimeS, TimeInputE, TimeInputS, TimeSolveE, TimeSolveS ) ;
 
-Write (*,*)"Simulation was conductued successfully for:" ;
+Write (*,*)" Simulation was conducted successfully for:" ;
 Write (*,"(' Model Name: ',A30,'Analysis Name: ', A30)")ModelName, AnaName ;
 Write (*,*) ;
 

@@ -9,7 +9,7 @@
 ! The University of Texas at Austin
 !
 ! ================================ V E R S I O N ==================================================
-! V0.1: 12/02/2018 - Initiation.
+! V0.1: 02/12/2018 - Initiation.
 !
 ! File version $Id $
 !
@@ -17,11 +17,15 @@
 !
 ! ================================ S U B R O U T I N E ============================================
 !
+! InfBasic: Writes the initial information in the info file.
+! InfTime:  Writes the simulation time.
+!
 ! ================================ F U N C T I O N ================================================
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
 ! (Refer to the main code to see the list of imported variables)
 !  . . . . . . . . . . . . . . . . Variables . . . . . . . . . . . . . . . . . . . . . . . . . . .
+!
 !
 !##################################################################################################
 
@@ -48,7 +52,7 @@ Contains
 ! The University of Texas at Austin
 !
 ! ================================ V E R S I O N ==================================================
-! V0.1: 12/02/2018 - Initiation.
+! V0.1: 02/12/2018 - Initiation.
 !
 ! File version $Id $
 !
@@ -100,13 +104,12 @@ Implicit None ;
 !#Complex, Intent(InOut) ::  ;
 !#Complex, Intent(OUT)   ::  ;
 ! - Character Variables ---------------------------------------------------------------------------
-Character (Kind = 1, Len = 30 ), Intent(In) :: Name ;       ! Name of the Input file
-Character (Kind = 1, Len = 150), Intent(In) :: Model_InDir; ! Directory of the input file.
-Character (Kind = 1, Len = 150), Intent(In) :: InlDir ;     ! Directory of the internal files.
-Character (Kind = 1, Len = 150), Intent(In) :: OutDir ;     ! Directory of the output files-Results
+!Character (Kind = 1, Len = 30 ), Intent(In) :: Name ;       ! Name of the Input file
+
 
 ! - Types -----------------------------------------------------------------------------------------
-type (TimeDate_tp):: TimeDate ;
+Type (TimeDate_tp)    :: TimeDate   ! Indicates the time and date of simulation
+Type (Input_Data_tp)  :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
 
 ! - Logical Variables -----------------------------------------------------------------------------
 !#Logical   ::  ;
@@ -134,13 +137,13 @@ type (TimeDate_tp):: TimeDate ;
 ! CODE ============================================================================================
 
 ! Write INFORMATION
-Write (FileInfo, Fmt_DATE) TimeDate%Month, TimeDate%Day,    TimeDate%Year, &
-                        TimeDate%Hour,  TimeDate%Minute, TimeDate%Second, TimeDate%S100th ;
-Write (FileInfo, Fmt_NM  ) Name, Model_InDir, OutDir, InlDir ;
+Write(FileInfo, Fmt_DATE) TimeDate%Month, TimeDate%Day,    TimeDate%Year, &
+                        TimeDate%Hour,  TimeDate%Minute, TimeDate%Second, TimeDate%S100th
+Write(FileInfo, Fmt_NM)ModelInfo%ModelName, ModelInfo%InputDir, ModelInfo%OutputDir, ModelInfo%IntDir
 
 Write (FileInfo,*)" Analysis Type " ;
 
-Write(*     ,*) 'End Subroutine < InfBasic >' ;
+Write(*, *) 'End Subroutine < InfBasic >' ;
 Return ;
 End Subroutine InfBasic
 
@@ -155,7 +158,7 @@ End Subroutine InfBasic
 ! The University of Texas at Austin
 !
 ! ================================ V E R S I O N ==================================================
-! V0.1: 12/02/2018 - Initiation.
+! V0.1: 02/12/2018 - Initiation.
 !
 ! File version $Id $
 !
