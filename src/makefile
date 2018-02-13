@@ -1,0 +1,50 @@
+
+# =================================================================================================
+#
+# Developer    : Babak Poursartip
+#                Institute for Computational Engineering and Sciences
+#                The University of Texas at Austin, TX, USA
+#
+# Code         : 2D Shallow Water Equation
+#
+# Last Update  : 12/02/2018
+#
+# =================================================================================================
+
+info ::
+@echo "do:"
+@echo "  make SOURCE"
+@echo "    where SOURCE is one of ${SOURCESF}"
+
+
+F90    = ifort
+FFLAGS = -O2
+
+SOURCESF    =   Parameters_mod.F90 \
+				Inf_mod.F90 \
+				Main.F90
+
+OBJSF       =  $(SOURCESF:%.F90=%.o)
+
+
+main :  $(OBJSF)
+	@echo Linking...
+	$(F90) $(FFLAGS) $(OBJSF) -o main
+	@echo Done!
+
+%.o   : %.F90
+	@echo Compiling...
+	$(F90) $(FFLAGS) -c $<
+
+
+
+# clean rule for object files
+cln  :
+	@echo Clean Object files...
+	rm -rf *.o main
+	rm -rf *.mod main
+	rm -rf fort.* main
+
+
+
+

@@ -53,29 +53,34 @@ Open(Unit=UnFile, File='ADDRESS.txt', Err=1001, IOStat=IO_File, Access='SEQUENTI
 
 ! Read the input fine name and directories Form "ADDRESS_File.txt" in the current directory -------
 Read(UN_ADR,*) ;
-Read(UN_ADR,*) ModelName ;
+Read(UN_ADR,*) ModelInfo%ModelName ;
 Read(UN_ADR,*) ;
-Read(UN_ADR,*) AnalysisType, Output_Type ;
+Read(UN_ADR,*) ModelInfo%AnalysisType;
 Read(UN_ADR,*) ;
-Read(UN_ADR,*) Model_InDir ;
+Read(UN_ADR,*) ModelInfo%InputDir ;
 Read(UN_ADR,*) ;
-Read(UN_ADR,*) InlDir ;
+Read(UN_ADR,*) ModelInfo%IntDir ;
 Read(UN_ADR,*) ;
-Read(UN_ADR,*) OutDir ;
+Read(UN_ADR,*) ModelInfo%OutputDir ;
 Read(UN_ADR,*) ;
-Read(UN_ADR,*) AnaName ;
-Read(UN_ADR,*) NumberOfAnalyses ;
+Read(UN_ADR,*) ModelInfo%AnaName ;
+Read(UN_ADR,*) ModelInfo%NumberOfAnalyses ;
 
-Ana_InDir  =Trim(AdjustL (Model_InDir))//'/'//Trim(AdjustL (ModelName))//'/'//'Analysis' ;
-Model_InDir=Trim(AdjustL (Model_InDir))//'/'//Trim(AdjustL (ModelName))//'/'//'Model' ;
+ModelInfo%AnalysisDir  =Trim(AdjustL(ModelInfo%InputDir))//'/'//Trim(AdjustL(ModelName))//'/'//'Analysis' ;
+ModelInfo%InputDir=Trim(AdjustL(ModelInfo%InputDir))//'/'//Trim(AdjustL(ModelName))//'/'//'Model' ;
 
-Write (*,fmt="(2A)")" The model directory is: ", Model_InDir ;
-Write (*,fmt="(2A)")" The analysis name is:", Ana_InDir ;
+Write (*,fmt="(2A)")" The model directory is: ", ModelInfo%InputDir;
+Write (*,fmt="(2A)")" The analysis name is:", ModelInfo%AnalysisDir ;
+
+
+
+
+
 
 ! Create the results folder -----------------------------------------------------------------------
 Write(*,fmt="(A)") " -Creating the output folders ...";
 
-Directory=MakeDirQQ (Trim(AdjustL (OutDir))//'/'//Trim(AdjustL (ModelName))  ) ;
+Directory=MakeDirQQ (Trim(AdjustL(ModelInfo%OutputDir))//'/'//Trim(AdjustL(ModelInfo%ModelName))) ;
   If (Directory) Then ;
      Write (*     ,*) 'New subdirectory successfully created - results folder' ;
   Else ;
@@ -83,35 +88,35 @@ Directory=MakeDirQQ (Trim(AdjustL (OutDir))//'/'//Trim(AdjustL (ModelName))  ) ;
   End If ;
 
 ! Internal folder
-Directory=MakeDirQQ (Trim(AdjustL (InlDir))//'/'//Trim(AdjustL (ModelName))) ;
+Directory=MakeDirQQ (Trim(AdjustL (ModelInfo%IntDir))//'/'//Trim(AdjustL (ModelInfo%ModelName))) ;
   If (Directory) Then ;
      Write (*    ,*) 'New subdirectory successfully created - internal folder' ;
   Else ;
      Write (*     ,*) 'Subdirectory is already exits - results folder' ;
   End If ;
 
-OutDir=Trim(AdjustL (OutDir))//'/'//Trim(AdjustL (ModelName)) ;
-InlDir=Trim(AdjustL (InlDir))//'/'//Trim(AdjustL (ModelName)) ;
+ModelInfo%OutputDir=Trim(AdjustL (ModelInfo%OutputDir))//'/'//Trim(AdjustL (ModelInfo%ModelName)) ;
+ModelInfo%IntDir=Trim(AdjustL (ModelInfo%IntDir))//'/'//Trim(AdjustL (ModelInfo%ModelName)) ;
 
-Write (*,fmt="(2A)")" The output folder is: ", OutDir ;
+Write (*,fmt="(2A)")" The output folder is: ", OutputDir ;
 
 ! Opening the information File --------------------------------------------------------------------
 Write(*,fmt="(A)") " -Creating the info.txt file in the output folder ...";
 
 UnFile=File_Info ;
-Open (Unit=UnFile, File=Trim(ModelName)//.infM', &
+Open (Unit=UnFile, File=Trim(ModelInfo%ModelName)//.infM', &
       Err=1001, IOStat=IO_File, Access='SEQUENTIAL', Action='Write', Asynchronous='NO', &
       Blank='NULL', BLOCKSize=0, DEFAULTFile=Trim(OutDir), DisPOSE='Keep', Form='FormATTED', &
       Position='ASIS', Status='REPLACE' ) ;
 
 ! Writing down the simulation time
-Call Info(Year, Month, Day, Hour, Minute, Seconds, S100th, ModelName, Ana_InDir, OutDir, InlDir) ;
+Call Info(TimeDate, ModelName, AnalysisDir, OutputDir, IntDir) ;
 
 ! Reading model data ==============================================================================
 Write(*,fmt="(A)") " -Opening the input file ...";
 
 UnFile=File_Input_Model ;
-Open (Unit=UnFile, File=Trim(ModelName)//'.dataModel', &
+Open (Unit=UnFile, File=Trim(ModelInfo%ModelName)//'.dataModel', &
       Err=1001, IOStat=IO_File, Access='SEQUENTIAL', ACTION='READ', Asynchronous='NO', &
       Blank='NULL', BLOCKSize=0, DEFAULTFile=Trim(Model_InDir), DisPOSE='Keep', Form='Formatted', &
       Position='ASIS', Status='old' ) ;
@@ -207,21 +212,21 @@ Close(Unit=UnFile, Status='Keep', Err=1002, IOStat=IO_File) ;
 ! Simulations =====================================================================================
 Write (*,*)"Ananlysis Number: ", IAnalysis ;
 
-Read(UN_ADR,*) AnaName ;
-Write (*,fmt="(2A)")"Ananlysis Name: ",AnaName ;
+Read(UN_ADR,*) ModelInfo%AnalysisName ;
+Write (*,fmt="(2A)")"Ananlysis Name: ",ModelInfo%AnalysisName ;
 
 ! Opening the input file for this specific simulation
 Write (*,fmt="(A)") " -Opening the analysis file ..." ;
 
 UnFile=UnInptAna ;
-Open (Unit=UnFile, File=Trim(AnaName)//'.txt', Err= 1001, IOStat=IO_File, Access='SEQUENTIAL', &
+Open (Unit=UnFile, File=Trim(ModelInfo%AnalysisName)//'.txt', Err= 1001, IOStat=IO_File, Access='SEQUENTIAL', &
       Action='READ', Asynchronous='NO', Blank='NULL', BLOCKSize=0, DEFAULTFile=Trim(Ana_InDir), &
       DisPOSE='Keep', FORM='FormATTED', Position='ASIS', Status='old') ;
 
 ! Creating the output file directory for this analysis --------------------------------------------
 Write(*,fmt="(A)") " -Creating the output folder for this analysis ...";
 
-Directory=MakeDirQQ (Trim(AdjustL (OutDir))//'/'//Trim(AdjustL (AnaName))  ) ;
+Directory=MakeDirQQ (Trim(AdjustL (ModelInfo%OutputDir))//'/'//Trim(AdjustL (ModelInfo%AnalysisName))  ) ;
   If (Directory) Then ;
      Write (*     ,*) 'New subdirectory successfully created.' ;
      Write (UnInf,*) 'New subdirectory successfully created.' ;
@@ -231,7 +236,7 @@ Directory=MakeDirQQ (Trim(AdjustL (OutDir))//'/'//Trim(AdjustL (AnaName))  ) ;
   End If ;
 
 ! Creating the internal File directory ------------------------------------------------------------
-Directory=MakeDirQQ (Trim(AdjustL (InlDir))//'/'//Trim(AdjustL (AnaName))  ) ;
+Directory=MakeDirQQ (Trim(AdjustL(ModelInfo%IntDir))//'/'//Trim(AdjustL(ModelInfo%AnalysisName))) ;
   If (Directory) Then ;
      Write (*    ,*) 'New subdirectory successfully created.' ;
      Write (UnInf,*) 'New subdirectory successfully created.' ;
@@ -240,8 +245,8 @@ Directory=MakeDirQQ (Trim(AdjustL (InlDir))//'/'//Trim(AdjustL (AnaName))  ) ;
      Write (UnInf,*) 'Subdirectory already exists.' ;
   End If ;
 
-OutDirAna=Trim(AdjustL (OutDir))//'/'//Trim(AdjustL (AnaName)) ;
-InlDirAna=Trim(AdjustL (InlDir))//'/'//Trim(AdjustL (AnaName)) ;
+ModelInfo%AnalysisOutputDir=Trim(AdjustL (ModelInfo%OutputDir))//'/'//Trim(AdjustL (ModelInfo%AnalysisName)) ;
+ModelInfo%AnalysisIntDir=Trim(AdjustL (ModelInfo%IntDir))//'/'//Trim(AdjustL (ModelInfo%AnalysisName)) ;
 
 ! Test File ---------------------------------------------------------------------------------------
 !UnFile=UN_CHK ;

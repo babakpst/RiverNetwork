@@ -2,13 +2,11 @@
 ! Integer Variables -------------------------------------------------------------------------------
 
 ! Tiny Integers
-Integer (Kind=Tiny)  :: ;                   ! ---
+!Integer (Kind=Tiny)  :: ;                        ! ---
 
 
 ! Smll Integers
-Integer (Kind=Smll)  :: Year, Month, Day ;               ! Date variables
-Integer (Kind=Smll)  :: Hour, Minute, Seconds, S100th ;  ! Time variables
-Integer (Kind=Smll)  :: IO_File ;                ! For IOSTAT: Input Output Status in OPEN cammand
+Integer (Kind=Smll)  :: IO_File ;                ! For IOSTAT: Input Output Status in OPEN command
 Integer (Kind=Smll)  :: ERR_Alloc, ERR_DeAlloc ; ! Allocating and DeAllocating errors
 Integer (Kind=Smll)  :: UnFile ;                 ! Holds Unit of a file for error message
 
@@ -19,20 +17,20 @@ Integer (Kind=Shrt)  :: ;                        !
 Integer (Kind=Lng )  :: ;                        !
 
 
-! - Real Variables ----------------------------------------------------------------------------------------------------------------------------------
+! - Real Variables --------------------------------------------------------------------------------
 Real (Kind=DBL)      :: TimeS, TimeE ;           ! TIME Variables for total run time
 Real (Kind=DBL)      :: TimeInputS, TimeInputE ; ! TIME Variables for reading input files
 Real (Kind=DBL)      :: TimeSolveS, TimeSolveE ; ! TIME Variables for Effective Stiffness
 
-! - Logical Variable --------------------------------------------------------------------------------------------------------------------------------
+! - Logical Variable ------------------------------------------------------------------------------
 Logical (Kind=Shrt)  :: Directory ;
 
-! - Integer Arrays ----------------------------------------------------------------------------------------------------------------------------------
-! - Real Arrays -------------------------------------------------------------------------------------------------------------------------------------
+! - Integer Arrays --------------------------------------------------------------------------------
+! - Real Arrays -----------------------------------------------------------------------------------
 
-! - Integer ARRAY ALLOCATION ------------------------------------------------------------------------------------------------------------------------
+! - Integer array, allocatable---------------------------------------------------------------------
 ! Tiny Integers
-Integer (Kind=Tiny),              Dimension(6)   :: ;          !
+Integer (Kind=Tiny),              Dimension(:)   :: ;          !
 
 ! Smll Integers
 Integer (Kind=Smll), Allocatable, Dimension(:)   :: ;          !
@@ -46,15 +44,16 @@ Integer (Kind=Lng ), Allocatable, Dimension(:)   :: ;          !
 Integer (Kind=Lng ), Allocatable, Dimension(:,:) :: ;          !
 
 
-! - Real ARRAY ALLOCATION ---------------------------------------------------------------------------------------------------------------------------
+! - Real array, allocatable -----------------------------------------------------------------------
 Real (Kind=DBL)   , Allocatable, Dimension(:)    :: ;
 
 Real (Kind=DBL)   , Allocatable, Dimension(:,:)  :: ;           !
 
-! - Type ALLOCATION ---------------------------------------------------------------------------------------------------------------------------------
-Type ( .. )    :: ;                !
+! - Type ALLOCATION -------------------------------------------------------------------------------
+Type (TimeDate_tp)    :: TimeDate;  ! Indicates the time and date of simulation
+Type (Input_Data_tp)  :: ModelInfo; ! Holds info. (name, dir, output dir) of the model
 
-! - Character Variables -----------------------------------------------------------------------------------------------------------------------------
-Character (Kind = 1, Len = 30 ) :: ;   !
+! - Character Variables ---------------------------------------------------------------------------
+!Character (Kind = 1, Len = 30 ) :: ;   !
 
 

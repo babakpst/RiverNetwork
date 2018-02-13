@@ -61,19 +61,20 @@ Contains
 !##################################################################################################
 
 Subroutine InfBasic ( &
-Year, Month, Day, Hour, Minute, Second, S100th, & ! Integer Variables
+!                                               & ! Integer Variables
 !                                               & ! Real Variables
 !                                               & ! Integer Arrays
 !                                               & ! Real Arrays
-Name, Model_InDir, OutDir, InlDir               & ! Characters
+Name, Model_InDir, OutDir, InlDir,              & ! Characters
+TimeDate                                        & ! Types
 ) ;
 
 Implicit None ;
 
 ! =========================== Global Variables ====================================================
 
-! - Integer Arrays --------------------------------------------------------------------------------
-Integer (Kind=Smll), Intent(In)    :: Year, Month, Day, Hour, Minute, Second, S100th ;
+! - Integer Variables -----------------------------------------------------------------------------
+!Integer (Kind=Smll), Intent(In)     ::  ;
 !#Integer (Kind=Shrt), Intent(InOut) ::  ;
 !#Integer (Kind=Shrt), Intent(OUT)   ::  ;
 ! - Real Variables --------------------------------------------------------------------------------
@@ -104,10 +105,14 @@ Character (Kind = 1, Len = 150), Intent(In) :: Model_InDir; ! Directory of the i
 Character (Kind = 1, Len = 150), Intent(In) :: InlDir ;     ! Directory of the internal files.
 Character (Kind = 1, Len = 150), Intent(In) :: OutDir ;     ! Directory of the output files-Results
 
+! - Types -----------------------------------------------------------------------------------------
+type (TimeDate_tp):: TimeDate ;
+
 ! - Logical Variables -----------------------------------------------------------------------------
 !#Logical   ::  ;
+
 ! =========================== LOCAL Variables =====================================================
-! - Integer Arrays --------------------------------------------------------------------------------
+! - Integer Variables -----------------------------------------------------------------------------
 !#Integer (Kind=Shrt)  ::  ;
 ! - Real Variables --------------------------------------------------------------------------------
 !#Real (Kind=DBL)  ::  ;
@@ -126,10 +131,11 @@ Character (Kind = 1, Len = 150), Intent(In) :: OutDir ;     ! Directory of the o
 ! - Type DECLERATIONS -----------------------------------------------------------------------------
 !#Type() :: ;
 
-! =========================== Subroutine CODE =====================================================
+! CODE ============================================================================================
 
 ! Write INFORMATION
-Write (UnInf, Fmt_DATE) Month, Day, Year,   Hour, Minute, Second, S100th ;
+Write (UnInf, Fmt_DATE) TimeDate%Month, TimeDate%Day,    TimeDate%Year, &
+                        TimeDate%Hour,  TimeDate%Minute, TimeDate%Second, TimeDate%S100th ;
 Write (UnInf, Fmt_NM  ) Name, Model_InDir, OutDir, InlDir ;
 
 Write (UnInf,*)" Analysis Type " ;
@@ -162,7 +168,7 @@ End Subroutine InfBasic ;
 !##################################################################################################
 
 Subroutine InfTime  (                                        &
-Nel,                                                         & ! Integer Variables
+!                                                            & ! Integer Variables
 TimeE, TimeS, TimeInputE, TimeInputS, TimeSolveE, TimeSolveS & ! Real Variables
 !                                                            & ! Integer Arrays
 !                                                            & ! Real Arrays
@@ -175,7 +181,7 @@ Implicit None ;
 ! =========================== Global Variables ====================================================
 
 ! - Integer Variables -----------------------------------------------------------------------------
-Integer (Kind=Lng ), Intent(In) :: NEl ;
+!Integer (Kind=Lng ), Intent(In) :: ;
 
 ! - Real Variables --------------------------------------------------------------------------------
 Real (Kind=Dbl), Intent(In)    :: TimeE, TimeS, TimeInputE, TimeInputS, TimeSolveE, TimeSolveS ;

@@ -90,12 +90,28 @@ Integer (Kind=Smll), Parameter, Public  :: UnInf=600; ! Model information file (
 
 ! Spectral Element
 
-! =================================================================================================
-! =================================================================================================
 
-type Input_Data
+! User defined types ==============================================================================
+! Time signature of the model
+type TimeDate_tp
+  Integer (Kind=Smll)  :: Year, Month, Day ;               ! Date variables
+  Integer (Kind=Smll)  :: Hour, Minute, Seconds, S100th ;  ! Time variables
+end type TimeDate_tp
 
-end type
+! Holds info. (name, dir, output directory) of the model
+type Input_Data_tp
+  Character (Kind = 1, Len = 30 ) :: ModelName ;    ! name of the model input file
+  Character (Kind = 1, Len = 30 ) :: AnalysisName ; ! Name of the analysis input file
+  Character (Kind = 1, Len = 150) :: InputDir ;     ! Directory of the input file.
+  Character (Kind = 1, Len = 150) :: AnalysisDir ;  ! Directory of Analysis input file.
+  Character (Kind = 1, Len = 150) :: IntDir ;       ! Directory of internal files.
+  Character (Kind = 1, Len = 150) :: AnalysisIntDir;! Directory of internal files for each analysis
+  Character (Kind = 1, Len = 150) :: OutputDir;     ! Directory of output files (Results)
+  Character (Kind = 1, Len = 150) :: AnalysisOutputDir;! Directory of output file for each analysis
+
+  Integer (Kind=Smll)  :: AnalysisType ;                     ! Analysis Type
+  Integer (Kind=Smll)  :: NumberOfAnalyses ;        ! Number of analysis
+end type Input_Data_tp
 
 Contains
 
