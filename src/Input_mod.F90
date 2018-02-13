@@ -63,6 +63,77 @@ contains
 !
 !##################################################################################################
 
+Subroutine Input_Basic(                                               &
+!                                                                     & ! Integer (1) Variables
+!                                                                     & ! Integer (2) Variables
+!                                                                     & ! Integer (4) Variables
+!                                                                     & ! Integer (8) Variables
+!                                                                     & ! Real Variables
+!                                                                     & ! Integer Arrays
+!                                                                     & ! Real Arrays
+!                                                                     & ! Characters
+!                                                                     & ! Type
+)
+
+Implicit None ;
+
+! Global Variables ================================================================================
+
+! - Integer Variables -----------------------------------------------------------------------------
+!#Integer (Kind=Shrt), Intent(In)    ::
+!#Integer (Kind=Shrt), Intent(InOut) ::
+!#Integer (Kind=Shrt), Intent(OUT)   ::
+! - Real Variables --------------------------------------------------------------------------------
+!#Real (Kind=Dbl),     Intent(In)    ::
+!#Real (Kind=Dbl),     Intent(InOut) ::
+!#Real (Kind=Dbl),     Intent(OUT)   ::
+! - Complex Variables -----------------------------------------------------------------------------
+!#Complex,             Intent(In)    ::
+!#Complex,             Intent(InOut) ::
+!#Complex,             Intent(OUT)   ::
+! - Integer Arrays --------------------------------------------------------------------------------
+!#Integer (Kind=Shrt), Intent(In),    Dimension (:  )  ::
+!#Integer (Kind=Shrt), Intent(In),    Dimension (:,:)  ::
+!#Integer (Kind=Shrt), Intent(In)    ::
+!#Integer (Kind=Shrt), Intent(InOut) ::
+!#Integer (Kind=Shrt), Intent(OUT)   ::
+! - Real Arrays -----------------------------------------------------------------------------------
+!#Real (Kind=Dbl),     Intent(In),    Dimension (:  )  ::
+!#Real (Kind=Dbl),     Intent(InOut), Dimension (:  )  ::
+!#Real (Kind=Dbl),     Intent(OUT),   Dimension (:  )  ::
+! - Character Variables ---------------------------------------------------------------------------
+!#Character (Kind = ?, Len = ? ) ::
+! - Logical Variables -----------------------------------------------------------------------------
+!#Logical   ::
+! - Types -----------------------------------------------------------------------------------------
+!#Type() ::
+! Local Variables =================================================================================
+! - Integer Variables -----------------------------------------------------------------------------
+!#Integer (Kind=Shrt)  ::
+! - Real Variables --------------------------------------------------------------------------------
+!#Real (Kind=Dbl)      ::
+! - Complex Variables -----------------------------------------------------------------------------
+!#Complex              ::
+! - Integer Arrays --------------------------------------------------------------------------------
+!#Integer (Kind=Shrt), Dimension (:)  ::
+!#Integer (Kind=Shrt), Allocatable, Dimension (:)  ::
+! - Real Arrays -----------------------------------------------------------------------------------
+!#Real (Kind=Dbl), Dimension (:)      ::
+!#Real (Kind=Dbl), Allocatable, Dimension (:)  ::
+! - Character Variables ---------------------------------------------------------------------------
+!#Character (Kind = ?, Len = ? ) ::
+! - Logical Variables -----------------------------------------------------------------------------
+!#Logical   ::  ;
+! - Type ------------------------------------------------------------------------------------------
+
+! CODE ============================================================================================
+
+
+
+!#Write(*    ,*) 'End Subroutine < sub >'
+!#Write(UnInf,*) 'End Subroutine < sub >'
+Return ;
+End Subroutine Input_Basic
 
 !##################################################################################################
 ! Purpose: This subroutine reads the arrays.
