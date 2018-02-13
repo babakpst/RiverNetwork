@@ -65,9 +65,9 @@ Subroutine InfBasic ( &
 !                                               & ! Real Variables
 !                                               & ! Integer Arrays
 !                                               & ! Real Arrays
-Name, Model_InDir, OutDir, InlDir,              & ! Characters
-TimeDate                                        & ! Types
-) ;
+!                                               & ! Characters
+TimeDate, ModelInfo                             & ! Types
+)
 
 Implicit None ;
 
@@ -134,15 +134,15 @@ type (TimeDate_tp):: TimeDate ;
 ! CODE ============================================================================================
 
 ! Write INFORMATION
-Write (UnInf, Fmt_DATE) TimeDate%Month, TimeDate%Day,    TimeDate%Year, &
+Write (FileInfo, Fmt_DATE) TimeDate%Month, TimeDate%Day,    TimeDate%Year, &
                         TimeDate%Hour,  TimeDate%Minute, TimeDate%Second, TimeDate%S100th ;
-Write (UnInf, Fmt_NM  ) Name, Model_InDir, OutDir, InlDir ;
+Write (FileInfo, Fmt_NM  ) Name, Model_InDir, OutDir, InlDir ;
 
-Write (UnInf,*)" Analysis Type " ;
+Write (FileInfo,*)" Analysis Type " ;
 
 Write(*     ,*) 'End Subroutine < InfBasic >' ;
 Return ;
-End Subroutine InfBasic ;
+End Subroutine InfBasic
 
 
 !##################################################################################################
@@ -167,14 +167,14 @@ End Subroutine InfBasic ;
 !
 !##################################################################################################
 
-Subroutine InfTime  (                                        &
+Subroutine InfTime(                                          &
 !                                                            & ! Integer Variables
 TimeE, TimeS, TimeInputE, TimeInputS, TimeSolveE, TimeSolveS & ! Real Variables
 !                                                            & ! Integer Arrays
 !                                                            & ! Real Arrays
 !                                                            & ! Characters
 !                                                            & ! Type
-) ;
+)
 
 Implicit None ;
 
@@ -230,16 +230,16 @@ Real (Kind=Dbl), Intent(In)    :: TimeE, TimeS, TimeInputE, TimeInputS, TimeSolv
 
 ! =========================== Subroutine CODE =====================================================
 
-Write(UnInf,*)
+Write(FileInfo,*)
 
 !Write(*     ,Fmt_RUNTIME) "TOTAL"   , TimeE - TimeS ;
 
-Write(UnInf,*)"---------- RUNNING TIME STATISTICS ----------" ;
+Write(FileInfo,*)"---------- RUNNING TIME STATISTICS ----------" ;
 
-Write(UnInf,Fmt_RUNTIME) "Reading Input files           ", TimeInputE  - TimeInputS ;
-Write(UnInf,Fmt_RUNTIME) "SOLVE                         ", TimeSolveE  - TimeSolveS ;
-Write(UnInf,Fmt_RUNTIME) "TOTAL                         ", TimeE       - TimeS ;
-Write(UnInf,*)
+Write(FileInfo,Fmt_RUNTIME) "Reading Input files           ", TimeInputE  - TimeInputS ;
+Write(FileInfo,Fmt_RUNTIME) "SOLVE                         ", TimeSolveE  - TimeSolveS ;
+Write(FileInfo,Fmt_RUNTIME) "TOTAL                         ", TimeE       - TimeS ;
+Write(FileInfo,*)
 
 Write(*     ,*) 'End Subroutine < InfTime >' ;
 

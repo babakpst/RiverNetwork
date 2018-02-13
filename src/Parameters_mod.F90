@@ -63,7 +63,7 @@ Character(144), Parameter, Public :: Fmt_Element2="('Error in the element type. 
 
 ! Unit NUMBERS OF EXTERNAL FILES ==================================================================
 ! Address file
-Integer (Kind=Smll), Parameter, Public  :: Un_ADR=500; ! Address file to save the model name & directories (.txt)
+Integer (Kind=Smll), Parameter, Public  :: FileAdr=500; ! Address file to save the model name & directories (.txt)
 
 ! Input files
 Integer (Kind=Smll), Parameter, Public  :: UnInptMdl=501; ! Input file (.dataModel)
@@ -75,7 +75,7 @@ Integer (Kind=Smll), Parameter, Public  :: UnInptCnt=504; ! Input file for node 
 Integer (Kind=Smll), Parameter, Public  :: Un_CHK=599; ! Scratch file for debugging (.Chk)
 
 !Output files
-Integer (Kind=Smll), Parameter, Public  :: UnInf=600; ! Model information file (.Inf)
+Integer (Kind=Smll), Parameter, Public  :: FileInfo=600; ! Model information file (.Inf)
 
 
 ! Analysis case number ============================================================================
@@ -98,9 +98,9 @@ type TimeDate_tp
   Integer (Kind=Smll)  :: Hour, Minute, Seconds, S100th ;  ! Time variables
 end type TimeDate_tp
 
-! Holds info. (name, dir, output directory) of the model
+! Holds info. (name, Dir, output directory) of the model
 type Input_Data_tp
-  Character (Kind = 1, Len = 30 ) :: ModelName ;    ! name of the model input file
+  Character (Kind = 1, Len = 30 ) :: ModelName ;    ! Name of the model input file
   Character (Kind = 1, Len = 30 ) :: AnalysisName ; ! Name of the analysis input file
   Character (Kind = 1, Len = 150) :: InputDir ;     ! Directory of the input file.
   Character (Kind = 1, Len = 150) :: AnalysisDir ;  ! Directory of Analysis input file.
@@ -109,7 +109,8 @@ type Input_Data_tp
   Character (Kind = 1, Len = 150) :: OutputDir;     ! Directory of output files (Results)
   Character (Kind = 1, Len = 150) :: AnalysisOutputDir;! Directory of output file for each analysis
 
-  Integer (Kind=Smll)  :: AnalysisType ;                     ! Analysis Type
+  Integer (Kind=Smll)  :: AnalysisType ;            ! Analysis Type: 1: 1D-2: 2D
+  Integer (Kind=Smll)  :: OutputType ;              ! Output Type: 1: ordinary-2: HDF5
   Integer (Kind=Smll)  :: NumberOfAnalyses ;        ! Number of analysis
 end type Input_Data_tp
 

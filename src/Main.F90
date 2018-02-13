@@ -27,93 +27,95 @@ program Shallow_Water_Equation;
 ! Libraries =======================================================================================
 
 ! Defined Modules =================================================================================
+use Parameters;
 
-Implicit None ;
 
 ! Global Variables ================================================================================
-Include 'Global_Variables_Inc.F95'   ! All Global Variables are defined/described in this File
+Implicit None ;
+Include 'Global_Variables_Inc.F90'   ! All Global Variables are defined/described in this File
+
+
+
 
 ! Time and Date signature =========================================================================
-Call CPU_TIME(Time_Start ) ;
-Call GETDAT(Year, Month, Day) ;
-Call GETTIM(Hour, Minute, Seconds, S100th) ;
+Call CPU_TIME(Time_Start)
+Call GETDAT(TimeDate%Year, TimeDate%Month, TimeDate%Day)
+Call GETTIM(TimeDate%Hour, TimeDate%Minute, TimeDate%Seconds, TimeDate%S100th)
 
 ! Write some inFormation on screen
-Write(*,*)" Numerical simulation of 2D Shallow water Equation" ;
+Write(*,*)" Numerical simulation of 2D Shallow water Equation"
 Write(*,*)
 
 ! Directories, input, and output Files ============================================================
 ! Address File ------------------------------------------------------------------------------------
-Write(*,fmt="(A)") " -Reading Address.txt file ...";
+Write(*,fmt="(A)") " -Reading Address.txt file ..."
 
-UnFile=File_Address ;
+UnFile=File_Address
 Open(Unit=UnFile, File='ADDRESS.txt', Err=1001, IOStat=IO_File, Access='SEQUENTIAL', &
      Action='READ', Asynchronous='NO', Blank='NULL', BLOCKSize=0, DisPOSE='Keep', &
-     Form='FormATTED', Position='ASIS', Status='old') ;
+     Form='FormATTED', Position='ASIS', Status='old')
 
 ! Read the input fine name and directories Form "ADDRESS_File.txt" in the current directory -------
-Read(UN_ADR,*) ;
-Read(UN_ADR,*) ModelInfo%ModelName ;
-Read(UN_ADR,*) ;
-Read(UN_ADR,*) ModelInfo%AnalysisType;
-Read(UN_ADR,*) ;
-Read(UN_ADR,*) ModelInfo%InputDir ;
-Read(UN_ADR,*) ;
-Read(UN_ADR,*) ModelInfo%IntDir ;
-Read(UN_ADR,*) ;
-Read(UN_ADR,*) ModelInfo%OutputDir ;
-Read(UN_ADR,*) ;
-Read(UN_ADR,*) ModelInfo%AnaName ;
-Read(UN_ADR,*) ModelInfo%NumberOfAnalyses ;
+Read(FileAdr,*)
+Read(FileAdr,*) ModelInfo%ModelName
+Read(FileAdr,*)
+Read(FileAdr,*) ModelInfo%AnalysisType
+Read(FileAdr,*)
+Read(FileAdr,*) ModelInfo%OutputType
+Read(FileAdr,*)
+Read(FileAdr,*) ModelInfo%InputDir
+Read(FileAdr,*)
+Read(FileAdr,*) ModelInfo%IntDir
+Read(FileAdr,*)
+Read(FileAdr,*) ModelInfo%OutputDir
+Read(FileAdr,*)
+Read(FileAdr,*) ModelInfo%AnaName
+Read(FileAdr,*) ModelInfo%NumberOfAnalyses
 
-ModelInfo%AnalysisDir  =Trim(AdjustL(ModelInfo%InputDir))//'/'//Trim(AdjustL(ModelName))//'/'//'Analysis' ;
-ModelInfo%InputDir=Trim(AdjustL(ModelInfo%InputDir))//'/'//Trim(AdjustL(ModelName))//'/'//'Model' ;
+ModelInfo%AnalysisDir=Trim(AdjustL(ModelInfo%InputDir))//'/'//Trim(AdjustL(ModelName))//'/'//'Analysis'
+ModelInfo%InputDir=Trim(AdjustL(ModelInfo%InputDir))//'/'//Trim(AdjustL(ModelName))//'/'//'Model'
 
-Write (*,fmt="(2A)")" The model directory is: ", ModelInfo%InputDir;
-Write (*,fmt="(2A)")" The analysis name is:", ModelInfo%AnalysisDir ;
-
-
-
-
-
+Write (*,fmt="(2A)")" The model directory is: ", ModelInfo%InputDir
+Write (*,fmt="(2A)")" The analysis name is: ", ModelInfo%AnalysisDir
 
 ! Create the results folder -----------------------------------------------------------------------
-Write(*,fmt="(A)") " -Creating the output folders ...";
+Write(*,fmt="(A)") " -Creating the output folders ..."
 
-Directory=MakeDirQQ (Trim(AdjustL(ModelInfo%OutputDir))//'/'//Trim(AdjustL(ModelInfo%ModelName))) ;
-  If (Directory) Then ;
-     Write (*     ,*) 'New subdirectory successfully created - results folder' ;
-  Else ;
-     Write (*     ,*) 'Subdirectory is already exits - results folder' ;
-  End If ;
+Directory=MakeDirQQ (Trim(AdjustL(ModelInfo%OutputDir))//'/'//Trim(AdjustL(ModelInfo%ModelName)))
+  If (Directory) Then
+    Write(*,*) "The result folder is created."
+  Else
+     Write (*,*) "The result folder already exists."
+  End If
 
 ! Internal folder
-Directory=MakeDirQQ (Trim(AdjustL (ModelInfo%IntDir))//'/'//Trim(AdjustL (ModelInfo%ModelName))) ;
-  If (Directory) Then ;
-     Write (*    ,*) 'New subdirectory successfully created - internal folder' ;
+Directory=MakeDirQQ (Trim(AdjustL (ModelInfo%IntDir))//'/'//Trim(AdjustL (ModelInfo%ModelName)))
+  If (Directory) Then
+     Write (*,*) "The internal folder is created."
   Else ;
-     Write (*     ,*) 'Subdirectory is already exits - results folder' ;
+     Write (*,*) "The internal folder already exists."
   End If ;
 
-ModelInfo%OutputDir=Trim(AdjustL (ModelInfo%OutputDir))//'/'//Trim(AdjustL (ModelInfo%ModelName)) ;
-ModelInfo%IntDir=Trim(AdjustL (ModelInfo%IntDir))//'/'//Trim(AdjustL (ModelInfo%ModelName)) ;
+ModelInfo%OutputDir=Trim(AdjustL (ModelInfo%OutputDir))//'/'//Trim(AdjustL (ModelInfo%ModelName))
+ModelInfo%IntDir=Trim(AdjustL (ModelInfo%IntDir))//'/'//Trim(AdjustL (ModelInfo%ModelName))
 
-Write (*,fmt="(2A)")" The output folder is: ", OutputDir ;
+Write (*,fmt="(2A)")" The output directory is: ", ModelInfo%OutputDir
 
 ! Opening the information File --------------------------------------------------------------------
-Write(*,fmt="(A)") " -Creating the info.txt file in the output folder ...";
+Write(*,fmt="(A)") " -Creating the info.txt file in the output folder ..."
 
-UnFile=File_Info ;
+UnFile=FileInfo
 Open (Unit=UnFile, File=Trim(ModelInfo%ModelName)//.infM', &
       Err=1001, IOStat=IO_File, Access='SEQUENTIAL', Action='Write', Asynchronous='NO', &
       Blank='NULL', BLOCKSize=0, DEFAULTFile=Trim(OutDir), DisPOSE='Keep', Form='FormATTED', &
-      Position='ASIS', Status='REPLACE' ) ;
+      Position='ASIS', Status='REPLACE' )
 
 ! Writing down the simulation time
-Call Info(TimeDate, ModelName, AnalysisDir, OutputDir, IntDir) ;
+Call Info(TimeDate, ModelInfo)
 
 ! Reading model data ==============================================================================
-Write(*,fmt="(A)") " -Opening the input file ...";
+Write(*,         fmt="(A)") " -Opening the input file ..."
+Write(FileInfo, fmt="(A)") " -Opening the input file ..."
 
 UnFile=File_Input_Model ;
 Open (Unit=UnFile, File=Trim(ModelInfo%ModelName)//'.dataModel', &
@@ -124,11 +126,12 @@ Open (Unit=UnFile, File=Trim(ModelInfo%ModelName)//'.dataModel', &
 
 Call CPU_TIME( TimeInputS ) ;
 
-! Reading basic data: Ordinary Files OR HDF5 Files ------------------------------------------------
-Write(*,fmt="(A)") " -Reading the initial data file ...";
+! Reading basic data: Ordinary OR HDF5 ------------------------------------------------------------
+Write(*,         fmt="(A)") " -Reading the initial data file ..."
+Write(FileInfo, fmt="(A)") " -Reading the initial data file ..."
 
-  If ( Output_Type == 0 .OR. Output_Type == 2 ) Then ;
-    Call Input (                                                         &
+  If (ModelInfo%OutputType==0_Smll) Then ! Ordinary
+    Call Input(                                                          &
                                                                          & ! Integer (1) Variables
                                                                          & ! Integer (2) Variables
                                                                          & ! Integer (4) Variables
@@ -138,9 +141,9 @@ Write(*,fmt="(A)") " -Reading the initial data file ...";
                                                                          & ! Real Arrays
                                                                          & ! Characters
                                                                          & ! Type
-    ) ;
-  Else If ( Output_Type == 1 ) Then ; ! Binary Files
-    Call Input_Binary (                                                  &
+    )
+  Else If (ModelInfo%OutputType==1_Smll) Then ! HDF5
+    Call Input(                                                          &
                                                                          & ! Integer (1) Variables
                                                                          & ! Integer (2) Variables
                                                                          & ! Integer (4) Variables
@@ -150,26 +153,30 @@ Write(*,fmt="(A)") " -Reading the initial data file ...";
                                                                          & ! Real Arrays
                                                                          & ! Characters
                                                                          & ! Type
-    ) ;
-  End If ;
+    )
+  End If
 
 ! Allocating required arrays
-Write(*,fmt="(A)") " -Allocating the required arrays ...";
+Write(*,         fmt="(A)") " -Allocating the required arrays ..."
+Write(FileInfo, fmt="(A)") " -Allocating the required arrays ..."
 
 Allocate ( ,
-           STAT=Err_Alloc) ;
+           STAT=Err_Alloc)
   If ( Err_Alloc /= 0 ) Then ;
-    Write (*, Fmt_ALLCT) Err_Alloc ;  Write (UnInf, Fmt_ALLCT) Err_Alloc ;
-    Write(*, Fmt_FL) ;  Write(UnInf, Fmt_FL) ; Write(*, Fmt_End) ; Read(*,*) ;  Stop ;
-  End If ;
+    Write (*, Fmt_ALLCT) Err_Alloc ;  Write (FileInfo, Fmt_ALLCT) Err_Alloc ;
+    Write(*, Fmt_FL) ;  Write(FileInfo, Fmt_FL) ; Write(*, Fmt_End) ; Read(*,*) ;  Stop ;
+  End If
 
 ! Open required Files -----------------------------------------------------------------------------
-Include 'Open_Inc.F90'
+Write(*,         fmt="(A)") " -Opening the input files ..."
+Write(FileInfo, fmt="(A)") " -Opening the input files ..."
+Include 'Open_File_Inc.F90'
 
 ! Reading input arrays ----------------------------------------------------------------------------
-Write(*,fmt="(A)") " -Reading arrays form data file ...";
+Write(*,         fmt="(A)") " -Reading arrays form data file ..."
+Write(FileInfo, fmt="(A)") " -Reading arrays form data file ..."
 
-  If ( Output_Type == 0 ) Then ;
+  If (ModelInfo%OutputType==0_Smll) Then
     Call Input (                                                         &
                                                                          & ! Integer (1) Variables
                                                                          & ! Integer (2) Variables
@@ -180,8 +187,8 @@ Write(*,fmt="(A)") " -Reading arrays form data file ...";
                                                                          & ! Real Arrays
                                                                          & ! Characters
                                                                          & ! Type
-    ) ;
-  Else If ( Output_Type == 1 ) Then ;
+    )
+  Else If (ModelInfo%OutputType==1_Smll) Then
     Call Input_Binary (                                                  &
                                                                          & ! Integer (1) Variables
                                                                          & ! Integer (2) Variables
@@ -192,31 +199,37 @@ Write(*,fmt="(A)") " -Reading arrays form data file ...";
                                                                          & ! Real Arrays
                                                                          & ! Characters
                                                                          & ! Type
-    ) ;
-  End If ;
-Call CPU_TIME( TimeInputE ) ;
+    )
+  End If
+Call CPU_TIME( TimeInputE )
 
 ! Close Input File --------------------------------------------------------------------------------
+Write(*,         fmt="(A)") " -Closing input files ..."
+Write(FileInfo, fmt="(A)") " -Closing input files ..."
+
 ! Close ADDRESS File
-UnFile= UN_ADR ;
-Close ( Unit=UnFile, Status='Keep', Err=1002, IOStat=IO_File ) ;
+UnFile= FileAdr
+Close ( Unit=UnFile, Status='Keep', Err=1002, IOStat=IO_File )
 
 ! Close data File
-UnFile= UnInptAna ;
-Close(Unit=UnFile, Status='Keep', Err=1002, IOStat=IO_File) ;
+UnFile= UnInptAna
+Close(Unit=UnFile, Status='Keep', Err=1002, IOStat=IO_File)
 
 ! close check File
 !UnFile= Un_CHK ;
 !Close (Unit=UnFile, Status='Keep', Err=1002, IOStat=IO_File) ;
 
 ! Simulations =====================================================================================
-Write (*,*)"Ananlysis Number: ", IAnalysis ;
+Write (*,         fmt="(A,I5)")"  Ananlysis Number: ", IAnalysis
+Write (FileInfo, fmt="(A,I5)")"  Ananlysis Number: ", IAnalysis
 
-Read(UN_ADR,*) ModelInfo%AnalysisName ;
-Write (*,fmt="(2A)")"Ananlysis Name: ",ModelInfo%AnalysisName ;
+Read(FileAdr,*) ModelInfo%AnalysisName ;
+Write (*,         fmt="(2A)")"Ananlysis Name: ", ModelInfo%AnalysisName
+Write (FileInfo, fmt="(2A)")"Ananlysis Name: ", ModelInfo%AnalysisName
 
 ! Opening the input file for this specific simulation
-Write (*,fmt="(A)") " -Opening the analysis file ..." ;
+Write (FileInfo, fmt="(A)") " -Opening the analysis file ..."
+Write (FileInfo, fmt="(A)") " -Opening the analysis file ..."
 
 UnFile=UnInptAna ;
 Open (Unit=UnFile, File=Trim(ModelInfo%AnalysisName)//'.txt', Err= 1001, IOStat=IO_File, Access='SEQUENTIAL', &
@@ -224,29 +237,30 @@ Open (Unit=UnFile, File=Trim(ModelInfo%AnalysisName)//'.txt', Err= 1001, IOStat=
       DisPOSE='Keep', FORM='FormATTED', Position='ASIS', Status='old') ;
 
 ! Creating the output file directory for this analysis --------------------------------------------
-Write(*,fmt="(A)") " -Creating the output folder for this analysis ...";
+Write(*,         fmt="(A)") " -Creating the output folder for this analysis ..."
+Write(FileInfo, fmt="(A)") " -Creating the output folder for this analysis ..."
 
 Directory=MakeDirQQ (Trim(AdjustL (ModelInfo%OutputDir))//'/'//Trim(AdjustL (ModelInfo%AnalysisName))  ) ;
   If (Directory) Then ;
-     Write (*     ,*) 'New subdirectory successfully created.' ;
-     Write (UnInf,*) 'New subdirectory successfully created.' ;
+     Write (*     ,*) "New subdirectory successfully created." ;
+     Write (FileInfo,*) "New subdirectory successfully created." ;
   Else ;
-     Write (*    ,*) 'Subdirectory already exists.' ;
-     Write (UnInf,*) 'Subdirectory already exists.' ;
+     Write (*    ,*) "Subdirectory already exists." ;
+     Write (FileInfo,*) "Subdirectory already exists." ;
   End If ;
 
 ! Creating the internal File directory ------------------------------------------------------------
 Directory=MakeDirQQ (Trim(AdjustL(ModelInfo%IntDir))//'/'//Trim(AdjustL(ModelInfo%AnalysisName))) ;
-  If (Directory) Then ;
-     Write (*    ,*) 'New subdirectory successfully created.' ;
-     Write (UnInf,*) 'New subdirectory successfully created.' ;
-  Else ;
-     Write (*    ,*) 'Subdirectory already exists.' ;
-     Write (UnInf,*) 'Subdirectory already exists.' ;
-  End If ;
+  If (Directory) Then
+     Write (*    ,*) "New subdirectory successfully created."
+     Write (FileInfo,*) "New subdirectory successfully created."
+  Else
+     Write (*    ,*) "Subdirectory already exists."
+     Write (FileInfo,*) "Subdirectory already exists."
+  End If
 
-ModelInfo%AnalysisOutputDir=Trim(AdjustL (ModelInfo%OutputDir))//'/'//Trim(AdjustL (ModelInfo%AnalysisName)) ;
-ModelInfo%AnalysisIntDir=Trim(AdjustL (ModelInfo%IntDir))//'/'//Trim(AdjustL (ModelInfo%AnalysisName)) ;
+ModelInfo%AnalysisOutputDir=Trim(AdjustL (ModelInfo%OutputDir))//'/'//Trim(AdjustL (ModelInfo%AnalysisName))
+ModelInfo%AnalysisIntDir=Trim(AdjustL (ModelInfo%IntDir))//'/'//Trim(AdjustL (ModelInfo%AnalysisName))
 
 ! Test File ---------------------------------------------------------------------------------------
 !UnFile=UN_CHK ;
@@ -257,28 +271,28 @@ ModelInfo%AnalysisIntDir=Trim(AdjustL (ModelInfo%IntDir))//'/'//Trim(AdjustL (Mo
 
 
 ! Analysis ========================================================================================
-  SELECT CASE ( AnalysisType ) ;
+  SELECT CASE (AnalysisType)
 
-    CASE (N_1D_SWE) ;    ! # 1
+    CASE (N_1D_SWE)    ! # 1
 
       Include '1D_Shallow_Water.F90'
 
     ! Error in analysis numbering
-    CASE DEFAULT ;
-      Write(*,*)" The analysis type  is not available in this code. Modify the analysis type." ;
-      Write(UnInf,*)" The analysis type  is not available in this code. Modify the analysis type." ;
-      Write(*,*) ;
-      Write(UnInf,*) ;
-      Write(*,*)" Simulation terminated with error." ;
+    CASE DEFAULT
+      Write(*,*)" The analysis type  is not available in this code. Modify the analysis type."
+      Write(FileInfo,*)" The analysis type  is not available in this code. Modify the analysis type."
+      Write(*,*)
+      Write(FileInfo,*)
+      Write(*,*)" Simulation terminated with error."
       Write(*, Fmt_End) ; Read(*,*) ;  Stop ;
 
-  End SELECT ;
+  End SELECT
 
 ! Deallocating arrays
 DEAllocate( ,      STAT = ERR_DeAlloc ) ;
   IF ( ERR_DeAlloc /= 0 ) Then ;
-    Write (*, Fmt_DEALLCT) ERR_DeAlloc ;  Write (UnInf, Fmt_DEALLCT) ERR_DeAlloc ;
-    Write(*, Fmt_FL) ;  Write(UnInf, Fmt_FL) ; Write(*, Fmt_End) ; Read(*,*) ;  STOP ;
+    Write (*, Fmt_DEALLCT) ERR_DeAlloc ;  Write (FileInfo, Fmt_DEALLCT) ERR_DeAlloc ;
+    Write(*, Fmt_FL) ;  Write(FileInfo, Fmt_FL) ; Write(*, Fmt_End) ; Read(*,*) ;  STOP ;
   End If ;
 
 
@@ -292,7 +306,7 @@ Write (*,*) ;
 
 ! Close Files -------------------------------------------------------------------------------------
 ! Close information File
-UnFile= UnInf ;
+UnFile= FileInfo ;
 Close ( Unit=UnFile, Status='Keep', Err=1002, IOStat=IO_File ) ;
 
 
@@ -301,7 +315,7 @@ Close ( Unit=UnFile, Status='Keep', Err=1002, IOStat=IO_File ) ;
 
 ! End the code ====================================================================================
 Write (*,"('Model Name: ',A30,'Analysis Name: ', A30)")ModelName, AnaName ;
-Write (*, Fmt_SUC) ;  Write(UnInf, Fmt_SUC) ;
+Write (*, Fmt_SUC) ;  Write(FileInfo, Fmt_SUC) ;
 Write (*, Fmt_End) ;
 
 !#Read(*,*);
@@ -312,20 +326,20 @@ Stop ;
 ! =================================================================================================
 ! Opening statement Errors
 1001  If ( IO_File > 0 ) Then ;
-        Write(*, Fmt_Err1_OPEN) UnFile, IO_File  ;  Write(UnInf, Fmt_Err1_OPEN) UnFile, IO_File;
-        Write(*, Fmt_FL) ; Write(UnInf, Fmt_FL) ;
+        Write(*, Fmt_Err1_OPEN) UnFile, IO_File  ;  Write(FileInfo, Fmt_Err1_OPEN) UnFile, IO_File;
+        Write(*, Fmt_FL) ; Write(FileInfo, Fmt_FL) ;
         Write(*, Fmt_End) ; Read(*,*) ;  Stop ;
       Else If ( IO_File < 0 ) Then ;
         Write(*, Fmt_Err1_OPEN) UnFile, IO_File  ;
-        Write(UnInf, Fmt_Err1_OPEN) UnFile, IO_File  ;  Write(*, Fmt_FL) ; Write(UnInf, Fmt_FL);
+        Write(FileInfo, Fmt_Err1_OPEN) UnFile, IO_File  ;  Write(*, Fmt_FL) ; Write(FileInfo, Fmt_FL);
         Write(*, Fmt_End) ; Read(*,*) ;  Stop ;
       End If ;
 
 
 ! Close statement Errors
 1002  If ( IO_File > 0 ) Then ;
-        Write(*, Fmt_Err1_Close) UnFile, IO_File  ;  Write(UnInf, Fmt_Err1_Close) UnFile, IO_File ;
-        Write(*, Fmt_FL) ; Write(UnInf, Fmt_FL) ;
+        Write(*, Fmt_Err1_Close) UnFile, IO_File  ;  Write(FileInfo, Fmt_Err1_Close) UnFile, IO_File ;
+        Write(*, Fmt_FL) ; Write(FileInfo, Fmt_FL) ;
         Write(*, Fmt_End) ; Read(*,*) ; ; Stop ;
       End If ;
 

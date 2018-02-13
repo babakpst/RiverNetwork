@@ -18,12 +18,12 @@ Integer (Kind=Lng )  :: ;                        !
 
 
 ! - Real Variables --------------------------------------------------------------------------------
-Real (Kind=DBL)      :: TimeS, TimeE ;           ! TIME Variables for total run time
-Real (Kind=DBL)      :: TimeInputS, TimeInputE ; ! TIME Variables for reading input files
-Real (Kind=DBL)      :: TimeSolveS, TimeSolveE ; ! TIME Variables for Effective Stiffness
+Real (Kind=DBL)      :: TimeS, TimeE            ! TIME Variables for total run time
+Real (Kind=DBL)      :: TimeInputS, TimeInputE  ! TIME Variables for reading input files
+Real (Kind=DBL)      :: TimeSolveS, TimeSolveE  ! TIME Variables for Effective Stiffness
 
 ! - Logical Variable ------------------------------------------------------------------------------
-Logical (Kind=Shrt)  :: Directory ;
+Logical (Kind=Shrt)  :: Directory
 
 ! - Integer Arrays --------------------------------------------------------------------------------
 ! - Real Arrays -----------------------------------------------------------------------------------
@@ -50,8 +50,8 @@ Real (Kind=DBL)   , Allocatable, Dimension(:)    :: ;
 Real (Kind=DBL)   , Allocatable, Dimension(:,:)  :: ;           !
 
 ! - Type ALLOCATION -------------------------------------------------------------------------------
-Type (TimeDate_tp)    :: TimeDate;  ! Indicates the time and date of simulation
-Type (Input_Data_tp)  :: ModelInfo; ! Holds info. (name, dir, output dir) of the model
+Type (TimeDate_tp)    :: TimeDate   ! Indicates the time and date of simulation
+Type (Input_Data_tp)  :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
 
 ! - Character Variables ---------------------------------------------------------------------------
 !Character (Kind = 1, Len = 30 ) :: ;   !
