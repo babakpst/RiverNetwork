@@ -9,13 +9,14 @@
 Integer (Kind=Smll) :: UnFile      ! Holds Unit of a file for error message
 Integer (Kind=Smll) :: IO_File ;                ! For IOSTAT: Input Output Status in OPEN command
 Integer (Kind=Smll) :: ERR_Alloc, ERR_DeAlloc ; ! Allocating and DeAllocating errors
+Integer (Kind=Smll)  :: i_analyses    ! loop index to read the analyses files
 
 
 ! Shrt Integers
-Integer (Kind=Shrt)  :: ;                        !
+!Integer (Kind=Shrt)  :: ;                        !
 
 ! Lng Integers
-Integer (Kind=Lng )  :: ;                        !
+!Integer (Kind=Lng )  :: ;                        !
 
 
 ! - Real Variables --------------------------------------------------------------------------------
@@ -24,31 +25,30 @@ Real (Kind=DBL)      :: TimeInputS, TimeInputE  ! TIME Variables for reading inp
 Real (Kind=DBL)      :: TimeSolveS, TimeSolveE  ! TIME Variables for Effective Stiffness
 
 ! - Logical Variable ------------------------------------------------------------------------------
-Logical (Kind=Shrt)  :: Directory
+!Logical (Kind=Shrt)  ::
 
 ! - Integer Arrays --------------------------------------------------------------------------------
 ! - Real Arrays -----------------------------------------------------------------------------------
 
 ! - Integer array, allocatable---------------------------------------------------------------------
 ! Tiny Integers
-Integer (Kind=Tiny),              Dimension(:)   :: ;          !
+!Integer (Kind=Tiny),              Dimension(:)   :: ;          !
 
 ! Smll Integers
-Integer (Kind=Smll), Allocatable, Dimension(:)   :: ;          !
+!Integer (Kind=Smll), Allocatable, Dimension(:)   :: ;          !
 
 ! Shrt Integers
-Integer (Kind=Shrt), Allocatable, Dimension(:)   :: ;          !
+!Integer (Kind=Shrt), Allocatable, Dimension(:)   :: ;          !
 
 
 ! Lng Integers
-Integer (Kind=Lng ), Allocatable, Dimension(:)   :: ;          !
-Integer (Kind=Lng ), Allocatable, Dimension(:,:) :: ;          !
+!Integer (Kind=Lng ), Allocatable, Dimension(:)   :: ;          !
+!Integer (Kind=Lng ), Allocatable, Dimension(:,:) :: ;          !
 
 
 ! - Real array, allocatable -----------------------------------------------------------------------
-Real (Kind=DBL)   , Allocatable, Dimension(:)    :: ;
-
-Real (Kind=DBL)   , Allocatable, Dimension(:,:)  :: ;           !
+!Real (Kind=DBL)   , Allocatable, Dimension(:)    :: ;
+!Real (Kind=DBL)   , Allocatable, Dimension(:,:)  :: ;           !
 
 ! - Type ALLOCATION -------------------------------------------------------------------------------
 Type (TimeDate_tp)    :: TimeDate   ! Indicates the time and date of simulation

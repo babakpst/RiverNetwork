@@ -111,6 +111,9 @@ Implicit None
 ! - Integer Variables -----------------------------------------------------------------------------
 Integer (Kind=Smll)  :: UnFile        ! Holds Unit of a file for error message
 Integer (Kind=Smll)  :: IO_File       ! For IOSTAT: Input Output Status in OPEN command
+Integer (Kind=Smll)  :: i_analyses    ! loop index to read the analyses files
+
+
 ! - Real Variables --------------------------------------------------------------------------------
 !#Real (Kind=Dbl)      ::
 ! - Complex Variables -----------------------------------------------------------------------------
@@ -151,18 +154,24 @@ Read(FileAdr,*) ModelInfo%IntDir
 Read(FileAdr,*)
 Read(FileAdr,*) ModelInfo%OutputDir
 Read(FileAdr,*)
-Read(FileAdr,*) ModelInfo%AnaName
 Read(FileAdr,*) ModelInfo%NumberOfAnalyses
+
+! Allocating
+Allocate (ModelInfo%AnalysesNames(ModelInfo%NumberOfAnalyses),  STAT = ERR_Alloc)
+  If ( ERR_Alloc /= 0 ) Then
+    Write (*, Fmt_ALLCT) ERR_Alloc ;  Write (UnInf, Fmt_ALLCT) ERR_Alloc ;
+    Write(*, Fmt_FL) ;  Write(UnInf, Fmt_FL) ; Read(*, Fmt_End) ;  Stop ;
+  End If
+Read(FileAdr,*)
+  do i_analysis = 1, ModelInfo%NumberOfAnalyses
+    Read(FileAdr,*) ModelInfo%AnalysesNames(i_analysis)
+  end do
 
 ModelInfo%AnalysisDir=Trim(AdjustL(ModelInfo%InputDir))//'/'//Trim(AdjustL(ModelName))//'/'//'Analysis'
 ModelInfo%InputDir=Trim(AdjustL(ModelInfo%InputDir))//'/'//Trim(AdjustL(ModelName))//'/'//'Model'
 
-Write (*,fmt="(2A)")" The model directory is: ", ModelInfo%InputDir
-Write (*,fmt="(2A)")" The analysis name is: ", ModelInfo%AnalysisDir
-
-Read(FileAdr,*) ModelInfo%AnalysisName ;
-Write (*,        fmt="(2A)")"Analysis Name: ", ModelInfo%AnalysisName
-Write (FileInfo, fmt="(2A)")"Analysis Name: ", ModelInfo%AnalysisName
+Write (*, fmt="(2A)")" The model directory is: ", ModelInfo%InputDir
+Write (*, fmt="(2A)")" The analysis name is: ", ModelInfo%AnalysisDir
 
 ! Create the results folder
 Write(*,fmt="(A)") " -Creating the output folders ..."
@@ -448,12 +457,14 @@ Implicit None
 !#Logical   ::
 ! - Type ------------------------------------------------------------------------------------------
 
-! CODE ============================================================================================
+! code ============================================================================================
+
+write(*,       *) " Subroutine < Input_Array_sub >: "
+write(FileInfo,*) " Subroutine < Input_Array_sub >: "
 
 
-
-Write(*    ,*) 'End Subroutine < Input_Array_sub >'
-Write(FileInfo,*) 'End Subroutine < Input_Array_sub >'
+Write(*,       *) "End Subroutine < Input_Array_sub >"
+Write(FileInfo,*) "End Subroutine < Input_Array_sub >"
 Return
 End Subroutine Input_Array_sub
 
@@ -543,12 +554,52 @@ Implicit None
 !#Logical   ::
 ! - Type ------------------------------------------------------------------------------------------
 
-! CODE ============================================================================================
+! code ============================================================================================
+write(*,       *) " Subroutine < Input_Analysis_sub >: "
+write(FileInfo,*) " Subroutine < Input_Analysis_sub >: "
+
+
+! Opening the input file for this specific simulation
+Write (*,        fmt="(A)") " -Opening the analysis file ..."
+Write (FileInfo, fmt="(A)") " -Opening the analysis file ..."
+
+UnFile=UnInptAna ;
+Open (Unit=UnFile, File=Trim(ModelInfo%AnalysisName)//'.txt', Err= 1001, IOStat=IO_File, Access='SEQUENTIAL', &
+      Action='READ', Asynchronous='NO', Blank='NULL', BLOCKSize=0, DEFAULTFile=Trim(Ana_InDir), &
+      DisPOSE='Keep', FORM='FormATTED', Position='ASIS', Status='old') ;
+
+! Creating the output file directory for this analysis --------------------------------------------
+Write(*,        fmt="(A)") " -Creating the output folder for this analysis ..."
+Write(FileInfo, fmt="(A)") " -Creating the output folder for this analysis ..."
+
+Directory=MakeDirQQ (Trim(AdjustL (ModelInfo%OutputDir))//'/'//Trim(AdjustL (ModelInfo%AnalysisName))  ) ;
+  If (Directory) Then ;
+     Write (*,       fmt="(A)") "The output folder for this analysis created." ;
+     Write (FileInfo,fmt="(A)") "The output folder for this analysis created." ;
+  Else ;
+     Write (*,        fmt="(A)") "The output folder for this analysis already exists." ;
+     Write (FileInfo, fmt="(A)") "The output folder for this analysis already exists." ;
+  End If ;
+
+! Creating the internal File directory ------------------------------------------------------------
+Directory=MakeDirQQ (Trim(AdjustL(ModelInfo%IntDir))//'/'//Trim(AdjustL(ModelInfo%AnalysisName))) ;
+  If (Directory) Then
+     Write (*,        fmt="(A)") "The internal folder for this analysis created."
+     Write (FileInfo, fmt="(A)") "The internal folder for this analysis created."
+  Else
+     Write (*,        fmt="(A)") "The internal folder for this analysis already exists."
+     Write (FileInfo, fmt="(A)") "The internal folder for this analysis already exists."
+  End If
+
+ModelInfo%AnalysisOutputDir=Trim(AdjustL(ModelInfo%OutputDir))//'/'//Trim(AdjustL(ModelInfo%AnalysisName))
+ModelInfo%AnalysisIntDir=Trim(AdjustL(ModelInfo%IntDir))//'/'//Trim(AdjustL(ModelInfo%AnalysisName))
 
 
 
-Write(*    ,*) 'End Subroutine < Input_Analysis_sub >'
-Write(FileInfo,*) 'End Subroutine < Input_Analysis_sub >'
+
+
+Write(*,       *) "End Subroutine < Input_Analysis_sub >"
+Write(FileInfo,*) "End Subroutine < Input_Analysis_sub >"
 Return
 End Subroutine Input_Analysis_sub
 

@@ -165,66 +165,41 @@ Close(Unit=UnFile, Status='Keep', Err=1002, IOStat=IO_File)
 !Close (Unit=UnFile, Status='Keep', Err=1002, IOStat=IO_File) ;
 
 ! Simulations =====================================================================================
-! Opening the input file for this specific simulation
-Write (*,        fmt="(A)") " -Opening the analysis file ..."
-Write (FileInfo, fmt="(A)") " -Opening the analysis file ..."
 
-UnFile=UnInptAna ;
-Open (Unit=UnFile, File=Trim(ModelInfo%AnalysisName)//'.txt', Err= 1001, IOStat=IO_File, Access='SEQUENTIAL', &
-      Action='READ', Asynchronous='NO', Blank='NULL', BLOCKSize=0, DEFAULTFile=Trim(Ana_InDir), &
-      DisPOSE='Keep', FORM='FormATTED', Position='ASIS', Status='old') ;
-
-! Creating the output file directory for this analysis --------------------------------------------
-Write(*,        fmt="(A)") " -Creating the output folder for this analysis ..."
-Write(FileInfo, fmt="(A)") " -Creating the output folder for this analysis ..."
-
-Directory=MakeDirQQ (Trim(AdjustL (ModelInfo%OutputDir))//'/'//Trim(AdjustL (ModelInfo%AnalysisName))  ) ;
-  If (Directory) Then ;
-     Write (*,       fmt="(A)") "The output folder for this analysis created." ;
-     Write (FileInfo,fmt="(A)") "The output folder for this analysis created." ;
-  Else ;
-     Write (*,        fmt="(A)") "The output folder for this analysis already exists." ;
-     Write (FileInfo, fmt="(A)") "The output folder for this analysis already exists." ;
-  End If ;
-
-! Creating the internal File directory ------------------------------------------------------------
-Directory=MakeDirQQ (Trim(AdjustL(ModelInfo%IntDir))//'/'//Trim(AdjustL(ModelInfo%AnalysisName))) ;
-  If (Directory) Then
-     Write (*,        fmt="(A)") "The internal folder for this analysis created."
-     Write (FileInfo, fmt="(A)") "The internal folder for this analysis created."
-  Else
-     Write (*,        fmt="(A)") "The internal folder for this analysis already exists."
-     Write (FileInfo, fmt="(A)") "The internal folder for this analysis already exists."
-  End If
-
-ModelInfo%AnalysisOutputDir=Trim(AdjustL(ModelInfo%OutputDir))//'/'//Trim(AdjustL(ModelInfo%AnalysisName))
-ModelInfo%AnalysisIntDir=Trim(AdjustL(ModelInfo%IntDir))//'/'//Trim(AdjustL(ModelInfo%AnalysisName))
-
-! Test File ---------------------------------------------------------------------------------------
-!UnFile=UN_CHK ;
-!Open ( Unit=UnFile, File=Trim(AnaName)//'_'//Trim(AdjustL(IndexSize))//'_'//Trim(AdjustL(IndexRank))//'.Chk', &
-!     Err= 1001, IOStat=IO_File, Access='SEQUENTIAL', Action='Write', Asynchronous='NO', &
-!     Blank='NULL', BLOCKSize=0, DEFAULTFile=Trim(InlDirAna), DisPOSE='Keep', Form='FormATTED', &
-!     Position='ASIS', Status='REPLACE' ) ;
+  do i_analysis = 1, ModelInfo%NumberOfAnalyses
 
 
-! Analysis ========================================================================================
-  SELECT CASE (AnalysisType)
+    ! Getting the required data for this specific analysis
+    call Input()
 
-    CASE (N_1D_SWE)    ! # 1
+    ! Test File ---------------------------------------------------------------------------------------
+    !UnFile=UN_CHK ;
+    !Open ( Unit=UnFile, File=Trim(AnaName)//'_'//Trim(AdjustL(IndexSize))//'_'//Trim(AdjustL(IndexRank))//'.Chk', &
+    !     Err= 1001, IOStat=IO_File, Access='SEQUENTIAL', Action='Write', Asynchronous='NO', &
+    !     Blank='NULL', BLOCKSize=0, DEFAULTFile=Trim(InlDirAna), DisPOSE='Keep', Form='FormATTED', &
+    !     Position='ASIS', Status='REPLACE' ) ;
 
-      Include '1D_Shallow_Water.F90'
 
-    ! Error in analysis numbering
-    CASE DEFAULT
-      Write(*,*)" The analysis type  is not available in this code. Modify the analysis type."
-      Write(FileInfo,*)" The analysis type  is not available in this code. Modify the analysis type."
-      Write(*,*)
-      Write(FileInfo,*)
-      Write(*,*)" Simulation terminated with error."
-      Write(*, Fmt_End) ; Read(*,*) ;  Stop ;
+    ! Analysis ========================================================================================
+      SELECT CASE (AnalysisType)
 
-  End SELECT
+        CASE (N_1D_SWE)    ! # 1
+
+          Include '1D_Shallow_Water.F90'
+
+        ! Error in analysis numbering
+        CASE DEFAULT
+          Write(*,*)" The analysis type  is not available in this code. Modify the analysis type."
+          Write(FileInfo,*)" The analysis type  is not available in this code. Modify the analysis type."
+          Write(*,*)
+          Write(FileInfo,*)
+          Write(*,*)" Simulation terminated with error."
+          Write(*, Fmt_End) ; Read(*,*) ;  Stop ;
+
+      End SELECT
+
+  end do
+
 
 ! Deallocating arrays
 DEAllocate( ,      STAT = ERR_DeAlloc ) ;

@@ -101,13 +101,13 @@ end type TimeDate_tp
 ! Holds info. (name, Dir, output directory) of the model
 type Input_Data_tp
   Character (Kind = 1, Len = 30 ) :: ModelName ;    ! Name of the model input file
-  Character (Kind = 1, Len = 30 ) :: AnalysisName ; ! Name of the analysis input file
   Character (Kind = 1, Len = 150) :: InputDir ;     ! Directory of the input file.
   Character (Kind = 1, Len = 150) :: AnalysisDir ;  ! Directory of Analysis input file.
   Character (Kind = 1, Len = 150) :: IntDir ;       ! Directory of internal files.
   Character (Kind = 1, Len = 150) :: AnalysisIntDir;! Directory of internal files for each analysis
   Character (Kind = 1, Len = 150) :: OutputDir;     ! Directory of output files (Results)
   Character (Kind = 1, Len = 150) :: AnalysisOutputDir;! Directory of output file for each analysis
+  Character (Kind = 1, Len = 150), dimension(:), allocatable :: AnalysesNames;! Holds the name of the analysis input file
 
   Integer (Kind=Smll)  :: AnalysisType ;            ! Analysis Type: 1: 1D-2: 2D
   Integer (Kind=Smll)  :: OutputType ;              ! Output Type: 1: ordinary-2: HDF5
