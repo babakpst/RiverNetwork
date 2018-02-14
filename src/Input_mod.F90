@@ -1,5 +1,4 @@
 
-
 !##################################################################################################
 ! Purpose: This module reads all data for simulation.
 !
@@ -72,7 +71,7 @@ Subroutine Input_Address_sub(                                         &
 !                                                                     & ! Integer Arrays
 !                                                                     & ! Real Arrays
 !                                                                     & ! Characters
-ModelInfo                                                                     & ! Type
+ModelInfo                                                             & ! Type
 )
 
 Implicit None
