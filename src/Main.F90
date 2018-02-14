@@ -96,6 +96,15 @@ Write(FileInfo, fmt="(A)") " -Reading the initial data file ..."
     )
   End If
 
+
+
+
+
+
+
+
+
+
 ! Allocating required arrays
 Write(*,        fmt="(A)") " -Allocating the required arrays ..."
 Write(FileInfo, fmt="(A)") " -Allocating the required arrays ..."

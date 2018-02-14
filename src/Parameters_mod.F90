@@ -66,7 +66,7 @@ Character(144), Parameter, Public :: Fmt_Element2="('Error in the element type. 
 Integer (Kind=Smll), Parameter, Public :: FileAdr=500 ! Address file that holds the model name & directories (.txt)
 
 ! Input files
-Integer (Kind=Smll), Parameter, Public :: UnInptMdl=501; ! Input file (.dataModel)
+Integer (Kind=Smll), Parameter, Public :: FileDataModel=501; ! Input file (.dataModel)
 Integer (Kind=Smll), Parameter, Public :: UnInptXYZ=502; ! Input file for node coordinates (.XYZ)
 Integer (Kind=Smll), Parameter, Public :: UnInptCnn=503; ! Input file for connectivities of elements (.Cnn)
 Integer (Kind=Smll), Parameter, Public :: UnInptCnt=504; ! Input file for node constraints (.Cnt)

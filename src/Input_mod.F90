@@ -219,7 +219,6 @@ Return
      End If
 
 
-
 End Subroutine Input_Address_sub
 
 
@@ -256,7 +255,7 @@ Subroutine Input_Basic_sub(                                           &
 !                                                                     & ! Integer Arrays
 !                                                                     & ! Real Arrays
 !                                                                     & ! Characters
-!                                                                     & ! Type
+ModelInfo                                                             & ! Type
 )
 
 Implicit None ;
@@ -312,20 +311,56 @@ Implicit None ;
 
 ! code ============================================================================================
 
+write(*,       *) " Subroutine < Input_Basic_sub >: "
+write(FileInfo,*) " Subroutine < Input_Basic_sub >: "
+
+! - Opening the data model file -------------------------------------------------------------------
 Write(*,        fmt="(A)") " -Opening the input file ..."
 Write(FileInfo, fmt="(A)") " -Opening the input file ..."
 
-UnFile=File_Input_Model ;
+UnFile=FileDataModel
 Open (Unit=UnFile, File=Trim(ModelInfo%ModelName)//'.dataModel', &
       Err=1001, IOStat=IO_File, Access='SEQUENTIAL', ACTION='READ', Asynchronous='NO', &
       Blank='NULL', BLOCKSize=0, DEFAULTFile=Trim(Model_InDir), DisPOSE='Keep', Form='Formatted', &
-      Position='ASIS', Status='old' ) ;
+      Position='ASIS', Status='old' )
 
 
+
+
+
+
+
+
+! - Closing the data model file -------------------------------------------------------------------
+Write(*,        fmt="(A)") " -Closing the address file"
+Write(FileInfo, fmt="(A)") " -Closing the address file"
+UnFile =  FileDataModel
+Close ( Unit = UnFile, Status = 'KEEP', ERR =  1002, IOSTAT = IO_File)
 
 Write(*,       *) 'End Subroutine < Input_Basic_sub >'
 Write(FileInfo,*) 'End Subroutine < Input_Basic_sub >'
-Return ;
+Return
+
+! Errors ==========================================================================================
+! Opening statement Errors
+1001 If (IO_File > 0) Then
+       Write(*, Fmt_Err1_OPEN) UnFile, IO_File; Write(FileInfo, Fmt_Err1_OPEN) UnFile, IO_File;
+       Write(*, Fmt_FL); Write(FileInfo, Fmt_FL);
+       Write(*, Fmt_End); Read(*,*); Stop;
+     Else If ( IO_File < 0 ) Then
+       Write(*, Fmt_Err1_OPEN) UnFile, IO_File
+       Write(FileInfo, Fmt_Err1_OPEN) UnFile, IO_File;  Write(*, Fmt_FL) ; Write(FileInfo, Fmt_FL);
+       Write(*, Fmt_End); Read(*,*); Stop;
+     End If
+
+
+! Close statement Errors
+1002 If (IO_File > 0) Then
+       Write(*, Fmt_Err1_Close) UnFile, IO_File; Write(FileInfo, Fmt_Err1_Close) UnFile, IO_File;
+       Write(*, Fmt_FL); Write(FileInfo, Fmt_FL);
+       Write(*, Fmt_End); Read(*,*); Stop;
+     End If
+
 End Subroutine Input_Basic_sub
 
 !##################################################################################################
