@@ -1,4 +1,3 @@
-
 # =================================================================================================
 #
 # Developer    : Babak Poursartip
@@ -7,27 +6,22 @@
 #
 # Code         : 2D Shallow Water Equation
 #
-# Last Update  : 12/02/2018
+# Last Update  : 02/13/2018
 #
 # =================================================================================================
 
-info ::
-@echo "do:"
-@echo "  make SOURCE"
-@echo "    where SOURCE is one of ${SOURCESF}"
+F90=ifort
+FFLAGS=-O2
+
+SOURCESF=	Parameters_mod.F90 \
+					Input_mod.F90 \
+					Inf_mod.F90 \
+					Main.F90
+
+OBJSF=$(SOURCESF:%.F90=%.o)
 
 
-F90    = ifort
-FFLAGS = -O2
-
-SOURCESF    =   Parameters_mod.F90 \
-				Inf_mod.F90 \
-				Main.F90
-
-OBJSF       =  $(SOURCESF:%.F90=%.o)
-
-
-main :  $(OBJSF)
+main:$(OBJSF)
 	@echo Linking...
 	$(F90) $(FFLAGS) $(OBJSF) -o main
 	@echo Done!

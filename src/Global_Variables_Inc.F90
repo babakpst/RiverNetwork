@@ -6,9 +6,10 @@
 
 
 ! Smll Integers
-Integer (Kind=Smll)  :: IO_File ;                ! For IOSTAT: Input Output Status in OPEN command
-Integer (Kind=Smll)  :: ERR_Alloc, ERR_DeAlloc ; ! Allocating and DeAllocating errors
-Integer (Kind=Smll)  :: UnFile ;                 ! Holds Unit of a file for error message
+Integer (Kind=Smll) :: UnFile      ! Holds Unit of a file for error message
+Integer (Kind=Smll) :: IO_File ;                ! For IOSTAT: Input Output Status in OPEN command
+Integer (Kind=Smll) :: ERR_Alloc, ERR_DeAlloc ; ! Allocating and DeAllocating errors
+
 
 ! Shrt Integers
 Integer (Kind=Shrt)  :: ;                        !

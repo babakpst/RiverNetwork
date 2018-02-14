@@ -32,9 +32,8 @@ use Parameters;
 
 ! Global Variables ================================================================================
 Implicit None ;
+
 Include 'Global_Variables_Inc.F90'   ! All Global Variables are defined/described in this File
-
-
 
 
 ! Time and Date signature =========================================================================
@@ -50,56 +49,7 @@ Write(*,*)
 ! Address File ------------------------------------------------------------------------------------
 Write(*,fmt="(A)") " -Reading Address.txt file ..."
 
-UnFile=File_Address
-Open(Unit=UnFile, File='ADDRESS.txt', Err=1001, IOStat=IO_File, Access='SEQUENTIAL', &
-     Action='READ', Asynchronous='NO', Blank='NULL', BLOCKSize=0, DisPOSE='Keep', &
-     Form='FormATTED', Position='ASIS', Status='old')
-
-! Read the input fine name and directories Form "ADDRESS_File.txt" in the current directory -------
-Read(FileAdr,*)
-Read(FileAdr,*) ModelInfo%ModelName
-Read(FileAdr,*)
-Read(FileAdr,*) ModelInfo%AnalysisType
-Read(FileAdr,*)
-Read(FileAdr,*) ModelInfo%OutputType
-Read(FileAdr,*)
-Read(FileAdr,*) ModelInfo%InputDir
-Read(FileAdr,*)
-Read(FileAdr,*) ModelInfo%IntDir
-Read(FileAdr,*)
-Read(FileAdr,*) ModelInfo%OutputDir
-Read(FileAdr,*)
-Read(FileAdr,*) ModelInfo%AnaName
-Read(FileAdr,*) ModelInfo%NumberOfAnalyses
-
-ModelInfo%AnalysisDir=Trim(AdjustL(ModelInfo%InputDir))//'/'//Trim(AdjustL(ModelName))//'/'//'Analysis'
-ModelInfo%InputDir=Trim(AdjustL(ModelInfo%InputDir))//'/'//Trim(AdjustL(ModelName))//'/'//'Model'
-
-Write (*,fmt="(2A)")" The model directory is: ", ModelInfo%InputDir
-Write (*,fmt="(2A)")" The analysis name is: ", ModelInfo%AnalysisDir
-
-! Create the results folder -----------------------------------------------------------------------
-Write(*,fmt="(A)") " -Creating the output folders ..."
-
-Directory=MakeDirQQ (Trim(AdjustL(ModelInfo%OutputDir))//'/'//Trim(AdjustL(ModelInfo%ModelName)))
-  If (Directory) Then
-    Write(*,fmt="(A)") "The result folder is created."
-  Else
-     Write (*,fmt="(A)") "The result folder already exists."
-  End If
-
-! Internal folder
-Directory=MakeDirQQ (Trim(AdjustL (ModelInfo%IntDir))//'/'//Trim(AdjustL (ModelInfo%ModelName)))
-  If (Directory) Then
-     Write (*,fmt="(2A)") "The internal folder is created."
-  Else ;
-     Write (*,fmt="(2A)") "The internal folder already exists."
-  End If ;
-
-ModelInfo%OutputDir=Trim(AdjustL (ModelInfo%OutputDir))//'/'//Trim(AdjustL (ModelInfo%ModelName))
-ModelInfo%IntDir=Trim(AdjustL (ModelInfo%IntDir))//'/'//Trim(AdjustL (ModelInfo%ModelName))
-
-Write (*,fmt="(2A)")" The output directory is: ", ModelInfo%OutputDir
+call Input(ModelInfo)
 
 ! Opening the information File --------------------------------------------------------------------
 Write(*,fmt="(A)") " -Creating the info.txt file in the output folder ..."
@@ -113,23 +63,13 @@ Open (Unit=UnFile, File=Trim(ModelInfo%ModelName)//.infM', &
 ! Writing down the simulation time
 Call Info(TimeDate, ModelInfo)
 
-! Reading model data ==============================================================================
-Write(*,        fmt="(A)") " -Opening the input file ..."
-Write(FileInfo, fmt="(A)") " -Opening the input file ..."
-
-UnFile=File_Input_Model ;
-Open (Unit=UnFile, File=Trim(ModelInfo%ModelName)//'.dataModel', &
-      Err=1001, IOStat=IO_File, Access='SEQUENTIAL', ACTION='READ', Asynchronous='NO', &
-      Blank='NULL', BLOCKSize=0, DEFAULTFile=Trim(Model_InDir), DisPOSE='Keep', Form='Formatted', &
-      Position='ASIS', Status='old' ) ;
-
-
 Call CPU_TIME( TimeInputS ) ;
 
-! Reading basic data: Ordinary OR HDF5 ------------------------------------------------------------
+! Reading model data ==============================================================================
 Write(*,        fmt="(A)") " -Reading the initial data file ..."
 Write(FileInfo, fmt="(A)") " -Reading the initial data file ..."
 
+! Reading basic data: Ordinary OR HDF5 ------------------------------------------------------------
   If (ModelInfo%OutputType==0_Smll) Then ! Ordinary
     Call Input(                                                          &
                                                                          & ! Integer (1) Variables
@@ -207,10 +147,6 @@ Call CPU_TIME( TimeInputE )
 Write(*,        fmt="(A)") " -Closing input files ..."
 Write(FileInfo, fmt="(A)") " -Closing input files ..."
 
-! Close ADDRESS File
-UnFile= FileAdr
-Close ( Unit=UnFile, Status='Keep', Err=1002, IOStat=IO_File )
-
 ! Close data File
 UnFile= UnInptAna
 Close(Unit=UnFile, Status='Keep', Err=1002, IOStat=IO_File)
@@ -220,13 +156,6 @@ Close(Unit=UnFile, Status='Keep', Err=1002, IOStat=IO_File)
 !Close (Unit=UnFile, Status='Keep', Err=1002, IOStat=IO_File) ;
 
 ! Simulations =====================================================================================
-Write (*,        fmt="(A,I5)")"  Analysis Number: ", IAnalysis
-Write (FileInfo, fmt="(A,I5)")"  Analysis Number: ", IAnalysis
-
-Read(FileAdr,*) ModelInfo%AnalysisName ;
-Write (*,        fmt="(2A)")"Analysis Name: ", ModelInfo%AnalysisName
-Write (FileInfo, fmt="(2A)")"Analysis Name: ", ModelInfo%AnalysisName
-
 ! Opening the input file for this specific simulation
 Write (*,        fmt="(A)") " -Opening the analysis file ..."
 Write (FileInfo, fmt="(A)") " -Opening the analysis file ..."
@@ -322,8 +251,7 @@ Write (*, Fmt_End) ;
 Stop ;
 
 
-! =================================================================================================
-! =================================================================================================
+! Errors ==========================================================================================
 ! Opening statement Errors
 1001  If ( IO_File > 0 ) Then ;
         Write(*, Fmt_Err1_OPEN) UnFile, IO_File  ;  Write(FileInfo, Fmt_Err1_OPEN) UnFile, IO_File;
