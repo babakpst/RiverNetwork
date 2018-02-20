@@ -2,7 +2,7 @@
 ! Integer Variables -------------------------------------------------------------------------------
 
 ! Tiny Integers
-!Integer (Kind=Tiny)  :: ;                        ! ---
+!Integer (Kind=Tiny)  ::                         ! ---
 
 
 ! Smll Integers
@@ -13,10 +13,10 @@ Integer (Kind=Smll) :: i_analyses    ! loop index to read the analyses files
 Integer (Kind=Smll) :: ii, jj        ! Loop index
 
 ! Shrt Integers
-!Integer (Kind=Shrt)  :: ;                        !
+!Integer (Kind=Shrt)  ::                         !
 
 ! Lng Integers
-!Integer (Kind=Lng )  :: ;                        !
+!Integer (Kind=Lng )  ::                         !
 
 ! - Real Variables --------------------------------------------------------------------------------
 Real (Kind=DBL)      :: TimeS, TimeE            ! TIME Variables for total run time
@@ -32,23 +32,23 @@ Real (Kind=DBL)      :: TimeSolveS, TimeSolveE  ! TIME Variables for Effective S
 
 ! - Integer array, allocatable---------------------------------------------------------------------
 ! Tiny Integers
-!Integer (Kind=Tiny),              Dimension(:)   :: ;          !
+!Integer (Kind=Tiny),              Dimension(:)   ::           !
 
 ! Smll Integers
-!Integer (Kind=Smll), Allocatable, Dimension(:)   :: ;          !
+!Integer (Kind=Smll), Allocatable, Dimension(:)   ::           !
 
 ! Shrt Integers
-!Integer (Kind=Shrt), Allocatable, Dimension(:)   :: ;          !
+!Integer (Kind=Shrt), Allocatable, Dimension(:)   ::           !
 
 
 ! Lng Integers
-!Integer (Kind=Lng ), Allocatable, Dimension(:)   :: ;          !
-!Integer (Kind=Lng ), Allocatable, Dimension(:,:) :: ;          !
+!Integer (Kind=Lng ), Allocatable, Dimension(:)   ::           !
+!Integer (Kind=Lng ), Allocatable, Dimension(:,:) ::           !
 
 
 ! - Real array, allocatable -----------------------------------------------------------------------
-!Real (Kind=DBL)   , Allocatable, Dimension(:)    :: ;
-!Real (Kind=DBL)   , Allocatable, Dimension(:,:)  :: ;           !
+!Real (Kind=DBL)   , Allocatable, Dimension(:)    ::
+!Real (Kind=DBL)   , Allocatable, Dimension(:,:)  ::            !
 
 ! - Type ------------------------------------------------------------------------------------------
 Type (TimeDate_tp)   :: TimeDate   ! Indicates the time and date of simulation

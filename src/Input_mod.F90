@@ -63,70 +63,80 @@ contains
 !##################################################################################################
 
 Subroutine Input_Address_sub(                                         &
-!                                                                     & ! Integer (1) Variables
-!                                                                     & ! Integer (2) Variables
-!                                                                     & ! Integer (4) Variables
-!                                                                     & ! Integer (8) Variables
-!                                                                     & ! Real Variables
-!                                                                     & ! Integer Arrays
-!                                                                     & ! Real Arrays
+!                                                                     & ! integer (1) Variables
+!                                                                     & ! integer (2) Variables
+!                                                                     & ! integer (4) Variables
+!                                                                     & ! integer (8) Variables
+!                                                                     & ! real Variables
+!                                                                     & ! integer Arrays
+!                                                                     & ! real Arrays
 !                                                                     & ! Characters
 ModelInfo                                                             & ! Type
 )
+
+
+! Libraries =======================================================================================
+use ifport
+
+! User defined modules ============================================================================
+
 
 Implicit None
 
 ! Global Variables ================================================================================
 
-! - Integer Variables -----------------------------------------------------------------------------
-!#Integer (Kind=Shrt), Intent(In)    ::
-!#Integer (Kind=Shrt), Intent(InOut) ::
-!#Integer (Kind=Shrt), Intent(OUT)   ::
-! - Real Variables --------------------------------------------------------------------------------
-!#Real (Kind=Dbl),     Intent(In)    ::
-!#Real (Kind=Dbl),     Intent(InOut) ::
-!#Real (Kind=Dbl),     Intent(OUT)   ::
-! - Complex Variables -----------------------------------------------------------------------------
-!#Complex,             Intent(In)    ::
-!#Complex,             Intent(InOut) ::
-!#Complex,             Intent(OUT)   ::
-! - Integer Arrays --------------------------------------------------------------------------------
-!#Integer (Kind=Shrt), Intent(In),    Dimension (:  )  ::
-!#Integer (Kind=Shrt), Intent(In),    Dimension (:,:)  ::
-!#Integer (Kind=Shrt), Intent(In)    ::
-!#Integer (Kind=Shrt), Intent(InOut) ::
-!#Integer (Kind=Shrt), Intent(OUT)   ::
-! - Real Arrays -----------------------------------------------------------------------------------
-!#Real (Kind=Dbl),     Intent(In),    Dimension (:  )  ::
-!#Real (Kind=Dbl),     Intent(InOut), Dimension (:  )  ::
-!#Real (Kind=Dbl),     Intent(OUT),   Dimension (:  )  ::
+! - integer Variables -----------------------------------------------------------------------------
+!#integer (Kind=Shrt), Intent(In)    ::
+!#integer (Kind=Shrt), Intent(InOut) ::
+!#integer (Kind=Shrt), Intent(OUT)   ::
+! - real Variables --------------------------------------------------------------------------------
+!#real (Kind=Dbl),     Intent(In)    ::
+!#real (Kind=Dbl),     Intent(InOut) ::
+!#real (Kind=Dbl),     Intent(OUT)   ::
+! - complex Variables -----------------------------------------------------------------------------
+!#complex,             Intent(In)    ::
+!#complex,             Intent(InOut) ::
+!#complex,             Intent(OUT)   ::
+! - integer Arrays --------------------------------------------------------------------------------
+!#integer (Kind=Shrt), Intent(In),    Dimension (:  )  ::
+!#integer (Kind=Shrt), Intent(In),    Dimension (:,:)  ::
+!#integer (Kind=Shrt), Intent(In)    ::
+!#integer (Kind=Shrt), Intent(InOut) ::
+!#integer (Kind=Shrt), Intent(OUT)   ::
+! - real Arrays -----------------------------------------------------------------------------------
+!#real (Kind=Dbl),     Intent(In),    Dimension (:  )  ::
+!#real (Kind=Dbl),     Intent(InOut), Dimension (:  )  ::
+!#real (Kind=Dbl),     Intent(OUT),   Dimension (:  )  ::
 ! - Character Variables ---------------------------------------------------------------------------
 !#Character (Kind = ?, Len = ? ) ::
 ! - Logical Variables -----------------------------------------------------------------------------
 !#Logical   ::
 ! - Types -----------------------------------------------------------------------------------------
-!#Type() ::
+type (Input_Data_tp), Intent(out) :: ModelInfo  ! Holds info. (name, dir, output dir) of the model :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
+
+
 ! Local Variables =================================================================================
-! - Integer Variables -----------------------------------------------------------------------------
-Integer (Kind=Smll)  :: UnFile        ! Holds Unit of a file for error message
-Integer (Kind=Smll)  :: IO_File       ! For IOSTAT: Input Output Status in OPEN command
-Integer (Kind=Smll)  :: i_analyses    ! loop index to read the analyses files
+! - integer Variables -----------------------------------------------------------------------------
+integer (Kind=Smll) :: UnFile        ! Holds Unit of a file for error message
+integer (Kind=Smll) :: IO_File       ! For IOSTAT: Input Output Status in OPEN command
+integer (Kind=Smll) :: i_analyses    ! loop index to read the analyses files
+integer (Kind=Smll) :: ERR_Alloc, ERR_DeAlloc ! Allocating and DeAllocating errors
 
-
-! - Real Variables --------------------------------------------------------------------------------
-!#Real (Kind=Dbl)      ::
-! - Complex Variables -----------------------------------------------------------------------------
-!#Complex              ::
-! - Integer Arrays --------------------------------------------------------------------------------
-!#Integer (Kind=Shrt), Dimension (:)  ::
-!#Integer (Kind=Shrt), Allocatable, Dimension (:)  ::
-! - Real Arrays -----------------------------------------------------------------------------------
-!#Real (Kind=Dbl), Dimension (:)      ::
-!#Real (Kind=Dbl), Allocatable, Dimension (:)  ::
+! - real Variables --------------------------------------------------------------------------------
+!#real (Kind=Dbl)      ::
+! - complex Variables -----------------------------------------------------------------------------
+!#complex              ::
+! - integer Arrays --------------------------------------------------------------------------------
+!#integer (Kind=Shrt), Dimension (:)  ::
+!#integer (Kind=Shrt), Allocatable, Dimension (:)  ::
+! - real Arrays -----------------------------------------------------------------------------------
+!#real (Kind=Dbl), Dimension (:)      ::
+!#real (Kind=Dbl), Allocatable, Dimension (:)  ::
 ! - Character Variables ---------------------------------------------------------------------------
 !#Character (Kind = ?, Len = ? ) ::
 ! - Logical Variables -----------------------------------------------------------------------------
-!#Logical   ::
+Logical (Kind=Shrt)  :: Directory
+
 ! - Type ------------------------------------------------------------------------------------------
 
 ! code ============================================================================================
@@ -158,16 +168,16 @@ Read(FileAdr,*) ModelInfo%NumberOfAnalyses
 ! Allocating
 Allocate (ModelInfo%AnalysesNames(ModelInfo%NumberOfAnalyses),  STAT = ERR_Alloc)
   If ( ERR_Alloc /= 0 ) Then
-    Write (*, Fmt_ALLCT) ERR_Alloc ;  Write (UnInf, Fmt_ALLCT) ERR_Alloc ;
-    Write(*, Fmt_FL) ;  Write(UnInf, Fmt_FL) ; Read(*, Fmt_End) ;  Stop ;
+    Write (*, Fmt_ALLCT) ERR_Alloc ;  Write (FileInfo, Fmt_ALLCT) ERR_Alloc ;
+    Write(*, Fmt_FL) ;  Write(FileInfo, Fmt_FL) ; Read(*, Fmt_End) ;  Stop ;
   End If
 Read(FileAdr,*)
-  do i_analysis = 1, ModelInfo%NumberOfAnalyses
-    Read(FileAdr,*) ModelInfo%AnalysesNames(i_analysis)
+  do i_analyses = 1, ModelInfo%NumberOfAnalyses
+    Read(FileAdr,*) ModelInfo%AnalysesNames(i_analyses)
   end do
 
-ModelInfo%AnalysisDir=Trim(AdjustL(ModelInfo%InputDir))//'/'//Trim(AdjustL(ModelName))//'/'//'Analysis'
-ModelInfo%InputDir=Trim(AdjustL(ModelInfo%InputDir))//'/'//Trim(AdjustL(ModelName))//'/'//'Model'
+ModelInfo%AnalysisDir=Trim(AdjustL(ModelInfo%InputDir))//'/'//Trim(AdjustL(ModelInfo%ModelName))//'/'//'Analysis'
+ModelInfo%InputDir=Trim(AdjustL(ModelInfo%InputDir))//'/'//Trim(AdjustL(ModelInfo%ModelName))//'/'//'Model'
 
 Write (*, fmt="(2A)")" The model directory is: ", ModelInfo%InputDir
 Write (*, fmt="(2A)")" The analysis name is: ", ModelInfo%AnalysisDir
@@ -186,9 +196,9 @@ Directory=MakeDirQQ (Trim(AdjustL(ModelInfo%OutputDir))//'/'//Trim(AdjustL(Model
 Directory=MakeDirQQ (Trim(AdjustL (ModelInfo%IntDir))//'/'//Trim(AdjustL (ModelInfo%ModelName)))
   If (Directory) Then
      Write (*,fmt="(2A)") "The internal folder is created."
-  Else ;
+  Else
      Write (*,fmt="(2A)") "The internal folder already exists."
-  End If ;
+  End If
 
 ModelInfo%OutputDir=Trim(AdjustL (ModelInfo%OutputDir))//'/'//Trim(AdjustL (ModelInfo%ModelName))
 ModelInfo%IntDir=Trim(AdjustL (ModelInfo%IntDir))//'/'//Trim(AdjustL (ModelInfo%ModelName))
@@ -198,7 +208,7 @@ Write (*,fmt="(2A)")" The output directory is: ", ModelInfo%OutputDir
 ! - Closing the address file ----------------------------------------------------------------------
 Write(*,        fmt="(A)") " -Closing the address file"
 Write(FileInfo, fmt="(A)") " -Closing the address file"
-UnFile =  FileAdr ;
+UnFile =  FileAdr
 Close ( Unit = UnFile, Status = 'KEEP', ERR =  1002, IOSTAT = IO_File)
 
 
@@ -255,66 +265,73 @@ End Subroutine Input_Address_sub
 !##################################################################################################
 
 Subroutine Input_Basic_sub(                                           &
-!                                                                     & ! Integer (1) Variables
-!                                                                     & ! Integer (2) Variables
-!                                                                     & ! Integer (4) Variables
-!                                                                     & ! Integer (8) Variables
-!                                                                     & ! Real Variables
-!                                                                     & ! Integer Arrays
-!                                                                     & ! Real Arrays
+!                                                                     & ! integer (1) Variables
+!                                                                     & ! integer (2) Variables
+!                                                                     & ! integer (4) Variables
+!                                                                     & ! integer (8) Variables
+!                                                                     & ! real Variables
+!                                                                     & ! integer Arrays
+!                                                                     & ! real Arrays
 !                                                                     & ! Characters
 ModelInfo                                                             & ! Type
 )
 
-Implicit None ;
+! Libraries =======================================================================================
+
+! User defined modules ============================================================================
+
+Implicit None
 
 ! Global Variables ================================================================================
 
-! - Integer Variables -----------------------------------------------------------------------------
-!#Integer (Kind=Shrt), Intent(In)    ::
-!#Integer (Kind=Shrt), Intent(InOut) ::
-!#Integer (Kind=Shrt), Intent(OUT)   ::
-! - Real Variables --------------------------------------------------------------------------------
-!#Real (Kind=Dbl),     Intent(In)    ::
-!#Real (Kind=Dbl),     Intent(InOut) ::
-!#Real (Kind=Dbl),     Intent(OUT)   ::
-! - Complex Variables -----------------------------------------------------------------------------
-!#Complex,             Intent(In)    ::
-!#Complex,             Intent(InOut) ::
-!#Complex,             Intent(OUT)   ::
-! - Integer Arrays --------------------------------------------------------------------------------
-!#Integer (Kind=Shrt), Intent(In),    Dimension (:  )  ::
-!#Integer (Kind=Shrt), Intent(In),    Dimension (:,:)  ::
-!#Integer (Kind=Shrt), Intent(In)    ::
-!#Integer (Kind=Shrt), Intent(InOut) ::
-!#Integer (Kind=Shrt), Intent(OUT)   ::
-! - Real Arrays -----------------------------------------------------------------------------------
-!#Real (Kind=Dbl),     Intent(In),    Dimension (:  )  ::
-!#Real (Kind=Dbl),     Intent(InOut), Dimension (:  )  ::
-!#Real (Kind=Dbl),     Intent(OUT),   Dimension (:  )  ::
+! - integer Variables -----------------------------------------------------------------------------
+!#integer (Kind=Shrt), Intent(In)    ::
+!#integer (Kind=Shrt), Intent(InOut) ::
+!#integer (Kind=Shrt), Intent(OUT)   ::
+! - real Variables --------------------------------------------------------------------------------
+!#real (Kind=Dbl),     Intent(In)    ::
+!#real (Kind=Dbl),     Intent(InOut) ::
+!#real (Kind=Dbl),     Intent(OUT)   ::
+! - complex Variables -----------------------------------------------------------------------------
+!#complex,             Intent(In)    ::
+!#complex,             Intent(InOut) ::
+!#complex,             Intent(OUT)   ::
+! - integer Arrays --------------------------------------------------------------------------------
+!#integer (Kind=Shrt), Intent(In),    Dimension (:  )  ::
+!#integer (Kind=Shrt), Intent(In),    Dimension (:,:)  ::
+!#integer (Kind=Shrt), Intent(In)    ::
+!#integer (Kind=Shrt), Intent(InOut) ::
+!#integer (Kind=Shrt), Intent(OUT)   ::
+! - real Arrays -----------------------------------------------------------------------------------
+!#real (Kind=Dbl),     Intent(In),    Dimension (:  )  ::
+!#real (Kind=Dbl),     Intent(InOut), Dimension (:  )  ::
+!#real (Kind=Dbl),     Intent(OUT),   Dimension (:  )  ::
 ! - Character Variables ---------------------------------------------------------------------------
 !#Character (Kind = ?, Len = ? ) ::
 ! - Logical Variables -----------------------------------------------------------------------------
 !#Logical   ::
 ! - Types -----------------------------------------------------------------------------------------
-!#Type() ::
+type (Input_Data_tp), Intent(In) :: ModelInfo  ! Holds info. (name, dir, output dir) of the model :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
+
 ! Local Variables =================================================================================
-! - Integer Variables -----------------------------------------------------------------------------
-!#Integer (Kind=Shrt)  ::
-! - Real Variables --------------------------------------------------------------------------------
-!#Real (Kind=Dbl)      ::
-! - Complex Variables -----------------------------------------------------------------------------
-!#Complex              ::
-! - Integer Arrays --------------------------------------------------------------------------------
-!#Integer (Kind=Shrt), Dimension (:)  ::
-!#Integer (Kind=Shrt), Allocatable, Dimension (:)  ::
-! - Real Arrays -----------------------------------------------------------------------------------
-!#Real (Kind=Dbl), Dimension (:)      ::
-!#Real (Kind=Dbl), Allocatable, Dimension (:)  ::
+! - integer Variables -----------------------------------------------------------------------------
+integer (Kind=Smll) :: UnFile        ! Holds Unit of a file for error message
+integer (Kind=Smll) :: IO_File       ! For IOSTAT: Input Output Status in OPEN command
+
+! - real Variables --------------------------------------------------------------------------------
+!#real (Kind=Dbl)      ::
+! - complex Variables -----------------------------------------------------------------------------
+!#complex              ::
+! - integer Arrays --------------------------------------------------------------------------------
+!#integer (Kind=Shrt), Dimension (:)  ::
+!#integer (Kind=Shrt), Allocatable, Dimension (:)  ::
+! - real Arrays -----------------------------------------------------------------------------------
+!#real (Kind=Dbl), Dimension (:)      ::
+!#real (Kind=Dbl), Allocatable, Dimension (:)  ::
 ! - Character Variables ---------------------------------------------------------------------------
 !#Character (Kind = ?, Len = ? ) ::
 ! - Logical Variables -----------------------------------------------------------------------------
-!#Logical   ::  ;
+!#Logical   ::
 ! - Type ------------------------------------------------------------------------------------------
 
 ! code ============================================================================================
@@ -329,7 +346,7 @@ Write(FileInfo, fmt="(A)") " -Opening the input file ..."
 UnFile=FileDataModel
 Open (Unit=UnFile, File=Trim(ModelInfo%ModelName)//'.dataModel', &
       Err=1001, IOStat=IO_File, Access='SEQUENTIAL', ACTION='READ', Asynchronous='NO', &
-      Blank='NULL', BLOCKSize=0, DEFAULTFile=Trim(Model_InDir), DisPOSE='Keep', Form='Formatted', &
+      Blank='NULL', BLOCKSize=0, DEFAULTFile=Trim(ModelInfo%InputDir), DisPOSE='Keep', Form='Formatted', &
       Position='ASIS', Status='old' )
 
 
@@ -409,62 +426,67 @@ End Subroutine Input_Basic_sub
 !##################################################################################################
 
 Subroutine Input_Array_sub(                                                       &
-!                                                                     & ! Integer (1) Variables
-!                                                                     & ! Integer (2) Variables
-!                                                                     & ! Integer (4) Variables
-!                                                                     & ! Integer (8) Variables
-!                                                                     & ! Real Variables
-!                                                                     & ! Integer Arrays
-!                                                                     & ! Real Arrays
+!                                                                     & ! integer (1) Variables
+!                                                                     & ! integer (2) Variables
+!                                                                     & ! integer (4) Variables
+!                                                                     & ! integer (8) Variables
+!                                                                     & ! real Variables
+!                                                                     & ! integer Arrays
+!                                                                     & ! real Arrays
 !                                                                     & ! Characters
 !                                                                     & ! Type
 )
+
+! Libraries =======================================================================================
+
+! User defined modules ============================================================================
 
 Implicit None
 
 ! Global Variables ================================================================================
 
-! - Integer Variables -----------------------------------------------------------------------------
-!#Integer (Kind=Shrt), Intent(In)    ::
-!#Integer (Kind=Shrt), Intent(InOut) ::
-!#Integer (Kind=Shrt), Intent(OUT)   ::
-! - Real Variables --------------------------------------------------------------------------------
-!#Real (Kind=Dbl),     Intent(In)    ::
-!#Real (Kind=Dbl),     Intent(InOut) ::
-!#Real (Kind=Dbl),     Intent(OUT)   ::
-! - Complex Variables -----------------------------------------------------------------------------
-!#Complex,             Intent(In)    ::
-!#Complex,             Intent(InOut) ::
-!#Complex,             Intent(OUT)   ::
-! - Integer Arrays --------------------------------------------------------------------------------
-!#Integer (Kind=Shrt), Intent(In),    Dimension (:  )  ::
-!#Integer (Kind=Shrt), Intent(In),    Dimension (:,:)  ::
-!#Integer (Kind=Shrt), Intent(In)    ::
-!#Integer (Kind=Shrt), Intent(InOut) ::
-!#Integer (Kind=Shrt), Intent(OUT)   ::
-! - Real Arrays -----------------------------------------------------------------------------------
-!#Real (Kind=Dbl),     Intent(In),    Dimension (:  )  ::
-!#Real (Kind=Dbl),     Intent(InOut), Dimension (:  )  ::
-!#Real (Kind=Dbl),     Intent(OUT),   Dimension (:  )  ::
+! - integer Variables -----------------------------------------------------------------------------
+!#integer (Kind=Shrt), Intent(In)    ::
+!#integer (Kind=Shrt), Intent(InOut) ::
+!#integer (Kind=Shrt), Intent(OUT)   ::
+! - real Variables --------------------------------------------------------------------------------
+!#real (Kind=Dbl),     Intent(In)    ::
+!#real (Kind=Dbl),     Intent(InOut) ::
+!#real (Kind=Dbl),     Intent(OUT)   ::
+! - complex Variables -----------------------------------------------------------------------------
+!#complex,             Intent(In)    ::
+!#complex,             Intent(InOut) ::
+!#complex,             Intent(OUT)   ::
+! - integer Arrays --------------------------------------------------------------------------------
+!#integer (Kind=Shrt), Intent(In),    Dimension (:  )  ::
+!#integer (Kind=Shrt), Intent(In),    Dimension (:,:)  ::
+!#integer (Kind=Shrt), Intent(In)    ::
+!#integer (Kind=Shrt), Intent(InOut) ::
+!#integer (Kind=Shrt), Intent(OUT)   ::
+! - real Arrays -----------------------------------------------------------------------------------
+!#real (Kind=Dbl),     Intent(In),    Dimension (:  )  ::
+!#real (Kind=Dbl),     Intent(InOut), Dimension (:  )  ::
+!#real (Kind=Dbl),     Intent(OUT),   Dimension (:  )  ::
 ! - Character Variables ---------------------------------------------------------------------------
 !#Character (Kind = ?, Len = ? ) ::
 ! - Logical Variables -----------------------------------------------------------------------------
 !#Logical   ::
 ! - Types -----------------------------------------------------------------------------------------
 !#Type() ::
+
 ! Local Variables =================================================================================
-! - Integer Variables -----------------------------------------------------------------------------
-!#Integer (Kind=Shrt)  ::
-! - Real Variables --------------------------------------------------------------------------------
-!#Real (Kind=Dbl)      ::
-! - Complex Variables -----------------------------------------------------------------------------
-!#Complex              ::
-! - Integer Arrays --------------------------------------------------------------------------------
-!#Integer (Kind=Shrt), Dimension (:)  ::
-!#Integer (Kind=Shrt), Allocatable, Dimension (:)  ::
-! - Real Arrays -----------------------------------------------------------------------------------
-!#Real (Kind=Dbl), Dimension (:)      ::
-!#Real (Kind=Dbl), Allocatable, Dimension (:)  ::
+! - integer Variables -----------------------------------------------------------------------------
+!#integer (Kind=Shrt)  ::
+! - real Variables --------------------------------------------------------------------------------
+!#real (Kind=Dbl)      ::
+! - complex Variables -----------------------------------------------------------------------------
+!#complex              ::
+! - integer Arrays --------------------------------------------------------------------------------
+!#integer (Kind=Shrt), Dimension (:)  ::
+!#integer (Kind=Shrt), Allocatable, Dimension (:)  ::
+! - real Arrays -----------------------------------------------------------------------------------
+!#real (Kind=Dbl), Dimension (:)      ::
+!#real (Kind=Dbl), Allocatable, Dimension (:)  ::
 ! - Character Variables ---------------------------------------------------------------------------
 !#Character (Kind = ?, Len = ? ) ::
 ! - Logical Variables -----------------------------------------------------------------------------
@@ -506,67 +528,76 @@ End Subroutine Input_Array_sub
 !
 !##################################################################################################
 Subroutine Input_Analysis_sub(                                        &
-!                                                                     & ! Integer (1) Variables
-!                                                                     & ! Integer (2) Variables
-!                                                                     & ! Integer (4) Variables
-!                                                                     & ! Integer (8) Variables
-!                                                                     & ! Real Variables
-!                                                                     & ! Integer Arrays
-!                                                                     & ! Real Arrays
+!                                                                     & ! integer (1) Variables
+!                                                                     & ! integer (2) Variables
+i_analysis,                                                           & ! integer (4) Variables
+!                                                                     & ! integer (8) Variables
+!                                                                     & ! real Variables
+!                                                                     & ! integer Arrays
+!                                                                     & ! real Arrays
 !                                                                     & ! Characters
-!                                                                     & ! Type
+ModelInfo                                                             & ! Type
 )
+
+! Libraries =======================================================================================
+use ifport
+
+! User defined modules ============================================================================
 
 Implicit None
 
 ! Global Variables ================================================================================
 
-! - Integer Variables -----------------------------------------------------------------------------
-!#Integer (Kind=Shrt), Intent(In)    ::
-!#Integer (Kind=Shrt), Intent(InOut) ::
-!#Integer (Kind=Shrt), Intent(OUT)   ::
-! - Real Variables --------------------------------------------------------------------------------
-!#Real (Kind=Dbl),     Intent(In)    ::
-!#Real (Kind=Dbl),     Intent(InOut) ::
-!#Real (Kind=Dbl),     Intent(OUT)   ::
-! - Complex Variables -----------------------------------------------------------------------------
-!#Complex,             Intent(In)    ::
-!#Complex,             Intent(InOut) ::
-!#Complex,             Intent(OUT)   ::
-! - Integer Arrays --------------------------------------------------------------------------------
-!#Integer (Kind=Shrt), Intent(In),    Dimension (:  )  ::
-!#Integer (Kind=Shrt), Intent(In),    Dimension (:,:)  ::
-!#Integer (Kind=Shrt), Intent(In)    ::
-!#Integer (Kind=Shrt), Intent(InOut) ::
-!#Integer (Kind=Shrt), Intent(OUT)   ::
-! - Real Arrays -----------------------------------------------------------------------------------
-!#Real (Kind=Dbl),     Intent(In),    Dimension (:  )  ::
-!#Real (Kind=Dbl),     Intent(InOut), Dimension (:  )  ::
-!#Real (Kind=Dbl),     Intent(OUT),   Dimension (:  )  ::
+! - integer Variables -----------------------------------------------------------------------------
+integer (Kind=Smll), Intent(In) :: i_analysis
+
+! - real Variables --------------------------------------------------------------------------------
+!#real (Kind=Dbl),     Intent(In)    ::
+!#real (Kind=Dbl),     Intent(InOut) ::
+!#real (Kind=Dbl),     Intent(OUT)   ::
+! - complex Variables -----------------------------------------------------------------------------
+!#complex,             Intent(In)    ::
+!#complex,             Intent(InOut) ::
+!#complex,             Intent(OUT)   ::
+! - integer Arrays --------------------------------------------------------------------------------
+!#integer (Kind=Shrt), Intent(In),    Dimension (:  )  ::
+!#integer (Kind=Shrt), Intent(In),    Dimension (:,:)  ::
+!#integer (Kind=Shrt), Intent(In)    ::
+!#integer (Kind=Shrt), Intent(InOut) ::
+!#integer (Kind=Shrt), Intent(OUT)   ::
+! - real Arrays -----------------------------------------------------------------------------------
+!#real (Kind=Dbl),     Intent(In),    Dimension (:  )  ::
+!#real (Kind=Dbl),     Intent(InOut), Dimension (:  )  ::
+!#real (Kind=Dbl),     Intent(OUT),   Dimension (:  )  ::
 ! - Character Variables ---------------------------------------------------------------------------
 !#Character (Kind = ?, Len = ? ) ::
 ! - Logical Variables -----------------------------------------------------------------------------
 !#Logical   ::
 ! - Types -----------------------------------------------------------------------------------------
-!#Type() ::
+type (Input_Data_tp), Intent(inout) :: ModelInfo  ! Holds info. (name, dir, output dir) of the model, Intent(In) :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
+
 ! Local Variables =================================================================================
-! - Integer Variables -----------------------------------------------------------------------------
-!#Integer (Kind=Shrt)  ::
-! - Real Variables --------------------------------------------------------------------------------
-!#Real (Kind=Dbl)      ::
-! - Complex Variables -----------------------------------------------------------------------------
-!#Complex              ::
-! - Integer Arrays --------------------------------------------------------------------------------
-!#Integer (Kind=Shrt), Dimension (:)  ::
-!#Integer (Kind=Shrt), Allocatable, Dimension (:)  ::
-! - Real Arrays -----------------------------------------------------------------------------------
-!#Real (Kind=Dbl), Dimension (:)      ::
-!#Real (Kind=Dbl), Allocatable, Dimension (:)  ::
+! - integer Variables -----------------------------------------------------------------------------
+integer (Kind=Smll) :: UnFile        ! Holds Unit of a file for error message
+integer (Kind=Smll) :: IO_File       ! For IOSTAT: Input Output Status in OPEN command
+
+! - real Variables --------------------------------------------------------------------------------
+!#real (Kind=Dbl)      ::
+! - complex Variables -----------------------------------------------------------------------------
+!#complex              ::
+! - integer Arrays --------------------------------------------------------------------------------
+!#integer (Kind=Shrt), Dimension (:)  ::
+!#integer (Kind=Shrt), Allocatable, Dimension (:)  ::
+! - real Arrays -----------------------------------------------------------------------------------
+!#real (Kind=Dbl), Dimension (:)      ::
+!#real (Kind=Dbl), Allocatable, Dimension (:)  ::
 ! - Character Variables ---------------------------------------------------------------------------
 !#Character (Kind = ?, Len = ? ) ::
 ! - Logical Variables -----------------------------------------------------------------------------
-!#Logical   ::
+Logical (Kind=Shrt)  :: Directory
+
 ! - Type ------------------------------------------------------------------------------------------
+
 
 ! code ============================================================================================
 write(*,       *) " Subroutine < Input_Analysis_sub >: "
@@ -577,16 +608,16 @@ write(FileInfo,*) " Subroutine < Input_Analysis_sub >: "
 Write (*,        fmt="(A)") " -Opening the analysis file ..."
 Write (FileInfo, fmt="(A)") " -Opening the analysis file ..."
 
-UnFile=UnInptAna ;
-Open (Unit=UnFile, File=Trim(ModelInfo%AnalysisName)//'.txt', Err= 1001, IOStat=IO_File, Access='SEQUENTIAL', &
-      Action='READ', Asynchronous='NO', Blank='NULL', BLOCKSize=0, DEFAULTFile=Trim(Ana_InDir), &
+UnFile=UnInptAna
+Open (Unit=UnFile, File=Trim(ModelInfo%AnalysesNames(i_analysis))//'.txt', Err= 1001, IOStat=IO_File, Access='SEQUENTIAL', &
+      Action='READ', Asynchronous='NO', Blank='NULL', BLOCKSize=0, DEFAULTFile=Trim(ModelInfo%AnalysisDir), &
       DisPOSE='Keep', FORM='FormATTED', Position='ASIS', Status='old') ;
 
 ! Creating the output file directory for this analysis --------------------------------------------
 Write(*,        fmt="(A)") " -Creating the output folder for this analysis ..."
 Write(FileInfo, fmt="(A)") " -Creating the output folder for this analysis ..."
 
-Directory=MakeDirQQ (Trim(AdjustL (ModelInfo%OutputDir))//'/'//Trim(AdjustL (ModelInfo%AnalysisName))  ) ;
+Directory=MakeDirQQ (Trim(AdjustL (ModelInfo%OutputDir))//'/'//Trim(AdjustL(ModelInfo%AnalysesNames(i_analysis))))
   If (Directory) Then ;
      Write (*,       fmt="(A)") "The output folder for this analysis created." ;
      Write (FileInfo,fmt="(A)") "The output folder for this analysis created." ;
@@ -596,7 +627,7 @@ Directory=MakeDirQQ (Trim(AdjustL (ModelInfo%OutputDir))//'/'//Trim(AdjustL (Mod
   End If ;
 
 ! Creating the internal File directory ------------------------------------------------------------
-Directory=MakeDirQQ (Trim(AdjustL(ModelInfo%IntDir))//'/'//Trim(AdjustL(ModelInfo%AnalysisName))) ;
+Directory=MakeDirQQ (Trim(AdjustL(ModelInfo%IntDir))//'/'//Trim(AdjustL(ModelInfo%AnalysesNames(i_analysis))))
   If (Directory) Then
      Write (*,        fmt="(A)") "The internal folder for this analysis created."
      Write (FileInfo, fmt="(A)") "The internal folder for this analysis created."
@@ -605,8 +636,8 @@ Directory=MakeDirQQ (Trim(AdjustL(ModelInfo%IntDir))//'/'//Trim(AdjustL(ModelInf
      Write (FileInfo, fmt="(A)") "The internal folder for this analysis already exists."
   End If
 
-ModelInfo%AnalysisOutputDir=Trim(AdjustL(ModelInfo%OutputDir))//'/'//Trim(AdjustL(ModelInfo%AnalysisName))
-ModelInfo%AnalysisIntDir=Trim(AdjustL(ModelInfo%IntDir))//'/'//Trim(AdjustL(ModelInfo%AnalysisName))
+ModelInfo%AnalysisOutputDir=Trim(AdjustL(ModelInfo%OutputDir))//'/'//Trim(AdjustL(ModelInfo%AnalysesNames(i_analysis)))
+ModelInfo%AnalysisIntDir=Trim(AdjustL(ModelInfo%IntDir))//'/'//Trim(AdjustL(ModelInfo%AnalysesNames(i_analysis)))
 
 
 
@@ -615,6 +646,27 @@ ModelInfo%AnalysisIntDir=Trim(AdjustL(ModelInfo%IntDir))//'/'//Trim(AdjustL(Mode
 Write(*,       *) "End Subroutine < Input_Analysis_sub >"
 Write(FileInfo,*) "End Subroutine < Input_Analysis_sub >"
 Return
+
+! Errors ==========================================================================================
+! Opening statement Errors
+1001 If (IO_File > 0) Then
+       Write(*, Fmt_Err1_OPEN) UnFile, IO_File; Write(FileInfo, Fmt_Err1_OPEN) UnFile, IO_File;
+       Write(*, Fmt_FL); Write(FileInfo, Fmt_FL);
+       Write(*, Fmt_End); Read(*,*); Stop;
+     Else If ( IO_File < 0 ) Then
+       Write(*, Fmt_Err1_OPEN) UnFile, IO_File
+       Write(FileInfo, Fmt_Err1_OPEN) UnFile, IO_File;  Write(*, Fmt_FL) ; Write(FileInfo, Fmt_FL);
+       Write(*, Fmt_End); Read(*,*); Stop;
+     End If
+
+
+! Close statement Errors
+1002 If (IO_File > 0) Then
+       Write(*, Fmt_Err1_Close) UnFile, IO_File; Write(FileInfo, Fmt_Err1_Close) UnFile, IO_File;
+       Write(*, Fmt_FL); Write(FileInfo, Fmt_FL);
+       Write(*, Fmt_End); Read(*,*); Stop;
+     End If
+
 End Subroutine Input_Analysis_sub
 
 

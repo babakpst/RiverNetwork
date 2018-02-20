@@ -29,14 +29,14 @@
 !
 !##################################################################################################
 
-Module Information ;
+Module Information
 
 
-Implicit None ;
+Implicit None
 
-  Interface Info ;
-    Module Procedure InfBasic, InfTime ;
-  End Interface  Info;
+  Interface Info
+    Module Procedure InfBasic, InfTime
+  End Interface  Info
 
 
 Contains
@@ -73,38 +73,38 @@ Subroutine InfBasic ( &
 TimeDate, ModelInfo                             & ! Types
 )
 
-Implicit None ;
+Implicit None
 
 ! =========================== Global Variables ====================================================
 
 ! - Integer Variables -----------------------------------------------------------------------------
-!Integer (Kind=Smll), Intent(In)     ::  ;
-!#Integer (Kind=Shrt), Intent(InOut) ::  ;
-!#Integer (Kind=Shrt), Intent(OUT)   ::  ;
+!Integer (Kind=Smll), Intent(In)     ::
+!#Integer (Kind=Shrt), Intent(InOut) ::
+!#Integer (Kind=Shrt), Intent(OUT)   ::
 ! - Real Variables --------------------------------------------------------------------------------
-!#Real (Kind=DBL), Intent(In)    ::  ;
-!#Real (Kind=DBL), Intent(InOut) ::  ;
-!#Real (Kind=DBL), Intent(OUT)   ::  ;
-! - Complex Variables -----------------------------------------------------------------------------
-!#Complex, Intent(In)    ::  ;
-!#Complex, Intent(InOut) ::  ;
-!#Complex, Intent(OUT)   ::  ;
+!#Real (Kind=DBL), Intent(In)    ::
+!#Real (Kind=DBL), Intent(InOut) ::
+!#Real (Kind=DBL), Intent(OUT)   ::
+! - complex Variables -----------------------------------------------------------------------------
+!#complex, Intent(In)    ::
+!#complex, Intent(InOut) ::
+!#complex, Intent(OUT)   ::
 ! - Integer Arrays --------------------------------------------------------------------------------
 !#Integer (Kind=Shrt), Intent(In), Dimension (:  )  ::
 !#Integer (Kind=Shrt), Intent(In), Dimension (:,:)  ::
-!#Integer (Kind=Shrt), Intent(In)    ::  ;
-!#Integer (Kind=Shrt), Intent(InOut) ::  ;
-!#Integer (Kind=Shrt), Intent(OUT)   ::  ;
+!#Integer (Kind=Shrt), Intent(In)    ::
+!#Integer (Kind=Shrt), Intent(InOut) ::
+!#Integer (Kind=Shrt), Intent(OUT)   ::
 ! - Real Arrays -----------------------------------------------------------------------------------
-!#Real (Kind=DBL), Intent(In)    ::  ;
-!#Real (Kind=DBL), Intent(InOut) ::  ;
-!#Real (Kind=DBL), Intent(OUT)   ::  ;
-! - Complex Variables -----------------------------------------------------------------------------
-!#Complex, Intent(In)    ::  ;
-!#Complex, Intent(InOut) ::  ;
-!#Complex, Intent(OUT)   ::  ;
+!#Real (Kind=DBL), Intent(In)    ::
+!#Real (Kind=DBL), Intent(InOut) ::
+!#Real (Kind=DBL), Intent(OUT)   ::
+! - complex Variables -----------------------------------------------------------------------------
+!#complex, Intent(In)    ::
+!#complex, Intent(InOut) ::
+!#complex, Intent(OUT)   ::
 ! - Character Variables ---------------------------------------------------------------------------
-!Character (Kind = 1, Len = 30 ), Intent(In) :: Name ;       ! Name of the Input file
+!Character (Kind = 1, Len = 30 ), Intent(In) :: Name        ! Name of the Input file
 
 
 ! - Types -----------------------------------------------------------------------------------------
@@ -112,27 +112,27 @@ Type (TimeDate_tp)    :: TimeDate   ! Indicates the time and date of simulation
 Type (Input_Data_tp)  :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
 
 ! - Logical Variables -----------------------------------------------------------------------------
-!#Logical   ::  ;
+!#Logical   ::
 
 ! =========================== LOCAL Variables =====================================================
 ! - Integer Variables -----------------------------------------------------------------------------
-!#Integer (Kind=Shrt)  ::  ;
+!#Integer (Kind=Shrt)  ::
 ! - Real Variables --------------------------------------------------------------------------------
-!#Real (Kind=DBL)  ::  ;
-! - Complex Variables -----------------------------------------------------------------------------
-!#Complex  ::  ;
+!#Real (Kind=DBL)  ::
+! - complex Variables -----------------------------------------------------------------------------
+!#complex  ::
 ! - Integer Arrays --------------------------------------------------------------------------------
-!#Integer (Kind=Shrt)  ::  ;
+!#Integer (Kind=Shrt)  ::
 ! - Real Arrays -----------------------------------------------------------------------------------
-!#Real (Kind=DBL)  ::  ;
-! - Complex Variables -----------------------------------------------------------------------------
-!#Complex  ::  ;
+!#Real (Kind=DBL)  ::
+! - complex Variables -----------------------------------------------------------------------------
+!#complex  ::
 ! - Character Variables ---------------------------------------------------------------------------
-!#Character   ::  ;
+!#Character   ::
 ! - Logical Variables -----------------------------------------------------------------------------
-!#Logical   ::  ;
+!#Logical   ::
 ! - Type DECLERATIONS -----------------------------------------------------------------------------
-!#Type() :: ;
+!#Type() ::
 
 ! CODE ============================================================================================
 
@@ -141,10 +141,10 @@ Write(FileInfo, Fmt_DATE) TimeDate%Month, TimeDate%Day,    TimeDate%Year, &
                         TimeDate%Hour,  TimeDate%Minute, TimeDate%Second, TimeDate%S100th
 Write(FileInfo, Fmt_NM)ModelInfo%ModelName, ModelInfo%InputDir, ModelInfo%OutputDir, ModelInfo%IntDir
 
-Write (FileInfo,*)" Analysis Type " ;
+Write (FileInfo,*)" Analysis Type "
 
-Write(*, *) 'End Subroutine < InfBasic >' ;
-Return ;
+Write(*, *) 'End Subroutine < InfBasic >'
+Return
 End Subroutine InfBasic
 
 
@@ -179,75 +179,75 @@ TimeE, TimeS, TimeInputE, TimeInputS, TimeSolveE, TimeSolveS & ! Real Variables
 !                                                            & ! Type
 )
 
-Implicit None ;
+Implicit None
 
 ! =========================== Global Variables ====================================================
 
 ! - Integer Variables -----------------------------------------------------------------------------
-!Integer (Kind=Lng ), Intent(In) :: ;
+!Integer (Kind=Lng ), Intent(In) ::
 
 ! - Real Variables --------------------------------------------------------------------------------
-Real (Kind=Dbl), Intent(In)    :: TimeE, TimeS, TimeInputE, TimeInputS, TimeSolveE, TimeSolveS ;
+Real (Kind=Dbl), Intent(In)    :: TimeE, TimeS, TimeInputE, TimeInputS, TimeSolveE, TimeSolveS
 
-! - Complex Variables -----------------------------------------------------------------------------
-!#Complex, Intent(In)    ::  ;
-!#Complex, Intent(InOut) ::  ;
-!#Complex, Intent(OUT)   ::  ;
+! - complex Variables -----------------------------------------------------------------------------
+!#complex, Intent(In)    ::
+!#complex, Intent(InOut) ::
+!#complex, Intent(OUT)   ::
 ! - Integer Arrays --------------------------------------------------------------------------------
-!#Integer (Kind=Shrt), Intent(In), Dimension (:  )  :: ;
-!#Integer (Kind=Shrt), Intent(In), Dimension (:,:)  :: ;
-!#Integer (Kind=Shrt), Intent(In)    ::  ;
-!#Integer (Kind=Shrt), Intent(InOut) ::  ;
-!#Integer (Kind=Shrt), Intent(OUT)   ::  ;
+!#Integer (Kind=Shrt), Intent(In), Dimension (:  )  ::
+!#Integer (Kind=Shrt), Intent(In), Dimension (:,:)  ::
+!#Integer (Kind=Shrt), Intent(In)    ::
+!#Integer (Kind=Shrt), Intent(InOut) ::
+!#Integer (Kind=Shrt), Intent(OUT)   ::
 ! - Real Arrays -----------------------------------------------------------------------------------
 !#Real (Kind=Dbl), Intent(In), Dimension (:  )  ::
-!#Real (Kind=Dbl), Intent(InOut), Dimension (:  )  :: ;
-!#Real (Kind=Dbl), Intent(OUT), Dimension (:  )  ::  ;
-! - Complex Variables -----------------------------------------------------------------------------
-!#Complex, Intent(In)    ::  ;
-!#Complex, Intent(InOut) ::  ;
-!#Complex, Intent(OUT)   ::  ;
+!#Real (Kind=Dbl), Intent(InOut), Dimension (:  )  ::
+!#Real (Kind=Dbl), Intent(OUT), Dimension (:  )  ::
+! - complex Variables -----------------------------------------------------------------------------
+!#complex, Intent(In)    ::
+!#complex, Intent(InOut) ::
+!#complex, Intent(OUT)   ::
 ! - Character Variables ---------------------------------------------------------------------------
-!#Character   ::  ;
+!#Character   ::
 ! - Logical Variables -----------------------------------------------------------------------------
-!#Logical   ::  ;
+!#Logical   ::
 ! - Type DECLERATIONS -----------------------------------------------------------------------------
-!#Type() :: ;
+!#Type() ::
 ! =========================== Local Variables =====================================================
 ! - Integer Variables -----------------------------------------------------------------------------
-!#Integer (Kind=Shrt)  ::  ;
+!#Integer (Kind=Shrt)  ::
 ! - Real Variables --------------------------------------------------------------------------------
-!#Real (Kind=Dbl)  ::  ;
-! - Complex Variables -----------------------------------------------------------------------------
-!#Complex  ::  ;
+!#Real (Kind=Dbl)  ::
+! - complex Variables -----------------------------------------------------------------------------
+!#complex  ::
 ! - Integer Arrays --------------------------------------------------------------------------------
-!#Integer (Kind=Shrt)  ::  ;
+!#Integer (Kind=Shrt)  ::
 ! - Real Arrays -----------------------------------------------------------------------------------
-!#Real (Kind=Dbl)  ::  ;
-! - Complex Variables -----------------------------------------------------------------------------
-!#Complex  ::  ;
+!#Real (Kind=Dbl)  ::
+! - complex Variables -----------------------------------------------------------------------------
+!#complex  ::
 ! - Character Variables ---------------------------------------------------------------------------
-!#Character   ::  ;
+!#Character   ::
 ! - Logical Variables -----------------------------------------------------------------------------
-!#Logical   ::  ;
+!#Logical   ::
 
 ! =========================== Subroutine CODE =====================================================
 
 Write(FileInfo,*)
 
-!Write(*     ,Fmt_RUNTIME) "TOTAL"   , TimeE - TimeS ;
+!Write(*     ,Fmt_RUNTIME) "TOTAL"   , TimeE - TimeS
 
-Write(FileInfo,*)"---------- RUNNING TIME STATISTICS ----------" ;
+Write(FileInfo,*)"---------- RUNNING TIME STATISTICS ----------"
 
-Write(FileInfo,Fmt_RUNTIME) "Reading Input files           ", TimeInputE  - TimeInputS ;
-Write(FileInfo,Fmt_RUNTIME) "SOLVE                         ", TimeSolveE  - TimeSolveS ;
-Write(FileInfo,Fmt_RUNTIME) "TOTAL                         ", TimeE       - TimeS ;
+Write(FileInfo,Fmt_RUNTIME) "Reading Input files           ", TimeInputE  - TimeInputS
+Write(FileInfo,Fmt_RUNTIME) "SOLVE                         ", TimeSolveE  - TimeSolveS
+Write(FileInfo,Fmt_RUNTIME) "TOTAL                         ", TimeE       - TimeS
 Write(FileInfo,*)
 
-Write(*     ,*) 'End Subroutine < InfTime >' ;
+Write(*     ,*) 'End Subroutine < InfTime >'
 
 
-Return ;
-End Subroutine InfTime ;
+Return
+End Subroutine InfTime
 
-End Module Information ;
+End Module Information
