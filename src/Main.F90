@@ -45,6 +45,24 @@ Call GETTIM(TimeDate%Hour, TimeDate%Minute, TimeDate%Seconds, TimeDate%S100th)
 Write(*,*)" Numerical simulation of 2D Shallow water Equation"
 Write(*,*)
 
+! Getting entered arguments =======================================================================
+Arguments%ArgCount = command_argument_count()
+
+! Allocating arg arrays
+Allocate (Arguments%Length(Arguments%ArgCount), Arguments%Arg(Arguments%ArgCount), Arguments%ArgStatus(Arguments%ArgCount), STAT = ERR_Alloc)
+  If ( ERR_Alloc /= 0 ) Then
+    Write (*, Fmt_ALLCT) ERR_Alloc ;  Write (UnInf, Fmt_ALLCT) ERR_Alloc ;
+    Write(*, Fmt_FL) ;  Write(UnInf, Fmt_FL) ; Read(*, Fmt_End) ;  Stop ;
+  End If
+
+
+  do ii=1,Arguments%ArgCount
+    call get_command_argument(ii, Arguments%Arg(ii), Arguments%Length(ii), Arguments%ArgStatus(ii))
+    if ( arg(1:1) /= "-" ) then
+      write(*, fmt="(A)") " Wrong input argument! Using the default variables." ! <modify>
+    end if
+  end do
+
 ! Directories, input, and output Files ============================================================
 ! Address File ------------------------------------------------------------------------------------
 Write(*,fmt="(A)") " -Reading Address.txt file ..."
@@ -95,6 +113,9 @@ Write(FileInfo, fmt="(A)") " -Reading the initial data file ..."
                                                                          & ! Type
     )
   End If
+
+
+
 
 
 
@@ -202,7 +223,7 @@ Close(Unit=UnFile, Status='Keep', Err=1002, IOStat=IO_File)
 
 
 ! Deallocating arrays
-DEAllocate( ,      STAT = ERR_DeAlloc ) ;
+DEAllocate(Arguments%Length, Arguments%Arg, Arguments%ArgStatus,      STAT = ERR_DeAlloc ) ;
   IF ( ERR_DeAlloc /= 0 ) Then ;
     Write (*, Fmt_DEALLCT) ERR_DeAlloc ;  Write (FileInfo, Fmt_DEALLCT) ERR_DeAlloc ;
     Write(*, Fmt_FL) ;  Write(FileInfo, Fmt_FL) ; Write(*, Fmt_End) ; Read(*,*) ;  STOP ;

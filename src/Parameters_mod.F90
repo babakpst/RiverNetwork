@@ -114,6 +114,16 @@ type Input_Data_tp
   Integer (Kind=Smll)  :: NumberOfAnalyses ;        ! Number of analysis
 end type Input_Data_tp
 
+
+! Holds the command argument
+type ArgCommands
+  Integer (Kind=Smll) :: ArgCount      ! Counts number of argument
+  Integer (Kind=Shrt), allocatable, dimension(:) :: ArgStatus     ! Counts number of argument
+  Integer (Kind=Shrt), allocatable, dimension(:) :: Length          ! Holds the length of each arg
+  Character (Kind = 1, Len = 50), allocatable, dimension(:) :: Arg  ! Holds the entered argument
+end type
+
+
 Contains
 
 

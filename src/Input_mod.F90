@@ -339,6 +339,12 @@ Open (Unit=UnFile, File=Trim(ModelInfo%ModelName)//'.dataModel', &
 
 
 
+
+
+
+
+
+
 ! - Closing the data model file -------------------------------------------------------------------
 Write(*,        fmt="(A)") " -Closing the address file"
 Write(FileInfo, fmt="(A)") " -Closing the address file"
@@ -370,6 +376,15 @@ Return
      End If
 
 End Subroutine Input_Basic_sub
+
+
+
+
+
+
+
+
+
 
 !##################################################################################################
 ! Purpose: This subroutine reads the arrays.
