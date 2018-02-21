@@ -13,10 +13,10 @@
 F90=ifort
 FFLAGS=-O2
 
-SOURCESF=	Parameters_mod.F90 \
-					Input_mod.F90 \
-					Inf_mod.F90 \
-					Main.F90
+SOURCESF=	Parameters_mod.f90 \
+					Input_mod.f90 \
+					Inf_mod.f90 \
+					Main.f90
 
 OBJSF=$(SOURCESF:%.F90=%.o)
 
