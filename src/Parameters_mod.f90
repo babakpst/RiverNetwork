@@ -105,8 +105,6 @@ type Input_Data_tp
   Character (Kind = 1, Len = 30 ) :: ModelName     ! Name of the model input file
   Character (Kind = 1, Len = 150) :: InputDir      ! Directory of the input file.
   Character (Kind = 1, Len = 150) :: AnalysisDir   ! Directory of Analysis input file.
-  Character (Kind = 1, Len = 150) :: IntDir        ! Directory of internal files.
-  Character (Kind = 1, Len = 150) :: AnalysisIntDir! Directory of internal files for each analysis
   Character (Kind = 1, Len = 150) :: OutputDir     ! Directory of output files (Results)
   Character (Kind = 1, Len = 150) :: AnalysisOutputDir! Directory of output file for each analysis
   Character (Kind = 1, Len = 150), dimension(:), allocatable :: AnalysesNames! Holds the name of the analysis input file

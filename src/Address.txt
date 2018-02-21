@@ -8,16 +8,16 @@ Input directory:
 /h1/babak/Documents/SVE_2D/input
 
 Output directory:
-/data2/Babak/MyDocuments/Codes/GitHub/SVE_Lax-Wendroff/output
+/h1/babak/Documents/SVE_2D/output
+
+Number of Analysis:
+1
+
+Names of the analysis files:
+EX1.Case1
 
 
-Input directory:
-C:
-\Box Sync\MyDocuments\Codes\GitHub\SVE_Energy\input
 
-Output directory:
-C:
-\Box Sync\MyDocuments\Codes\GitHub\SVE_Energy\output
 
 
 

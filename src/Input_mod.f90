@@ -160,9 +160,6 @@ Read(FileAdr,*)
 Read(FileAdr,*) ModelInfo%InputDir
 Read(FileAdr,*)
 Read(FileAdr,*)
-Read(FileAdr,*) ModelInfo%IntDir
-Read(FileAdr,*)
-Read(FileAdr,*)
 Read(FileAdr,*) ModelInfo%OutputDir
 Read(FileAdr,*)
 Read(FileAdr,*)
@@ -195,16 +192,7 @@ Directory=MakeDirQQ (Trim(AdjustL(ModelInfo%OutputDir))//'/'//Trim(AdjustL(Model
      Write (*,fmt="(A)") "The result folder already exists."
   End If
 
-! Internal folder
-Directory=MakeDirQQ (Trim(AdjustL (ModelInfo%IntDir))//'/'//Trim(AdjustL (ModelInfo%ModelName)))
-  If (Directory) Then
-     Write (*,fmt="(2A)") "The internal folder is created."
-  Else
-     Write (*,fmt="(2A)") "The internal folder already exists."
-  End If
-
 ModelInfo%OutputDir=Trim(AdjustL (ModelInfo%OutputDir))//'/'//Trim(AdjustL (ModelInfo%ModelName))
-ModelInfo%IntDir=Trim(AdjustL (ModelInfo%IntDir))//'/'//Trim(AdjustL (ModelInfo%ModelName))
 
 Write (*,fmt="(2A)")" The output directory is: ", ModelInfo%OutputDir
 
@@ -629,22 +617,7 @@ Directory=MakeDirQQ (Trim(AdjustL (ModelInfo%OutputDir))//'/'//Trim(AdjustL(Mode
      Write (FileInfo, fmt="(A)") "The output folder for this analysis already exists." ;
   End If ;
 
-! Creating the internal File directory ------------------------------------------------------------
-Directory=MakeDirQQ (Trim(AdjustL(ModelInfo%IntDir))//'/'//Trim(AdjustL(ModelInfo%AnalysesNames(i_analysis))))
-  If (Directory) Then
-     Write (*,        fmt="(A)") "The internal folder for this analysis created."
-     Write (FileInfo, fmt="(A)") "The internal folder for this analysis created."
-  Else
-     Write (*,        fmt="(A)") "The internal folder for this analysis already exists."
-     Write (FileInfo, fmt="(A)") "The internal folder for this analysis already exists."
-  End If
-
 ModelInfo%AnalysisOutputDir=Trim(AdjustL(ModelInfo%OutputDir))//'/'//Trim(AdjustL(ModelInfo%AnalysesNames(i_analysis)))
-ModelInfo%AnalysisIntDir=Trim(AdjustL(ModelInfo%IntDir))//'/'//Trim(AdjustL(ModelInfo%AnalysesNames(i_analysis)))
-
-
-
-
 
 Write(*,       *) "End Subroutine < Input_Analysis_sub >"
 Write(FileInfo,*) "End Subroutine < Input_Analysis_sub >"
