@@ -1,3 +1,7 @@
+# ignore the following file types:
 *.cbp
 *.layout
 *.o
+
+# ignoring the following folders:
+output/

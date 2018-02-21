@@ -68,6 +68,10 @@ Write(*,fmt="(A)") " -Reading Address.txt file ..."
 
 call Input(ModelInfo)
 
+
+
+
+
 ! Opening the information File --------------------------------------------------------------------
 Write(*,fmt="(A)") " -Creating the info.txt file in the output folder ..."
 
@@ -87,8 +91,7 @@ Write(*,        fmt="(A)") " -Reading the initial data file ..."
 Write(FileInfo, fmt="(A)") " -Reading the initial data file ..."
 
 ! Reading basic data: Ordinary OR HDF5 ------------------------------------------------------------
-  If (ModelInfo%OutputType==0_Smll) Then ! Ordinary
-    Call Input(                                                          &
+call Input(                                                          &
                                                                          & ! Integer (1) Variables
                                                                          & ! Integer (2) Variables
                                                                          & ! Integer (4) Variables
@@ -99,30 +102,6 @@ Write(FileInfo, fmt="(A)") " -Reading the initial data file ..."
                                                                          & ! Characters
                                                                          & ! Type
     )
-  Else If (ModelInfo%OutputType==1_Smll) Then ! HDF5
-    Call Input(                                                          &
-                                                                         & ! Integer (1) Variables
-                                                                         & ! Integer (2) Variables
-                                                                         & ! Integer (4) Variables
-                                                                         & ! Integer (8) Variables
-                                                                         & ! Real Variables
-                                                                         & ! Integer Arrays
-                                                                         & ! Real Arrays
-                                                                         & ! Characters
-                                                                         & ! Type
-    )
-  End If
-
-
-
-
-
-
-
-
-
-
-
 
 
 ! Allocating required arrays
@@ -145,8 +124,7 @@ Include 'Open_File_Inc.F90'
 Write(*,        fmt="(A)") " -Reading arrays form data file ..."
 Write(FileInfo, fmt="(A)") " -Reading arrays form data file ..."
 
-  If (ModelInfo%OutputType==0_Smll) Then
-    Call Input (                                                         &
+Call Input (                                                         &
                                                                          & ! Integer (1) Variables
                                                                          & ! Integer (2) Variables
                                                                          & ! Integer (4) Variables
@@ -157,19 +135,7 @@ Write(FileInfo, fmt="(A)") " -Reading arrays form data file ..."
                                                                          & ! Characters
                                                                          & ! Type
     )
-  Else If (ModelInfo%OutputType==1_Smll) Then
-    Call Input_Binary (                                                  &
-                                                                         & ! Integer (1) Variables
-                                                                         & ! Integer (2) Variables
-                                                                         & ! Integer (4) Variables
-                                                                         & ! Integer (8) Variables
-                                                                         & ! Real Variables
-                                                                         & ! Integer Arrays
-                                                                         & ! Real Arrays
-                                                                         & ! Characters
-                                                                         & ! Type
-    )
-  End If
+
 Call CPU_TIME( TimeInputE )
 
 ! Close Input File --------------------------------------------------------------------------------

@@ -145,7 +145,7 @@ write(*,       *) " Subroutine < Input_Address_sub >: "
 write(FileInfo,*) " Subroutine < Input_Address_sub >: "
 
 UnFile=FileAdr
-Open(Unit=UnFile, File='ADDRESS.txt', Err=1001, IOStat=IO_File, Access='SEQUENTIAL', &
+Open(Unit=UnFile, File='Address.txt', Err=1001, IOStat=IO_File, Access='SEQUENTIAL', &
      Action='READ', Asynchronous='NO', Blank='NULL', BLOCKSize=0, DisPOSE='Keep', &
      Form='FormATTED', Position='ASIS', Status='old')
 
@@ -153,15 +153,18 @@ Open(Unit=UnFile, File='ADDRESS.txt', Err=1001, IOStat=IO_File, Access='SEQUENTI
 Read(FileAdr,*)
 Read(FileAdr,*) ModelInfo%ModelName
 Read(FileAdr,*)
+Read(FileAdr,*)
 Read(FileAdr,*) ModelInfo%AnalysisType
 Read(FileAdr,*)
-Read(FileAdr,*) ModelInfo%OutputType
 Read(FileAdr,*)
 Read(FileAdr,*) ModelInfo%InputDir
 Read(FileAdr,*)
+Read(FileAdr,*)
 Read(FileAdr,*) ModelInfo%IntDir
 Read(FileAdr,*)
+Read(FileAdr,*)
 Read(FileAdr,*) ModelInfo%OutputDir
+Read(FileAdr,*)
 Read(FileAdr,*)
 Read(FileAdr,*) ModelInfo%NumberOfAnalyses
 
