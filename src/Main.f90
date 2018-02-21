@@ -48,7 +48,7 @@ write(*,*)
 Arguments%ArgCount = command_argument_count()
 
 ! Allocating arg arrays
-allocate(Arguments%Length(Arguments%ArgCount), Arguments%Arg(Arguments%ArgCount), Arguments%ArgStatus(Arguments%ArgCount), STAT = ERR_Alloc)
+allocate(Arguments%Length(Arguments%ArgCount), Arguments%Arg(Arguments%ArgCount), Arguments%Argstatus(Arguments%ArgCount), STAT = ERR_Alloc)
   If (ERR_Alloc /= 0) Then
     write(*, Fmt_ALLCT) ERR_Alloc; write(FileInfo, Fmt_ALLCT) ERR_Alloc;
     write(*, Fmt_FL); write(FileInfo, Fmt_FL); read(*, Fmt_End); stop;
@@ -56,10 +56,10 @@ allocate(Arguments%Length(Arguments%ArgCount), Arguments%Arg(Arguments%ArgCount)
 
 
   do ii=1,Arguments%ArgCount
-    call get_command_argument(ii, Arguments%Arg(ii), Arguments%Length(ii), Arguments%ArgStatus(ii))
-    if (Arguments%Arg(1:1) /= "-") then
-      write(*, fmt="(A)") " Wrong input argument! Using the default variables." ! <modify>
-    end if
+    call get_command_argument(ii, Arguments%Arg(ii), Arguments%Length(ii), Arguments%Argstatus(ii))
+    !if (Arguments%Arg(1:2) /= "-") then
+    !  write(*, fmt="(A)") " Wrong input argument! Using the default variables." ! <modify>
+    !end if
   end do
 
 ! Directories, input, and output Files ============================================================
@@ -73,10 +73,10 @@ call Input(ModelInfo)
 write(*,fmt="(A)") " -Creating the info.txt file in the output folder ..."
 
 UnFile=FileInfo
-Open(Unit=UnFile, File=Trim(ModelInfo%ModelName)//'.infM',     &
+Open(Unit=UnFile, File=trim(ModelInfo%ModelName)//'.infM',     &
      Err=1001, IOStat=IO_File, Access='SEQUENTIAL', Action='write', Asynchronous='NO', &
-     Blank='NULL', BLOCKSize=0, DEFAULTFile=Trim(ModelInfo%OutputDir), DisPOSE='Keep', Form='FormATTED', &
-     Position='ASIS', Status='REPLACE')
+     Blank='NULL', blocksize=0, defaultfile=trim(ModelInfo%OutputDir), DisPOSE='Keep', Form='formatted', &
+     position='ASIS', status='REPLACE')
 
 ! Writing down the simulation time
 Call Info(TimeDate, ModelInfo)
@@ -88,18 +88,7 @@ write(*,        fmt="(A)") " -Reading the initial data file ..."
 write(FileInfo, fmt="(A)") " -Reading the initial data file ..."
 
 ! Reading basic data: -----------------------------------------------------------------------------
-!call Input(                                                              &
-!                                                                         & ! Integer (1) Variables
-!                                                                         & ! Integer (2) Variables
-!                                                                         & ! Integer (4) Variables
-!                                                                         & ! Integer (8) Variables
-!                                                                         & ! Real Variables
-!                                                                         & ! Integer Arrays
-!                                                                         & ! Real Arrays
-!                                                                         & ! Characters
-!                                                                         & ! Type
-!    )
-
+call Input(ModelInfo, InitialInfo)
 
 ! Allocating required arrays
 write(*,        fmt="(A)") " -Allocating the required arrays ..."
@@ -141,11 +130,11 @@ write(FileInfo, fmt="(A)") " -Closing input files ..."
 
 ! Close data File
 UnFile= UnInptAna
-Close(Unit=UnFile, Status='Keep', Err=1002, IOStat=IO_File)
+Close(Unit=UnFile, status='Keep', Err=1002, IOStat=IO_File)
 
 ! close check File
 !UnFile= Un_CHK
-!Close(Unit=UnFile, Status='Keep', Err=1002, IOStat=IO_File)
+!Close(Unit=UnFile, status='Keep', Err=1002, IOStat=IO_File)
 
 ! Simulations =====================================================================================
 
@@ -157,10 +146,10 @@ Close(Unit=UnFile, Status='Keep', Err=1002, IOStat=IO_File)
 
     ! Test File ---------------------------------------------------------------------------------------
     !UnFile=UN_CHK
-    !Open( Unit=UnFile, File=Trim(AnaName)//'_'//Trim(AdjustL(IndexSize))//'_'//Trim(AdjustL(IndexRank))//'.Chk', &
+    !Open( Unit=UnFile, File=trim(AnaName)//'_'//trim(AdjustL(IndexSize))//'_'//trim(AdjustL(IndexRank))//'.Chk', &
     !     Err= 1001, IOStat=IO_File, Access='SEQUENTIAL', Action='write', Asynchronous='NO', &
-    !     Blank='NULL', BLOCKSize=0, DEFAULTFile=Trim(InlDirAna), DisPOSE='Keep', Form='FormATTED', &
-    !     Position='ASIS', Status='REPLACE')
+    !     Blank='NULL', blocksize=0, defaultfile=trim(InlDirAna), DisPOSE='Keep', Form='formatted', &
+    !     position='ASIS', status='REPLACE')
 
 
     ! Analysis ========================================================================================
@@ -189,7 +178,7 @@ Close(Unit=UnFile, Status='Keep', Err=1002, IOStat=IO_File)
 
 
 ! Deallocating arrays
-DEallocate(Arguments%Length, Arguments%Arg, Arguments%ArgStatus,      STAT = ERR_DeAlloc )
+DEallocate(Arguments%Length, Arguments%Arg, Arguments%Argstatus,      STAT = ERR_DeAlloc )
   IF (ERR_DeAlloc /= 0) Then
     write(*, Fmt_DEALLCT) ERR_DeAlloc; write(FileInfo, Fmt_DEALLCT) ERR_DeAlloc;
     write(*, Fmt_FL); write(FileInfo, Fmt_FL);  write(*, Fmt_End);  read(*,*);   stop;
@@ -205,11 +194,11 @@ Call cpu_time(SimulationTime%Time_End)
 ! Close Files -------------------------------------------------------------------------------------
 ! Close information File
 UnFile= FileInfo
-Close(Unit=UnFile, Status='Keep', Err=1002, IOStat=IO_File)
+Close(Unit=UnFile, status='Keep', Err=1002, IOStat=IO_File)
 
 
 UnFile= UnInptAna
-Close(Unit=UnFile, Status='Keep', Err=1002, IOStat=IO_File)
+Close(Unit=UnFile, status='Keep', Err=1002, IOStat=IO_File)
 
 ! End the code ====================================================================================
 write(*, Fmt_SUC); write(FileInfo, Fmt_SUC);

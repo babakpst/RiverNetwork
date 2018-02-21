@@ -115,19 +115,65 @@ end type Input_Data_tp
 ! Holds the command argument
 type ArgCommands
   Integer (Kind=Smll) :: ArgCount      ! Counts number of argument
-  Integer (Kind=Shrt), allocatable, dimension(:) :: ArgStatus     ! Counts number of argument
+  Integer (Kind=Shrt), allocatable, dimension(:) :: Argstatus     ! Counts number of argument
   Integer (Kind=Shrt), allocatable, dimension(:) :: Length          ! Holds the length of each arg
   Character (Kind = 1, Len = 50), allocatable, dimension(:) :: Arg  ! Holds the entered argument
 end type
 
 type timing
-  real(Kind=DBL):: Time_Start, Time_End !TIME Variables for total runtime
+  real(Kind=DBL):: Time_Start, Time_End !TIME Variables for total run time
   real(Kind=DBL):: Input_Starts, Input_Ends ! required time to read the input file
 end type timing
 
+type InitialData_tp
+  real(Kind=DBL):: TotalTime ! Total simulation time (in seconds)
+  real(Kind=DBL):: TimeStep  ! Time Step
+  real(Kind=DBL):: Q_Up      ! Upstream boundary condition, constant flow (m^3/s)
+  real(Kind=DBL):: h_dw      ! Downstream water depth (in meters)
+  real(Kind=DBL):: CntrlV    ! Initial control volume
+  real(Kind=DBL):: NoReaches ! Number of reaches
+end type InitialData_tp
 
 
 Contains
 
 
 End Module Parameters
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
