@@ -35,9 +35,6 @@ Integer(2), Parameter, Public :: Smll=SELECTED_INT_Kind(3 )           ! EQUIVALE
 Integer(2), Parameter, Public :: Shrt=SELECTED_INT_Kind(8 )           ! EQUIVALENT TO Integer (4)
 Integer(2), Parameter, Public :: Lng =SELECTED_INT_Kind(10)           ! EQUIVALENT TO Integer (8)
 
-! Type DECLARATOINS ===============================================================================
-
-
 ! MATHEMATICAL CONSTATNS ==========================================================================
 !#Integer (Kind=Shrt), Parameter, Public  ::
 Real (Kind=DBL), Parameter, Public  ::  PI=3.141592653589793238_DBL
@@ -48,7 +45,7 @@ Character(27),  Parameter, Public :: Fmt_End="('PRESS ENTER TO End ...')"
 Character(80),  Parameter, Public :: Fmt_ERR1_OPEN="( 'ERROR IN OPEN STATEMENT. Unit NUMBER=', I3, '   ERROR NUMBER IS=', I4  )"
 Character(91),  Parameter, Public :: Fmt_ERR2_OPEN="('End-OF-FILE ERROR IN OPEN STATEMENT. Unit NUMBER=', I3, '   ERROR NUMBER IS=', I4  )"
 Character(81),  Parameter, Public :: Fmt_ERR1_Close="( 'ERROR IN Close STATEMENT. Unit NUMBER=', I3, '   ERROR NUMBER IS=', I4  )"
-Character(163), Parameter, Public :: Fmt_NM="(' FILE Name : ', A20,//,' Directories :',/, 'INPUT FILE DIRECTORY     : ', A100,/, 'OUTPUT FILES DIRECTORY   : ', A100,/, 'INTERNAL FILES DIRECTORY : ', A100,/ )"
+Character(163), Parameter, Public :: Fmt_NM="(' FILE Name : ', A20,//,' Directories :',/, 'INPUT FILE DIRECTORY     : ', A100,/, 'OUTPUT FILES DIRECTORY   : ', A100 )"
 Character(41),  Parameter, Public :: Fmt_SUC="('CONGRATULATIONS! DONE SUCCESSFULLY. ')"
 Character(39),  Parameter, Public :: Fmt_FL="('OOPS!!!  FAIL TO OPERATE PROPERLY.')"
 Character(78),  Parameter, Public :: Fmt_ALLCT="('ERROR IN ALLOCATING Arrays. ERROR NUMBER IS :', I4, '   LOCATION: ??????.')"
@@ -57,7 +54,7 @@ Character(23),  Parameter, Public :: Fmt_RUNTIME="(A,F50.2,'   SECONDS')"
 Character(70),  Parameter, Public :: Fmt_READ1="('ERROR IN READ STATEMENT. Unit IS : ',I5,' ERROR NUMBER IS : ', I5 )"
 Character(76),  Parameter, Public :: Fmt_READ2="('End OF FILE IN READ STATEMENT. Unit IS : ',I5,' ERROR NUMBER IS : ', I5 )"
 Character(78),  Parameter, Public :: Fmt_READ3="('End OF RECORD IN READ STATEMENT. Unit IS : ',I5,' ERROR NUMBER IS : ', I5 )"
-Character(71),  Parameter, Public :: Fmt_Write1="('ERROR IN Write STATEMENT. Unit IS : ',I5,' ERROR NUMBER IS : ', I5 )"
+Character(71),  Parameter, Public :: Fmt_write1="('ERROR IN write STATEMENT. Unit IS : ',I5,' ERROR NUMBER IS : ', I5 )"
 Character(143), Parameter, Public :: Fmt_Element1="('Error in the element type. Either there is a mistake in the input file for element type or element type in not available in the code yet.')"
 Character(144), Parameter, Public :: Fmt_Element2="('Error in the element type. This element number',I3,'is not available in the list of this code. Check the input file for element number',I19)"
 
@@ -81,7 +78,7 @@ Integer (Kind=Smll), Parameter, Public  :: FileInfo=600 ! Model information file
 
 
 ! Analysis case number ============================================================================
-!Integer (Kind=Smll), Parameter, Public :: ACN_LI_ST=21 ! Linear Static Analysis
+Integer (Kind=Smll), Parameter, Public :: AnalysisType_1D=100 ! 1D Shallow water simulation
 
 
 ! Element Types Number ============================================================================
@@ -122,6 +119,12 @@ type ArgCommands
   Integer (Kind=Shrt), allocatable, dimension(:) :: Length          ! Holds the length of each arg
   Character (Kind = 1, Len = 50), allocatable, dimension(:) :: Arg  ! Holds the entered argument
 end type
+
+type timing
+  real(Kind=DBL):: Time_Start, Time_End !TIME Variables for total runtime
+  real(Kind=DBL):: Input_Starts, Input_Ends ! required time to read the input file
+end type timing
+
 
 
 Contains

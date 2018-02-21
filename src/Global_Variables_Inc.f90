@@ -51,9 +51,10 @@ Real (Kind=DBL)      :: TimeSolveS, TimeSolveE  ! TIME Variables for Effective S
 !Real (Kind=DBL)   , Allocatable, Dimension(:,:)  ::            !
 
 ! - Type ------------------------------------------------------------------------------------------
-Type (TimeDate_tp)   :: TimeDate   ! Indicates the time and date of simulation
-Type (Input_Data_tp) :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
-type (ArgCommands)   :: Arguments  ! Holds the entered arguments from the command line
+type(TimeDate_tp)   :: TimeDate   ! Indicates the time and date of simulation
+type(Input_Data_tp) :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
+type(ArgCommands)   :: Arguments  ! Holds the entered arguments from the command line
+type(timing)        :: SimulationTime ! Holds the run time
 
 ! - Character Variables ---------------------------------------------------------------------------
 !Character (Kind = 1, Len = 50 ) :: arg  ! Holds the entered argument

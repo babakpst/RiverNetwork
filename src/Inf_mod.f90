@@ -17,8 +17,8 @@
 !
 ! ================================ S U B R O U T I N E ============================================
 !
-! InfBasic: Writes the initial information in the info file.
-! InfTime:  Writes the simulation time.
+! InfBasic: writes the initial information in the info file.
+! InfTime:  writes the simulation time.
 !
 ! ================================ F U N C T I O N ================================================
 !
@@ -31,6 +31,7 @@
 
 Module Information
 
+use Parameters
 
 Implicit None
 
@@ -108,8 +109,8 @@ Implicit None
 
 
 ! - Types -----------------------------------------------------------------------------------------
-Type (TimeDate_tp)    :: TimeDate   ! Indicates the time and date of simulation
-Type (Input_Data_tp)  :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
+type(TimeDate_tp)    :: TimeDate   ! Indicates the time and date of simulation
+type(Input_Data_tp)  :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
 
 ! - Logical Variables -----------------------------------------------------------------------------
 !#Logical   ::
@@ -132,18 +133,18 @@ Type (Input_Data_tp)  :: ModelInfo  ! Holds info. (name, dir, output dir) of the
 ! - Logical Variables -----------------------------------------------------------------------------
 !#Logical   ::
 ! - Type DECLERATIONS -----------------------------------------------------------------------------
-!#Type() ::
+!#type() ::
 
 ! CODE ============================================================================================
 
-! Write INFORMATION
-Write(FileInfo, Fmt_DATE) TimeDate%Month, TimeDate%Day,    TimeDate%Year, &
-                        TimeDate%Hour,  TimeDate%Minute, TimeDate%Second, TimeDate%S100th
-Write(FileInfo, Fmt_NM)ModelInfo%ModelName, ModelInfo%InputDir, ModelInfo%OutputDir, ModelInfo%IntDir
+! write INFORMATION
+write(FileInfo, Fmt_DATE) TimeDate%Month, TimeDate%Day,    TimeDate%Year, &
+                        TimeDate%Hour,  TimeDate%Minute, TimeDate%Seconds, TimeDate%S100th
+write(FileInfo, Fmt_NM)ModelInfo%ModelName, ModelInfo%InputDir, ModelInfo%OutputDir
 
-Write (FileInfo,*)" Analysis Type "
+write (FileInfo,*)" Analysis Type "
 
-Write(*, *) 'End Subroutine < InfBasic >'
+write(*, *) 'End Subroutine < InfBasic >'
 Return
 End Subroutine InfBasic
 
@@ -212,7 +213,7 @@ Real (Kind=Dbl), Intent(In)    :: TimeE, TimeS, TimeInputE, TimeInputS, TimeSolv
 ! - Logical Variables -----------------------------------------------------------------------------
 !#Logical   ::
 ! - Type DECLERATIONS -----------------------------------------------------------------------------
-!#Type() ::
+!#type() ::
 ! =========================== Local Variables =====================================================
 ! - Integer Variables -----------------------------------------------------------------------------
 !#Integer (Kind=Shrt)  ::
@@ -233,18 +234,18 @@ Real (Kind=Dbl), Intent(In)    :: TimeE, TimeS, TimeInputE, TimeInputS, TimeSolv
 
 ! =========================== Subroutine CODE =====================================================
 
-Write(FileInfo,*)
+write(FileInfo,*)
 
-!Write(*     ,Fmt_RUNTIME) "TOTAL"   , TimeE - TimeS
+!write(*     ,Fmt_RUNTIME) "TOTAL"   , TimeE - TimeS
 
-Write(FileInfo,*)"---------- RUNNING TIME STATISTICS ----------"
+write(FileInfo,*)"---------- RUNNING TIME STATISTICS ----------"
 
-Write(FileInfo,Fmt_RUNTIME) "Reading Input files           ", TimeInputE  - TimeInputS
-Write(FileInfo,Fmt_RUNTIME) "SOLVE                         ", TimeSolveE  - TimeSolveS
-Write(FileInfo,Fmt_RUNTIME) "TOTAL                         ", TimeE       - TimeS
-Write(FileInfo,*)
+write(FileInfo,Fmt_RUNTIME) "Reading Input files           ", TimeInputE  - TimeInputS
+write(FileInfo,Fmt_RUNTIME) "SOLVE                         ", TimeSolveE  - TimeSolveS
+write(FileInfo,Fmt_RUNTIME) "TOTAL                         ", TimeE       - TimeS
+write(FileInfo,*)
 
-Write(*     ,*) 'End Subroutine < InfTime >'
+write(*     ,*) 'End Subroutine < InfTime >'
 
 
 Return

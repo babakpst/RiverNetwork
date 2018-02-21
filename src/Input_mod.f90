@@ -112,7 +112,7 @@ Implicit None
 ! - Logical Variables -----------------------------------------------------------------------------
 !#Logical   ::
 ! - Types -----------------------------------------------------------------------------------------
-type (Input_Data_tp), Intent(out) :: ModelInfo  ! Holds info. (name, dir, output dir) of the model :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
+type(Input_Data_tp), Intent(out) :: ModelInfo  ! Holds info. (name, dir, output dir) of the model :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
 
 
 ! Local Variables =================================================================================
@@ -150,81 +150,81 @@ Open(Unit=UnFile, File='Address.txt', Err=1001, IOStat=IO_File, Access='SEQUENTI
      Form='FormATTED', Position='ASIS', Status='old')
 
 ! Read the input fine name and directories Form "ADDRESS_File.txt" in the current directory -------
-Read(FileAdr,*)
-Read(FileAdr,*) ModelInfo%ModelName
-Read(FileAdr,*)
-Read(FileAdr,*)
-Read(FileAdr,*) ModelInfo%AnalysisType
-Read(FileAdr,*)
-Read(FileAdr,*)
-Read(FileAdr,*) ModelInfo%InputDir
-Read(FileAdr,*)
-Read(FileAdr,*)
-Read(FileAdr,*) ModelInfo%OutputDir
-Read(FileAdr,*)
-Read(FileAdr,*)
-Read(FileAdr,*) ModelInfo%NumberOfAnalyses
+read(FileAdr,*)
+read(FileAdr,*) ModelInfo%ModelName
+read(FileAdr,*)
+read(FileAdr,*)
+read(FileAdr,*) ModelInfo%AnalysisType
+read(FileAdr,*)
+read(FileAdr,*)
+read(FileAdr,*) ModelInfo%InputDir
+read(FileAdr,*)
+read(FileAdr,*)
+read(FileAdr,*) ModelInfo%OutputDir
+read(FileAdr,*)
+read(FileAdr,*)
+read(FileAdr,*) ModelInfo%NumberOfAnalyses
 
 ! Allocating
 Allocate (ModelInfo%AnalysesNames(ModelInfo%NumberOfAnalyses),  STAT = ERR_Alloc)
   If ( ERR_Alloc /= 0 ) Then
-    Write (*, Fmt_ALLCT) ERR_Alloc ;  Write (FileInfo, Fmt_ALLCT) ERR_Alloc ;
-    Write(*, Fmt_FL) ;  Write(FileInfo, Fmt_FL) ; Read(*, Fmt_End) ;  Stop ;
+    write (*, Fmt_ALLCT) ERR_Alloc ;  write (FileInfo, Fmt_ALLCT) ERR_Alloc ;
+    write(*, Fmt_FL) ;  write(FileInfo, Fmt_FL) ; read(*, Fmt_End) ;  stop ;
   End If
-Read(FileAdr,*)
+read(FileAdr,*)
   do i_analyses = 1, ModelInfo%NumberOfAnalyses
-    Read(FileAdr,*) ModelInfo%AnalysesNames(i_analyses)
+    read(FileAdr,*) ModelInfo%AnalysesNames(i_analyses)
   end do
 
 ModelInfo%AnalysisDir=Trim(AdjustL(ModelInfo%InputDir))//'/'//Trim(AdjustL(ModelInfo%ModelName))//'/'//'Analysis'
 ModelInfo%InputDir=Trim(AdjustL(ModelInfo%InputDir))//'/'//Trim(AdjustL(ModelInfo%ModelName))//'/'//'Model'
 
-Write (*, fmt="(2A)")" The model directory is: ", ModelInfo%InputDir
-Write (*, fmt="(2A)")" The analysis name is: ", ModelInfo%AnalysisDir
+write (*, fmt="(2A)")" The model directory is: ", ModelInfo%InputDir
+write (*, fmt="(2A)")" The analysis name is: ", ModelInfo%AnalysisDir
 
 ! Create the results folder
-Write(*,fmt="(A)") " -Creating the output folders ..."
+write(*,fmt="(A)") " -Creating the output folders ..."
 
 Directory=MakeDirQQ (Trim(AdjustL(ModelInfo%OutputDir))//'/'//Trim(AdjustL(ModelInfo%ModelName)))
   If (Directory) Then
-    Write(*,fmt="(A)") "The result folder is created."
+    write(*,fmt="(A)") "The result folder is created."
   Else
-     Write (*,fmt="(A)") "The result folder already exists."
+     write (*,fmt="(A)") "The result folder already exists."
   End If
 
 ModelInfo%OutputDir=Trim(AdjustL (ModelInfo%OutputDir))//'/'//Trim(AdjustL (ModelInfo%ModelName))
 
-Write (*,fmt="(2A)")" The output directory is: ", ModelInfo%OutputDir
+write (*,fmt="(2A)")" The output directory is: ", ModelInfo%OutputDir
 
 ! - Closing the address file ----------------------------------------------------------------------
-Write(*,        fmt="(A)") " -Closing the address file"
-Write(FileInfo, fmt="(A)") " -Closing the address file"
+write(*,        fmt="(A)") " -Closing the address file"
+write(FileInfo, fmt="(A)") " -Closing the address file"
 UnFile =  FileAdr
 Close ( Unit = UnFile, Status = 'KEEP', ERR =  1002, IOSTAT = IO_File)
 
 
-Write(*,       *) 'End Subroutine < Input_Address_sub >'
-Write(FileInfo,*) 'End Subroutine < Input_Address_sub >'
+write(*,       *) 'End Subroutine < Input_Address_sub >'
+write(FileInfo,*) 'End Subroutine < Input_Address_sub >'
 Return
 
 ! Errors ==========================================================================================
 ! Opening statement Errors
 1001 If (IO_File > 0) Then
-       Write(*, Fmt_Err1_OPEN) UnFile, IO_File; Write(FileInfo, Fmt_Err1_OPEN) UnFile, IO_File;
-       Write(*, Fmt_FL); Write(FileInfo, Fmt_FL);
-       Write(*, Fmt_End); Read(*,*); Stop;
+       write(*, Fmt_Err1_OPEN) UnFile, IO_File; write(FileInfo, Fmt_Err1_OPEN) UnFile, IO_File;
+       write(*, Fmt_FL); write(FileInfo, Fmt_FL);
+       write(*, Fmt_End); read(*,*); stop;
      Else If ( IO_File < 0 ) Then
-       Write(*, Fmt_Err1_OPEN) UnFile, IO_File
-       Write(FileInfo, Fmt_Err1_OPEN) UnFile, IO_File;  Write(*, Fmt_FL) ; Write(FileInfo, Fmt_FL);
-       Write(*, Fmt_End); Read(*,*); Stop;
+       write(*, Fmt_Err1_OPEN) UnFile, IO_File
+       write(FileInfo, Fmt_Err1_OPEN) UnFile, IO_File;  write(*, Fmt_FL) ; write(FileInfo, Fmt_FL);
+       write(*, Fmt_End); read(*,*); stop;
      End If
 
 
 ! Close statement Errors
 1002 If (IO_File > 0) Then
-       Write(*, Fmt_Err1_Close) UnFile, IO_File; Write(FileInfo, Fmt_Err1_Close) UnFile, IO_File;
-       Write(*, Fmt_FL); Write(FileInfo, Fmt_FL);
-       Write(*, Fmt_End); Read(*,*); Stop;
+       write(*, Fmt_Err1_Close) UnFile, IO_File; write(FileInfo, Fmt_Err1_Close) UnFile, IO_File;
+       write(*, Fmt_FL); write(FileInfo, Fmt_FL);
+       write(*, Fmt_End); read(*,*); stop;
      End If
 
 
@@ -302,7 +302,7 @@ Implicit None
 ! - Logical Variables -----------------------------------------------------------------------------
 !#Logical   ::
 ! - Types -----------------------------------------------------------------------------------------
-type (Input_Data_tp), Intent(In) :: ModelInfo  ! Holds info. (name, dir, output dir) of the model :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
+type(Input_Data_tp), Intent(In) :: ModelInfo  ! Holds info. (name, dir, output dir) of the model :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
 
 ! Local Variables =================================================================================
 ! - integer Variables -----------------------------------------------------------------------------
@@ -331,8 +331,8 @@ write(*,       *) " Subroutine < Input_Basic_sub >: "
 write(FileInfo,*) " Subroutine < Input_Basic_sub >: "
 
 ! - Opening the data model file -------------------------------------------------------------------
-Write(*,        fmt="(A)") " -Opening the input file ..."
-Write(FileInfo, fmt="(A)") " -Opening the input file ..."
+write(*,        fmt="(A)") " -Opening the input file ..."
+write(FileInfo, fmt="(A)") " -Opening the input file ..."
 
 UnFile=FileDataModel
 Open (Unit=UnFile, File=Trim(ModelInfo%ModelName)//'.dataModel', &
@@ -354,33 +354,33 @@ Open (Unit=UnFile, File=Trim(ModelInfo%ModelName)//'.dataModel', &
 
 
 ! - Closing the data model file -------------------------------------------------------------------
-Write(*,        fmt="(A)") " -Closing the address file"
-Write(FileInfo, fmt="(A)") " -Closing the address file"
+write(*,        fmt="(A)") " -Closing the address file"
+write(FileInfo, fmt="(A)") " -Closing the address file"
 UnFile =  FileDataModel
 Close ( Unit = UnFile, Status = 'KEEP', ERR =  1002, IOSTAT = IO_File)
 
-Write(*,       *) 'End Subroutine < Input_Basic_sub >'
-Write(FileInfo,*) 'End Subroutine < Input_Basic_sub >'
+write(*,       *) 'End Subroutine < Input_Basic_sub >'
+write(FileInfo,*) 'End Subroutine < Input_Basic_sub >'
 Return
 
 ! Errors ==========================================================================================
 ! Opening statement Errors
 1001 If (IO_File > 0) Then
-       Write(*, Fmt_Err1_OPEN) UnFile, IO_File; Write(FileInfo, Fmt_Err1_OPEN) UnFile, IO_File;
-       Write(*, Fmt_FL); Write(FileInfo, Fmt_FL);
-       Write(*, Fmt_End); Read(*,*); Stop;
+       write(*, Fmt_Err1_OPEN) UnFile, IO_File; write(FileInfo, Fmt_Err1_OPEN) UnFile, IO_File;
+       write(*, Fmt_FL); write(FileInfo, Fmt_FL);
+       write(*, Fmt_End); read(*,*); stop;
      Else If ( IO_File < 0 ) Then
-       Write(*, Fmt_Err1_OPEN) UnFile, IO_File
-       Write(FileInfo, Fmt_Err1_OPEN) UnFile, IO_File;  Write(*, Fmt_FL) ; Write(FileInfo, Fmt_FL);
-       Write(*, Fmt_End); Read(*,*); Stop;
+       write(*, Fmt_Err1_OPEN) UnFile, IO_File
+       write(FileInfo, Fmt_Err1_OPEN) UnFile, IO_File;  write(*, Fmt_FL) ; write(FileInfo, Fmt_FL);
+       write(*, Fmt_End); read(*,*); stop;
      End If
 
 
 ! Close statement Errors
 1002 If (IO_File > 0) Then
-       Write(*, Fmt_Err1_Close) UnFile, IO_File; Write(FileInfo, Fmt_Err1_Close) UnFile, IO_File;
-       Write(*, Fmt_FL); Write(FileInfo, Fmt_FL);
-       Write(*, Fmt_End); Read(*,*); Stop;
+       write(*, Fmt_Err1_Close) UnFile, IO_File; write(FileInfo, Fmt_Err1_Close) UnFile, IO_File;
+       write(*, Fmt_FL); write(FileInfo, Fmt_FL);
+       write(*, Fmt_End); read(*,*); stop;
      End If
 
 End Subroutine Input_Basic_sub
@@ -463,7 +463,7 @@ Implicit None
 ! - Logical Variables -----------------------------------------------------------------------------
 !#Logical   ::
 ! - Types -----------------------------------------------------------------------------------------
-!#Type() ::
+!#type() ::
 
 ! Local Variables =================================================================================
 ! - integer Variables -----------------------------------------------------------------------------
@@ -490,8 +490,8 @@ write(*,       *) " Subroutine < Input_Array_sub >: "
 write(FileInfo,*) " Subroutine < Input_Array_sub >: "
 
 
-Write(*,       *) "End Subroutine < Input_Array_sub >"
-Write(FileInfo,*) "End Subroutine < Input_Array_sub >"
+write(*,       *) "End Subroutine < Input_Array_sub >"
+write(FileInfo,*) "End Subroutine < Input_Array_sub >"
 Return
 End Subroutine Input_Array_sub
 
@@ -565,7 +565,7 @@ integer (Kind=Smll), Intent(In) :: i_analysis
 ! - Logical Variables -----------------------------------------------------------------------------
 !#Logical   ::
 ! - Types -----------------------------------------------------------------------------------------
-type (Input_Data_tp), Intent(inout) :: ModelInfo  ! Holds info. (name, dir, output dir) of the model, Intent(In) :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
+type(Input_Data_tp), Intent(inout) :: ModelInfo  ! Holds info. (name, dir, output dir) of the model, Intent(In) :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
 
 ! Local Variables =================================================================================
 ! - integer Variables -----------------------------------------------------------------------------
@@ -596,51 +596,51 @@ write(FileInfo,*) " Subroutine < Input_Analysis_sub >: "
 
 
 ! Opening the input file for this specific simulation
-Write (*,        fmt="(A)") " -Opening the analysis file ..."
-Write (FileInfo, fmt="(A)") " -Opening the analysis file ..."
+write (*,        fmt="(A)") " -Opening the analysis file ..."
+write (FileInfo, fmt="(A)") " -Opening the analysis file ..."
 
 UnFile=UnInptAna
-Open (Unit=UnFile, File=Trim(ModelInfo%AnalysesNames(i_analysis))//'.txt', Err= 1001, IOStat=IO_File, Access='SEQUENTIAL', &
+Open(Unit=UnFile, File=Trim(ModelInfo%AnalysesNames(i_analysis))//'.txt', Err= 1001, IOStat=IO_File, Access='SEQUENTIAL', &
       Action='READ', Asynchronous='NO', Blank='NULL', BLOCKSize=0, DEFAULTFile=Trim(ModelInfo%AnalysisDir), &
       DisPOSE='Keep', FORM='FormATTED', Position='ASIS', Status='old') ;
 
 ! Creating the output file directory for this analysis --------------------------------------------
-Write(*,        fmt="(A)") " -Creating the output folder for this analysis ..."
-Write(FileInfo, fmt="(A)") " -Creating the output folder for this analysis ..."
+write(*,        fmt="(A)") " -Creating the output folder for this analysis ..."
+write(FileInfo, fmt="(A)") " -Creating the output folder for this analysis ..."
 
 Directory=MakeDirQQ (Trim(AdjustL (ModelInfo%OutputDir))//'/'//Trim(AdjustL(ModelInfo%AnalysesNames(i_analysis))))
   If (Directory) Then ;
-     Write (*,       fmt="(A)") "The output folder for this analysis created." ;
-     Write (FileInfo,fmt="(A)") "The output folder for this analysis created." ;
+     write (*,       fmt="(A)") "The output folder for this analysis created." ;
+     write (FileInfo,fmt="(A)") "The output folder for this analysis created." ;
   Else ;
-     Write (*,        fmt="(A)") "The output folder for this analysis already exists." ;
-     Write (FileInfo, fmt="(A)") "The output folder for this analysis already exists." ;
+     write (*,        fmt="(A)") "The output folder for this analysis already exists." ;
+     write (FileInfo, fmt="(A)") "The output folder for this analysis already exists." ;
   End If ;
 
 ModelInfo%AnalysisOutputDir=Trim(AdjustL(ModelInfo%OutputDir))//'/'//Trim(AdjustL(ModelInfo%AnalysesNames(i_analysis)))
 
-Write(*,       *) "End Subroutine < Input_Analysis_sub >"
-Write(FileInfo,*) "End Subroutine < Input_Analysis_sub >"
+write(*,       *) "End Subroutine < Input_Analysis_sub >"
+write(FileInfo,*) "End Subroutine < Input_Analysis_sub >"
 Return
 
 ! Errors ==========================================================================================
 ! Opening statement Errors
 1001 If (IO_File > 0) Then
-       Write(*, Fmt_Err1_OPEN) UnFile, IO_File; Write(FileInfo, Fmt_Err1_OPEN) UnFile, IO_File;
-       Write(*, Fmt_FL); Write(FileInfo, Fmt_FL);
-       Write(*, Fmt_End); Read(*,*); Stop;
+       write(*, Fmt_Err1_OPEN) UnFile, IO_File; write(FileInfo, Fmt_Err1_OPEN) UnFile, IO_File;
+       write(*, Fmt_FL); write(FileInfo, Fmt_FL);
+       write(*, Fmt_End); read(*,*); stop;
      Else If ( IO_File < 0 ) Then
-       Write(*, Fmt_Err1_OPEN) UnFile, IO_File
-       Write(FileInfo, Fmt_Err1_OPEN) UnFile, IO_File;  Write(*, Fmt_FL) ; Write(FileInfo, Fmt_FL);
-       Write(*, Fmt_End); Read(*,*); Stop;
+       write(*, Fmt_Err1_OPEN) UnFile, IO_File
+       write(FileInfo, Fmt_Err1_OPEN) UnFile, IO_File;  write(*, Fmt_FL) ; write(FileInfo, Fmt_FL);
+       write(*, Fmt_End); read(*,*); stop;
      End If
 
 
 ! Close statement Errors
 1002 If (IO_File > 0) Then
-       Write(*, Fmt_Err1_Close) UnFile, IO_File; Write(FileInfo, Fmt_Err1_Close) UnFile, IO_File;
-       Write(*, Fmt_FL); Write(FileInfo, Fmt_FL);
-       Write(*, Fmt_End); Read(*,*); Stop;
+       write(*, Fmt_Err1_Close) UnFile, IO_File; write(FileInfo, Fmt_Err1_Close) UnFile, IO_File;
+       write(*, Fmt_FL); write(FileInfo, Fmt_FL);
+       write(*, Fmt_End); read(*,*); stop;
      End If
 
 End Subroutine Input_Analysis_sub
