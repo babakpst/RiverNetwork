@@ -101,11 +101,6 @@ write(FileInfo, fmt="(A)") " -Allocating the required arrays ..."
 !    write(*, Fmt_FL); write(FileInfo, Fmt_FL); write(*, Fmt_End); read(*,*); stop;
 !  End If
 
-! Open required Files -----------------------------------------------------------------------------
-write(*,        fmt="(A)") " -Opening the input files ..."
-write(FileInfo, fmt="(A)") " -Opening the input files ..."
-! <modify>
-
 ! Reading input arrays ----------------------------------------------------------------------------
 write(*,        fmt="(A)") " -Reading arrays form data file ..."
 write(FileInfo, fmt="(A)") " -Reading arrays form data file ..."

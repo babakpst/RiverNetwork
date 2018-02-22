@@ -131,6 +131,7 @@ type InitialData_tp
   real(Kind=DBL):: Q_Up      ! Upstream boundary condition, constant flow (m^3/s)
   real(Kind=DBL):: h_dw      ! Downstream water depth (in meters)
   real(Kind=DBL):: CntrlV    ! Initial control volume
+  real(Kind=DBL):: CntrlV_ratio  ! Initial control volume ration, used to initialize data
   real(Kind=DBL):: NoReaches ! Number of reaches
 end type InitialData_tp
 

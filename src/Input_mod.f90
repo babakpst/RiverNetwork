@@ -9,11 +9,11 @@
 ! The University of Texas at Austin
 !
 ! ================================ V E R S I O N ==================================================
-! V0.1: 02/13/2018 - Initiation.
+! V0.1: 02/22/2018 - Initiation.
 !
 ! File version $Id $
 !
-! Last update: 13/02/2018
+! Last update: 02/22/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 !
@@ -50,7 +50,7 @@ contains
 ! The University of Texas at Austin
 !
 ! ================================ V E R S I O N ==================================================
-! V0.1: 02/13/2018 - Initiation.
+! V0.1: 02/21/2018 - Initiation.
 !
 ! File version $Id $
 !
@@ -242,11 +242,11 @@ End Subroutine Input_Address_sub
 ! The University of Texas at Austin
 !
 ! ================================ V E R S I O N ==================================================
-! V0.1: 02/13/2018 - Initiation.
+! V0.1: 02/21/2018 - Initiation.
 !
 ! File version $Id $
 !
-! Last update: 02/13/2018
+! Last update: 02/21/2018
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
 ! (Refer to the main code to see the list of imported variables)
@@ -341,17 +341,50 @@ open(Unit=UnFile, file=trim(ModelInfo%ModelName)//'.dataModel', &
      blank='null', blocksize=0, defaultfile=trim(ModelInfo%InputDir), DisPOSE='keep', form='formatted', &
      position='asis', status='old')
 
+UnFile = FileDataModel
+read(unit=UnFile, fmt="()", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004, eor=1005)
+read(unit=UnFile, fmt="()", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004, eor=1005)
+read(unit=UnFile, fmt="()", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004, eor=1005)
+read(unit=UnFile, fmt="()", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004, eor=1005)InitialInfo%TotalTime
+UnFile = FileInfo
+write(unit=UnFile, fmt="(' The total simulation time is: ', F12.3)", advance='yes', asynchronous='no', iostat=IO_write, err=1006)InitialInfo%TotalTime
+write(unit=*,      fmt="(' The total simulation time is: ', F12.3)")InitialInfo%TotalTime
 
+UnFile = FileDataModel
+read(unit=UnFile, fmt="()", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004, eor=1005) InitialInfo%TimeStep
+UnFile = FileInfo
+write(unit=UnFile, fmt="(' The time step is: ', F12.3)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) InitialInfo%TimeStep
+write(unit=*,      fmt="(' The time step is: ', F12.3)") InitialInfo%TimeStep
 
+UnFile = FileDataModel
+read(unit=UnFile, fmt="()", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004, eor=1005) InitialInfo%Q_Up
+UnFile = FileInfo
+write(unit=UnFile, fmt="(' Flow rate at the upstream is: ', F12.3)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) InitialInfo%Q_Up
+write(unit=*,      fmt="(' Flow rate at the upstream is: ', F12.3)") InitialInfo%Q_Up
 
+UnFile = FileDataModel
+read(unit=UnFile, fmt="()", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004, eor=1005) InitialInfo%h_dw
+UnFile = FileInfo
+write(unit=UnFile, fmt="(' Downstream water depth is: ', F12.3)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) InitialInfo%h_dw
+write(unit=*,      fmt="(' Downstream water depth is: ', F12.3)") InitialInfo%h_dw
 
+UnFile = FileDataModel
+read(unit=UnFile, fmt="()", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004, eor=1005) InitialInfo%CntrlV
+UnFile = FileInfo
+write(unit=UnFile, fmt="(' Control Volume is: ', F12.3)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) InitialInfo%CntrlV
+write(unit=*,      fmt="(' Control Volume is: ', F12.3)") InitialInfo%CntrlV
 
+UnFile = FileDataModel
+read(unit=UnFile, fmt="()", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004, eor=1005) InitialInfo%CntrlV_ratio
+UnFile = FileInfo
+write(unit=UnFile, fmt="(' The ratio of control volume is: ', F12.3)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) InitialInfo%CntrlV_ratio
+write(unit=*,      fmt="(' The ratio of control volume is: ', F12.3)") InitialInfo%CntrlV_ratio
 
-
-
-
-
-
+UnFile = FileDataModel
+read(unit=UnFile, fmt="()", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004, eor=1005) InitialInfo%NoReaches
+UnFile = FileInfo
+write(unit=UnFile, fmt="(' Total number of reach(es) is(are): ', F12.3)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) InitialInfo%NoReaches
+write(unit=*,      fmt="(' Total number of reach(es) is(are): ', F12.3)") InitialInfo%NoReaches
 
 
 ! - Closing the data model file -------------------------------------------------------------------
@@ -393,9 +426,14 @@ Return
 1004 write(*, Fmt_read2) UnFile, IO_read; write(UnFile, Fmt_read2) UnFile, IO_read;
      write(*, Fmt_FL);  write(FileInfo, Fmt_FL); write(*, Fmt_End); read(*,*);  stop;
 
-! - End-OF-FILE IN read STATEMENT -----------------------------------------------------------------
+! - End-OF-FILE IN read statement -----------------------------------------------------------------
 1005 write(*, Fmt_read3) UnFile, IO_read; write(UnFile, Fmt_read3) UnFile, IO_read;
      write(*, Fmt_FL);  write(FileInfo, Fmt_FL); write(*, Fmt_End); read(*,*);  stop;
+
+! - write statement error -------------------------------------------------------------------------
+1006 write(*, Fmt_write1) UnFile, IO_write; write(UnFile, Fmt_write1) UnFile, IO_write;
+     write(*, Fmt_FL); write(UnInf, Fmt_FL); write(*, Fmt_End); read(*,*);  stop;
+
 
 End Subroutine Input_Basic_sub
 
@@ -410,11 +448,11 @@ End Subroutine Input_Basic_sub
 ! The University of Texas at Austin
 !
 ! ================================ V E R S I O N ==================================================
-! V0.1: 02/13/2018 - Initiation.
+! V0.1: 02/22/2018 - Initiation.
 !
 ! File version $Id $
 !
-! Last update: 02/13/2018
+! Last update: 02/22/2018
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
 ! (Refer to the main code to see the list of imported variables)
@@ -422,7 +460,7 @@ End Subroutine Input_Basic_sub
 !
 !##################################################################################################
 
-Subroutine Input_Array_sub(                                                       &
+Subroutine Input_Array_sub(                                           &
 !                                                                     & ! integer(1) Variables
 !                                                                     & ! integer(2) Variables
 !                                                                     & ! integer(4) Variables
@@ -465,9 +503,9 @@ Implicit None
 !#real(Kind=Dbl),     intent(InOut), dimension(:  )  ::
 !#real(Kind=Dbl),     intent(OUT),   dimension(:  )  ::
 ! - Character Variables ---------------------------------------------------------------------------
-!#Character (Kind = ?, Len = ? ) ::
+!#character (Kind = ?, Len = ? ) ::
 ! - Logical Variables -----------------------------------------------------------------------------
-!#Logical   ::
+!#logical   ::
 ! - Types -----------------------------------------------------------------------------------------
 !#type() ::
 
@@ -485,15 +523,27 @@ Implicit None
 !#real(Kind=Dbl), dimension(:)      ::
 !#real(Kind=Dbl), allocatable, dimension(:)  ::
 ! - Character Variables ---------------------------------------------------------------------------
-!#Character (Kind = ?, Len = ? ) ::
+!#character (Kind = ?, Len = ? ) ::
 ! - Logical Variables -----------------------------------------------------------------------------
-!#Logical   ::
+!#logical   ::
 ! - Type ------------------------------------------------------------------------------------------
 
 ! code ============================================================================================
 
 write(*,       *) " Subroutine < Input_Array_sub >: "
 write(FileInfo,*) " Subroutine < Input_Array_sub >: "
+
+! Open required Files -----------------------------------------------------------------------------
+write(*,        fmt="(A)") " -Opening the input files ..."
+write(FileInfo, fmt="(A)") " -Opening the input files ..."
+! <modify>
+
+
+
+
+
+
+
 
 
 write(*,       *) "End Subroutine < Input_Array_sub >"
