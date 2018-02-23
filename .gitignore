@@ -2,7 +2,6 @@
 *.cbp
 *.layout
 *.o
-*.mod
 
 # ignoring the following folders:
 output/
