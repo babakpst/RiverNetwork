@@ -396,10 +396,10 @@ write(unit=*,      fmt="(' The ratio of control volume is: ', F23.10)") InitialI
 UnFile = FileDataModel
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) InitialInfo%NoReaches
+read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) InitialInfo%NoReaches
 UnFile = FileInfo
-write(unit=UnFile, fmt="(' Total number of reach(es) is(are): ', F23.10)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) InitialInfo%NoReaches
-write(unit=*,      fmt="(' Total number of reach(es) is(are): ', F23.10)") InitialInfo%NoReaches
+write(unit=UnFile, fmt="(' Total number of reach(es) is(are): ', I10)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) InitialInfo%NoReaches
+write(unit=*,      fmt="(' Total number of reach(es) is(are): ', I10)") InitialInfo%NoReaches
 
 
 ! - Closing the data model file -------------------------------------------------------------------

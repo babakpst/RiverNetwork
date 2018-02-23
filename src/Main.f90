@@ -95,10 +95,10 @@ call Input(ModelInfo, InitialInfo)
 write(*,        fmt="(A)") " -Allocating the required arrays ..."
 write(FileInfo, fmt="(A)") " -Allocating the required arrays ..."
 
-allocate(Geometry%ReachLength(InitialInfo%NoReaches), Geometry%ReachDisc(InitialInfo%NoReaches),
-         Geometry%ReachType(InitialInfo%NoReaches), Geometry%ReachSlope(InitialInfo%NoReaches),
-         Geometry%ReachManning(InitialInfo%NoReaches), Geometry%ReachWidth(InitialInfo%NoReaches),
-        stat=Err_Alloc)
+allocate(Geometry%ReachLength(InitialInfo%NoReaches), Geometry%ReachDisc(InitialInfo%NoReaches), &
+         Geometry%ReachType(InitialInfo%NoReaches), Geometry%ReachSlope(InitialInfo%NoReaches),  &
+         Geometry%ReachManning(InitialInfo%NoReaches), Geometry%ReachWidth(InitialInfo%NoReaches),&
+         stat=Err_Alloc)
   if (Err_Alloc /= 0) then
     write(*, Fmt_ALLCT) Err_Alloc; write(FileInfo, Fmt_ALLCT) Err_Alloc;
     write(*, Fmt_FL); write(FileInfo, Fmt_FL); write(*, Fmt_End); read(*,*); stop;

@@ -128,22 +128,22 @@ type timing
 end type timing
 
 type InitialData_tp
+  integer(kind=Lng):: NoReaches ! Number of reaches
   real(kind=DBL):: TotalTime ! Total simulation time (in seconds)
   real(kind=DBL):: TimeStep  ! Time Step
   real(kind=DBL):: Q_Up      ! Upstream boundary condition, constant flow (m^3/s)
   real(kind=DBL):: h_dw      ! Downstream water depth (in meters)
   real(kind=DBL):: CntrlV    ! Initial control volume
   real(kind=DBL):: CntrlV_ratio  ! Initial control volume ration, used to initialize data
-  real(kind=DBL):: NoReaches ! Number of reaches
 end type InitialData_tp
 
 type geometry_tp
-  real(kind=DBL), dimension(:) :: ReachLength ! Stores the length of each reach
-  real(kind=DBL), dimension(:) :: ReachDisc  ! Stores the no. of control volume in each reach
-  real(kind=DBL), dimension(:) :: ReachType  ! Stores reach type
-  real(kind=DBL), dimension(:) :: ReachSlope  ! Stores the slope of each reach
-  real(kind=DBL), dimension(:) :: ReachManning ! Stores the Manning's number for each reach
-  real(kind=DBL), dimension(:) :: ReachWidth ! Stores the width of each reach
+  real(kind=DBL), allocatable, dimension(:) :: ReachLength ! Stores the length of each reach
+  real(kind=DBL), allocatable, dimension(:) :: ReachDisc  ! Stores the no. of control volume in each reach
+  real(kind=DBL), allocatable, dimension(:) :: ReachType  ! Stores reach type
+  real(kind=DBL), allocatable, dimension(:) :: ReachSlope  ! Stores the slope of each reach
+  real(kind=DBL), allocatable, dimension(:) :: ReachManning ! Stores the Manning's number for each reach
+  real(kind=DBL), allocatable, dimension(:) :: ReachWidth ! Stores the width of each reach
 end type geometry_tp
 
 
