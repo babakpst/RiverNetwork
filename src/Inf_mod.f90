@@ -85,7 +85,7 @@ write(*,*)"             Supervised by: Clint Dawson"
 write(*,*)
 write(*,*)"    Institute for Computational Engineering and Sciences"
 write(*,*)
-write(*,fmt="(A,F6.2)")"             Version:", version
+write(*,fmt="(A,F6.2)") "             Version:", version
 write(*,*)
 write(*,*)"=========================================================="
 write(*,*)"=========================================================="

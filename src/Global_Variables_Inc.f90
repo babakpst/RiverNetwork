@@ -56,8 +56,8 @@ type(Input_Data_tp) :: ModelInfo  ! Holds info. (name, dir, output dir) of the m
 type(ArgCommands)   :: Arguments  ! Holds the entered arguments from the command line
 type(timing)        :: SimulationTime ! Holds the run time
 type(InitialData_tp):: InitialInfo ! Holds initial data required for array allocation
+type(geometry_tp)   :: Geometry   ! Holds information about the geometry of the domain
 
 ! - Character Variables ---------------------------------------------------------------------------
 !Character (kind = 1, Len = 50 ) :: arg  ! Holds the entered argument
-
 

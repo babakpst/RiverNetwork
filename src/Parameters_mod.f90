@@ -137,6 +137,16 @@ type InitialData_tp
   real(kind=DBL):: NoReaches ! Number of reaches
 end type InitialData_tp
 
+type geometry_tp
+  real(kind=DBL), dimension(:) :: ReachLength ! Stores the length of each reach
+  real(kind=DBL), dimension(:) :: ReachDisc  ! Stores the no. of control volume in each reach
+  real(kind=DBL), dimension(:) :: ReachType  ! Stores reach type
+  real(kind=DBL), dimension(:) :: ReachSlope  ! Stores the slope of each reach
+  real(kind=DBL), dimension(:) :: ReachManning ! Stores the Manning's number for each reach
+  real(kind=DBL), dimension(:) :: ReachWidth ! Stores the width of each reach
+end type geometry_tp
+
+
 
 Contains
 

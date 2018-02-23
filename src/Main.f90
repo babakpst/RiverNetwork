@@ -49,11 +49,11 @@ call Header(ModelInfo%Version) ! Writes info on screen.
 Arguments%ArgCount = command_argument_count()
 
 ! Allocating arg arrays
-allocate(Arguments%Length(Arguments%ArgCount), Arguments%Arg(Arguments%ArgCount), Arguments%Argstatus(Arguments%ArgCount), STAT = ERR_Alloc)
-  If (ERR_Alloc /= 0) Then
+allocate(Arguments%Length(Arguments%ArgCount), Arguments%Arg(Arguments%ArgCount), Arguments%Argstatus(Arguments%ArgCount), stat = ERR_Alloc)
+  if (ERR_Alloc /= 0) then
     write(*, Fmt_ALLCT) ERR_Alloc; write(FileInfo, Fmt_ALLCT) ERR_Alloc;
     write(*, Fmt_FL); write(FileInfo, Fmt_FL); read(*, Fmt_End); stop;
-  End If
+  end if
 
 
   do ii=1,Arguments%ArgCount
@@ -75,7 +75,7 @@ write(*,fmt="(A)") " -Creating the info.txt file in the output folder ..."
 
 UnFile=FileInfo
 Open(Unit=UnFile, File=trim(ModelInfo%ModelName)//'.infM',     &
-     Err=1001, IOStat=IO_File, Access='SEQUENTIAL', Action='write', Asynchronous='NO', &
+     Err=1001, IOstat=IO_File, Access='SEQUENTIAL', Action='write', Asynchronous='NO', &
      Blank='NULL', blocksize=0, defaultfile=trim(ModelInfo%OutputDir), DisPOSE='Keep', Form='formatted', &
      position='ASIS', status='REPLACE')
 
@@ -95,12 +95,14 @@ call Input(ModelInfo, InitialInfo)
 write(*,        fmt="(A)") " -Allocating the required arrays ..."
 write(FileInfo, fmt="(A)") " -Allocating the required arrays ..."
 
-!allocate( ,
-!           STAT=Err_Alloc)
-!  If (Err_Alloc /= 0) Then
-!    write(*, Fmt_ALLCT) Err_Alloc; write(FileInfo, Fmt_ALLCT) Err_Alloc;
-!    write(*, Fmt_FL); write(FileInfo, Fmt_FL); write(*, Fmt_End); read(*,*); stop;
-!  End If
+allocate(Geometry%ReachLength(InitialInfo%NoReaches), Geometry%ReachDisc(InitialInfo%NoReaches),
+         Geometry%ReachType(InitialInfo%NoReaches), Geometry%ReachSlope(InitialInfo%NoReaches),
+         Geometry%ReachManning(InitialInfo%NoReaches), Geometry%ReachWidth(InitialInfo%NoReaches),
+        stat=Err_Alloc)
+  if (Err_Alloc /= 0) then
+    write(*, Fmt_ALLCT) Err_Alloc; write(FileInfo, Fmt_ALLCT) Err_Alloc;
+    write(*, Fmt_FL); write(FileInfo, Fmt_FL); write(*, Fmt_End); read(*,*); stop;
+  end if
 
 ! Reading input arrays ----------------------------------------------------------------------------
 write(*,        fmt="(A)") " -Reading arrays form data file ..."
@@ -126,11 +128,11 @@ write(FileInfo, fmt="(A)") " -Closing input files ..."
 
 ! Close data File
 UnFile= UnInptAna
-Close(Unit=UnFile, status='Keep', Err=1002, IOStat=IO_File)
+Close(Unit=UnFile, status='Keep', Err=1002, IOstat=IO_File)
 
 ! close check File
 !UnFile= Un_CHK
-!Close(Unit=UnFile, status='Keep', Err=1002, IOStat=IO_File)
+!Close(Unit=UnFile, status='Keep', Err=1002, IOstat=IO_File)
 
 ! Simulations =====================================================================================
 
@@ -143,7 +145,7 @@ Close(Unit=UnFile, status='Keep', Err=1002, IOStat=IO_File)
     ! Test File ---------------------------------------------------------------------------------------
     !UnFile=UN_CHK
     !Open( Unit=UnFile, File=trim(AnaName)//'_'//trim(AdjustL(IndexSize))//'_'//trim(AdjustL(IndexRank))//'.Chk', &
-    !     Err= 1001, IOStat=IO_File, Access='SEQUENTIAL', Action='write', Asynchronous='NO', &
+    !     Err= 1001, IOstat=IO_File, Access='SEQUENTIAL', Action='write', Asynchronous='NO', &
     !     Blank='NULL', blocksize=0, defaultfile=trim(InlDirAna), DisPOSE='Keep', Form='formatted', &
     !     position='ASIS', status='REPLACE')
 
@@ -174,11 +176,11 @@ Close(Unit=UnFile, status='Keep', Err=1002, IOStat=IO_File)
 
 
 ! Deallocating arrays
-DEallocate(Arguments%Length, Arguments%Arg, Arguments%Argstatus,      STAT = ERR_DeAlloc )
-  IF (ERR_DeAlloc /= 0) Then
+DEallocate(Arguments%Length, Arguments%Arg, Arguments%Argstatus,      stat = ERR_DeAlloc )
+  if (ERR_DeAlloc /= 0) then
     write(*, Fmt_DEALLCT) ERR_DeAlloc; write(FileInfo, Fmt_DEALLCT) ERR_DeAlloc;
     write(*, Fmt_FL); write(FileInfo, Fmt_FL);  write(*, Fmt_End);  read(*,*);   stop;
-  End If
+  end if
 
 
 ! RUNNING TIME OF THE CODE ========================================================================
@@ -190,11 +192,11 @@ Call cpu_time(SimulationTime%Time_End)
 ! Close Files -------------------------------------------------------------------------------------
 ! Close information File
 UnFile= FileInfo
-Close(Unit=UnFile, status='Keep', Err=1002, IOStat=IO_File)
+Close(Unit=UnFile, status='Keep', Err=1002, IOstat=IO_File)
 
 
 UnFile= UnInptAna
-Close(Unit=UnFile, status='Keep', Err=1002, IOStat=IO_File)
+Close(Unit=UnFile, status='Keep', Err=1002, IOstat=IO_File)
 
 ! End the code ====================================================================================
 write(*, Fmt_SUC); write(FileInfo, Fmt_SUC);
@@ -206,22 +208,22 @@ stop
 
 ! Errors ==========================================================================================
 ! Opening statement Errors
-1001  If (IO_File > 0) Then
+1001  if (IO_File > 0) then
         write(*, Fmt_Err1_OPEN) UnFile, IO_File; write(FileInfo, Fmt_Err1_OPEN) UnFile, IO_File;
         write(*, Fmt_FL); write(FileInfo, Fmt_FL);
         write(*, Fmt_End); read(*,*); stop;
-      Else If (IO_File < 0) Then
+      Else if (IO_File < 0) then
         write(*, Fmt_Err1_OPEN) UnFile, IO_File;
         write(FileInfo, Fmt_Err1_OPEN) UnFile, IO_File; write(*, Fmt_FL); write(FileInfo, Fmt_FL);
         write(*, Fmt_End);  read(*,*);   stop;
-      End If
+      end if
 
 
 ! Close statement Errors
-1002  If (IO_File > 0) Then
+1002  if (IO_File > 0) then
         write(*, Fmt_Err1_Close) UnFile, IO_File; write(FileInfo, Fmt_Err1_Close) UnFile, IO_File;
         write(*, Fmt_FL); write(FileInfo, Fmt_FL);
         write(*, Fmt_End); read(*,*);   stop;
-      End If
+      end if
 
 end program Shallow_Water_Equation
