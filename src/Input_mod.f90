@@ -303,7 +303,7 @@ Implicit None
 ! - Logical Variables -----------------------------------------------------------------------------
 !#Logical   ::
 ! - Types -----------------------------------------------------------------------------------------
-type(Input_Data_tp),  intent(In)  :: ModelInfo   ! Holds info. (name, dir, output dir) of the model :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
+type(Input_Data_tp),  intent(In)  :: ModelInfo   ! Holds info. (name, dir, output dir) of the model
 type(InitialData_tp), intent(out) :: InitialInfo ! Holds initial data required for array allocation
 
 ! Local Variables =================================================================================
@@ -463,11 +463,11 @@ End Subroutine Input_Basic_sub
 ! The University of Texas at Austin
 !
 ! ================================ V E R S I O N ==================================================
-! V0.1: 02/22/2018 - Initiation.
+! V0.1: 02/23/2018 - Initiation.
 !
 ! File version $Id $
 !
-! Last update: 02/22/2018
+! Last update: 02/23/2018
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
 ! (Refer to the main code to see the list of imported variables)
@@ -521,12 +521,18 @@ Implicit None
 !#character (kind = ?, Len = ? ) ::
 ! - Logical Variables -----------------------------------------------------------------------------
 !#logical   ::
-! - Types -----------------------------------------------------------------------------------------
-!#type() ::
+! - types -----------------------------------------------------------------------------------------
+type(Input_Data_tp),  intent(In) :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
+type(InitialData_tp), intent(In) :: InitialInfo! Holds initial data required for array allocation
+type(Geometry_tp),    intent(Out):: Geometry   ! Holds information about the geometry of the domain
 
 ! Local Variables =================================================================================
 ! - integer Variables -----------------------------------------------------------------------------
-!#integer(kind=Shrt)  ::
+integer(kind=Smll) :: UnFile   ! Holds Unit of a file for error message
+integer(kind=Smll) :: IO_File  ! For IOSTAT: Input Output status in OPEN command
+integer(kind=Smll) :: IO_read  ! Holds error of read statements
+integer(kind=Smll) :: IO_write ! Used for IOSTAT - Input Output Status - in the write command
+
 ! - real Variables --------------------------------------------------------------------------------
 !#real(kind=Dbl)      ::
 ! - complex Variables -----------------------------------------------------------------------------
@@ -551,8 +557,65 @@ write(FileInfo,*) " Subroutine < Input_Array_sub >: "
 ! Open required Files -----------------------------------------------------------------------------
 write(*,        fmt="(A)") " -Opening the input files ..."
 write(FileInfo, fmt="(A)") " -Opening the input files ..."
-! <modify>
 
+! Open the input file
+UnFile = FileDataGeo
+open(Unit=UnFile, file=trim(ModelInfo%ModelName)//'.Geo', &
+     err=1001, iostat=IO_File, access='sequential', action='read', asynchronous='no', &
+     blank='null', blocksize=0, defaultfile=trim(ModelInfo%InputDir), DisPOSE='keep', form='formatted', &
+     position='asis', status='old')
+
+UnFile = FileDataGeo
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+
+read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) InitialInfo%TotalTime
+UnFile = FileInfo
+write(unit=*,      fmt="(' The total simulation time is: ', F23.10, ' s')") InitialInfo%TotalTime
+write(unit=UnFile, fmt="(' The total simulation time is: ', F23.10, ' s')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) InitialInfo%TotalTime
+
+
+
+        for ii in range(self.No_reaches): # Length of each reach
+            Temp       = self.File_Input.readline().rstrip("\n")
+            self.Reach_Length[ii] = float(Temp)
+            print("The length of reach {:d} is {:f}".format(ii+1, self.Reach_Length[ii]))
+
+        Temp       = self.File_Input.readline().rstrip("\n")
+        Temp       = self.File_Input.readline().rstrip("\n")
+        for ii in range(self.No_reaches): # Total number of control volumes in each reach/ For now we have a constant discretization in each reach.
+            Temp       = self.File_Input.readline().rstrip("\n")
+            self.Reach_Disc[ii] = int(Temp)
+            print("No. of discretization of reach {:d} is {:f}".format(ii+1, self.Reach_Disc[ii]))
+
+        Temp       = self.File_Input.readline().rstrip("\n")
+        Temp       = self.File_Input.readline().rstrip("\n")
+        for ii in range(self.No_reaches):
+            Temp       = self.File_Input.readline().rstrip("\n")
+            self.Reach_Type[ii] = int(Temp)
+            print("Rreach {:d} is of type: {:d}".format(ii+1, self.Reach_Type[ii]))
+
+        Temp       = self.File_Input.readline().rstrip("\n")
+        Temp       = self.File_Input.readline().rstrip("\n")
+        for ii in range(self.No_reaches): # Slope of each reach
+            Temp       = self.File_Input.readline().rstrip("\n")
+            self.Reach_Slope[ii] = float(Temp)
+            print("The slope of reach {:d} is {:f}".format(ii+1, self.Reach_Slope[ii]))
+
+        Temp       = self.File_Input.readline().rstrip("\n")
+        Temp       = self.File_Input.readline().rstrip("\n")
+        for ii in range(self.No_reaches): # The Manning's number for each reach
+            Temp       = self.File_Input.readline().rstrip("\n")
+            self.Reach_Manning[ii] = float(Temp)
+            print("The Manning's no. for reach {:d} is {:f}".format(ii+1, self.Reach_Manning[ii]))
+
+        Temp       = self.File_Input.readline().rstrip("\n")
+        Temp       = self.File_Input.readline().rstrip("\n")
+        for ii in range(self.No_reaches): # The width of each reach
+            Temp       = self.File_Input.readline().rstrip("\n")
+            self.Reach_Width[ii] = float(Temp)
+            print("The width of reach {:d} is {:f}".format(ii+1, self.Reach_Width[ii]))
 
 
 
@@ -564,7 +627,47 @@ write(FileInfo, fmt="(A)") " -Opening the input files ..."
 write(*,       *) "End Subroutine < Input_Array_sub >"
 write(FileInfo,*) "End Subroutine < Input_Array_sub >"
 Return
+
+! Errors ==========================================================================================
+! Opening statement Errors
+1001 if (IO_File > 0) then
+       write(*, Fmt_Err1_OPEN) UnFile, IO_File; write(FileInfo, Fmt_Err1_OPEN) UnFile, IO_File;
+       write(*, Fmt_FL); write(FileInfo, Fmt_FL);
+       write(*, Fmt_End); read(*,*); stop;
+     Else if ( IO_File < 0 ) then
+       write(*, Fmt_Err1_OPEN) UnFile, IO_File
+       write(FileInfo, Fmt_Err1_OPEN) UnFile, IO_File;  write(*, Fmt_FL) ; write(FileInfo, Fmt_FL);
+       write(*, Fmt_End); read(*,*); stop;
+     end if
+
+
+! Close statement Errors
+1002 if (IO_File > 0) then
+       write(*, Fmt_Err1_Close) UnFile, IO_File; write(FileInfo, Fmt_Err1_Close) UnFile, IO_File;
+       write(*, Fmt_FL); write(FileInfo, Fmt_FL);
+       write(*, Fmt_End); read(*,*); stop;
+     end if
+
+! - Error in read statement -----------------------------------------------------------------------
+1003 write(*, Fmt_read1) UnFile, IO_read; write(UnFile, Fmt_read1) UnFile, IO_read;
+     write(*, Fmt_FL);  write(FileInfo, Fmt_FL); write(*, Fmt_End); read(*,*);  stop;
+
+! - End-OF-FILE in read statement -----------------------------------------------------------------
+1004 write(*, Fmt_read2) UnFile, IO_read; write(UnFile, Fmt_read2) UnFile, IO_read;
+     write(*, Fmt_FL);  write(FileInfo, Fmt_FL); write(*, Fmt_End); read(*,*);  stop;
+
+! - End-OF-FILE IN read statement -----------------------------------------------------------------
+1005 write(*, Fmt_read3) UnFile, IO_read; write(UnFile, Fmt_read3) UnFile, IO_read;
+     write(*, Fmt_FL);  write(FileInfo, Fmt_FL); write(*, Fmt_End); read(*,*);  stop;
+
+! - write statement error -------------------------------------------------------------------------
+1006 write(*, Fmt_write1) UnFile, IO_write; write(UnFile, Fmt_write1) UnFile, IO_write;
+     write(*, Fmt_FL); write(FileInfo, Fmt_FL); write(*, Fmt_End); read(*,*);  stop;
+
 End Subroutine Input_Array_sub
+
+
+
 
 
 

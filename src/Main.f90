@@ -108,17 +108,25 @@ allocate(Geometry%ReachLength(InitialInfo%NoReaches), Geometry%ReachDisc(Initial
 write(*,        fmt="(A)") " -Reading arrays form data file ..."
 write(FileInfo, fmt="(A)") " -Reading arrays form data file ..."
 
-!call Input(                                                              &
-!                                                                         & ! Integer (1) Variables
-!                                                                         & ! Integer (2) Variables
-!                                                                         & ! Integer (4) Variables
-!                                                                         & ! Integer (8) Variables
-!                                                                         & ! Real Variables
-!                                                                         & ! Integer Arrays
-!                                                                         & ! Real Arrays
-!                                                                         & ! Characters
-!                                                                         & ! Type
-!    )
+call Input(                                                              &
+                                                                         & ! Integer (1) Variables
+                                                                         & ! Integer (2) Variables
+                                                                         & ! Integer (4) Variables
+                                                                         & ! Integer (8) Variables
+                                                                         & ! Real Variables
+                                                                         & ! Integer Arrays
+                                                                         & ! Real Arrays
+                                                                         & ! Characters
+                                                                         & ! Type
+    )
+
+
+
+
+
+
+
+
 
 Call cpu_time(SimulationTime%Input_Ends)
 

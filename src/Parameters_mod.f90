@@ -64,9 +64,7 @@ integer(kind=Smll), Parameter, Public :: FileAdr=500 ! Address file that holds t
 
 ! Input files
 integer(kind=Smll), Parameter, Public :: FileDataModel=501 ! Input file (.dataModel)
-integer(kind=Smll), Parameter, Public :: UnInptXYZ=502 ! Input file for node coordinates (.XYZ)
-integer(kind=Smll), Parameter, Public :: UnInptCnn=503 ! Input file for connectivities of elements (.Cnn)
-integer(kind=Smll), Parameter, Public :: UnInptCnt=504 ! Input file for node constraints (.Cnt)
+integer(kind=Smll), Parameter, Public :: FileDataGeo=502 ! Input file for node coordinates (.XYZ)
 integer(kind=Smll), PARAMETER, PUBLIC :: UnInptAna=510 ! input file for analysis (.data)
 integer(kind=Smll), PARAMETER, PUBLIC :: UnInptMat=511 ! input file for material property (.Mat)
 
@@ -137,14 +135,15 @@ type InitialData_tp
   real(kind=DBL):: CntrlV_ratio  ! Initial control volume ration, used to initialize data
 end type InitialData_tp
 
-type geometry_tp
+type Geometry_tp
   real(kind=DBL), allocatable, dimension(:) :: ReachLength ! Stores the length of each reach
   real(kind=DBL), allocatable, dimension(:) :: ReachDisc  ! Stores the no. of control volume in each reach
   real(kind=DBL), allocatable, dimension(:) :: ReachType  ! Stores reach type
   real(kind=DBL), allocatable, dimension(:) :: ReachSlope  ! Stores the slope of each reach
   real(kind=DBL), allocatable, dimension(:) :: ReachManning ! Stores the Manning's number for each reach
   real(kind=DBL), allocatable, dimension(:) :: ReachWidth ! Stores the width of each reach
-end type geometry_tp
+end type Geometry_tp
+
 
 
 
