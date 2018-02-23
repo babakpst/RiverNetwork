@@ -42,9 +42,7 @@ Call cpu_time(SimulationTime%Time_Start)
 Call GETDAT(TimeDate%Year, TimeDate%Month, TimeDate%Day)
 Call GETTIM(TimeDate%Hour, TimeDate%Minute, TimeDate%Seconds, TimeDate%S100th)
 
-! write some inFormation on screen
-write(*,*)" Numerical simulation of 2D Shallow water Equation"
-write(*,*)
+call Header() ! Writes info on screen.
 
 ! Getting entered arguments =======================================================================
 Arguments%ArgCount = command_argument_count()

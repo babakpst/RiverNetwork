@@ -5,10 +5,10 @@ Analysis type: 1: 1D -2: 2D
 1
 
 Input directory:
-/h1/babak/Documents/SVE_2D/input
+"/h1/babak/Documents/SVE_2D/input"
 
 Output directory:
-/h1/babak/Documents/SVE_2D/output
+"/h1/babak/Documents/SVE_2D/output"
 
 Number of Analysis:
 1

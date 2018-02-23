@@ -10,13 +10,15 @@
 !
 ! ================================ V E R S I O N ==================================================
 ! V0.1: 02/12/2018 - Initiation.
+! V0.2: 02/23/2018 - Adding the header subroutine.
 !
 ! File version $Id $
 !
-! Last update: 12/02/2018
+! Last update: 02/23/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 !
+! Header: Writes down the introduction of the code.
 ! InfBasic: writes the initial information in the info file.
 ! InfTime:  writes the simulation time.
 !
@@ -36,11 +38,59 @@ use Parameters_mod
 Implicit None
 
   Interface Info
-    Module Procedure InfBasic, InfTime
+    Module Procedure InfBasic, InfTime, Header
   End Interface  Info
 
 
 Contains
+
+
+!##################################################################################################
+! Purpose: This subroutine writes down the header on screen.
+!
+! Developed by: Babak Poursartip
+! Supervised by: Clint Dawson
+!
+! The Institute for Computational Engineering and Sciences (ICES)
+! The University of Texas at Austin
+!
+! ================================ V E R S I O N ==================================================
+! V0.1: 02/23/2018 - Initiation.
+!
+! File version $Id $
+!
+! Last update: 02/23/2018
+!
+! ================================ L O C A L   V A R I A B L E S ==================================
+! (Refer to the main code to see the list of imported variables)
+!  . . . . . . . . . . . . . . . . Variables . . . . . . . . . . . . . . . . . . . . . . . . . . .
+!
+!##################################################################################################
+
+subroutine Header()
+
+implicit none
+
+! write some inFormation on screen
+write(*,*)
+write(*,*)
+write(*,*)"=========================================================="
+write(*,*)"=========================================================="
+write(*,*)"     Numerical simulation of 2D Shallow water Equation"
+write(*,*)"             Developer: Babak Poursartip"
+write(*,*)"             Supervised by: Clint Dawson"
+write(*,*)
+write(*,*)"    Institute for Computational Engineering and Sciences"
+write(*,*)
+write(*,*)"             Version:"
+write(*,*)
+write(*,*)"=========================================================="
+write(*,*)"=========================================================="
+write(*,*)
+
+end subroutine Header
+
+
 
 
 !##################################################################################################
@@ -57,7 +107,7 @@ Contains
 !
 ! File version $Id $
 !
-! Last update: 12/02/2018
+! Last update: 02/23/2018
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
 ! (Refer to the main code to see the list of imported variables)
@@ -79,33 +129,33 @@ Implicit None
 ! =========================== Global Variables ====================================================
 
 ! - Integer Variables -----------------------------------------------------------------------------
-!Integer (Kind=Smll), Intent(In)     ::
-!#Integer (Kind=Shrt), Intent(InOut) ::
-!#Integer (Kind=Shrt), Intent(OUT)   ::
+!Integer (kind=Smll), Intent(In)     ::
+!#Integer (kind=Shrt), Intent(InOut) ::
+!#Integer (kind=Shrt), Intent(OUT)   ::
 ! - Real Variables --------------------------------------------------------------------------------
-!#Real (Kind=DBL), Intent(In)    ::
-!#Real (Kind=DBL), Intent(InOut) ::
-!#Real (Kind=DBL), Intent(OUT)   ::
+!#Real (kind=DBL), Intent(In)    ::
+!#Real (kind=DBL), Intent(InOut) ::
+!#Real (kind=DBL), Intent(OUT)   ::
 ! - complex Variables -----------------------------------------------------------------------------
 !#complex, Intent(In)    ::
 !#complex, Intent(InOut) ::
 !#complex, Intent(OUT)   ::
 ! - Integer Arrays --------------------------------------------------------------------------------
-!#Integer (Kind=Shrt), Intent(In), Dimension (:  )  ::
-!#Integer (Kind=Shrt), Intent(In), Dimension (:,:)  ::
-!#Integer (Kind=Shrt), Intent(In)    ::
-!#Integer (Kind=Shrt), Intent(InOut) ::
-!#Integer (Kind=Shrt), Intent(OUT)   ::
+!#Integer (kind=Shrt), Intent(In), Dimension (:  )  ::
+!#Integer (kind=Shrt), Intent(In), Dimension (:,:)  ::
+!#Integer (kind=Shrt), Intent(In)    ::
+!#Integer (kind=Shrt), Intent(InOut) ::
+!#Integer (kind=Shrt), Intent(OUT)   ::
 ! - Real Arrays -----------------------------------------------------------------------------------
-!#Real (Kind=DBL), Intent(In)    ::
-!#Real (Kind=DBL), Intent(InOut) ::
-!#Real (Kind=DBL), Intent(OUT)   ::
+!#Real (kind=DBL), Intent(In)    ::
+!#Real (kind=DBL), Intent(InOut) ::
+!#Real (kind=DBL), Intent(OUT)   ::
 ! - complex Variables -----------------------------------------------------------------------------
 !#complex, Intent(In)    ::
 !#complex, Intent(InOut) ::
 !#complex, Intent(OUT)   ::
 ! - Character Variables ---------------------------------------------------------------------------
-!Character (Kind = 1, Len = 30 ), Intent(In) :: Name        ! Name of the Input file
+!Character (kind = 1, Len = 30 ), Intent(In) :: Name        ! Name of the Input file
 
 
 ! - Types -----------------------------------------------------------------------------------------
@@ -117,15 +167,15 @@ type(Input_Data_tp)  :: ModelInfo  ! Holds info. (name, dir, output dir) of the 
 
 ! =========================== LOCAL Variables =====================================================
 ! - Integer Variables -----------------------------------------------------------------------------
-!#Integer (Kind=Shrt)  ::
+!#Integer (kind=Shrt)  ::
 ! - Real Variables --------------------------------------------------------------------------------
-!#Real (Kind=DBL)  ::
+!#Real (kind=DBL)  ::
 ! - complex Variables -----------------------------------------------------------------------------
 !#complex  ::
 ! - Integer Arrays --------------------------------------------------------------------------------
-!#Integer (Kind=Shrt)  ::
+!#Integer (kind=Shrt)  ::
 ! - Real Arrays -----------------------------------------------------------------------------------
-!#Real (Kind=DBL)  ::
+!#Real (kind=DBL)  ::
 ! - complex Variables -----------------------------------------------------------------------------
 !#complex  ::
 ! - Character Variables ---------------------------------------------------------------------------
@@ -185,25 +235,25 @@ Implicit None
 ! =========================== Global Variables ====================================================
 
 ! - Integer Variables -----------------------------------------------------------------------------
-!Integer (Kind=Lng ), Intent(In) ::
+!Integer (kind=Lng ), Intent(In) ::
 
 ! - Real Variables --------------------------------------------------------------------------------
-Real (Kind=Dbl), Intent(In)    :: TimeE, TimeS, TimeInputE, TimeInputS, TimeSolveE, TimeSolveS
+Real (kind=Dbl), Intent(In)    :: TimeE, TimeS, TimeInputE, TimeInputS, TimeSolveE, TimeSolveS
 
 ! - complex Variables -----------------------------------------------------------------------------
 !#complex, Intent(In)    ::
 !#complex, Intent(InOut) ::
 !#complex, Intent(OUT)   ::
 ! - Integer Arrays --------------------------------------------------------------------------------
-!#Integer (Kind=Shrt), Intent(In), Dimension (:  )  ::
-!#Integer (Kind=Shrt), Intent(In), Dimension (:,:)  ::
-!#Integer (Kind=Shrt), Intent(In)    ::
-!#Integer (Kind=Shrt), Intent(InOut) ::
-!#Integer (Kind=Shrt), Intent(OUT)   ::
+!#Integer (kind=Shrt), Intent(In), Dimension (:  )  ::
+!#Integer (kind=Shrt), Intent(In), Dimension (:,:)  ::
+!#Integer (kind=Shrt), Intent(In)    ::
+!#Integer (kind=Shrt), Intent(InOut) ::
+!#Integer (kind=Shrt), Intent(OUT)   ::
 ! - Real Arrays -----------------------------------------------------------------------------------
-!#Real (Kind=Dbl), Intent(In), Dimension (:  )  ::
-!#Real (Kind=Dbl), Intent(InOut), Dimension (:  )  ::
-!#Real (Kind=Dbl), Intent(OUT), Dimension (:  )  ::
+!#Real (kind=Dbl), Intent(In), Dimension (:  )  ::
+!#Real (kind=Dbl), Intent(InOut), Dimension (:  )  ::
+!#Real (kind=Dbl), Intent(OUT), Dimension (:  )  ::
 ! - complex Variables -----------------------------------------------------------------------------
 !#complex, Intent(In)    ::
 !#complex, Intent(InOut) ::
@@ -216,15 +266,15 @@ Real (Kind=Dbl), Intent(In)    :: TimeE, TimeS, TimeInputE, TimeInputS, TimeSolv
 !#type() ::
 ! =========================== Local Variables =====================================================
 ! - Integer Variables -----------------------------------------------------------------------------
-!#Integer (Kind=Shrt)  ::
+!#Integer (kind=Shrt)  ::
 ! - Real Variables --------------------------------------------------------------------------------
-!#Real (Kind=Dbl)  ::
+!#Real (kind=Dbl)  ::
 ! - complex Variables -----------------------------------------------------------------------------
 !#complex  ::
 ! - Integer Arrays --------------------------------------------------------------------------------
-!#Integer (Kind=Shrt)  ::
+!#Integer (kind=Shrt)  ::
 ! - Real Arrays -----------------------------------------------------------------------------------
-!#Real (Kind=Dbl)  ::
+!#Real (kind=Dbl)  ::
 ! - complex Variables -----------------------------------------------------------------------------
 !#complex  ::
 ! - Character Variables ---------------------------------------------------------------------------
