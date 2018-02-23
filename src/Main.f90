@@ -36,13 +36,14 @@ use ifport
 Implicit None
 
 Include 'Global_Variables_Inc.f90'   ! All Global Variables are defined/described in this File
+ModelInfo%Version = 0.1_SGL          ! Reports the version of the code
 
 ! Time and Date signature =========================================================================
 Call cpu_time(SimulationTime%Time_Start)
 Call GETDAT(TimeDate%Year, TimeDate%Month, TimeDate%Day)
 Call GETTIM(TimeDate%Hour, TimeDate%Minute, TimeDate%Seconds, TimeDate%S100th)
 
-call Header() ! Writes info on screen.
+call Header(ModelInfo%Version) ! Writes info on screen.
 
 ! Getting entered arguments =======================================================================
 Arguments%ArgCount = command_argument_count()

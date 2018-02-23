@@ -153,16 +153,16 @@ read(FileAdr,*)
 read(FileAdr,*) ModelInfo%ModelName; write(*,*) ModelInfo%ModelName
 read(FileAdr,*)
 read(FileAdr,*)
-read(FileAdr,*) ModelInfo%AnalysisType; write(*,*) ModelInfo%AnalysisType
+read(FileAdr,*) ModelInfo%AnalysisType; !write(*,*) ModelInfo%AnalysisType
 read(FileAdr,*)
 read(FileAdr,*)
-read(FileAdr,*) ModelInfo%InputDir; write(*,*) ModelInfo%InputDir
+read(FileAdr,*) ModelInfo%InputDir; !write(*,*) ModelInfo%InputDir
 read(FileAdr,*)
 read(FileAdr,*)
-read(FileAdr,*) ModelInfo%OutputDir; write(*,*) ModelInfo%OutputDir
+read(FileAdr,*) ModelInfo%OutputDir; !write(*,*) ModelInfo%OutputDir
 read(FileAdr,*)
 read(FileAdr,*)
-read(FileAdr,*) ModelInfo%NumberOfAnalyses; write(*,*) ModelInfo%NumberOfAnalyses
+read(FileAdr,*) ModelInfo%NumberOfAnalyses; !write(*,*) ModelInfo%NumberOfAnalyses
 
 ! Allocating
 allocate(ModelInfo%AnalysesNames(ModelInfo%NumberOfAnalyses),  stat=ERR_Alloc)
@@ -345,61 +345,61 @@ open(Unit=UnFile, file=trim(ModelInfo%ModelName)//'.dataModel', &
      position='asis', status='old')
 
 UnFile = FileDataModel
-read(unit=UnFile, fmt="()", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="()", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="()", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="()", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)InitialInfo%TotalTime
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) InitialInfo%TotalTime
 UnFile = FileInfo
-write(unit=UnFile, fmt="(' The total simulation time is: ', F12.3)", advance='yes', asynchronous='no', iostat=IO_write, err=1006)InitialInfo%TotalTime
-write(unit=*,      fmt="(' The total simulation time is: ', F12.3)")InitialInfo%TotalTime
+write(unit=*,      fmt="(' The total simulation time is: ', F23.10, ' s')") InitialInfo%TotalTime
+write(unit=UnFile, fmt="(' The total simulation time is: ', F23.10, ' s')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) InitialInfo%TotalTime
 
 UnFile = FileDataModel
-read(unit=UnFile, fmt="()", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="()", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="()", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) InitialInfo%TimeStep
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) InitialInfo%TimeStep
 UnFile = FileInfo
-write(unit=UnFile, fmt="(' The time step is: ', F12.3)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) InitialInfo%TimeStep
-write(unit=*,      fmt="(' The time step is: ', F12.3)") InitialInfo%TimeStep
+write(unit=UnFile, fmt="(' The time step is: ', F23.10, ' s')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) InitialInfo%TimeStep
+write(unit=*,      fmt="(' The time step is: ', F23.10, ' s')") InitialInfo%TimeStep
 
 UnFile = FileDataModel
-read(unit=UnFile, fmt="()", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="()", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="()", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) InitialInfo%Q_Up
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) InitialInfo%Q_Up
 UnFile = FileInfo
-write(unit=UnFile, fmt="(' Flow rate at the upstream is: ', F12.3)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) InitialInfo%Q_Up
-write(unit=*,      fmt="(' Flow rate at the upstream is: ', F12.3)") InitialInfo%Q_Up
+write(unit=UnFile, fmt="(' Flow rate at the upstream is: ', F23.10, ' m/s3')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) InitialInfo%Q_Up
+write(unit=*,      fmt="(' Flow rate at the upstream is: ', F23.10, ' m/s3')") InitialInfo%Q_Up
 
 UnFile = FileDataModel
-read(unit=UnFile, fmt="()", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="()", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="()", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) InitialInfo%h_dw
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) InitialInfo%h_dw
 UnFile = FileInfo
-write(unit=UnFile, fmt="(' Downstream water depth is: ', F12.3)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) InitialInfo%h_dw
-write(unit=*,      fmt="(' Downstream water depth is: ', F12.3)") InitialInfo%h_dw
+write(unit=UnFile, fmt="(' Downstream water depth is: ', F23.10, ' m')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) InitialInfo%h_dw
+write(unit=*,      fmt="(' Downstream water depth is: ', F23.10, ' m')") InitialInfo%h_dw
 
 UnFile = FileDataModel
-read(unit=UnFile, fmt="()", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="()", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="()", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) InitialInfo%CntrlV
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) InitialInfo%CntrlV
 UnFile = FileInfo
-write(unit=UnFile, fmt="(' Control Volume is: ', F12.3)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) InitialInfo%CntrlV
-write(unit=*,      fmt="(' Control Volume is: ', F12.3)") InitialInfo%CntrlV
+write(unit=UnFile, fmt="(' Control Volume is: ', F23.10, ' m^3')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) InitialInfo%CntrlV
+write(unit=*,      fmt="(' Control Volume is: ', F23.10, ' m^3')") InitialInfo%CntrlV
 
 UnFile = FileDataModel
-read(unit=UnFile, fmt="()", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="()", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="()", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) InitialInfo%CntrlV_ratio
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) InitialInfo%CntrlV_ratio
 UnFile = FileInfo
-write(unit=UnFile, fmt="(' The ratio of control volume is: ', F12.3)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) InitialInfo%CntrlV_ratio
-write(unit=*,      fmt="(' The ratio of control volume is: ', F12.3)") InitialInfo%CntrlV_ratio
+write(unit=UnFile, fmt="(' The ratio of control volume is: ', F23.10)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) InitialInfo%CntrlV_ratio
+write(unit=*,      fmt="(' The ratio of control volume is: ', F23.10)") InitialInfo%CntrlV_ratio
 
 UnFile = FileDataModel
-read(unit=UnFile, fmt="()", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="()", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="()", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) InitialInfo%NoReaches
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) InitialInfo%NoReaches
 UnFile = FileInfo
-write(unit=UnFile, fmt="(' Total number of reach(es) is(are): ', F12.3)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) InitialInfo%NoReaches
-write(unit=*,      fmt="(' Total number of reach(es) is(are): ', F12.3)") InitialInfo%NoReaches
+write(unit=UnFile, fmt="(' Total number of reach(es) is(are): ', F23.10)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) InitialInfo%NoReaches
+write(unit=*,      fmt="(' Total number of reach(es) is(are): ', F23.10)") InitialInfo%NoReaches
 
 
 ! - Closing the data model file -------------------------------------------------------------------

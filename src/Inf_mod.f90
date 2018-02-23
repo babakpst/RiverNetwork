@@ -67,9 +67,12 @@ Contains
 !
 !##################################################################################################
 
-subroutine Header()
+subroutine Header(version)
 
 implicit none
+
+real(kind=SGL):: version
+
 
 ! write some inFormation on screen
 write(*,*)
@@ -82,7 +85,7 @@ write(*,*)"             Supervised by: Clint Dawson"
 write(*,*)
 write(*,*)"    Institute for Computational Engineering and Sciences"
 write(*,*)
-write(*,*)"             Version:"
+write(*,fmt="(A,F6.2)")"             Version:", version
 write(*,*)
 write(*,*)"=========================================================="
 write(*,*)"=========================================================="

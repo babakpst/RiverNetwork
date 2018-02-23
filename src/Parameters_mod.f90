@@ -106,12 +106,11 @@ type Input_Data_tp
   character (kind = 1, Len = 150) :: AnalysisOutputDir! Directory of output file for each analysis
   character (kind = 1, Len = 150), dimension(:), allocatable :: AnalysesNames! Holds the name of the analysis input file
 
-  integer(kind=Smll)  :: AnalysisType             ! Analysis Type: 1: 1D-2: 2D
-!  integer(kind=Smll)  :: OutputType               ! Output Type: 1: ordinary-2: HDF5
-  integer(kind=Smll)  :: NumberOfAnalyses         ! Number of analysis
+  integer(kind=Smll) :: AnalysisType      ! Analysis Type: 1: 1D-2: 2D
+  !integer(kind=Smll):: OutputType        ! Output Type: 1: ordinary-2: HDF5
+  integer(kind=Smll) :: NumberOfAnalyses  ! Number of analysis
 
-  real(kind=SGL)
-
+  real(kind=SGL) :: Version               ! Holds the version of the code.
 end type Input_Data_tp
 
 
