@@ -21,7 +21,7 @@
 !
 !##################################################################################################
 
-Module Parameters
+Module Parameters_mod
 
 Implicit None
 
@@ -139,42 +139,5 @@ end type InitialData_tp
 Contains
 
 
-End Module Parameters
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+End Module Parameters_mod
 

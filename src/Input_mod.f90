@@ -28,7 +28,7 @@
 
 module Input_mod
 
-use Parameters
+use Parameters_mod
 
 implicit none
 
@@ -530,8 +530,8 @@ Implicit None
 ! - complex Variables -----------------------------------------------------------------------------
 !#complex              ::
 ! - integer Arrays --------------------------------------------------------------------------------
-!#integer(Kind=Shrt), dimension(:)  ::
-!#integer(Kind=Shrt), allocatable, dimension(:)  ::
+!#integer(Kind=Shrt), dimension(:) ::
+!#integer(Kind=Shrt), allocatable, dimension(:) ::
 ! - real Arrays -----------------------------------------------------------------------------------
 !#real(Kind=Dbl), dimension(:)      ::
 !#real(Kind=Dbl), allocatable, dimension(:)  ::

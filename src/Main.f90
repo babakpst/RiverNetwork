@@ -27,8 +27,10 @@ program Shallow_Water_Equation
 ! Libraries =======================================================================================
 
 ! Defined Modules =================================================================================
-use Parameters
-
+use Parameters_mod
+use Information_mod
+use Input_mod
+use ifport
 
 ! Global Variables ================================================================================
 Implicit None

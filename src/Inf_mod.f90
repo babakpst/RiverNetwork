@@ -29,9 +29,9 @@
 !
 !##################################################################################################
 
-Module Information
+Module Information_mod
 
-use Parameters
+use Parameters_mod
 
 Implicit None
 
@@ -251,4 +251,4 @@ write(*     ,*) 'End Subroutine < InfTime >'
 Return
 End Subroutine InfTime
 
-End Module Information
+End Module Information_mod
