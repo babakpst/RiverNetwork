@@ -136,14 +136,14 @@ type InitialData_tp
 end type InitialData_tp
 
 type Geometry_tp
+  integer(kind=Lng), allocatable, dimension(:) :: ReachDisc  ! Stores the no. of control volume in each reach
+
   real(kind=DBL), allocatable, dimension(:) :: ReachLength ! Stores the length of each reach
-  real(kind=DBL), allocatable, dimension(:) :: ReachDisc  ! Stores the no. of control volume in each reach
   real(kind=DBL), allocatable, dimension(:) :: ReachType  ! Stores reach type
   real(kind=DBL), allocatable, dimension(:) :: ReachSlope  ! Stores the slope of each reach
   real(kind=DBL), allocatable, dimension(:) :: ReachManning ! Stores the Manning's number for each reach
   real(kind=DBL), allocatable, dimension(:) :: ReachWidth ! Stores the width of each reach
 end type Geometry_tp
-
 
 
 

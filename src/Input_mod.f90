@@ -484,7 +484,7 @@ Subroutine Input_Array_sub(                                           &
 !                                                                     & ! integer Arrays
 !                                                                     & ! real Arrays
 !                                                                     & ! Characters
-!                                                                     & ! Type
+ModelInfo, InitialInfo, Geometry                                      & ! Type
 )
 
 ! Libraries =======================================================================================
@@ -524,7 +524,7 @@ Implicit None
 ! - types -----------------------------------------------------------------------------------------
 type(Input_Data_tp),  intent(In) :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
 type(InitialData_tp), intent(In) :: InitialInfo! Holds initial data required for array allocation
-type(Geometry_tp),    intent(Out):: Geometry   ! Holds information about the geometry of the domain
+type(Geometry_tp),    intent(inout):: Geometry   ! Holds information about the geometry of the domain
 
 ! Local Variables =================================================================================
 ! - integer Variables -----------------------------------------------------------------------------
@@ -532,6 +532,7 @@ integer(kind=Smll) :: UnFile   ! Holds Unit of a file for error message
 integer(kind=Smll) :: IO_File  ! For IOSTAT: Input Output status in OPEN command
 integer(kind=Smll) :: IO_read  ! Holds error of read statements
 integer(kind=Smll) :: IO_write ! Used for IOSTAT - Input Output Status - in the write command
+integer(kind=Smll) :: i_reach  ! loop index on the number of reaches
 
 ! - real Variables --------------------------------------------------------------------------------
 !#real(kind=Dbl)      ::
@@ -555,10 +556,10 @@ write(*,       *) " Subroutine < Input_Array_sub >: "
 write(FileInfo,*) " Subroutine < Input_Array_sub >: "
 
 ! Open required Files -----------------------------------------------------------------------------
-write(*,        fmt="(A)") " -Opening the input files ..."
-write(FileInfo, fmt="(A)") " -Opening the input files ..."
+write(*,        fmt="(A)") " -Opening the input files for arrays ..."
+write(FileInfo, fmt="(A)") " -Opening the input files for arrays ..."
 
-! Open the input file
+! Open the input file for arrays
 UnFile = FileDataGeo
 open(Unit=UnFile, file=trim(ModelInfo%ModelName)//'.Geo', &
      err=1001, iostat=IO_File, access='sequential', action='read', asynchronous='no', &
@@ -568,61 +569,86 @@ open(Unit=UnFile, file=trim(ModelInfo%ModelName)//'.Geo', &
 UnFile = FileDataGeo
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+
+! Reading the length of each reach
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+  do i_reach= 1, InitialInfo%NoReaches
+    UnFile = FileDataGeo
+    read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) Geometry%ReachLength(i_reach); !write(*,*)Geometry%ReachLength(i_reach)
+    UnFile = FileInfo
+    write(unit=*,      fmt="(' The length of reach ', I5, ' is:', F23.10,' m')") i_reach, Geometry%ReachLength(i_reach)
+    write(unit=UnFile, fmt="(' The length of reach ', I5, ' is:', F23.10,' m')") i_reach, Geometry%ReachLength(i_reach)
+  end do
 
-read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) InitialInfo%TotalTime
-UnFile = FileInfo
-write(unit=*,      fmt="(' The total simulation time is: ', F23.10, ' s')") InitialInfo%TotalTime
-write(unit=UnFile, fmt="(' The total simulation time is: ', F23.10, ' s')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) InitialInfo%TotalTime
+! Reading total number of control volumes in each reach/ For now we have a constant discretization in each reach.
+UnFile = FileDataGeo
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+  do i_reach= 1, InitialInfo%NoReaches
+    UnFile = FileDataGeo
+    read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) Geometry%ReachDisc(i_reach)
+    UnFile = FileInfo
+    write(unit=*,      fmt="(' No. of discretization of reach ', I5, ' is:', I10)") i_reach, Geometry%ReachDisc(i_reach)
+    write(unit=UnFile, fmt="(' No. of discretization of reach ', I5, ' is:', I10)") i_reach, Geometry%ReachDisc(i_reach)
+  end do
 
+! Reading reach type
+UnFile = FileDataGeo
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+  do i_reach= 1, InitialInfo%NoReaches
+    UnFile = FileDataGeo
+    read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) Geometry%ReachType(i_reach)
+    UnFile = FileInfo
+    write(unit=*,      fmt="(' Rreach ', I10,' is of type: ', I5)") i_reach, Geometry%ReachType(i_reach)
+    write(unit=UnFile, fmt="(' Rreach ', I10,' is of type: ', I5)") i_reach, Geometry%ReachType(i_reach)
+  end do
 
+! Reading slopes of reach
+UnFile = FileDataGeo
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+  do i_reach= 1, InitialInfo%NoReaches
+    UnFile = FileDataGeo
+    read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) Geometry%ReachSlope(i_reach)
+    UnFile = FileInfo
+    write(unit=*,      fmt="(' The slope of reach ', I10,' is: ', F23.10)") i_reach, Geometry%ReachSlope(i_reach)
+    write(unit=UnFile, fmt="(' The slope of reach ', I10,' is: ', F23.10)") i_reach, Geometry%ReachSlope(i_reach)
+  end do
 
-        for ii in range(self.No_reaches): # Length of each reach
-            Temp       = self.File_Input.readline().rstrip("\n")
-            self.Reach_Length[ii] = float(Temp)
-            print("The length of reach {:d} is {:f}".format(ii+1, self.Reach_Length[ii]))
-
-        Temp       = self.File_Input.readline().rstrip("\n")
-        Temp       = self.File_Input.readline().rstrip("\n")
-        for ii in range(self.No_reaches): # Total number of control volumes in each reach/ For now we have a constant discretization in each reach.
-            Temp       = self.File_Input.readline().rstrip("\n")
-            self.Reach_Disc[ii] = int(Temp)
-            print("No. of discretization of reach {:d} is {:f}".format(ii+1, self.Reach_Disc[ii]))
-
-        Temp       = self.File_Input.readline().rstrip("\n")
-        Temp       = self.File_Input.readline().rstrip("\n")
-        for ii in range(self.No_reaches):
-            Temp       = self.File_Input.readline().rstrip("\n")
-            self.Reach_Type[ii] = int(Temp)
-            print("Rreach {:d} is of type: {:d}".format(ii+1, self.Reach_Type[ii]))
-
-        Temp       = self.File_Input.readline().rstrip("\n")
-        Temp       = self.File_Input.readline().rstrip("\n")
-        for ii in range(self.No_reaches): # Slope of each reach
-            Temp       = self.File_Input.readline().rstrip("\n")
-            self.Reach_Slope[ii] = float(Temp)
-            print("The slope of reach {:d} is {:f}".format(ii+1, self.Reach_Slope[ii]))
-
-        Temp       = self.File_Input.readline().rstrip("\n")
-        Temp       = self.File_Input.readline().rstrip("\n")
-        for ii in range(self.No_reaches): # The Manning's number for each reach
-            Temp       = self.File_Input.readline().rstrip("\n")
-            self.Reach_Manning[ii] = float(Temp)
-            print("The Manning's no. for reach {:d} is {:f}".format(ii+1, self.Reach_Manning[ii]))
-
-        Temp       = self.File_Input.readline().rstrip("\n")
-        Temp       = self.File_Input.readline().rstrip("\n")
-        for ii in range(self.No_reaches): # The width of each reach
-            Temp       = self.File_Input.readline().rstrip("\n")
-            self.Reach_Width[ii] = float(Temp)
-            print("The width of reach {:d} is {:f}".format(ii+1, self.Reach_Width[ii]))
-
-
-
+! Reading Manning number of each reach
+UnFile = FileDataGeo
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+  do i_reach= 1, InitialInfo%NoReaches
+    UnFile = FileDataGeo
+    read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) Geometry%ReachManning(i_reach)
+    UnFile = FileInfo
+    write(unit=*,      fmt="(' The Mannings no. for reach ', I10,' is: ', F23.10)") i_reach, Geometry%ReachManning(i_reach)
+    write(unit=UnFile, fmt="(' The Mannings no. for reach ', I10,' is: ', F23.10)") i_reach, Geometry%ReachManning(i_reach)
+  end do
 
 
 
 
+! Reading the width of each reach
+UnFile = FileDataGeo
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+  do i_reach= 1, InitialInfo%NoReaches
+    UnFile = FileDataGeo
+    read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) Geometry%ReachWidth(i_reach)
+    UnFile = FileInfo
+    write(unit=*,      fmt="(' The width of reach ', I10,'is: ', F23.10)") i_reach, Geometry%ReachWidth(i_reach)
+    write(unit=UnFile, fmt="(' The width of reach ', I10,'is: ', F23.10)") i_reach, Geometry%ReachWidth(i_reach)
+  end do
+
+! - Closing the geometry file ---------------------------------------------------------------------
+write(*,        fmt="(A)") " -Closing the geometry file"
+write(FileInfo, fmt="(A)") " -Closing the geometry file"
+
+UnFile = FileDataGeo
+Close(Unit = UnFile, status = 'KEEP', ERR =  1002, IOSTAT = IO_File)
 
 write(*,       *) "End Subroutine < Input_Array_sub >"
 write(FileInfo,*) "End Subroutine < Input_Array_sub >"

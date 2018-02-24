@@ -1,9 +1,9 @@
 Name: ex3 - Flow over a hump
 
 Total Length (in meter) for each reach:
-8
-4
-13
+8.0
+4.0
+13.0
 
 Discretization: number of cells per reach:
 1280

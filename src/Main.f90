@@ -108,35 +108,10 @@ allocate(Geometry%ReachLength(InitialInfo%NoReaches), Geometry%ReachDisc(Initial
 write(*,        fmt="(A)") " -Reading arrays form data file ..."
 write(FileInfo, fmt="(A)") " -Reading arrays form data file ..."
 
-call Input(                                                              &
-                                                                         & ! Integer (1) Variables
-                                                                         & ! Integer (2) Variables
-                                                                         & ! Integer (4) Variables
-                                                                         & ! Integer (8) Variables
-                                                                         & ! Real Variables
-                                                                         & ! Integer Arrays
-                                                                         & ! Real Arrays
-                                                                         & ! Characters
-                                                                         & ! Type
-    )
-
-
-
-
-
-
-
-
+! Geometry
+call Input(ModelInfo, InitialInfo, Geometry)
 
 Call cpu_time(SimulationTime%Input_Ends)
-
-! Close Input File --------------------------------------------------------------------------------
-write(*,        fmt="(A)") " -Closing input files ..."
-write(FileInfo, fmt="(A)") " -Closing input files ..."
-
-! Close data File
-UnFile= UnInptAna
-Close(Unit=UnFile, status='Keep', Err=1002, IOstat=IO_File)
 
 ! close check File
 !UnFile= Un_CHK
@@ -146,6 +121,8 @@ Close(Unit=UnFile, status='Keep', Err=1002, IOstat=IO_File)
 
   do i_analyses = 1, ModelInfo%NumberOfAnalyses
 
+    write(*,        fmt="(A,I10)") " -Analyse no.", i_analyses
+    write(FileInfo, fmt="(A,I10)") " -Analyse no.", i_analyses
 
     ! Getting the required data for this specific analysis
     !call Input()
@@ -196,15 +173,14 @@ Call cpu_time(SimulationTime%Time_End)
 !Call Info()
 
 
-
 ! Close Files -------------------------------------------------------------------------------------
 ! Close information File
 UnFile= FileInfo
 Close(Unit=UnFile, status='Keep', Err=1002, IOstat=IO_File)
 
-
 UnFile= UnInptAna
 Close(Unit=UnFile, status='Keep', Err=1002, IOstat=IO_File)
+
 
 ! End the code ====================================================================================
 write(*, Fmt_SUC); write(FileInfo, Fmt_SUC);
