@@ -13,7 +13,7 @@
 !
 ! File version $Id $
 !
-! Last update: 02/22/2018
+! Last update: 02/23/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 !
@@ -140,8 +140,11 @@ Logical (kind=Shrt)  :: Directory
 
 ! code ============================================================================================
 
+write(*,       *)
 write(*,       *) " Subroutine < Input_Address_sub >: "
+write(FileInfo,*)
 write(FileInfo,*) " Subroutine < Input_Address_sub >: "
+
 
 UnFile=FileAdr
 Open(Unit=UnFile, File='Address.txt', Err=1001, IOStat=IO_File, Access='SEQUENTIAL', &
@@ -204,8 +207,10 @@ UnFile =  FileAdr
 Close(unit = UnFile, status = 'KEEP', ERR =  1002, IOSTAT = IO_File)
 
 
-write(*,       *) 'End Subroutine < Input_Address_sub >'
-write(FileInfo,*) 'End Subroutine < Input_Address_sub >'
+write(*,       *) ' End Subroutine < Input_Address_sub >'
+write(*,       *)
+write(FileInfo,*) ' End Subroutine < Input_Address_sub >'
+write(FileInfo,*)
 Return
 
 ! Errors ==========================================================================================
@@ -331,7 +336,9 @@ integer(kind=Smll) :: IO_write ! Used for IOSTAT - Input Output Status - in the 
 
 ! code ============================================================================================
 
+write(*,       *)
 write(*,       *) " Subroutine < Input_Basic_sub >: "
+write(FileInfo,*)
 write(FileInfo,*) " Subroutine < Input_Basic_sub >: "
 
 ! - Opening the data model file -------------------------------------------------------------------
@@ -409,8 +416,10 @@ write(FileInfo, fmt="(A)") " -Closing the data model file"
 UnFile =  FileDataModel
 Close(Unit = UnFile, status = 'KEEP', ERR =  1002, IOSTAT = IO_File)
 
-write(*,       *) 'End Subroutine < Input_Basic_sub >'
-write(FileInfo,*) 'End Subroutine < Input_Basic_sub >'
+write(*,       *) ' End Subroutine < Input_Basic_sub >'
+write(*,       *)
+write(FileInfo,*) ' End Subroutine < Input_Basic_sub >'
+write(FileInfo,*)
 Return
 
 ! Errors ==========================================================================================
@@ -551,8 +560,9 @@ integer(kind=Smll) :: i_reach  ! loop index on the number of reaches
 ! - Type ------------------------------------------------------------------------------------------
 
 ! code ============================================================================================
-
+write(*,       *)
 write(*,       *) " Subroutine < Input_Array_sub >: "
+write(FileInfo,*)
 write(FileInfo,*) " Subroutine < Input_Array_sub >: "
 
 ! Open required Files -----------------------------------------------------------------------------
@@ -628,9 +638,6 @@ read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, e
     write(unit=UnFile, fmt="(' The Mannings no. for reach ', I10,' is: ', F23.10)") i_reach, Geometry%ReachManning(i_reach)
   end do
 
-
-
-
 ! Reading the width of each reach
 UnFile = FileDataGeo
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
@@ -650,8 +657,10 @@ write(FileInfo, fmt="(A)") " -Closing the geometry file"
 UnFile = FileDataGeo
 Close(Unit = UnFile, status = 'KEEP', ERR =  1002, IOSTAT = IO_File)
 
-write(*,       *) "End Subroutine < Input_Array_sub >"
-write(FileInfo,*) "End Subroutine < Input_Array_sub >"
+write(*,       *) " End Subroutine < Input_Array_sub >"
+write(*,       *)
+write(FileInfo,*) " End Subroutine < Input_Array_sub >"
+write(FileInfo,*)
 Return
 
 ! Errors ==========================================================================================
@@ -791,7 +800,9 @@ logical(kind=Shrt)  :: Directory
 
 
 ! code ============================================================================================
+write(*,       *)
 write(*,       *) " Subroutine < Input_Analysis_sub >: "
+write(FileInfo,*)
 write(FileInfo,*) " Subroutine < Input_Analysis_sub >: "
 
 
@@ -819,8 +830,11 @@ Directory=MakeDirQQ (trim(AdjustL (ModelInfo%OutputDir))//'/'//trim(AdjustL(Mode
 
 ModelInfo%AnalysisOutputDir=trim(AdjustL(ModelInfo%OutputDir))//'/'//trim(AdjustL(ModelInfo%AnalysesNames(i_analysis)))
 
-write(*,       *) "End Subroutine < Input_Analysis_sub >"
-write(FileInfo,*) "End Subroutine < Input_Analysis_sub >"
+write(*,       *) " End Subroutine < Input_Analysis_sub >"
+write(*,       *)
+write(FileInfo,*) " End Subroutine < Input_Analysis_sub >"
+write(FileInfo,*)
+
 Return
 
 ! Errors ==========================================================================================
