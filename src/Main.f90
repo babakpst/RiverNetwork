@@ -9,7 +9,11 @@
 ! The University of Texas at Austin
 !
 ! ================================ V E R S I O N ==================================================
-! V0.1: 02/22/2018  - Initiation.
+! V0.00: 02/16/2018  - Initiation.
+! V0.01: 02/18/2018  - Compiled for the first time.
+! V0.02: 02/23/2018  - Adding input modules
+! V0.02: 02/24/2018  - Adding input modules
+! V0.02: 02/26/2018  - Adding discretize module
 !
 ! File version $Id $
 !
@@ -25,12 +29,14 @@ program Shallow_Water_Equation
 
 
 ! Libraries =======================================================================================
+use ifport
 
 ! Defined Modules =================================================================================
 use Parameters_mod
 use Information_mod
 use Input_mod
-use ifport
+use Discretization_mod
+
 
 ! Global Variables ================================================================================
 Implicit None
@@ -116,6 +122,32 @@ Call cpu_time(SimulationTime%Input_Ends)
 ! close check File
 !UnFile= Un_CHK
 !Close(Unit=UnFile, status='Keep', Err=1002, IOstat=IO_File)
+
+! Discretization ----------------------------------------------------------------------------------
+write(*,        fmt="(A)") " -Discretization ..."
+write(FileInfo, fmt="(A)") " -Discretization ..."
+
+call Discretization()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ! Simulations =====================================================================================
 
