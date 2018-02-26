@@ -128,10 +128,12 @@ type(discretization_tp), intent(out) :: Discretization
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
-integer (kind=Lng) :: i_reach
+integer (kind=Lng) :: i_reach ! Loop index on the number of reaches
+integer (kind=Lng) :: Cell_Counter ! Counts number of cells
 
 ! - real variables --------------------------------------------------------------------------------
-!#real (kind=Dbl)      ::
+real (kind=Dbl)    :: MaxHeight ! Maximum height of the domain
+
 ! - complex variables -----------------------------------------------------------------------------
 !#complex              ::
 ! - integer Arrays --------------------------------------------------------------------------------
@@ -153,9 +155,6 @@ write(FileInfo,*) " subroutine <Discretize_1D>: "
 write(*,       *) " -Discretizing the domain ..."
 write(FileInfo,*) " -Discretizing the domain ..."
 
-
-
-
 ! Find total number of cells in the domain:
 Discretization%NCells = 0_Lng
 
@@ -164,37 +163,33 @@ write(*,fmt="(A)") " Calculating the total number of the cells in the domain ...
 forall (i_reach = 1_Lng, InitialInfo%NoReaches) Discretization%NCells = Discretization%NCells + Geometry%ReachDisc(i_reach)
 write(*,fmt="(A,I15)") " Total number of cells: ", Discretization%NCells
 
-allocate( ,  ,  ,     stat=ERR_Alloc)
+allocate(Discretization%LengthCell(Discretization%NCells),
+         Discretization%SlopeCell(Discretization%NCells),
+         Discretization%ZCell(Discretization%NCells),
+         Discretization%ZFull(Discretization%NCells*2_Sgl + 1_Sgl),
+         Discretization%ManningCell(Discretization%NCells),
+         Discretization%WidthCell(Discretization%NCells),
+         Discretization%X_Disc(Discretization%NCells),
+         Discretization%X_Full(Discretization%NCells*2_Sgl + 1_Sgl),
+        stat=ERR_Alloc)
 
   if (ERR_Alloc /= 0) then
     write (*, Fmt_ALLCT) ERR_Alloc;  write (UnInf, Fmt_ALLCT) ERR_Alloc;
     write(*, Fmt_FL);  write(UnInf, Fmt_FL); read(*, Fmt_End);  stop;
   end if
 
-
-
-
-        self.Length_Cell  = np.zeros(self.N_Cells, dtype=np.float) # Stores the length of each cell
-        self.S_Cell       = np.zeros(self.N_Cells, dtype=np.float) # Stores bottom elevation of each cell
-        self.Z_Cell       = np.zeros(self.N_Cells, dtype=np.float) # Stores bottom elevation of each cell
-        self.Z_Full       = np.zeros(self.N_Cells*2+1, dtype=np.float) # Stores bottom elevation of each cell
-        self.Manning_Cell = np.zeros(self.N_Cells, dtype=np.float) # Stores the Manning's number of each cell
-        self.Width_Cell   = np.zeros(self.N_Cells, dtype=np.float) # Stores the Manning's number of each cell
-        self.X_Disc       = np.zeros(self.N_Cells, dtype=np.float) # Stores the Manning's number of each cell
-        self.X_Full       = np.zeros(self.N_Cells*2+1, dtype=np.float) # Stores the Manning's number of each cell
-
-
-
 write(*,fmt="(A)")" Loop over reaches to discretize the domain ..."
 
-        # Finding the highest point in the domain:
-        print(" Calculating the highest point in the domain ... ")
-        Max_Height = 0
-        for ii in range(Temp_No_reaches):
-            Max_Height += Experiment.Reach_Slope[ii] * Experiment.Reach_Length[ii]
-        print("{} {:f}".format(" Maximum height is:", Max_Height))
+! Finding the highest point in the domain:
+write(*,fmt="(A)")" Calculating the highest point in the domain ... "
+MaxHeight = 0.0_Dbl
 
-        print(" Basic calculations ...")
+forall (i_reach = 1_Lng, InitialInfo%NoReaches) MaxHeight = MaxHeight + Geometry%ReachSlope(i_reach) * Geometry%ReachLength(i_reach)
+
+write(*,fmt="(A,F23.10)") " Maximum height is:", MaxHeight
+
+write(*,fmt="(A)")" Basic calculations ..."
+
         Cell_Counter = 0
         for ii in range(Temp_No_reaches):
             if Experiment.Reach_Type[ii]==0:
