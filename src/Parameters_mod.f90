@@ -145,6 +145,18 @@ type Geometry_tp
   real(kind=DBL), allocatable, dimension(:) :: ReachWidth ! Stores the width of each reach
 end type Geometry_tp
 
+type discretization_tp
+  integer (kind=Lng)  :: NCells ! Total number of cells in the domain
+
+  real(kind=DBL), allocatable, dimension(:) :: LengthCell  ! Stores the length of each cell
+  real(kind=DBL), allocatable, dimension(:) :: SlopeCell   ! Stores the slope of each cell at the center
+  real(kind=DBL), allocatable, dimension(:) :: ZCell       ! Stores bottom elevation at the center of each cell
+  real(kind=DBL), allocatable, dimension(:) :: ZFull       ! Stores bottom elevation at all points
+  real(kind=DBL), allocatable, dimension(:) :: ManningCell ! Stores the Manning's number of each cell
+  real(kind=DBL), allocatable, dimension(:) :: WidthCell   ! Stores the Manning's number of each cell
+  real(kind=DBL), allocatable, dimension(:) :: X_Disc      ! Stores the coordinates of the cell center
+  real(kind=DBL), allocatable, dimension(:) :: X_Full      ! Stores the coordinates all points
+end type discretization_tp
 
 
 Contains
