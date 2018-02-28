@@ -42,7 +42,7 @@ implicit none
 !private
 
   interface Results
-    module procedure Domain_1D
+    !module procedure Domain_1D
   end interface
 
 
