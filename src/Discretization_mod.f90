@@ -137,6 +137,7 @@ real (kind=Dbl)    :: Z_loss            ! loss of height in each cell
 real (kind=Dbl)    :: TotalLength       ! Temp var
 real (kind=Dbl)    :: CntrlVolumeLength ! The length of control volume
 real (kind=Dbl)    :: XCoordinate       ! Temp var to compute the coordinate of the cell center
+real (kind=Dbl)    :: ProjectionLength
 
 ! - complex variables -----------------------------------------------------------------------------
 !#complex              ::
@@ -254,67 +255,49 @@ CellCounter = 0_Lng
     else if (Geometry%ReachType(i_reach)==0) then
       Height = MaxHeight
 
+      ProjectionLength = floor(1.0E10 * Geometry%ReachLength(i_reach) / Geometry%ReachDisc(i_reach) )/1.0E10
 
+      XCoordinate = 0.5_Dbl * ProjectionLength
 
+      forall (jj = 1_Lng, i_reach) XCoordinate = XCoordinate + Geometry%ReachLength(jj)
 
+        do jj = 1_Lng, Geometry%ReachDisc(i_reach)
+          Z_loss = Domain_Func_1D(XCoordinate)
 
+          Discretization%LengthCell(CellCounter) = dsqrt(ProjectionLength**2 + Z_loss**2)
+          Discretization%X_Disc(CellCounter) = XCoordinate
+          Discretization%X_Full(CellCounter*2_Lng)       = XCoordinate - 0.5_Dbl * ProjectionLength
+          Discretization%X_Full(CellCounter*2_Lng+1_Lng) = XCoordinate
 
+          Discretization%SlopeCell(CellCounter)  = Domain_Func_1D_D(XCoordinate)
+          Discretization%ZCell(CellCounter)      = Height + Z_loss
+          Discretization%ZFull(CellCounter*2)    = Height + Domain_Func_1D(XCoordinate - 0.5_Dbl * ProjectionLength)
+          Discretization%ZFull(CellCounter*2+1)  = Height + Z_loss
+          Discretization%ManningCell(CellCounter)= Geometry%ReachManning(i_reach)
+          Discretization%WidthCell(CellCounter)  = Geometry%ReachWidth(i_reach)
 
-      Projection_Length = round(Experiment.Reach_Length[ii]/Experiment.Reach_Disc[ii],10)
-      #print(Projection_Length)
-      XCoordinate = 0.5 * Projection_Length
+          XCoordinate = XCoordinate + ProjectionLength
+          TotalLength = TotalLength + ProjectionLength
+          CellCounter = TotalLength + 1_Lng
+        end do
 
-        for jj in range(ii):
-            #print("X-distance: ",XCoordinate) # <delete>
-            XCoordinate  += Experiment.Reach_Length[jj]
-
-        for jj in range( Experiment.Reach_Disc[ii] ):
-            Z_loss = Func (XCoordinate)
-            #print(XCoordinate,Z_loss) # <delete>
-
-            self.Length_Cell[CellCounter] = (Projection_Length**2 + Z_loss**2)**0.5
-            self.X_Disc[CellCounter] = XCoordinate
-            self.X_Full[CellCounter*2] = XCoordinate - 0.5 * Projection_Length
-            self.X_Full[CellCounter*2+1] = XCoordinate
-
-            self.S_Cell[CellCounter]       = DFunc(XCoordinate)
-            self.Z_Cell[CellCounter]       = Height + Z_loss
-            self.Z_Full[CellCounter*2]     = Height + Func(XCoordinate - 0.5 * Projection_Length)
-            self.Z_Full[CellCounter*2+1]   = Height + Z_loss
-            self.Manning_Cell[CellCounter] = Experiment.Reach_Manning[ii]
-            self.Width_Cell[CellCounter]   = Experiment.Reach_Width[ii]
-            XCoordinate += Projection_Length
-            TotalLength += Projection_Length
-            CellCounter += 1
-
-      MaxHeight   -= Experiment.Reach_Length[ii] * Experiment.Reach_Slope[ii]
+      MaxHeight = MaxHeight - Geometry%ReachLength(i_reach) * Geometry%ReachSlope(i_reach)
     end if
 
   end do
 
-self.Q_Up       = Experiment.Q_Up
-self.V_in       = Experiment.V_in
-self.V_ratio    = Experiment.V_ratio
-self.Total_Time = Experiment.Total_Time
-self.Time_Step  = Experiment.Time_Step
-self.h_dw       = Experiment.h_dw
 
-  if self.N_Cells != CellCounter:
-    sys.exit("FATAL ERROR: Mismatch between the number of cells! Check the Discretization_Class.")
-
+  if (Discretization%NCells /= CellCounter) then
+    write(*,        fmt = "(A") "Fatal error: Mismatch between the number of cells. Check the discretization module."
+    write(FileInfo, fmt = "(A") "Fatal error: Mismatch between the number of cells. Check the discretization module."
+    write(*, Fmt_End); read(*,*); stop;
+  end if
 
 
 # Plot the discretized domain
 # Title = "Discretized domain at the cell level"
 # Vis =Draw.Plot_Domain(self.N_Cells, self.X_Disc, self.Z_Cell, Title)
 # Vis =Draw.Plot_Domain(2*self.N_Cells+1, self.X_Full, self.Z_Full, Title)
-
-print(" Discretization ends successfully. ")
-print(" ========== Discretization Class ==========")
-print()
-
-
-
 
 write(*,       *) " -Domain discretized successfully."
 write(FileInfo,*) " -Domain discretized successfully."
