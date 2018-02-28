@@ -41,7 +41,7 @@ implicit none
 !Private
 
   interface Discretize
-    module procedure Discretize_1D
+    module procedure Discretize_1D_sub
   end interface
 
 contains
@@ -69,7 +69,7 @@ contains
 !
 !##################################################################################################
 
-subroutine Discretize_1D(                                             &
+subroutine Discretize_1D_sub(                                         &
 !                                                                     & ! integer (1) variables
 !                                                                     & ! integer (2) variables
 !                                                                     & ! integer (4) variables
@@ -318,7 +318,7 @@ write(FileInfo,*) " -Domain discretized successfully."
 write(*,       *) " end subroutine <Discretize_1D>"
 write(FileInfo,*) " end subroutine <Discretize_1D>"
 return
-end subroutine Discretize_1D
+end subroutine Discretize_1D_sub
 
 
 
