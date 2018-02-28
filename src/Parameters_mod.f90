@@ -81,7 +81,7 @@ integer(kind=Smll), Parameter, Public :: AnalysisType_1D=100 ! 1D Shallow water 
 
 ! Element Types Number ============================================================================
 ! Solid Element
-!integer(kind=Tiny), Parameter, Public  :: El2d4NSldPS  =1 ! Element: 2D-4 noded-Solid
+!integer(kind=Tiny), Parameter, Public  :: El2d4NSldPS  =1 ! Element: 2D-4 node-Solid
 
 ! PML Elements
 

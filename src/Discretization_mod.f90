@@ -14,7 +14,7 @@
 !
 ! File version $Id $
 !
-! Last update: 02/26/2018
+! Last update: 02/28/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! Discretize_1D: Discretizes the 1D model.
@@ -44,9 +44,7 @@ implicit none
     module procedure Discretize_1D
   end interface
 
-
 contains
-
 
 !##################################################################################################
 ! Purpose: This subroutine discretizes the 1D domain and creates the required arrays.
@@ -63,7 +61,7 @@ contains
 !
 ! File version $Id $
 !
-! Last update: 02/26/2018
+! Last update: 02/28/2018
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
 ! (Refer to the main code to see the list of imported variables)
@@ -122,23 +120,23 @@ implicit none
 ! - logical variables -----------------------------------------------------------------------------
 !#logical   ::
 ! - types -----------------------------------------------------------------------------------------
-type(Geometry_tp), intent(in) :: Geometry
-type(InitialData_tp), intent(in) :: InitialInfo
+type(Geometry_tp),       intent(in)  :: Geometry
+type(InitialData_tp),    intent(in)  :: InitialInfo
 type(discretization_tp), intent(out) :: Discretization
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
-integer (kind=Lng) :: i_reach ! Loop index on the number of reaches
-integer (kind=Lng) :: jj      ! Loop index
+integer (kind=Lng) :: i_reach     ! Loop index on the number of reaches
+integer (kind=Lng) :: jj          ! Loop index
 integer (kind=Lng) :: CellCounter ! Counts number of cells
 
 ! - real variables --------------------------------------------------------------------------------
-real (kind=Dbl)    :: MaxHeight ! Maximum height of the domain
-real (kind=Dbl)    :: Height    ! Height
-real (kind=Dbl)    :: Z_loss    ! loss of height in each cell
-real (kind=Dbl)    :: Total_Length
-real (kind=Dbl)    :: CntrlVolume_Length ! The length of control volume
-real (kind=Dbl)    :: X_distance
+real (kind=Dbl)    :: MaxHeight         ! Maximum height of the domain
+real (kind=Dbl)    :: Height            ! Height
+real (kind=Dbl)    :: Z_loss            ! loss of height in each cell
+real (kind=Dbl)    :: TotalLength       ! Temp var
+real (kind=Dbl)    :: CntrlVolumeLength ! The length of control volume
+real (kind=Dbl)    :: XCoordinate       ! Temp var to compute the coordinate of the cell center
 
 ! - complex variables -----------------------------------------------------------------------------
 !#complex              ::
@@ -196,18 +194,65 @@ write(*,fmt="(A,F23.10)") " Maximum height is:", MaxHeight
 
 write(*,fmt="(A)")" Basic calculations ..."
 
-Cell_Counter = 0_Lng
+CellCounter = 0_Lng
   do (i_reach = 1_Lng, InitialInfo%NoReaches)
-      if (Geometry%ReachType(i_reach)==0) then
-        CntrlVolume_Length = Geometry%ReachLength(i_reach)/Geometry%ReachDisc(i_reach) ! Control volume length
-        write(*,fmt="(A,I5,A,F23.10)") " Cell length in the reach ", i_reach," is:", CntrlVolume_Length
-        Height = MaxHeight
-        Z_loss = CntrlVolume_Length * Geometry%ReachSlope(i_reach)
-        Height = Height + 0.5_Dbl * Z_loss
-        Total_Length = 0.0_Dbl
-        X_distance = 0.5_Dbl * CntrlVolume_Length
+    if (Geometry%ReachType(i_reach)==0) then
+      CntrlVolumeLength =  floor(Geometry%ReachLength(i_reach)*1.0E10/Geometry%ReachDisc(i_reach) )/1.0E10     ! Control volume length
+      write(*,fmt="(A,I5,A,F23.10)") " Cell length in the reach ", i_reach," is:", CntrlVolumeLength
+      Height = MaxHeight
+      Z_loss = floor(1.0E10*CntrlVolumeLength * Geometry%ReachSlope(i_reach))/ 1.0E10
+      Height = Height +  floor(1.0E10 * 0.5_Dbl * Z_loss)/1.0E10
+      TotalLength = 0.0_Dbl
+      XCoordinate = 0.5_Dbl * CntrlVolumeLength
 
-        forall (jj = 1_Lng, i_reach) X_distance = X_distance + Geometry%ReachLength(jj)
+      forall (jj = 1_Lng, i_reach) XCoordinate = XCoordinate + Geometry%ReachLength(jj)
+
+        do jj = 1_Lng, Geometry%ReachDisc(i_reach) - 1_Lng
+            Discretization%LengthCell(CellCounter)  = CntrlVolumeLength
+            Discretization%X_Disc(CellCounter)      = XCoordinate
+            Discretization%X_Full(CellCounter)      = XCoordinate - 0.5_Dbl * CntrlVolumeLength
+            Discretization%X_Full(CellCounter*2_Lng+1_Lng) = XCoordinate
+            Discretization
+
+            XCoordinate = XCoordinate + CntrlVolumeLength
+            TotalLength = TotalLength + CntrlVolumeLength
+            Height      = Height - Z_loss
+
+            Discretization%SlopeCell(CellCounter)  = Geometry%ReachSlope(i_reach)
+            Discretization%ZCell(CellCounter)      = Height
+            Discretization%ZFull(CellCounter*2)    = Height + 0.5_Dbl * Z_loss
+            Discretization%ZFull(CellCounter*2+1)  = Height
+            Discretization%ManningCell(CellCounter)= Geometry%ReachManning(i_reach)
+            Discretization%WidthCell(CellCounter)  = Geometry%ReachWidth(i_reach)
+
+            CellCounter = CellCounter + 1_Lng
+        end do
+
+      Discretization%LengthCell(CellCounter) = Geometry%ReachLength(i_reach) - TotalLength
+
+      XCoordinate                            = XCoordinate - 0.5_dbl * CntrlVolumeLength + 0.5_dbl * Discretization%LengthCell(CellCounter)
+
+      Discretization%X_Disc(CellCounter)     = XCoordinate
+      Discretization%X_Full(CellCounter*2_Lng)       = XCoordinate - 0.5 * Discretization%LengthCell(CellCounter)
+      Discretization%X_Full(CellCounter*2_Lng+1_Lng) = XCoordinate
+      Discretization%X_Full(CellCounter*2_Lng+2_Lng) = XCoordinate + 0.5 * Discretization%LengthCell(CellCounter)
+
+      Height = Height - (0.5_dbl * Z_loss + 0.5_dble * Discretization%LengthCell(CellCounter) * Geometry%ReachSlope(i_reach))
+
+      Discretization%ZCell(CellCounter)             = Height
+
+      Discretization%ZFull(CellCounter*2_Lng)       = Height + 0.5_dbl * Discretization%LengthCell(CellCounter) * Geometry%ReachSlope(i_reach)
+      Discretization%ZFull(CellCounter*2_Lng+1_Lng) = Height
+      Discretization%ZFull(CellCounter*2_Lng)       = Height - 0.5_dbl * Discretization%LengthCell(CellCounter) * Geometry%ReachSlope(i_reach)
+      Discretization%ManningCell(CellCounter)= Geometry%ReachManning(i_reach)
+      Discretization%WidthCell(CellCounter)  = Geometry%ReachWidth(i_reach)
+
+
+      CellCounter = CellCounter + 1_Lng
+      MaxHeight   =  MaxHeight - Geometry%ReachLength(i_reach) * Geometry%ReachSlope(i_reach)
+
+    else if (Geometry%ReachType(i_reach)==0) then
+      Height = MaxHeight
 
 
 
@@ -215,71 +260,35 @@ Cell_Counter = 0_Lng
 
 
 
-        for jj in range( Experiment.Reach_Disc[ii] - 1 ):
-            self.Length_Cell[Cell_Counter]  = CntrlVolume_Length
-            self.X_Disc[Cell_Counter]       = X_distance
-            self.X_Full[Cell_Counter*2]     = X_distance - 0.5 * CntrlVolume_Length
-            self.X_Full[Cell_Counter*2+1]   = X_distance
-            X_distance                     += CntrlVolume_Length
-            Total_Length                   += CntrlVolume_Length
-            Height                         -= Z_loss
+      Projection_Length = round(Experiment.Reach_Length[ii]/Experiment.Reach_Disc[ii],10)
+      #print(Projection_Length)
+      XCoordinate = 0.5 * Projection_Length
 
-            self.S_Cell[Cell_Counter]       = Experiment.Reach_Slope[ii]
-            self.Z_Cell[Cell_Counter]       = Height
-            self.Z_Full[Cell_Counter*2]     = Height +0.5 * Z_loss
-            self.Z_Full[Cell_Counter*2+1]   = Height
-            self.Manning_Cell[Cell_Counter] = Experiment.Reach_Manning[ii]
-            self.Width_Cell[Cell_Counter]   = Experiment.Reach_Width[ii]
-            Cell_Counter += 1
+        for jj in range(ii):
+            #print("X-distance: ",XCoordinate) # <delete>
+            XCoordinate  += Experiment.Reach_Length[jj]
 
-        # The last cell: we need to separate the last cell in each reach to adjust the numerical error in the total length of the reach
-        self.Length_Cell[Cell_Counter]  = Experiment.Reach_Length[ii] - Total_Length
-        X_distance                      = X_distance - 0.5 * CntrlVolume_Length + 0.5 * self.Length_Cell[Cell_Counter]
-        self.X_Disc[Cell_Counter]       = X_distance
-        self.X_Full[Cell_Counter*2]     = X_distance - 0.5 * self.Length_Cell[Cell_Counter]
-        self.X_Full[Cell_Counter*2+1]   = X_distance
-        self.X_Full[Cell_Counter*2+2]   = X_distance + 0.5 * self.Length_Cell[Cell_Counter]
-        Height                         -= ( 0.5*Z_loss + 0.5 * self.Length_Cell[Cell_Counter] * Experiment.Reach_Slope[ii] )
+        for jj in range( Experiment.Reach_Disc[ii] ):
+            Z_loss = Func (XCoordinate)
+            #print(XCoordinate,Z_loss) # <delete>
 
-        self.Z_Cell[Cell_Counter]       = Height
-        self.Z_Full[Cell_Counter*2]     = Height + 0.5 * self.Length_Cell[Cell_Counter] * Experiment.Reach_Slope[ii]
-        self.Z_Full[Cell_Counter*2+1]   = Height
-        self.Z_Full[Cell_Counter*2+2]   = Height - 0.5 * self.Length_Cell[Cell_Counter] * Experiment.Reach_Slope[ii]
-        self.Manning_Cell[Cell_Counter] = Experiment.Reach_Manning[ii]
-        self.Width_Cell[Cell_Counter]   = Experiment.Reach_Width[ii]
-        Cell_Counter += 1
-        MaxHeight   -= Experiment.Reach_Length[ii] * Experiment.Reach_Slope[ii]
+            self.Length_Cell[CellCounter] = (Projection_Length**2 + Z_loss**2)**0.5
+            self.X_Disc[CellCounter] = XCoordinate
+            self.X_Full[CellCounter*2] = XCoordinate - 0.5 * Projection_Length
+            self.X_Full[CellCounter*2+1] = XCoordinate
 
-      else if (Geometry%ReachType(i_reach)==0) then
-          Height = MaxHeight
-          Projection_Length = round(Experiment.Reach_Length[ii]/Experiment.Reach_Disc[ii],10)
-          #print(Projection_Length)
-          X_distance = 0.5 * Projection_Length
+            self.S_Cell[CellCounter]       = DFunc(XCoordinate)
+            self.Z_Cell[CellCounter]       = Height + Z_loss
+            self.Z_Full[CellCounter*2]     = Height + Func(XCoordinate - 0.5 * Projection_Length)
+            self.Z_Full[CellCounter*2+1]   = Height + Z_loss
+            self.Manning_Cell[CellCounter] = Experiment.Reach_Manning[ii]
+            self.Width_Cell[CellCounter]   = Experiment.Reach_Width[ii]
+            XCoordinate += Projection_Length
+            TotalLength += Projection_Length
+            CellCounter += 1
 
-          for jj in range(ii):
-              #print("X-distance: ",X_distance) # <delete>
-              X_distance  += Experiment.Reach_Length[jj]
-
-          for jj in range( Experiment.Reach_Disc[ii] ):
-              Z_loss = Func (X_distance)
-              #print(X_distance,Z_loss) # <delete>
-
-              self.Length_Cell[Cell_Counter] = (Projection_Length**2 + Z_loss**2)**0.5
-              self.X_Disc[Cell_Counter] = X_distance
-              self.X_Full[Cell_Counter*2] = X_distance - 0.5 * Projection_Length
-              self.X_Full[Cell_Counter*2+1] = X_distance
-
-              self.S_Cell[Cell_Counter]       = DFunc(X_distance)
-              self.Z_Cell[Cell_Counter]       = Height + Z_loss
-              self.Z_Full[Cell_Counter*2]     = Height + Func(X_distance - 0.5 * Projection_Length)
-              self.Z_Full[Cell_Counter*2+1]   = Height + Z_loss
-              self.Manning_Cell[Cell_Counter] = Experiment.Reach_Manning[ii]
-              self.Width_Cell[Cell_Counter]   = Experiment.Reach_Width[ii]
-              X_distance += Projection_Length
-              Total_Length += Projection_Length
-              Cell_Counter += 1
-
-          MaxHeight   -= Experiment.Reach_Length[ii] * Experiment.Reach_Slope[ii]
+      MaxHeight   -= Experiment.Reach_Length[ii] * Experiment.Reach_Slope[ii]
+    end if
 
   end do
 
@@ -290,7 +299,7 @@ self.Total_Time = Experiment.Total_Time
 self.Time_Step  = Experiment.Time_Step
 self.h_dw       = Experiment.h_dw
 
-  if self.N_Cells != Cell_Counter:
+  if self.N_Cells != CellCounter:
     sys.exit("FATAL ERROR: Mismatch between the number of cells! Check the Discretization_Class.")
 
 
@@ -303,11 +312,6 @@ self.h_dw       = Experiment.h_dw
 print(" Discretization ends successfully. ")
 print(" ========== Discretization Class ==========")
 print()
-
-
-
-
-
 
 
 
