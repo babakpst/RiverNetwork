@@ -1,6 +1,6 @@
 
 !##################################################################################################
-! Purpose: This module applies the boundary condition on the boundary.
+! Purpose: This module solves the shallow water equation.
 !
 ! Developed by: Babak Poursartip
 ! Supervised by: Clint Dawson
@@ -27,7 +27,7 @@
 !
 !##################################################################################################
 
-module Boundary_Conditions_mod
+module Solver_mod
 
 ! Libraries =======================================================================================
 
@@ -40,7 +40,7 @@ implicit none
 !public
 !private
 
-  interface Results
+  interface Solve
     !module procedure Domain_1D
   end interface
 
@@ -49,5 +49,5 @@ contains
 
 
 
-end module Boundary_Conditions_mod
+end module Solver_mod
 

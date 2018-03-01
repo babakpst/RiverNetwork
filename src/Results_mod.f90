@@ -42,11 +42,13 @@ implicit none
 !private
 
   interface Results
-    !module procedure Domain_1D
+    module procedure Plot_Domain_1D
   end interface
 
 
 contains
+
+
 
 
 
