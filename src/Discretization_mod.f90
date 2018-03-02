@@ -87,7 +87,7 @@ Geometry, InitialInfo, Discretization                                 & ! type
 
 
 ! User defined modules ============================================================================
-!use Results_mod
+use Results_mod
 
 implicit none
 
@@ -154,6 +154,7 @@ real(kind=Dbl)    :: ProjectionLength
 ! - logical variables -----------------------------------------------------------------------------
 !#logical   ::
 ! - type ------------------------------------------------------------------------------------------
+type(Plot_domain_1D_tp) :: Plot ! Plots the discretized domain
 
 ! code ============================================================================================
 write(*,       *) " subroutine <Discretize_1D>: "
@@ -307,18 +308,34 @@ CellCounter = 0_Lng
   end if
 
 
-! Plot the discretized domain
-! Title = "Discretized domain at the cell level"
-! Vis =Draw.Plot_Domain(self.N_Cells, self.X_Disc, self.Z_Cell, Title)
-! Vis =Draw.Plot_Domain(2*self.N_Cells+1, self.X_Full, self.Z_Full, Title)
+! Plot the discretized domain (cell centers)
+Plot%NPoints = Discretization%NCells
+Plot%ModelName =
+Plot%OutputDir =
+Plot%AnalysisOutputDir =
+Plot%
+
+allocate(Plot%XCoor(Plot%NPoints), Plot%ZCoor(Plot%NPoints), stat=ERR_Alloc)
+
+  if (ERR_Alloc /= 0) then
+    write (*, Fmt_ALLCT) ERR_Alloc;  write (UnInf, Fmt_ALLCT) ERR_Alloc;
+    write(*, Fmt_FL);  write(UnInf, Fmt_FL); read(*, Fmt_End);  stop;
+  end if
+
+call
+
+
+! Plot full results
+
+
 
 write(*,       *) " -Domain discretized successfully."
 write(FileInfo,*) " -Domain discretized successfully."
 
 write(*,       *) " end subroutine <Discretize_1D>"
 write(FileInfo,*) " end subroutine <Discretize_1D>"
-return
 end subroutine Discretize_1D_sub
+return
 
 
 

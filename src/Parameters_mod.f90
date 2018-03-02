@@ -58,7 +58,6 @@ character(71),  Parameter, Public :: Fmt_write1="('ERROR IN write STATEMENT. Uni
 character(143), Parameter, Public :: Fmt_Element1="('Error in the element type. Either there is a mistake in the input file for element type or element type in not available in the code yet.')"
 character(144), Parameter, Public :: Fmt_Element2="('Error in the element type. This element number',I3,'is not available in the list of this code. Check the input file for element number',I19)"
 
-
 ! Unit NUMBERS OF EXTERNAL FILES ==================================================================
 ! Address file
 integer(kind=Smll), Parameter, Public :: FileAdr=500 ! Address file that holds the model name & directories (.txt)
@@ -74,6 +73,7 @@ integer(kind=Smll), Parameter, Public  :: Un_CHK=599 ! Scratch file for debuggin
 
 !Output files
 integer(kind=Smll), Parameter, Public  :: FileInfo=600 ! Model information file (.Inf)
+integer(kind=Smll), Parameter, Public  :: FileDomain=601 ! output file containing the domain (.domain)
 
 
 ! Analysis case number ============================================================================
@@ -121,11 +121,13 @@ type ArgCommands
   character (kind = 1, Len = 50), allocatable, dimension(:) :: Arg  ! Holds the entered argument
 end type
 
+! Holds data about the run time
 type timing
   real(kind=DBL):: Time_Start, Time_End !TIME Variables for total run time
   real(kind=DBL):: Input_Starts, Input_Ends ! required time to read the input file
 end type timing
 
+! Contains all information about the domain, required
 type InitialData_tp
   integer(kind=Lng):: NoReaches ! Number of reaches
   real(kind=DBL):: TotalTime ! Total simulation time (in seconds)
@@ -136,6 +138,7 @@ type InitialData_tp
   real(kind=DBL):: CntrlV_ratio  ! Initial control volume ration, used to initialize data
 end type InitialData_tp
 
+! Contains all information about the geometry of the domain. (input)
 type Geometry_tp
   integer(kind=Lng), allocatable, dimension(:) :: ReachDisc  ! Stores the no. of control volume in each reach
 
@@ -146,6 +149,7 @@ type Geometry_tp
   real(kind=DBL), allocatable, dimension(:) :: ReachWidth ! Stores the width of each reach
 end type Geometry_tp
 
+! Contains all information after discretization
 type discretization_tp
   integer (kind=Lng)  :: NCells ! Total number of cells in the domain
 
@@ -158,7 +162,6 @@ type discretization_tp
   real(kind=DBL), allocatable, dimension(:) :: X_Disc      ! Stores the coordinates of the cell center
   real(kind=DBL), allocatable, dimension(:) :: X_Full      ! Stores the coordinates all points
 end type discretization_tp
-
 
 Contains
 
