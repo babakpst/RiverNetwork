@@ -194,9 +194,9 @@ write(*,fmt="(A)") " -Creating the output folders ..."
 
 Directory=MakeDirQQ (trim(AdjustL(ModelInfo%OutputDir))//'/'//trim(AdjustL(ModelInfo%ModelName)))
   if (Directory) then
-    write(*,fmt="(A)") "The result folder is created."
+    write(*,fmt="(A)") " The result folder is created."
   Else
-     write(*,fmt="(A)") "The result folder already exists."
+     write(*,fmt="(A)") " The result folder already exists."
   end if
 
 ModelInfo%OutputDir=trim(AdjustL (ModelInfo%OutputDir))//'/'//trim(AdjustL (ModelInfo%ModelName))

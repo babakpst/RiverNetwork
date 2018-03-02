@@ -145,22 +145,36 @@ write(FileInfo,*) " subroutine < Plot_Domain_1D >: "
 
 ! - Opening the domain file -----------------------------------------------------------------------
 UnFile = FileDomain
+
+write(*,       *) " Writing down the domain in the .Domain file ... "
+write(FileInfo,*) " Writing down the domain in the .Domain file ... "
+
 open(unit=UnFile, file=trim(this%ModelName)//'.Domain', Err=1001, iostat=IO_File, &
-access='sequential', action='write', asynchronous='no', blank='NULL', blocksize=0, defaultfile=trim(this%AnalysisDir), &
+access='sequential', action='write', asynchronous='no', blank='NULL', blocksize=0, defaultfile=trim(this%AnalysisOutputDir), &
 dispose='keep', form='formatted', position='asis', status='replace')
 
 UnFile = FileDomain
-write(unit=UnFile, fmt="('Domain coordinates: ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
+write(unit=UnFile, fmt="(' Domain coordinates: ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
+write(unit=UnFile, fmt="(' Number of points: ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
+write(unit=UnFile, fmt="(I20)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%NPoints
 write(unit=UnFile, fmt="(' x   --      z ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
 
   do i_points = 1_Lng, this%NPoints
     write(unit=UnFile, fmt="(2F20.5)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%XCoor(i_points), this%ZCoor(i_points)
   end do
 
+
+write(*,       *) " Domain coordinates was written successfully in the file. "
+write(FileInfo,*) " Domain coordinates was written successfully in the file. "
+
+
 ! - Closing the domain file -----------------------------------------------------------------------
 UnFile =  FileDomain
 close(unit=UnFile, status="keep", err=1002, iostat=IO_File)
 
+write(*,       *) " end subroutine < Plot_Domain_1D >"
+write(FileInfo,*) " end subroutine < Plot_Domain_1D >"
+return
 
 ! Errors ==========================================================================================
 ! Opening statement Errors
@@ -185,9 +199,6 @@ close(unit=UnFile, status="keep", err=1002, iostat=IO_File)
 1006 write(*, Fmt_write1) UnFile, IO_write; write(UnFile, Fmt_write1) UnFile, IO_write;
      write(*, Fmt_FL); write(FileInfo, Fmt_FL); write(*, Fmt_End); read(*,*);  stop;
 
-write(*,       *) " end subroutine < Plot_Domain_1D >"
-write(FileInfo,*) " end subroutine < Plot_Domain_1D >"
-return
 end subroutine Plot_Domain_1D
 
 end module Results_mod

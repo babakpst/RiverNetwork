@@ -167,14 +167,16 @@ write(FileInfo,*) " -Discretizing the domain ..."
 ! Find total number of cells in the domain:
 Discretization%NCells = 0_Lng
 
-write(*,fmt="(A)") " Calculating the total number of the cells in the domain ... "
+write(*,        fmt="(A)") " Calculating the total number of the cells in the domain ... "
+write(FileInfo, fmt="(A)") " Calculating the total number of the cells in the domain ... "
 
   do i_reach = 1_Lng,InitialInfo%NoReaches
     Discretization%NCells = Discretization%NCells + Geometry%ReachDisc(i_reach)
   end do
 
 
-write(*,fmt="(A,I15)") " Total number of cells: ", Discretization%NCells
+write(*,        fmt="(A,I15)") " Total number of cells: ", Discretization%NCells
+write(FileInfo, fmt="(A,I15)") " Total number of cells: ", Discretization%NCells
 
 allocate(Discretization%LengthCell(Discretization%NCells),              &
          Discretization%SlopeCell(Discretization%NCells),               &
@@ -191,121 +193,135 @@ allocate(Discretization%LengthCell(Discretization%NCells),              &
     write(*, Fmt_FL);  write(FileInfo, Fmt_FL); read(*, Fmt_End);  stop;
   end if
 
-write(*,fmt="(A)")" Loop over reaches to discretize the domain ..."
-
 ! Finding the highest point in the domain:
-write(*,fmt="(A)")" Calculating the highest point in the domain ... "
+write(*,        fmt="(A)")" Calculating the highest point in the domain ... "
+write(FileInfo, fmt="(A)")" Calculating the highest point in the domain ... "
+
 MaxHeight = 0.0_Dbl
 
   do i_reach = 1_Lng,InitialInfo%NoReaches
     MaxHeight = MaxHeight + Geometry%ReachSlope(i_reach) * Geometry%ReachLength(i_reach)
   end do
 
+write(*,        fmt="(A,F23.10)") " Maximum height is:", MaxHeight
+write(FileInfo, fmt="(A,F23.10)") " Maximum height is:", MaxHeight
 
+write(*,        fmt="(A)")" Basic calculations ..."
+write(FileInfo, fmt="(A)")" Basic calculations ..."
 
-write(*,fmt="(A,F23.10)") " Maximum height is:", MaxHeight
-
-write(*,fmt="(A)")" Basic calculations ..."
+write(*,        fmt="(A)")" Loop over reaches to discretize the domain ..."
+write(FileInfo, fmt="(A)")" Loop over reaches to discretize the domain ..."
 
 CellCounter = 0_Lng
+
   do i_reach = 1_Lng, InitialInfo%NoReaches
-    if (Geometry%ReachType(i_reach)==0) then
-      CntrlVolumeLength =  floor(Geometry%ReachLength(i_reach)*1.0E10/Geometry%ReachDisc(i_reach) )/1.0E10     ! Control volume length
-      write(*,fmt="(A,I5,A,F23.10)") " Cell length in the reach ", i_reach," is:", CntrlVolumeLength
-      Height = MaxHeight
-      Z_loss = floor(1.0E10*CntrlVolumeLength * Geometry%ReachSlope(i_reach))/ 1.0E10
-      Height = Height +  floor(1.0E10 * 0.5_Dbl * Z_loss)/1.0E10
-      TotalLength = 0.0_Dbl
-      XCoordinate = 0.5_Dbl * CntrlVolumeLength
 
-        do jj = 1_Lng,i_reach
-          XCoordinate = XCoordinate + Geometry%ReachLength(jj)
-        end do
+    write(*,        fmt="(A, I10,A)")" -Discretizing reach no.: ", i_reach, " ..."
+    write(FileInfo, fmt="(A, I10,A)")" -Discretizing reach no.: ", i_reach, " ..."
 
-        do jj = 1_Lng, Geometry%ReachDisc(i_reach) - 1_Lng
-            Discretization%LengthCell(CellCounter)  = CntrlVolumeLength
-            Discretization%X_Disc(CellCounter)      = XCoordinate
-            Discretization%X_Full(CellCounter)      = XCoordinate - 0.5_Dbl * CntrlVolumeLength
+      if (Geometry%ReachType(i_reach)==0_Shrt) then
+
+        CntrlVolumeLength =  floor(Geometry%ReachLength(i_reach)*1.0E10/Geometry%ReachDisc(i_reach) )/1.0E10     ! Control volume length
+        write(*,fmt="(A,I5,A,F23.10)") " Cell length in the reach ", i_reach," is:", CntrlVolumeLength
+        Height = MaxHeight
+        Z_loss = floor(1.0E10*CntrlVolumeLength * Geometry%ReachSlope(i_reach))/ 1.0E10
+        Height = Height +  floor(1.0E10 * 0.5_Dbl * Z_loss)/1.0E10
+        TotalLength = 0.0_Dbl
+        XCoordinate = 0.5_Dbl * CntrlVolumeLength
+
+          do jj = 1_Lng,i_reach-1_Lng
+            XCoordinate = XCoordinate + Geometry%ReachLength(jj)
+          end do
+
+          do jj = 1_Lng, Geometry%ReachDisc(i_reach) - 1_Lng
+              CellCounter = CellCounter + 1_Lng
+              Discretization%LengthCell(CellCounter)  = CntrlVolumeLength
+              Discretization%X_Disc(CellCounter)      = XCoordinate
+              Discretization%X_Full(CellCounter)      = XCoordinate - 0.5_Dbl * CntrlVolumeLength
+              Discretization%X_Full(CellCounter*2_Lng+1_Lng) = XCoordinate
+
+              XCoordinate = XCoordinate + CntrlVolumeLength
+              TotalLength = TotalLength + CntrlVolumeLength
+              Height      = Height - Z_loss
+
+              Discretization%SlopeCell(CellCounter)  = Geometry%ReachSlope(i_reach)
+              Discretization%ZCell(CellCounter)      = Height
+              Discretization%ZFull(CellCounter*2)    = Height + 0.5_Dbl * Z_loss
+              Discretization%ZFull(CellCounter*2+1)  = Height
+              Discretization%ManningCell(CellCounter)= Geometry%ReachManning(i_reach)
+              Discretization%WidthCell(CellCounter)  = Geometry%ReachWidth(i_reach)
+
+
+          end do
+
+        CellCounter = CellCounter + 1_Lng
+        Discretization%LengthCell(CellCounter) = Geometry%ReachLength(i_reach) - TotalLength
+
+        XCoordinate                            = XCoordinate - 0.5_dbl * CntrlVolumeLength + 0.5_dbl * Discretization%LengthCell(CellCounter)
+
+        Discretization%X_Disc(CellCounter)     = XCoordinate
+        Discretization%X_Full(CellCounter*2_Lng)       = XCoordinate - 0.5 * Discretization%LengthCell(CellCounter)
+        Discretization%X_Full(CellCounter*2_Lng+1_Lng) = XCoordinate
+        Discretization%X_Full(CellCounter*2_Lng+2_Lng) = XCoordinate + 0.5 * Discretization%LengthCell(CellCounter)
+
+        Height = Height - (0.5_dbl * Z_loss + 0.5_dbl * Discretization%LengthCell(CellCounter) * Geometry%ReachSlope(i_reach))
+
+        Discretization%ZCell(CellCounter)             = Height
+
+        Discretization%ZFull(CellCounter*2_Lng)       = Height + 0.5_dbl * Discretization%LengthCell(CellCounter) * Geometry%ReachSlope(i_reach)
+        Discretization%ZFull(CellCounter*2_Lng+1_Lng) = Height
+        Discretization%ZFull(CellCounter*2_Lng)       = Height - 0.5_dbl * Discretization%LengthCell(CellCounter) * Geometry%ReachSlope(i_reach)
+        Discretization%ManningCell(CellCounter)= Geometry%ReachManning(i_reach)
+        Discretization%WidthCell(CellCounter)  = Geometry%ReachWidth(i_reach)
+
+        MaxHeight   =  MaxHeight - Geometry%ReachLength(i_reach) * Geometry%ReachSlope(i_reach)
+
+      else if (Geometry%ReachType(i_reach)==1_Shrt) then
+
+        Height = MaxHeight
+        ProjectionLength = floor(1.0E10 * Geometry%ReachLength(i_reach) / Geometry%ReachDisc(i_reach) )/1.0E10
+        XCoordinate = 0.5_Dbl * ProjectionLength
+
+          do jj = 1_Lng,i_reach-1_Lng
+            XCoordinate = XCoordinate + Geometry%ReachLength(jj)
+          end do
+
+          do jj = 1_Lng, Geometry%ReachDisc(i_reach)
+            CellCounter = CellCounter + 1_Lng
+            Z_loss = Domain_Func_1D(XCoordinate)
+
+            Discretization%LengthCell(CellCounter) = dsqrt(ProjectionLength**2 + Z_loss**2)
+            Discretization%X_Disc(CellCounter) = XCoordinate
+            Discretization%X_Full(CellCounter*2_Lng)       = XCoordinate - 0.5_Dbl * ProjectionLength
             Discretization%X_Full(CellCounter*2_Lng+1_Lng) = XCoordinate
 
-            XCoordinate = XCoordinate + CntrlVolumeLength
-            TotalLength = TotalLength + CntrlVolumeLength
-            Height      = Height - Z_loss
-
-            Discretization%SlopeCell(CellCounter)  = Geometry%ReachSlope(i_reach)
-            Discretization%ZCell(CellCounter)      = Height
-            Discretization%ZFull(CellCounter*2)    = Height + 0.5_Dbl * Z_loss
-            Discretization%ZFull(CellCounter*2+1)  = Height
+            Discretization%SlopeCell(CellCounter)  = Domain_Func_1D_D(XCoordinate)
+            Discretization%ZCell(CellCounter)      = Height + Z_loss
+            Discretization%ZFull(CellCounter*2)    = Height + Domain_Func_1D(XCoordinate - 0.5_Dbl * ProjectionLength)
+            Discretization%ZFull(CellCounter*2+1)  = Height + Z_loss
             Discretization%ManningCell(CellCounter)= Geometry%ReachManning(i_reach)
             Discretization%WidthCell(CellCounter)  = Geometry%ReachWidth(i_reach)
 
-            CellCounter = CellCounter + 1_Lng
-        end do
+            XCoordinate = XCoordinate + ProjectionLength
+            TotalLength = TotalLength + ProjectionLength
+          end do
 
-      Discretization%LengthCell(CellCounter) = Geometry%ReachLength(i_reach) - TotalLength
-
-      XCoordinate                            = XCoordinate - 0.5_dbl * CntrlVolumeLength + 0.5_dbl * Discretization%LengthCell(CellCounter)
-
-      Discretization%X_Disc(CellCounter)     = XCoordinate
-      Discretization%X_Full(CellCounter*2_Lng)       = XCoordinate - 0.5 * Discretization%LengthCell(CellCounter)
-      Discretization%X_Full(CellCounter*2_Lng+1_Lng) = XCoordinate
-      Discretization%X_Full(CellCounter*2_Lng+2_Lng) = XCoordinate + 0.5 * Discretization%LengthCell(CellCounter)
-
-      Height = Height - (0.5_dbl * Z_loss + 0.5_dbl * Discretization%LengthCell(CellCounter) * Geometry%ReachSlope(i_reach))
-
-      Discretization%ZCell(CellCounter)             = Height
-
-      Discretization%ZFull(CellCounter*2_Lng)       = Height + 0.5_dbl * Discretization%LengthCell(CellCounter) * Geometry%ReachSlope(i_reach)
-      Discretization%ZFull(CellCounter*2_Lng+1_Lng) = Height
-      Discretization%ZFull(CellCounter*2_Lng)       = Height - 0.5_dbl * Discretization%LengthCell(CellCounter) * Geometry%ReachSlope(i_reach)
-      Discretization%ManningCell(CellCounter)= Geometry%ReachManning(i_reach)
-      Discretization%WidthCell(CellCounter)  = Geometry%ReachWidth(i_reach)
-
-
-      CellCounter = CellCounter + 1_Lng
-      MaxHeight   =  MaxHeight - Geometry%ReachLength(i_reach) * Geometry%ReachSlope(i_reach)
-
-    else if (Geometry%ReachType(i_reach)==0) then
-      Height = MaxHeight
-      ProjectionLength = floor(1.0E10 * Geometry%ReachLength(i_reach) / Geometry%ReachDisc(i_reach) )/1.0E10
-      XCoordinate = 0.5_Dbl * ProjectionLength
-
-        do jj = 1_Lng,i_reach
-          XCoordinate = XCoordinate + Geometry%ReachLength(jj)
-        end do
-
-        do jj = 1_Lng, Geometry%ReachDisc(i_reach)
-          Z_loss = Domain_Func_1D(XCoordinate)
-
-          Discretization%LengthCell(CellCounter) = dsqrt(ProjectionLength**2 + Z_loss**2)
-          Discretization%X_Disc(CellCounter) = XCoordinate
-          Discretization%X_Full(CellCounter*2_Lng)       = XCoordinate - 0.5_Dbl * ProjectionLength
-          Discretization%X_Full(CellCounter*2_Lng+1_Lng) = XCoordinate
-
-          Discretization%SlopeCell(CellCounter)  = Domain_Func_1D_D(XCoordinate)
-          Discretization%ZCell(CellCounter)      = Height + Z_loss
-          Discretization%ZFull(CellCounter*2)    = Height + Domain_Func_1D(XCoordinate - 0.5_Dbl * ProjectionLength)
-          Discretization%ZFull(CellCounter*2+1)  = Height + Z_loss
-          Discretization%ManningCell(CellCounter)= Geometry%ReachManning(i_reach)
-          Discretization%WidthCell(CellCounter)  = Geometry%ReachWidth(i_reach)
-
-          XCoordinate = XCoordinate + ProjectionLength
-          TotalLength = TotalLength + ProjectionLength
-          CellCounter = TotalLength + 1_Lng
-        end do
-
-      MaxHeight = MaxHeight - Geometry%ReachLength(i_reach) * Geometry%ReachSlope(i_reach)
-    end if
+        MaxHeight = MaxHeight - Geometry%ReachLength(i_reach) * Geometry%ReachSlope(i_reach)
+      end if
 
   end do
 
-
   if (Discretization%NCells /= CellCounter) then
-    write(*,        fmt = "(A)") "Fatal error: Mismatch between the number of cells. Check the discretization module."
-    write(FileInfo, fmt = "(A)") "Fatal error: Mismatch between the number of cells. Check the discretization module."
+    write(*,        fmt = "(A,2I10)") "Fatal error: Mismatch between the number of cells. Check the discretization module.", Discretization%NCells, CellCounter
+    write(FileInfo, fmt = "(A,2I10)") "Fatal error: Mismatch between the number of cells. Check the discretization module.", Discretization%NCells, CellCounter
     write(*, Fmt_End); read(*,*); stop;
   end if
 
+write(*,        fmt="(' Discretization was successful. ')")
+write(FileInfo, fmt="(' Discretization was successful. ')")
+
+write(*,        fmt="(' -Plotting the discretized domain ... ')")
+write(FileInfo, fmt="(' -Plotting the discretized domain ... ')")
 
 ! Plot the discretized domain (cell centers)
 Plot%NPoints = Discretization%NCells
@@ -322,18 +338,15 @@ allocate(Plot%XCoor(Plot%NPoints), Plot%ZCoor(Plot%NPoints), stat=ERR_Alloc)
     write(*, Fmt_FL);  write(FileInfo, Fmt_FL); read(*, Fmt_End);  stop;
   end if
 
+! Filling the coordinates for plot
+Plot%XCoor(:)  = Discretization%X_Disc(:)
+Plot%ZCoor(:)  = Discretization%ZCell(:)
+
+
 call Plot%plot()
 
-
-! Plot full results
-
-
-
-write(*,       *) " -Domain discretized successfully."
-write(FileInfo,*) " -Domain discretized successfully."
-
-write(*,       *) " end subroutine <Discretize_1D>"
-write(FileInfo,*) " end subroutine <Discretize_1D>"
+write(*,       *) " end subroutine < Discretize_1D >"
+write(FileInfo,*) " end subroutine < Discretize_1D >"
 return
 end subroutine Discretize_1D_sub
 
