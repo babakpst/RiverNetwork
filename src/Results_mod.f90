@@ -42,8 +42,8 @@ implicit none
 
 
 ! Plot domain
-type, :: Plot_domain_1D_tp(NPoints)
-  integer(kind=Lng), len :: NPoints
+type :: Plot_domain_1D_tp
+  integer(kind=Lng) :: NPoints
 
   character (kind = 1, Len = 30 ) :: ModelName     ! Name of the model input file
   character (kind = 1, Len = 150) :: AnalysisDir   ! Directory of Analysis input file.
@@ -51,8 +51,8 @@ type, :: Plot_domain_1D_tp(NPoints)
   character (kind = 1, Len = 150) :: OutputDir     ! Directory of output files (Results)
   character (kind = 1, Len = 150) :: AnalysisOutputDir! Directory of output file for each analysis
 
-  real(kind=DBL), dimension(NPoints) :: XCoor  ! Horizontal points
-  real(kind=DBL), dimension(NPoints) :: ZCoor  ! Horizontal points
+  real(kind=DBL), allocatable, dimension(:) :: XCoor  ! Horizontal points
+  real(kind=DBL), allocatable, dimension(:) :: ZCoor  ! Horizontal points
   contains
     procedure plot => Plot_Domain_1D
 end type Plot_domain_1D_tp
@@ -117,11 +117,11 @@ class(Plot_domain_1D_tp) :: this
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
-integer(kind=Smll) :: UnFile          ! Holds Unit of a file for error message
-integer(kind=Smll) :: IO_File         ! For IOSTAT: Input Output Status in OPEN command
+integer(kind=Smll) :: UnFile         ! Holds Unit of a file for error message
+integer(kind=Smll) :: IO_File        ! For IOSTAT: Input Output Status in OPEN command
 integer(kind=Smll) :: IO_write       ! Used for IOSTAT: Input/Output Status in the write command
 
-integer(kind=Lng)  :: i_point              ! Loop index on the points
+integer(kind=Lng)  :: i_points       ! Loop index on the points
 
 ! - real variables --------------------------------------------------------------------------------
 !#real (kind=Dbl)      ::
@@ -150,11 +150,11 @@ access='sequential', action='write', asynchronous='no', blank='NULL', blocksize=
 dispose='keep', form='formatted', position='asis', status='replace')
 
 UnFile = FileDomain
-write(unit=UnFile, fmt="("Domain coordinates: ")", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
-write(unit=UnFile, fmt="(" x   --      z ")", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
+write(unit=UnFile, fmt="('Domain coordinates: ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
+write(unit=UnFile, fmt="(' x   --      z ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
 
   do i_points = 1_Lng, this%NPoints
-    write(unit=UnFile, fmt="(2F20.5)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%XCoor(i_point), this%ZCoor(i_point)
+    write(unit=UnFile, fmt="(2F20.5)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%XCoor(i_points), this%ZCoor(i_points)
   end do
 
 ! - Closing the domain file -----------------------------------------------------------------------

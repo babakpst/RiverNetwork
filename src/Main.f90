@@ -127,26 +127,7 @@ Call cpu_time(SimulationTime%Input_Ends)
 write(*,        fmt="(A)") " -Discretization ..."
 write(FileInfo, fmt="(A)") " -Discretization ..."
 
-call Discretize(Geometry, InitialInfo, Discretization)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+call Discretize(Geometry, InitialInfo, Discretization, ModelInfo)
 
 ! Simulations =====================================================================================
 

@@ -78,7 +78,7 @@ subroutine Discretize_1D_sub(                                         &
 !                                                                     & ! integer arrays
 !                                                                     & ! real arrays
 !                                                                     & ! characters
-Geometry, InitialInfo, Discretization                                 & ! type
+Geometry, InitialInfo, Discretization, ModelInfo                      & ! type
 )
 
 
@@ -122,6 +122,7 @@ implicit none
 ! - types -----------------------------------------------------------------------------------------
 type(Geometry_tp),       intent(in)  :: Geometry
 type(InitialData_tp),    intent(in)  :: InitialInfo
+type(Input_Data_tp),     intent(in)  :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
 type(discretization_tp), intent(out) :: Discretization
 
 ! Local variables =================================================================================
@@ -266,9 +267,7 @@ CellCounter = 0_Lng
 
     else if (Geometry%ReachType(i_reach)==0) then
       Height = MaxHeight
-
       ProjectionLength = floor(1.0E10 * Geometry%ReachLength(i_reach) / Geometry%ReachDisc(i_reach) )/1.0E10
-
       XCoordinate = 0.5_Dbl * ProjectionLength
 
         do jj = 1_Lng,i_reach
@@ -310,19 +309,20 @@ CellCounter = 0_Lng
 
 ! Plot the discretized domain (cell centers)
 Plot%NPoints = Discretization%NCells
-Plot%ModelName =
-Plot%OutputDir =
-Plot%AnalysisOutputDir =
-Plot%
+Plot%ModelName = ModelInfo%ModelName
+Plot%OutputDir = ModelInfo%OutputDir
+Plot%AnalysisOutputDir = ModelInfo%OutputDir
+Plot%AnalysisDir =ModelInfo%AnalysisDir
+Plot%AnalysisName = ModelInfo%AnalysesNames(1)  ! <Modify>
 
 allocate(Plot%XCoor(Plot%NPoints), Plot%ZCoor(Plot%NPoints), stat=ERR_Alloc)
 
   if (ERR_Alloc /= 0) then
-    write (*, Fmt_ALLCT) ERR_Alloc;  write (UnInf, Fmt_ALLCT) ERR_Alloc;
-    write(*, Fmt_FL);  write(UnInf, Fmt_FL); read(*, Fmt_End);  stop;
+    write (*, Fmt_ALLCT) ERR_Alloc;  write (FileInfo, Fmt_ALLCT) ERR_Alloc;
+    write(*, Fmt_FL);  write(FileInfo, Fmt_FL); read(*, Fmt_End);  stop;
   end if
 
-call
+call Plot%plot()
 
 
 ! Plot full results
@@ -334,9 +334,8 @@ write(FileInfo,*) " -Domain discretized successfully."
 
 write(*,       *) " end subroutine <Discretize_1D>"
 write(FileInfo,*) " end subroutine <Discretize_1D>"
-end subroutine Discretize_1D_sub
 return
-
+end subroutine Discretize_1D_sub
 
 
 !##################################################################################################
