@@ -128,18 +128,19 @@ type timing
 end type timing
 
 ! Contains all information about the domain, required
-type InitialData_tp
-  integer(kind=Lng):: NoReaches ! Number of reaches
+type AnalysisData_tp
   real(kind=DBL):: TotalTime ! Total simulation time (in seconds)
   real(kind=DBL):: TimeStep  ! Time Step
   real(kind=DBL):: Q_Up      ! Upstream boundary condition, constant flow (m^3/s)
   real(kind=DBL):: h_dw      ! Downstream water depth (in meters)
   real(kind=DBL):: CntrlV    ! Initial control volume
   real(kind=DBL):: CntrlV_ratio  ! Initial control volume ration, used to initialize data
-end type InitialData_tp
+end type AnalysisData_tp
 
 ! Contains all information about the geometry of the domain. (input)
 type Geometry_tp
+  integer(kind=Lng):: NoReaches ! Number of reaches
+
   integer(kind=Lng),  allocatable, dimension(:) :: ReachDisc  ! Stores the no. of control volume in each reach
   integer(kind=Shrt), allocatable, dimension(:) :: ReachType  ! Stores reach type
 

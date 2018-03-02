@@ -78,7 +78,7 @@ subroutine Discretize_1D_sub(                                         &
 !                                                                     & ! integer arrays
 !                                                                     & ! real arrays
 !                                                                     & ! characters
-Geometry, InitialInfo, Discretization, ModelInfo                      & ! type
+Geometry, Discretization, ModelInfo                      & ! type
 )
 
 
@@ -121,7 +121,6 @@ implicit none
 !#logical   ::
 ! - types -----------------------------------------------------------------------------------------
 type(Geometry_tp),       intent(in)  :: Geometry
-type(InitialData_tp),    intent(in)  :: InitialInfo
 type(Input_Data_tp),     intent(in)  :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
 type(discretization_tp), intent(out) :: Discretization
 
@@ -170,7 +169,7 @@ Discretization%NCells = 0_Lng
 write(*,        fmt="(A)") " Calculating the total number of the cells in the domain ... "
 write(FileInfo, fmt="(A)") " Calculating the total number of the cells in the domain ... "
 
-  do i_reach = 1_Lng,InitialInfo%NoReaches
+  do i_reach = 1_Lng,Geometry%NoReaches
     Discretization%NCells = Discretization%NCells + Geometry%ReachDisc(i_reach)
   end do
 
@@ -199,7 +198,7 @@ write(FileInfo, fmt="(A)")" Calculating the highest point in the domain ... "
 
 MaxHeight = 0.0_Dbl
 
-  do i_reach = 1_Lng,InitialInfo%NoReaches
+  do i_reach = 1_Lng,Geometry%NoReaches
     MaxHeight = MaxHeight + Geometry%ReachSlope(i_reach) * Geometry%ReachLength(i_reach)
   end do
 
@@ -214,7 +213,7 @@ write(FileInfo, fmt="(A)")" Loop over reaches to discretize the domain ..."
 
 CellCounter = 0_Lng
 
-  do i_reach = 1_Lng, InitialInfo%NoReaches
+  do i_reach = 1_Lng, Geometry%NoReaches
 
     write(*,        fmt="(A, I10,A)")" -Discretizing reach no.: ", i_reach, " ..."
     write(FileInfo, fmt="(A, I10,A)")" -Discretizing reach no.: ", i_reach, " ..."
@@ -274,7 +273,7 @@ CellCounter = 0_Lng
         Discretization%ManningCell(CellCounter)= Geometry%ReachManning(i_reach)
         Discretization%WidthCell(CellCounter)  = Geometry%ReachWidth(i_reach)
 
-        MaxHeight   =  MaxHeight - Geometry%ReachLength(i_reach) * Geometry%ReachSlope(i_reach)
+        MaxHeight = MaxHeight - Geometry%ReachLength(i_reach) * Geometry%ReachSlope(i_reach)
 
       else if (Geometry%ReachType(i_reach)==1_Shrt) then
 

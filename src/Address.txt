@@ -14,7 +14,7 @@ Number of Analysis:
 1
 
 Names of the analysis files:
-EX1.Case1
+EX1_Case1
 
 
 

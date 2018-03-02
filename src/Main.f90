@@ -97,15 +97,15 @@ write(*,        fmt="(A)") " -Reading the initial data file ..."
 write(FileInfo, fmt="(A)") " -Reading the initial data file ..."
 
 ! Reading basic data: -----------------------------------------------------------------------------
-call Input(ModelInfo, InitialInfo)
+call Input_Basic_sub(ModelInfo, Geometry)
 
 ! Allocating required arrays
 write(*,        fmt="(A)") " -Allocating the required arrays ..."
 write(FileInfo, fmt="(A)") " -Allocating the required arrays ..."
 
-allocate(Geometry%ReachLength(InitialInfo%NoReaches), Geometry%ReachDisc(InitialInfo%NoReaches), &
-         Geometry%ReachType(InitialInfo%NoReaches), Geometry%ReachSlope(InitialInfo%NoReaches),  &
-         Geometry%ReachManning(InitialInfo%NoReaches), Geometry%ReachWidth(InitialInfo%NoReaches),&
+allocate(Geometry%ReachLength(Geometry%NoReaches), Geometry%ReachDisc(Geometry%NoReaches), &
+         Geometry%ReachType(Geometry%NoReaches), Geometry%ReachSlope(Geometry%NoReaches),  &
+         Geometry%ReachManning(Geometry%NoReaches), Geometry%ReachWidth(Geometry%NoReaches),&
          stat=Err_Alloc)
   if (Err_Alloc /= 0) then
     write(*, Fmt_ALLCT) Err_Alloc; write(FileInfo, Fmt_ALLCT) Err_Alloc;
@@ -117,7 +117,7 @@ write(*,        fmt="(A)") " -Reading arrays form data file ..."
 write(FileInfo, fmt="(A)") " -Reading arrays form data file ..."
 
 ! Geometry
-call Input(ModelInfo, InitialInfo, Geometry)
+call Input_Array_sub(ModelInfo, Geometry)
 
 Call cpu_time(SimulationTime%Input_Ends)
 
@@ -129,7 +129,7 @@ Call cpu_time(SimulationTime%Input_Ends)
 write(*,        fmt="(A)") " -Discretization ..."
 write(FileInfo, fmt="(A)") " -Discretization ..."
 
-call Discretize(Geometry, InitialInfo, Discretization, ModelInfo)
+call Discretize(Geometry, Discretization, ModelInfo)
 
 ! Simulations =====================================================================================
 
@@ -139,17 +139,16 @@ call Discretize(Geometry, InitialInfo, Discretization, ModelInfo)
     write(FileInfo, fmt="(A,I10)") " -Analyse no.", i_analyses
 
     ! Getting the required data for this specific analysis
-    !call Input()
+    call Input(i_analyses, ModelInfo, AnalysisInfo)
 
-    ! Test File ---------------------------------------------------------------------------------------
+    ! Test File -----------------------------------------------------------------------------------
     !UnFile=UN_CHK
     !Open( Unit=UnFile, File=trim(AnaName)//'_'//trim(AdjustL(IndexSize))//'_'//trim(AdjustL(IndexRank))//'.Chk', &
     !     Err= 1001, IOstat=IO_File, Access='SEQUENTIAL', Action='write', Asynchronous='NO', &
     !     Blank='NULL', blocksize=0, defaultfile=trim(InlDirAna), DisPOSE='Keep', Form='formatted', &
     !     position='ASIS', status='REPLACE')
 
-
-    ! Analysis ========================================================================================
+    ! Analysis ====================================================================================
       SELECT CASE(ModelInfo%AnalysisType)
 
         CASE(AnalysisType_1D)    ! # 1

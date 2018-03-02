@@ -37,7 +37,7 @@ implicit none
 
 
 interface Input
-  module procedure Input_Address_sub, Input_Basic_sub, Input_Array_sub, Input_Analysis_sub
+  module procedure Input_Address_sub, Input_Analysis_sub!, Input_Basic_sub, Input_Array_sub
 end interface Input
 
 contains
@@ -177,6 +177,7 @@ allocate(ModelInfo%AnalysesNames(ModelInfo%NumberOfAnalyses),  stat=ERR_Alloc)
     write(*, Fmt_FL);  write(FileInfo, Fmt_FL); read(*, Fmt_End);  stop;
   end if
 read(FileAdr,*)
+read(FileAdr,*)
   do i_analyses = 1, ModelInfo%NumberOfAnalyses
     read(FileAdr,*) ModelInfo%AnalysesNames(i_analyses)
   end do
@@ -273,7 +274,7 @@ Subroutine Input_Basic_sub(                                           &
 !                                                                     & ! integer Arrays
 !                                                                     & ! real Arrays
 !                                                                     & ! Characters
-ModelInfo, InitialInfo                                                & ! Type
+ModelInfo, Geometry                                                   & ! Type
 )
 
 ! Libraries =======================================================================================
@@ -312,7 +313,7 @@ Implicit None
 !#Logical   ::
 ! - Types -----------------------------------------------------------------------------------------
 type(Input_Data_tp),  intent(In)  :: ModelInfo   ! Holds info. (name, dir, output dir) of the model
-type(InitialData_tp), intent(out) :: InitialInfo ! Holds initial data required for array allocation
+type(Geometry_tp),    intent(out) :: Geometry   ! Holds information about the geometry of the domain
 
 ! Local Variables =================================================================================
 ! - integer Variables -----------------------------------------------------------------------------
@@ -358,58 +359,10 @@ UnFile = FileDataModel
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) InitialInfo%TotalTime
+read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) Geometry%NoReaches
 UnFile = FileInfo
-write(unit=*,      fmt="(' The total simulation time is: ', F23.10, ' s')") InitialInfo%TotalTime
-write(unit=UnFile, fmt="(' The total simulation time is: ', F23.10, ' s')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) InitialInfo%TotalTime
-
-UnFile = FileDataModel
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) InitialInfo%TimeStep
-UnFile = FileInfo
-write(unit=UnFile, fmt="(' The time step is: ', F23.10, ' s')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) InitialInfo%TimeStep
-write(unit=*,      fmt="(' The time step is: ', F23.10, ' s')") InitialInfo%TimeStep
-
-UnFile = FileDataModel
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) InitialInfo%Q_Up
-UnFile = FileInfo
-write(unit=UnFile, fmt="(' Flow rate at the upstream is: ', F23.10, ' m/s3')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) InitialInfo%Q_Up
-write(unit=*,      fmt="(' Flow rate at the upstream is: ', F23.10, ' m/s3')") InitialInfo%Q_Up
-
-UnFile = FileDataModel
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) InitialInfo%h_dw
-UnFile = FileInfo
-write(unit=UnFile, fmt="(' Downstream water depth is: ', F23.10, ' m')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) InitialInfo%h_dw
-write(unit=*,      fmt="(' Downstream water depth is: ', F23.10, ' m')") InitialInfo%h_dw
-
-UnFile = FileDataModel
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) InitialInfo%CntrlV
-UnFile = FileInfo
-write(unit=UnFile, fmt="(' Control Volume is: ', F23.10, ' m^3')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) InitialInfo%CntrlV
-write(unit=*,      fmt="(' Control Volume is: ', F23.10, ' m^3')") InitialInfo%CntrlV
-
-UnFile = FileDataModel
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) InitialInfo%CntrlV_ratio
-UnFile = FileInfo
-write(unit=UnFile, fmt="(' The ratio of control volume is: ', F23.10)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) InitialInfo%CntrlV_ratio
-write(unit=*,      fmt="(' The ratio of control volume is: ', F23.10)") InitialInfo%CntrlV_ratio
-
-UnFile = FileDataModel
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) InitialInfo%NoReaches
-UnFile = FileInfo
-write(unit=UnFile, fmt="(' Total number of reach(es) is(are): ', I10)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) InitialInfo%NoReaches
-write(unit=*,      fmt="(' Total number of reach(es) is(are): ', I10)") InitialInfo%NoReaches
+write(unit=UnFile, fmt="(' Total number of reach(es) is(are): ', I10)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) Geometry%NoReaches
+write(unit=*,      fmt="(' Total number of reach(es) is(are): ', I10)") Geometry%NoReaches
 
 
 ! - Closing the data model file -------------------------------------------------------------------
@@ -496,7 +449,7 @@ Subroutine Input_Array_sub(                                           &
 !                                                                     & ! integer Arrays
 !                                                                     & ! real Arrays
 !                                                                     & ! Characters
-ModelInfo, InitialInfo, Geometry                                      & ! Type
+ModelInfo, Geometry                                                   & ! Type
 )
 
 ! Libraries =======================================================================================
@@ -535,7 +488,6 @@ Implicit None
 !#logical   ::
 ! - types -----------------------------------------------------------------------------------------
 type(Input_Data_tp),  intent(In) :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
-type(InitialData_tp), intent(In) :: InitialInfo! Holds initial data required for array allocation
 type(Geometry_tp),    intent(inout):: Geometry   ! Holds information about the geometry of the domain
 
 ! Local Variables =================================================================================
@@ -585,7 +537,7 @@ read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, e
 
 ! Reading the length of each reach
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-  do i_reach= 1, InitialInfo%NoReaches
+  do i_reach= 1, Geometry%NoReaches
     UnFile = FileDataGeo
     read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) Geometry%ReachLength(i_reach); !write(*,*)Geometry%ReachLength(i_reach)
     UnFile = FileInfo
@@ -597,7 +549,7 @@ read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, e
 UnFile = FileDataGeo
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-  do i_reach= 1, InitialInfo%NoReaches
+  do i_reach= 1, Geometry%NoReaches
     UnFile = FileDataGeo
     read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) Geometry%ReachDisc(i_reach)
     UnFile = FileInfo
@@ -609,7 +561,7 @@ read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, e
 UnFile = FileDataGeo
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-  do i_reach= 1, InitialInfo%NoReaches
+  do i_reach= 1, Geometry%NoReaches
     UnFile = FileDataGeo
     read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) Geometry%ReachType(i_reach)
     UnFile = FileInfo
@@ -621,7 +573,7 @@ read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, e
 UnFile = FileDataGeo
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-  do i_reach= 1, InitialInfo%NoReaches
+  do i_reach= 1, Geometry%NoReaches
     UnFile = FileDataGeo
     read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) Geometry%ReachSlope(i_reach)
     UnFile = FileInfo
@@ -633,7 +585,7 @@ read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, e
 UnFile = FileDataGeo
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-  do i_reach= 1, InitialInfo%NoReaches
+  do i_reach= 1, Geometry%NoReaches
     UnFile = FileDataGeo
     read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) Geometry%ReachManning(i_reach)
     UnFile = FileInfo
@@ -645,7 +597,7 @@ read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, e
 UnFile = FileDataGeo
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-  do i_reach= 1, InitialInfo%NoReaches
+  do i_reach= 1, Geometry%NoReaches
     UnFile = FileDataGeo
     read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) Geometry%ReachWidth(i_reach)
     UnFile = FileInfo
@@ -704,11 +656,6 @@ Return
 
 End Subroutine Input_Array_sub
 
-
-
-
-
-
 !##################################################################################################
 ! Purpose: This subroutine reads information required for a particular analysis
 !
@@ -733,13 +680,13 @@ End Subroutine Input_Array_sub
 Subroutine Input_Analysis_sub(                                        &
 !                                                                     & ! integer(1) Variables
 !                                                                     & ! integer(2) Variables
-i_analysis,                                                           & ! integer(4) Variables
+i_analyses,                                                           & ! integer(4) Variables
 !                                                                     & ! integer(8) Variables
 !                                                                     & ! real Variables
 !                                                                     & ! integer Arrays
 !                                                                     & ! real Arrays
 !                                                                     & ! Characters
-ModelInfo                                                             & ! Type
+ModelInfo, AnalysisInfo                                               & ! Type
 )
 
 ! Libraries =======================================================================================
@@ -752,7 +699,7 @@ Implicit None
 ! Global Variables ================================================================================
 
 ! - integer Variables -----------------------------------------------------------------------------
-integer(kind=Smll), intent(In) :: i_analysis
+integer(kind=Smll), intent(In) :: i_analyses
 
 ! - real Variables --------------------------------------------------------------------------------
 !#real(kind=Dbl), intent(In)    ::
@@ -778,11 +725,14 @@ integer(kind=Smll), intent(In) :: i_analysis
 !#Logical   ::
 ! - Types -----------------------------------------------------------------------------------------
 type(Input_Data_tp), intent(inout) :: ModelInfo  ! Holds info. (name, dir, output dir) of the model, intent(In) :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
+type(AnalysisData_tp), intent(out) :: AnalysisInfo  ! Holds info. (name, dir, output dir) of the model, intent(In) :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
 
 ! Local Variables =================================================================================
 ! - integer Variables -----------------------------------------------------------------------------
 integer(kind=Smll) :: UnFile        ! Holds Unit of a file for error message
 integer(kind=Smll) :: IO_File       ! For IOSTAT: Input Output status in OPEN command
+integer(kind=Smll) :: IO_read  ! Holds error of read statements
+integer(kind=Smll) :: IO_write ! Used for IOSTAT - Input Output Status - in the write command.
 
 ! - real Variables --------------------------------------------------------------------------------
 !#real(kind=Dbl)      ::
@@ -813,16 +763,19 @@ write(FileInfo,*) " Subroutine < Input_Analysis_sub >: "
 write(*,        fmt="(A)") " -Opening the analysis file ..."
 write(FileInfo, fmt="(A)") " -Opening the analysis file ..."
 
+print*, ModelInfo%AnalysesNames(i_analyses)
+print*, ModelInfo%AnalysisDir
+
 UnFile=UnInptAna
-Open(Unit=UnFile, File=trim(ModelInfo%AnalysesNames(i_analysis))//'.txt', Err= 1001, IOStat=IO_File, Access='SEQUENTIAL', &
-      action='READ', Asynchronous='NO', blank='NULL', blocksize=0, defaultfile=trim(ModelInfo%AnalysisDir), &
-      dispose='Keep', form='formatted', position='ASIS', status='old') ;
+Open(Unit=UnFile, File=trim(ModelInfo%AnalysesNames(i_analyses))//'.Analysis', Err= 1001, IOStat=IO_File, Access='sequential', &
+      action='read', Asynchronous='no', blank='null', blocksize=0, defaultfile=trim(ModelInfo%AnalysisDir), &
+      dispose='Keep', form='formatted', position='asis', status='old') ;
 
 ! Creating the output file directory for this analysis --------------------------------------------
 write(*,        fmt="(A)") " -Creating the output folder for this analysis ..."
 write(FileInfo, fmt="(A)") " -Creating the output folder for this analysis ..."
 
-Directory=MakeDirQQ (trim(AdjustL (ModelInfo%OutputDir))//'/'//trim(AdjustL(ModelInfo%AnalysesNames(i_analysis))))
+Directory=MakeDirQQ (trim(AdjustL (ModelInfo%OutputDir))//'/'//trim(AdjustL(ModelInfo%AnalysesNames(i_analyses))))
   if (Directory) then ;
      write(*,       fmt="(A)") "The output folder for this analysis created." ;
      write(FileInfo,fmt="(A)") "The output folder for this analysis created." ;
@@ -831,7 +784,56 @@ Directory=MakeDirQQ (trim(AdjustL (ModelInfo%OutputDir))//'/'//trim(AdjustL(Mode
      write(FileInfo, fmt="(A)") "The output folder for this analysis already exists." ;
   end if ;
 
-ModelInfo%AnalysisOutputDir=trim(AdjustL(ModelInfo%OutputDir))//'/'//trim(AdjustL(ModelInfo%AnalysesNames(i_analysis)))
+ModelInfo%AnalysisOutputDir=trim(AdjustL(ModelInfo%OutputDir))//'/'//trim(AdjustL(ModelInfo%AnalysesNames(i_analyses)))
+
+UnFile = UnInptAna
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) AnalysisInfo%TotalTime
+UnFile = FileInfo
+write(unit=*,      fmt="(' The total simulation time is: ', F23.10, ' s')") AnalysisInfo%TotalTime
+write(unit=UnFile, fmt="(' The total simulation time is: ', F23.10, ' s')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) AnalysisInfo%TotalTime
+
+UnFile = UnInptAna
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) AnalysisInfo%TimeStep
+UnFile = FileInfo
+write(unit=UnFile, fmt="(' The time step is: ', F23.10, ' s')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) AnalysisInfo%TimeStep
+write(unit=*,      fmt="(' The time step is: ', F23.10, ' s')") AnalysisInfo%TimeStep
+
+UnFile = UnInptAna
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) AnalysisInfo%Q_Up
+UnFile = FileInfo
+write(unit=UnFile, fmt="(' Flow rate at the upstream is: ', F23.10, ' m/s3')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) AnalysisInfo%Q_Up
+write(unit=*,      fmt="(' Flow rate at the upstream is: ', F23.10, ' m/s3')") AnalysisInfo%Q_Up
+
+UnFile = UnInptAna
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) AnalysisInfo%h_dw
+UnFile = FileInfo
+write(unit=UnFile, fmt="(' Downstream water depth is: ', F23.10, ' m')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) AnalysisInfo%h_dw
+write(unit=*,      fmt="(' Downstream water depth is: ', F23.10, ' m')") AnalysisInfo%h_dw
+
+UnFile = UnInptAna
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) AnalysisInfo%CntrlV
+UnFile = FileInfo
+write(unit=UnFile, fmt="(' Control Volume is: ', F23.10, ' m^3')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) AnalysisInfo%CntrlV
+write(unit=*,      fmt="(' Control Volume is: ', F23.10, ' m^3')") AnalysisInfo%CntrlV
+
+UnFile = UnInptAna
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) AnalysisInfo%CntrlV_ratio
+UnFile = FileInfo
+write(unit=UnFile, fmt="(' The ratio of control volume is: ', F23.10)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) AnalysisInfo%CntrlV_ratio
+write(unit=*,      fmt="(' The ratio of control volume is: ', F23.10)") AnalysisInfo%CntrlV_ratio
 
 write(*,       *) " End Subroutine < Input_Analysis_sub >"
 write(*,       *)
@@ -859,6 +861,26 @@ Return
        write(*, Fmt_FL); write(FileInfo, Fmt_FL);
        write(*, Fmt_End); read(*,*); stop;
      end if
+
+! - Error in read statement -----------------------------------------------------------------------
+1003 write(*, Fmt_read1) UnFile, IO_read; write(UnFile, Fmt_read1) UnFile, IO_read;
+     write(*, Fmt_FL);  write(FileInfo, Fmt_FL); write(*, Fmt_End); read(*,*);  stop;
+
+! - End-OF-FILE in read statement -----------------------------------------------------------------
+1004 write(*, Fmt_read2) UnFile, IO_read; write(UnFile, Fmt_read2) UnFile, IO_read;
+     write(*, Fmt_FL);  write(FileInfo, Fmt_FL); write(*, Fmt_End); read(*,*);  stop;
+
+! - End-OF-FILE IN read statement -----------------------------------------------------------------
+1005 write(*, Fmt_read3) UnFile, IO_read; write(UnFile, Fmt_read3) UnFile, IO_read;
+     write(*, Fmt_FL);  write(FileInfo, Fmt_FL); write(*, Fmt_End); read(*,*);  stop;
+
+! - write statement error -------------------------------------------------------------------------
+1006 write(*, Fmt_write1) UnFile, IO_write; write(UnFile, Fmt_write1) UnFile, IO_write;
+     write(*, Fmt_FL); write(FileInfo, Fmt_FL); write(*, Fmt_End); read(*,*);  stop;
+
+
+
+
 
 End Subroutine Input_Analysis_sub
 

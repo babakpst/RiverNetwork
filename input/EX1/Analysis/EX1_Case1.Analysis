@@ -1,0 +1,20 @@
+Name: ex3 - Flow over a hump
+
+Total run time (in seconds): 
+6000.
+
+Time step (in seconds):
+0.005 
+
+Upstream boundary condition, constant flow (m^3/s):  
+4.42
+
+Downstream water depth (in meters):
+2.0
+
+Initial control volume: ( V = L * B * h)
+2.0
+
+Control Volume ratio:
+0.00
+
