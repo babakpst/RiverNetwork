@@ -18,7 +18,7 @@
 !
 ! ================================ S U B R O U T I N E ============================================
 ! Slover_1D_Richtmyer: Solves the 1D shallow water equation, using the Richtmyer method.
-!
+! Impose_Boundary_Condition_1D_sub: Imposes boundary conditions on the 1D model
 ! ================================ F U N C T I O N ================================================
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
@@ -60,12 +60,12 @@ type, public :: Richtmyer
   real(kind=DBL)    :: s_m(NCells-1_Lng-1_Lng)   ! temp
 
   contains
-    procedure Solve => Slover_1D_Richtmyer
-    procedure Initial => Impose_Initial_Condition
+    procedure Solve => Slover_1D_Richtmyer_sub
+    procedure Initial => Impose_Boundary_Condition_1D_sub
 end type Richtmyer
 
   interface Solve
-    module procedure Slover_1D_Richtmyer
+    module procedure Slover_1D_Richtmyer_sub
   end interface
 
 contains
@@ -96,7 +96,7 @@ contains
 !
 !##################################################################################################
 
-subroutine Slover_1D_Richtmyer(                                       &
+subroutine Slover_1D_Richtmyer_sub(                                       &
 !                                                                     & ! integer (1) variables
 !                                                                     & ! integer (2) variables
 !                                                                     & ! integer (4) variables
@@ -169,8 +169,8 @@ integer(kind=Lng)  :: i_steps   ! loop index over the number steps
 ! - type ------------------------------------------------------------------------------------------
 
 ! code ============================================================================================
-write(*,       *) " subroutine < Slover_1D_Richtmyer >: "
-write(FileInfo,*) " subroutine < Slover_1D_Richtmyer >: "
+write(*,       *) " subroutine < Slover_1D_Richtmyer_sub >: "
+write(FileInfo,*) " subroutine < Slover_1D_Richtmyer_sub >: "
 
 write(*,       *) " -Solving the shallow water equation ..."
 write(FileInfo,*) " -Solving the shallow water equation ..."
@@ -182,8 +182,7 @@ write(FileInfo,*) " -Applying initial conditions ..."
 this%h(:) = this%AnalysisInfo%CntrlV
 this%uh(:) = 0.0_Dbl
 
-
-        h, uh = boundary_conditions (nx, nt, h, uh, t[0], h_downstream, Q_upstream, B )
+this%Initial()
 
   do i_steps = 1_Lng, NSteps
 
@@ -231,17 +230,120 @@ this%uh(:) = 0.0_Dbl
 
 
 
-write(*,       *) " end subroutine < Slover_1D_Richtmyer >"
-write(FileInfo,*) " end subroutine < Slover_1D_Richtmyer >"
+write(*,       *) " end subroutine < Slover_1D_Richtmyer_sub >"
+write(FileInfo,*) " end subroutine < Slover_1D_Richtmyer_sub >"
 return
-end subroutine Slover_1D_Richtmyer
-
-Impose_Initial_Condition
+end subroutine Slover_1D_Richtmyer_sub
 
 
+!##################################################################################################
+! Purpose: This subroutine imposes the boundary conditions on a 1D domain.
+!
+! Developed by: Babak Poursartip
+! Supervised by: Clint Dawson
+!
+! The Institute for Computational Engineering and Sciences (ICES)
+! The University of Texas at Austin
+!
+! ================================ V E R S I O N ==================================================
+! V0.00: 03/05/2018 - File initiated.
+! V0.01: 03/05/2018 - Initiated: Compiled without error for the first time.
+!
+! File version $Id $
+!
+! Last update: 03/05/2018
+!
+! ================================ L O C A L   V A R I A B L E S ==================================
+! (Refer to the main code to see the list of imported variables)
+!  . . . . . . . . . . . . . . . . Variables . . . . . . . . . . . . . . . . . . . . . . . . . . .
+!
+!##################################################################################################
+
+subroutine Impose_Boundary_Condition_1D_sub(                                                       &
+!                                                                     & ! integer (1) variables
+!                                                                     & ! integer (2) variables
+!                                                                     & ! integer (4) variables
+!                                                                     & ! integer (8) variables
+!                                                                     & ! real variables
+!                                                                     & ! integer arrays
+!                                                                     & ! real arrays
+!                                                                     & ! characters
+this                                                                     & ! type
+)
 
 
+! Libraries =======================================================================================
 
+! User defined modules ============================================================================
+
+
+implicit none
+
+! Global variables ================================================================================
+
+! - integer variables -----------------------------------------------------------------------------
+!#integer (kind=Shrt), intent(in)    ::
+!#integer (kind=Shrt), intent(inout) ::
+!#integer (kind=Shrt), intent(out)   ::
+! - real variables --------------------------------------------------------------------------------
+!#real (kind=Dbl),     intent(in)    ::
+!#real (kind=Dbl),     intent(inout) ::
+!#real (kind=Dbl),     intent(out)   ::
+! - complex variables -----------------------------------------------------------------------------
+!#complex,             intent(in)    ::
+!#complex,             intent(inout) ::
+!#complex,             intent(out)   ::
+! - integer Arrays --------------------------------------------------------------------------------
+!#integer (kind=Shrt), intent(in),    dimension (:  )  ::
+!#integer (kind=Shrt), intent(in),    dimension (:,:)  ::
+!#integer (kind=Shrt), intent(in)    ::
+!#integer (kind=Shrt), intent(inout) ::
+!#integer (kind=Shrt), intent(out)   ::
+! - real Arrays -----------------------------------------------------------------------------------
+!#real (kind=Dbl),     intent(in),    dimension (:  )  ::
+!#real (kind=Dbl),     intent(inout), dimension (:  )  ::
+!#real (kind=Dbl),     intent(out),   dimension (:  )  ::
+! - character variables ---------------------------------------------------------------------------
+!#character (kind = ?, Len = ? ) ::
+! - logical variables -----------------------------------------------------------------------------
+!#logical   ::
+! - types -----------------------------------------------------------------------------------------
+class(Richtmyer) :: this
+
+! Local variables =================================================================================
+! - integer variables -----------------------------------------------------------------------------
+!#integer (kind=Shrt)  ::
+! - real variables --------------------------------------------------------------------------------
+!#real (kind=Dbl)      ::
+! - complex variables -----------------------------------------------------------------------------
+!#complex              ::
+! - integer Arrays --------------------------------------------------------------------------------
+!#integer (kind=Shrt), dimension (:)  ::
+!#integer (kind=Shrt), Allocatable, dimension (:)  ::
+! - real Arrays -----------------------------------------------------------------------------------
+!#real (kind=Dbl), dimension (:)      ::
+!#real (kind=Dbl), allocatable, dimension (:)  ::
+! - character variables ---------------------------------------------------------------------------
+!#character (kind = ?, Len = ? ) ::
+! - logical variables -----------------------------------------------------------------------------
+!#logical   ::
+! - type ------------------------------------------------------------------------------------------
+
+! code ============================================================================================
+write(*,       *) " subroutine < Impose_Boundary_Condition_1D_sub >: "
+write(FileInfo,*) " subroutine < Impose_Boundary_Condition_1D_sub >: "
+
+
+this%h(1) = this%h(2)
+this%h(NCells)  = h_downstream
+
+this%uh(1) = q_upstream/B
+this%uh(NCells)  = this%uh(NCells-1)
+
+write(*,       *) " end subroutine < Impose_Boundary_Condition_1D_sub >"
+write(FileInfo,*) " end subroutine < Impose_Boundary_Condition_1D_sub >"
+return
+end subroutine Impose_Boundary_Condition_1D_sub
 
 end module Solver_mod
 
