@@ -59,9 +59,9 @@ type, public :: Richtmyer
   real(kind=DBL)    :: s_f_m(NCells-1_Lng) ! friction slope at each step
   real(kind=DBL)    :: s_m(NCells-1_Lng-1_Lng)   ! temp
 
-
   contains
     procedure Solve => Slover_1D_Richtmyer
+    procedure Initial => Impose_Initial_Condition
 end type Richtmyer
 
   interface Solve
@@ -105,7 +105,7 @@ subroutine Slover_1D_Richtmyer(                                       &
 !                                                                     & ! integer arrays
 !                                                                     & ! real arrays
 !                                                                     & ! characters
-!                                                                     & ! type
+this                                                                  & ! type
 )
 
 
@@ -145,12 +145,13 @@ implicit none
 ! - logical variables -----------------------------------------------------------------------------
 !#logical   ::
 ! - types -----------------------------------------------------------------------------------------
-!#type() ::
+class(Richtmyer) :: this
 
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
-!#integer (kind=Shrt)  ::
+integer(kind=Lng)  :: i_steps   ! loop index over the number steps
+
 ! - real variables --------------------------------------------------------------------------------
 !#real (kind=Dbl)      ::
 ! - complex variables -----------------------------------------------------------------------------
@@ -171,6 +172,61 @@ implicit none
 write(*,       *) " subroutine < Slover_1D_Richtmyer >: "
 write(FileInfo,*) " subroutine < Slover_1D_Richtmyer >: "
 
+write(*,       *) " -Solving the shallow water equation ..."
+write(FileInfo,*) " -Solving the shallow water equation ..."
+
+! Applying initial conditions:
+write(*,       *) " -Applying initial conditions ..."
+write(FileInfo,*) " -Applying initial conditions ..."
+
+this%h(:) = this%AnalysisInfo%CntrlV
+this%uh(:) = 0.0_Dbl
+
+
+        h, uh = boundary_conditions (nx, nt, h, uh, t[0], h_downstream, Q_upstream, B )
+
+  do i_steps = 1_Lng, NSteps
+
+    ! write down data for visualization
+
+
+    ! applying boundary conditions
+
+    ! find the solution at the half step
+
+    ! find the solution at the full step
+
+
+
+
+            S_f[0:nx] = (n_manning**2.0) * ( (uh[0:nx]/h[0:nx]) * abs(uh[0:nx]/h[0:nx]) ) / (((B * h[0:nx]) /(B + 2.0 * h[0:nx]) )**(4.0/3.0) )
+            S  [0:nx] = - g * h[0:nx] * ( S_0[0:nx] - S_f[0:nx] )
+
+            #for i in range(nx):
+            #    print("{:5d},  S_f: {:20.15f},  S: {:20.15f},  h: {:20.15f}".format(i,S_f[i], S[i], h[i]) )
+            #print(" This is the end ----------------")
+
+            hm[0:nx-1] = ( h[0:nx-1] + h[1:nx] ) / 2.0 - ( dt / 2.0 ) * ( uh[1:nx] - uh[0:nx-1] ) / dx
+            uhm[0:nx-1] = ( uh[0:nx-1] + uh[1:nx] ) / 2.0 - ( dt / 2.0 ) * (  (uh[1:nx] ** 2.0) / h[1:nx]   + 0.5 * g * (h[1:nx] ** 2.0) - (uh[0:nx-1] ** 2.0 )/ h[0:nx-1] - 0.5 * g * (h[0:nx-1] ** 2.0 )) / dx - ( dt / 4.0 ) * ( S[1:nx] + S[0:nx-1] )
+            #print(uhm)
+            #print(hm)
+
+
+            S_f_m[0:nx-1] = (n_manning**2.0) * ( (uhm[0:nx-1]/hm[0:nx-1]) * abs(uhm[0:nx-1]/hm[0:nx-1]) ) / (  ( (B * hm[0:nx-1]) /(B + 2 * hm[0:nx-1]) )**(4.0/3.0) )
+            S_m  [0:nx-1] = - g * hm[0:nx-1] * ( S_0[0:nx-1] - S_f_m[0:nx-1] )
+
+            h[1:nx-1] = h[1:nx-1] - dt * ( uhm[1:nx-1] - uhm[0:nx-2] ) / dx
+            uh[1:nx-1] = uh[1:nx-1] - dt * ( (uhm[1:nx-1] ** 2.0)  / hm[1:nx-1] + 0.5 * g * (hm[1:nx-1] ** 2.0) - (uhm[0:nx-2] ** 2.0)  / hm[0:nx-2] - 0.5 * g * (hm[0:nx-2] ** 2.0) ) / dx - ( dt / 2.0 ) * ( S_m[1:nx-1] + S_m[0:nx-2] )
+
+
+            h, uh = boundary_conditions ( nx, nt, h, uh, t[it], h_downstream, Q_upstream, B )
+
+
+
+  end do
+
+
+
 
 
 
@@ -179,6 +235,13 @@ write(*,       *) " end subroutine < Slover_1D_Richtmyer >"
 write(FileInfo,*) " end subroutine < Slover_1D_Richtmyer >"
 return
 end subroutine Slover_1D_Richtmyer
+
+Impose_Initial_Condition
+
+
+
+
+
 
 end module Solver_mod
 
