@@ -38,7 +38,7 @@ use Parameters_mod
 use Information_mod
 use Input_mod
 use Discretization_mod
-
+use Solver_mod
 
 ! Global Variables ================================================================================
 Implicit None
@@ -153,7 +153,9 @@ call Discretize(Geometry, Discretization, ModelInfo)
 
         CASE(AnalysisType_1D)    ! # 1
 
-          ! <modify>
+          Experiment%AnalysisInfo = AnalysisInfo
+          Experiment%Geometry = Geometry
+          call Solve()
 
         ! Error in analysis numbering
         CASE DEFAULT

@@ -58,6 +58,8 @@ type(timing)        :: SimulationTime ! Holds the run time
 type(AnalysisData_tp):: AnalysisInfo ! Holds initial data required for array allocation
 type(Geometry_tp)   :: Geometry   ! Holds information about the geometry of the domain
 type(discretization_tp):: Discretization ! Holds all information required for discretization
+type(Richtmyer)     :: Experiment ! Contains all info to solve shallow water equation using Richtmyer method
+s
 
 ! - Character Variables ---------------------------------------------------------------------------
 !Character (kind = 1, Len = 50 ) :: arg  ! Holds the entered argument
