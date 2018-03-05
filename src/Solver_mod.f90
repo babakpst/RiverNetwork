@@ -146,6 +146,7 @@ implicit none
 !#logical   ::
 ! - types -----------------------------------------------------------------------------------------
 class(Richtmyer) :: this
+type(Plot_Results_1D_tp(NCells)) :: Results
 
 
 ! Local variables =================================================================================
@@ -187,29 +188,22 @@ this%Initial()
   do i_steps = 1_Lng, NSteps
 
     ! write down data for visualization
-
+    call Results%plot_results(i_steps)
 
     ! applying boundary conditions
 
+
     ! find the solution at the half step
 
+      this%s_f(:) = (this%ManningCell(:)**2.0_Dbl)*((this%uh(:)/this%h(:)) &
+                    *dabs(this%uh(:)/this%h(:)))/(((this%WidthCell(:)*this%h(:))/(this%WidthCell(:)+2.0_Dbl*this%h(:)) )**(4.0_Dbl/3.0_Dbl))
+
+      this%s(:) = - Gravity * this%h(:)*(this%s_0(:) - this%s_f(:))
+
+      this%hm(1:NCells-1) = (this%h(1:NCells-1) + this%h(2:NCells) ) / 2.0_Dbl - ( dt / 2.0_Dbl ) * (this%uh(2:NCells) - this%uh(1:NCells-1) ) / this%Geometry%LengthCell(1:NCells-1)
+      this%uhm(1:NCells-1) = (this%uh(1:NCells-1) + this%uh(2:NCells)) / 2.0_Dbl - ( dt / 2.0_Dbl ) * ( (this%uh(2:NCells) ** 2.0_Dbl) / this%h(2:NCells) + 0.5_Dbl * Gravity * ( this%h(2:NCells) ** 2.0_Dbl) - (this%uh(1:NCells-1)** 2.0_Dbl)/ this%h(1:NCells-1) - 0.5_Dbl * Gravity * (this%h(1:NCells-1) ** 2.0_Dbl )) / this%Geometry%LengthCell(1:NCells-1) - ( dt / 4.0_Dbl ) * ( this%s(2:NCells) + this%s(1:NCells-1) )
+
     ! find the solution at the full step
-
-
-
-
-            S_f[0:nx] = (n_manning**2.0) * ( (uh[0:nx]/h[0:nx]) * abs(uh[0:nx]/h[0:nx]) ) / (((B * h[0:nx]) /(B + 2.0 * h[0:nx]) )**(4.0/3.0) )
-            S  [0:nx] = - g * h[0:nx] * ( S_0[0:nx] - S_f[0:nx] )
-
-            #for i in range(nx):
-            #    print("{:5d},  S_f: {:20.15f},  S: {:20.15f},  h: {:20.15f}".format(i,S_f[i], S[i], h[i]) )
-            #print(" This is the end ----------------")
-
-            hm[0:nx-1] = ( h[0:nx-1] + h[1:nx] ) / 2.0 - ( dt / 2.0 ) * ( uh[1:nx] - uh[0:nx-1] ) / dx
-            uhm[0:nx-1] = ( uh[0:nx-1] + uh[1:nx] ) / 2.0 - ( dt / 2.0 ) * (  (uh[1:nx] ** 2.0) / h[1:nx]   + 0.5 * g * (h[1:nx] ** 2.0) - (uh[0:nx-1] ** 2.0 )/ h[0:nx-1] - 0.5 * g * (h[0:nx-1] ** 2.0 )) / dx - ( dt / 4.0 ) * ( S[1:nx] + S[0:nx-1] )
-            #print(uhm)
-            #print(hm)
-
 
             S_f_m[0:nx-1] = (n_manning**2.0) * ( (uhm[0:nx-1]/hm[0:nx-1]) * abs(uhm[0:nx-1]/hm[0:nx-1]) ) / (  ( (B * hm[0:nx-1]) /(B + 2 * hm[0:nx-1]) )**(4.0/3.0) )
             S_m  [0:nx-1] = - g * hm[0:nx-1] * ( S_0[0:nx-1] - S_f_m[0:nx-1] )
@@ -217,18 +211,10 @@ this%Initial()
             h[1:nx-1] = h[1:nx-1] - dt * ( uhm[1:nx-1] - uhm[0:nx-2] ) / dx
             uh[1:nx-1] = uh[1:nx-1] - dt * ( (uhm[1:nx-1] ** 2.0)  / hm[1:nx-1] + 0.5 * g * (hm[1:nx-1] ** 2.0) - (uhm[0:nx-2] ** 2.0)  / hm[0:nx-2] - 0.5 * g * (hm[0:nx-2] ** 2.0) ) / dx - ( dt / 2.0 ) * ( S_m[1:nx-1] + S_m[0:nx-2] )
 
-
+    ! apply boundary condition
             h, uh = boundary_conditions ( nx, nt, h, uh, t[it], h_downstream, Q_upstream, B )
 
-
-
   end do
-
-
-
-
-
-
 
 write(*,       *) " end subroutine < Slover_1D_Richtmyer_sub >"
 write(FileInfo,*) " end subroutine < Slover_1D_Richtmyer_sub >"

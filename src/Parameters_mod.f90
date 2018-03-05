@@ -72,8 +72,9 @@ integer(kind=Smll), PARAMETER, PUBLIC :: UnInptMat=511 ! input file for material
 integer(kind=Smll), Parameter, Public  :: Un_CHK=599 ! Scratch file for debugging (.Chk)
 
 !Output files
-integer(kind=Smll), Parameter, Public  :: FileInfo=600 ! Model information file (.Inf)
-integer(kind=Smll), Parameter, Public  :: FileDomain=601 ! output file containing the domain (.domain)
+integer(kind=Smll), Parameter, Public  :: FileInfo=600    ! Model information file (.Inf)
+integer(kind=Smll), Parameter, Public  :: FileDomain=601  ! output file containing the domain (.domain)
+integer(kind=Smll), Parameter, Public  :: FileResults=602 ! output file containing results (.res)
 
 
 ! Analysis case number ============================================================================
