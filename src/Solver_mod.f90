@@ -61,7 +61,7 @@ type, public :: Richtmyer
 
   contains
     procedure Solve => Slover_1D_Richtmyer_sub
-    procedure Initial => Impose_Boundary_Condition_1D_sub
+    procedure BC => Impose_Boundary_Condition_1D_sub
 end type Richtmyer
 
   interface Solve
@@ -194,25 +194,22 @@ this%Initial()
 
 
     ! find the solution at the half step
+    this%s_f(:) = (this%ManningCell(:)**2.0_Dbl)*((this%uh(:)/this%h(:)) &
+                  *dabs(this%uh(:)/this%h(:)))/(((this%WidthCell(:)*this%h(:))/(this%WidthCell(:)+2.0_Dbl*this%h(:)) )**(4.0_Dbl/3.0_Dbl))
+    this%s(:) = - Gravity * this%h(:)*(this%s_0(:) - this%s_f(:))
 
-      this%s_f(:) = (this%ManningCell(:)**2.0_Dbl)*((this%uh(:)/this%h(:)) &
-                    *dabs(this%uh(:)/this%h(:)))/(((this%WidthCell(:)*this%h(:))/(this%WidthCell(:)+2.0_Dbl*this%h(:)) )**(4.0_Dbl/3.0_Dbl))
-
-      this%s(:) = - Gravity * this%h(:)*(this%s_0(:) - this%s_f(:))
-
-      this%hm(1:NCells-1) = (this%h(1:NCells-1) + this%h(2:NCells) ) / 2.0_Dbl - ( dt / 2.0_Dbl ) * (this%uh(2:NCells) - this%uh(1:NCells-1) ) / this%Geometry%LengthCell(1:NCells-1)
-      this%uhm(1:NCells-1) = (this%uh(1:NCells-1) + this%uh(2:NCells)) / 2.0_Dbl - ( dt / 2.0_Dbl ) * ( (this%uh(2:NCells) ** 2.0_Dbl) / this%h(2:NCells) + 0.5_Dbl * Gravity * ( this%h(2:NCells) ** 2.0_Dbl) - (this%uh(1:NCells-1)** 2.0_Dbl)/ this%h(1:NCells-1) - 0.5_Dbl * Gravity * (this%h(1:NCells-1) ** 2.0_Dbl )) / this%Geometry%LengthCell(1:NCells-1) - ( dt / 4.0_Dbl ) * ( this%s(2:NCells) + this%s(1:NCells-1) )
+    this%hm(1:NCells-1) = (this%h(1:NCells-1) + this%h(2:NCells) ) / 2.0_Dbl - ( dt / 2.0_Dbl ) * (this%uh(2:NCells) - this%uh(1:NCells-1) ) / this%Geometry%LengthCell(1:NCells-1)
+    this%uhm(1:NCells-1) = (this%uh(1:NCells-1) + this%uh(2:NCells)) / 2.0_Dbl - ( dt / 2.0_Dbl ) * ( (this%uh(2:NCells) ** 2.0_Dbl) / this%h(2:NCells) + 0.5_Dbl * Gravity * ( this%h(2:NCells) ** 2.0_Dbl) - (this%uh(1:NCells-1)** 2.0_Dbl)/ this%h(1:NCells-1) - 0.5_Dbl * Gravity * (this%h(1:NCells-1) ** 2.0_Dbl )) / this%Geometry%LengthCell(1:NCells-1) - ( dt / 4.0_Dbl ) * ( this%s(2:NCells) + this%s(1:NCells-1) )
 
     ! find the solution at the full step
+    this%S_f_m(1:NCells_1) = (this%Geometry%ManningCell(1:NCells_1) **2.0) * ( (this%uhm(1:NCells_1)/this%hm(1:NCells_1)) * dabs(this%uhm(1:NCells_1)/this%hm(1:NCells_1)) ) / ((( this%Geometry%WidthCell(1:NCells_1) * this%hm(1:NCells_1)) /(this%Geometry%WidthCell(1:NCells_1) + 2.0_Dbl * this%hm(1:NCells_1)) )**(4.0_Dbl/3.0_Dbl))
+    this%s_m (1:NCells_1) = - Gravity * this%hm(1:NCells_1)*(this%s_0(1:NCells_1) - this%s_f_m(1:NCells_1))
 
-            S_f_m[0:nx-1] = (n_manning**2.0) * ( (uhm[0:nx-1]/hm[0:nx-1]) * abs(uhm[0:nx-1]/hm[0:nx-1]) ) / (  ( (B * hm[0:nx-1]) /(B + 2 * hm[0:nx-1]) )**(4.0/3.0) )
-            S_m  [0:nx-1] = - g * hm[0:nx-1] * ( S_0[0:nx-1] - S_f_m[0:nx-1] )
-
-            h[1:nx-1] = h[1:nx-1] - dt * ( uhm[1:nx-1] - uhm[0:nx-2] ) / dx
-            uh[1:nx-1] = uh[1:nx-1] - dt * ( (uhm[1:nx-1] ** 2.0)  / hm[1:nx-1] + 0.5 * g * (hm[1:nx-1] ** 2.0) - (uhm[0:nx-2] ** 2.0)  / hm[0:nx-2] - 0.5 * g * (hm[0:nx-2] ** 2.0) ) / dx - ( dt / 2.0 ) * ( S_m[1:nx-1] + S_m[0:nx-2] )
+    this%h(2:NCells_1) = this%h(2:NCells_1) - dt * ( this%uhm(2:NCells_1) - this%uhm(1:NCells-2) ) / this%Geometry%LengthCell(2:NCells_1)
+    this%uh(2:NCells_1) = this%uh(2:NCells_1) - dt * ((this%uhm(2:NCells_1) ** 2.0_Dbl)  / this%hm(2:NCells_1) + 0.5_Dbl * Gravity * ( this%hm(2:NCells_1) ** 2.0_Dbl) - (this%uhm(2:NCells-2) ** 2.0_Dbl)  / this%hm(1:NCells-2) - 0.5_Dbl * Gravity * ( this%hm(1:NCells-2) ** 2.0_Dbl) ) / this%Geometry%LengthCell(2:NCells_1) - ( dt / 2.0_Dbl ) * ( this%s_m(2:NCells_1) + this%s_m(1:NCells-2) )
 
     ! apply boundary condition
-            h, uh = boundary_conditions ( nx, nt, h, uh, t[it], h_downstream, Q_upstream, B )
+    call this%BC()
 
   end do
 
