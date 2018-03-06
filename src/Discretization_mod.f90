@@ -154,7 +154,7 @@ real(kind=Dbl)    :: ProjectionLength
 ! - logical variables -----------------------------------------------------------------------------
 !#logical   ::
 ! - type ------------------------------------------------------------------------------------------
-type(Plot_domain_1D_tp) :: Plot ! Plots the discretized domain
+type(Plot_domain_1D_tp(NCells=:)),allocatable :: Plot ! Plots the discretized domain
 
 ! code ============================================================================================
 write(*,       *) " subroutine <Discretize_1D>: "
@@ -323,14 +323,8 @@ write(*,        fmt="(' -Plotting the discretized domain ... ')")
 write(FileInfo, fmt="(' -Plotting the discretized domain ... ')")
 
 ! Plot the discretized domain (cell centers)
-Plot%NPoints = Discretization%NCells
-Plot%ModelName = ModelInfo%ModelName
-Plot%OutputDir = ModelInfo%OutputDir
-Plot%AnalysisOutputDir = ModelInfo%OutputDir
-Plot%AnalysisDir =ModelInfo%AnalysisDir
-Plot%AnalysisName = ModelInfo%AnalysesNames(1)  ! <Modify>
-
-allocate(Plot%XCoor(Plot%NPoints), Plot%ZCoor(Plot%NPoints), stat=ERR_Alloc)
+Plot%ModelInfo = ModelInfo
+allocate( Plot_domain_1D_tp(Discretization%NCells) :: Plot, stat=ERR_Alloc)
 
   if (ERR_Alloc /= 0) then
     write (*, Fmt_ALLCT) ERR_Alloc;  write (FileInfo, Fmt_ALLCT) ERR_Alloc;

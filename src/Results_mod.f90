@@ -35,38 +35,44 @@ module Results_mod
 ! User defined modules ============================================================================
 use Parameters_mod
 
+
 implicit none
 
 !public
 !private
 
-
 ! Plot domain
-type :: Plot_domain_1D_tp
-  integer(kind=Lng) :: NPoints
+type Plot_domain_1D_tp(NCells)
+  integer(kind=Lng), len :: NCells
 
-  character (kind = 1, Len = 30 ) :: ModelName     ! Name of the model input file
-  character (kind = 1, Len = 150) :: AnalysisDir   ! Directory of Analysis input file.
-  character (kind = 1, Len = 150) :: AnalysisName  ! Name of the file
-  character (kind = 1, Len = 150) :: OutputDir     ! Directory of output files (Results)
-  character (kind = 1, Len = 150) :: AnalysisOutputDir! Directory of output file for each analysis
+  real(kind=DBL), dimension(NCells) :: XCoor  ! Horizontal points
+  real(kind=DBL), dimension(NCells) :: ZCoor  ! Horizontal points
 
-  real(kind=DBL), allocatable, dimension(:) :: XCoor  ! Horizontal points
-  real(kind=DBL), allocatable, dimension(:) :: ZCoor  ! Horizontal points
+  type(Input_Data_tp) :: ModelInfo
+
   contains
     procedure plot => Plot_Domain_1D_sub
 end type Plot_domain_1D_tp
 
-type :: Plot_Results_1D_tp(NCells)
-  type(Plot_domain_1D_tp) :: Domain
 
+
+
+
+type Plot_Results_1D_tp(NCells)
   integer(kind=Lng), len :: NCells
-  real(kind=dbl) :: h(NCells)
-  real(kind=dbl) :: uh(NCells)
+  real(kind=dbl), dimension(NCells) :: h
+  real(kind=dbl), dimension(NCells)  :: uh
+
+  type(Plot_domain_1D_tp(NCells)) :: Domain
 
   contains
     procedure plot_results => Plot_Results_1D_sub
 end type Plot_Results_1D_tp
+
+
+
+
+
 
 private :: Plot_Domain_1D_sub, Plot_Results_1D_sub
 
@@ -122,7 +128,7 @@ implicit none
 ! Global variables ================================================================================
 
 ! - types -----------------------------------------------------------------------------------------
-class(Plot_domain_1D_tp) :: this
+class(Plot_domain_1D_tp(*)) :: this
 
 
 ! Local variables =================================================================================
@@ -150,8 +156,8 @@ integer(kind=Lng)  :: i_points       ! Loop index on the points
 ! - type ------------------------------------------------------------------------------------------
 
 ! code ============================================================================================
-write(*,       *) " subroutine < Plot_Domain_1D >: "
-write(FileInfo,*) " subroutine < Plot_Domain_1D >: "
+write(*,       *) " subroutine < Plot_Domain_1D_sub >: "
+write(FileInfo,*) " subroutine < Plot_Domain_1D_sub >: "
 
 ! - Opening the domain file -----------------------------------------------------------------------
 UnFile = FileDomain
@@ -159,17 +165,17 @@ UnFile = FileDomain
 write(*,       *) " -Writing down the domain in the .Domain file ... "
 write(FileInfo,*) " -Writing down the domain in the .Domain file ... "
 
-open(unit=UnFile, file=trim(this%ModelName)//'.Domain', Err=1001, iostat=IO_File, &
-access='sequential', action='write', asynchronous='no', blank='NULL', blocksize=0, defaultfile=trim(this%AnalysisOutputDir), &
+open(unit=UnFile, file=trim(this%ModelInfo%ModelName)//'.Domain', Err=1001, iostat=IO_File, &
+access='sequential', action='write', asynchronous='no', blank='NULL', blocksize=0, defaultfile=trim(this%ModelInfo%AnalysisOutputDir), &
 dispose='keep', form='formatted', position='asis', status='replace')
 
 UnFile = FileDomain
 write(unit=UnFile, fmt="(' Domain coordinates: ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
 write(unit=UnFile, fmt="(' Number of points: ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
-write(unit=UnFile, fmt="(I20)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%NPoints
+write(unit=UnFile, fmt="(I20)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%NCells
 write(unit=UnFile, fmt="(' x   --      z ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
 
-  do i_points = 1_Lng, this%NPoints
+  do i_points = 1_Lng, this%NCells
     write(unit=UnFile, fmt="(2F20.5)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%XCoor(i_points), this%ZCoor(i_points)
   end do
 
@@ -182,8 +188,8 @@ write(FileInfo,*) " Domain coordinates was written successfully in the file. "
 UnFile =  FileDomain
 close(unit=UnFile, status="keep", err=1002, iostat=IO_File)
 
-write(*,       *) " end subroutine < Plot_Domain_1D >"
-write(FileInfo,*) " end subroutine < Plot_Domain_1D >"
+write(*,       *) " end subroutine < Plot_Domain_1D_sub >"
+write(FileInfo,*) " end subroutine < Plot_Domain_1D_sub >"
 return
 
 ! Errors ==========================================================================================
@@ -247,10 +253,11 @@ subroutine Plot_Results_1D_sub(                                       &
 this, i_step                                                          & ! type
 )
 
-
 ! Libraries =======================================================================================
 
+
 ! User defined modules ============================================================================
+
 
 
 implicit none
@@ -283,12 +290,16 @@ integer(kind=Lng), intent(in) :: i_step
 ! - logical variables -----------------------------------------------------------------------------
 !#logical   ::
 ! - types -----------------------------------------------------------------------------------------
-class(Plot_Results_1D_tp) :: this
-
+class(Plot_Results_1D_tp(*)) :: this
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
-!#integer (kind=Shrt)  ::
+integer(kind=Smll) :: UnFile         ! Holds Unit of a file for error message
+integer(kind=Smll) :: IO_File        ! For IOSTAT: Input Output Status in OPEN command
+integer(kind=Smll) :: IO_write       ! Used for IOSTAT: Input/Output Status in the write command
+
+integer(kind=Lng)  :: i_points       ! Loop index on the points
+
 ! - real variables --------------------------------------------------------------------------------
 !#real (kind=Dbl)      ::
 ! - complex variables -----------------------------------------------------------------------------
@@ -312,20 +323,23 @@ write(FileInfo,*) " subroutine < Plot_Results_1D_sub >: "
 ! - Opening the domain file -----------------------------------------------------------------------
 UnFile = FileResults
 
-write(*,       *) " -Writing down the domain in the .Domain file ... "
-write(FileInfo,*) " -Writing down the domain in the .Domain file ... "
+write(*,       *) " -Writing down the results in the .Res file ... "
+write(FileInfo,*) " -Writing down the results in the .Res file ... "
 
-open(unit=UnFile, file=trim(this%ModelName)//'.Res', Err=1001, iostat=IO_File, &
-access='sequential', action='write', asynchronous='no', blank='NULL', blocksize=0, defaultfile=trim(this%AnalysisOutputDir), &
+print*, this%Domain%ModelInfo%ModelName
+print*, this%Domain%ModelInfo%AnalysisOutputDir
+
+open(unit=UnFile, file=trim(this%Domain%ModelInfo%ModelName)//'.Res', Err=1001, iostat=IO_File, &
+access='sequential', action='write', asynchronous='no', blank='NULL', blocksize=0, defaultfile=trim(this%Domain%ModelInfo%AnalysisOutputDir), &
 dispose='keep', form='formatted', position='asis', status='replace')
 
 UnFile = FileResults
 write(unit=UnFile, fmt="(' Results: ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
 write(unit=UnFile, fmt="(' Number of points: ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
-write(unit=UnFile, fmt="(I20)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%NPoints
+write(unit=UnFile, fmt="(I20)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%NCells
 write(unit=UnFile, fmt="(' h      --      uh ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
 
-  do i_points = 1_Lng, this%NPoints
+  do i_points = 1_Lng, this%NCells
     write(unit=UnFile, fmt="(2F20.5)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%h(i_points), this%uh(i_points)
   end do
 

@@ -34,18 +34,17 @@ module Solver_mod
 
 ! User defined modules ============================================================================
 use Parameters_mod
+use Results_mod
 
 implicit none
 
 !public
 !private
 
-type, public :: Richtmyer
+type, public :: Richtmyer(NCells)
 
-  type(discretization_tp) :: Geometry
-  type(AnalysisData_tp)   :: AnalysisInfo
-
-  integer(kind=Lnd) = Plot = 100
+  integer(kind=Lng), len :: NCells
+  integer(kind=Lng) :: Plot = 100
 
   real(kind=DBL)    :: Gravity = 9.81_Dbl
   real(kind=DBL)    :: h(NCells)   ! water height at each step
@@ -58,6 +57,10 @@ type, public :: Richtmyer
   real(kind=DBL)    :: s(NCells)   ! temp
   real(kind=DBL)    :: s_f_m(NCells-1_Lng) ! friction slope at each step
   real(kind=DBL)    :: s_m(NCells-1_Lng-1_Lng)   ! temp
+
+  type(discretization_tp) :: Discretization
+  type(AnalysisData_tp)   :: AnalysisInfo
+  type(Plot_domain_1D_tp(NCells)) :: Domain
 
   contains
     procedure Solve => Slover_1D_Richtmyer_sub
@@ -145,16 +148,17 @@ implicit none
 ! - logical variables -----------------------------------------------------------------------------
 !#logical   ::
 ! - types -----------------------------------------------------------------------------------------
-class(Richtmyer) :: this
-type(Plot_Results_1D_tp(NCells)) :: Results
-
+class(Richtmyer(*)) :: this
+type(Plot_Results_1D_tp(NCells = this%NCells)) :: Results
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
 integer(kind=Lng)  :: i_steps   ! loop index over the number steps
+integer(kind=Lng)  :: NSteps    ! Total number of steps for time marching
 
 ! - real variables --------------------------------------------------------------------------------
-!#real (kind=Dbl)      ::
+real (kind=Dbl)      :: dt
+
 ! - complex variables -----------------------------------------------------------------------------
 !#complex              ::
 ! - integer Arrays --------------------------------------------------------------------------------
@@ -180,33 +184,34 @@ write(FileInfo,*) " -Solving the shallow water equation ..."
 write(*,       *) " -Applying initial conditions ..."
 write(FileInfo,*) " -Applying initial conditions ..."
 
+
+
 this%h(:) = this%AnalysisInfo%CntrlV
 this%uh(:) = 0.0_Dbl
 
-this%Initial()
+NSteps = this%AnalysisInfo%TotalTime / this%AnalysisInfo%TimeStep
+dt     = this%AnalysisInfo%TimeStep
 
   do i_steps = 1_Lng, NSteps
 
     ! write down data for visualization
     call Results%plot_results(i_steps)
 
-    ! applying boundary conditions
-
 
     ! find the solution at the half step
-    this%s_f(:) = (this%ManningCell(:)**2.0_Dbl)*((this%uh(:)/this%h(:)) &
-                  *dabs(this%uh(:)/this%h(:)))/(((this%WidthCell(:)*this%h(:))/(this%WidthCell(:)+2.0_Dbl*this%h(:)) )**(4.0_Dbl/3.0_Dbl))
-    this%s(:) = - Gravity * this%h(:)*(this%s_0(:) - this%s_f(:))
+    this%s_f(:) = (this%Discretization%ManningCell(:)**2.0_Dbl)*((this%uh(:)/this%h(:)) &
+                  *dabs(this%uh(:)/this%h(:)))/(((this%Discretization%WidthCell(:)*this%h(:))/(this%Discretization%WidthCell(:)+2.0_Dbl*this%h(:)) )**(4.0_Dbl/3.0_Dbl))
+    this%s(:) = - this%Gravity * this%h(:)*(this%s_0(:) - this%s_f(:))
 
-    this%hm(1:NCells-1) = (this%h(1:NCells-1) + this%h(2:NCells) ) / 2.0_Dbl - ( dt / 2.0_Dbl ) * (this%uh(2:NCells) - this%uh(1:NCells-1) ) / this%Geometry%LengthCell(1:NCells-1)
-    this%uhm(1:NCells-1) = (this%uh(1:NCells-1) + this%uh(2:NCells)) / 2.0_Dbl - ( dt / 2.0_Dbl ) * ( (this%uh(2:NCells) ** 2.0_Dbl) / this%h(2:NCells) + 0.5_Dbl * Gravity * ( this%h(2:NCells) ** 2.0_Dbl) - (this%uh(1:NCells-1)** 2.0_Dbl)/ this%h(1:NCells-1) - 0.5_Dbl * Gravity * (this%h(1:NCells-1) ** 2.0_Dbl )) / this%Geometry%LengthCell(1:NCells-1) - ( dt / 4.0_Dbl ) * ( this%s(2:NCells) + this%s(1:NCells-1) )
+    this%hm(1:this%NCells-1) = (this%h(1:this%NCells-1) + this%h(2:this%NCells) ) / 2.0_Dbl - ( dt / 2.0_Dbl ) * (this%uh(2:this%NCells) - this%uh(1:this%NCells-1) ) / this%Discretization%LengthCell(1:this%NCells-1)
+    this%uhm(1:this%NCells-1) = (this%uh(1:this%NCells-1) + this%uh(2:this%NCells)) / 2.0_Dbl - ( dt / 2.0_Dbl ) * ( (this%uh(2:this%NCells) ** 2.0_Dbl) / this%h(2:this%NCells) + 0.5_Dbl * this%Gravity * ( this%h(2:this%NCells) ** 2.0_Dbl) - (this%uh(1:this%NCells-1)** 2.0_Dbl)/ this%h(1:this%NCells-1) - 0.5_Dbl * this%Gravity * (this%h(1:this%NCells-1) ** 2.0_Dbl )) / this%Discretization%LengthCell(1:this%NCells-1) - ( dt / 4.0_Dbl ) * ( this%s(2:this%NCells) + this%s(1:this%NCells-1) )
 
     ! find the solution at the full step
-    this%S_f_m(1:NCells_1) = (this%Geometry%ManningCell(1:NCells_1) **2.0) * ( (this%uhm(1:NCells_1)/this%hm(1:NCells_1)) * dabs(this%uhm(1:NCells_1)/this%hm(1:NCells_1)) ) / ((( this%Geometry%WidthCell(1:NCells_1) * this%hm(1:NCells_1)) /(this%Geometry%WidthCell(1:NCells_1) + 2.0_Dbl * this%hm(1:NCells_1)) )**(4.0_Dbl/3.0_Dbl))
-    this%s_m (1:NCells_1) = - Gravity * this%hm(1:NCells_1)*(this%s_0(1:NCells_1) - this%s_f_m(1:NCells_1))
+    this%S_f_m(1:this%NCells-1) = (this%Discretization%ManningCell(1:this%NCells-1) **2.0) * ( (this%uhm(1:this%NCells-1)/this%hm(1:this%NCells-1)) * dabs(this%uhm(1:this%NCells-1)/this%hm(1:this%NCells-1)) ) / ((( this%Discretization%WidthCell(1:this%NCells-1) * this%hm(1:this%NCells-1)) /(this%Discretization%WidthCell(1:this%NCells-1) + 2.0_Dbl * this%hm(1:this%NCells-1)) )**(4.0_Dbl/3.0_Dbl))
+    this%s_m (1:this%NCells-1) = - this%Gravity * this%hm(1:this%NCells-1)*(this%s_0(1:this%NCells-1) - this%s_f_m(1:this%NCells-1))
 
-    this%h(2:NCells_1) = this%h(2:NCells_1) - dt * ( this%uhm(2:NCells_1) - this%uhm(1:NCells-2) ) / this%Geometry%LengthCell(2:NCells_1)
-    this%uh(2:NCells_1) = this%uh(2:NCells_1) - dt * ((this%uhm(2:NCells_1) ** 2.0_Dbl)  / this%hm(2:NCells_1) + 0.5_Dbl * Gravity * ( this%hm(2:NCells_1) ** 2.0_Dbl) - (this%uhm(2:NCells-2) ** 2.0_Dbl)  / this%hm(1:NCells-2) - 0.5_Dbl * Gravity * ( this%hm(1:NCells-2) ** 2.0_Dbl) ) / this%Geometry%LengthCell(2:NCells_1) - ( dt / 2.0_Dbl ) * ( this%s_m(2:NCells_1) + this%s_m(1:NCells-2) )
+    this%h(2:this%NCells-1) = this%h(2:this%NCells-1) - dt * ( this%uhm(2:this%NCells-1) - this%uhm(1:this%NCells-2) ) / this%Discretization%LengthCell(2:this%NCells-1)
+    this%uh(2:this%NCells-1) = this%uh(2:this%NCells-1) - dt * ((this%uhm(2:this%NCells-1) ** 2.0_Dbl)  / this%hm(2:this%NCells-1) + 0.5_Dbl * this%Gravity * ( this%hm(2:this%NCells-1) ** 2.0_Dbl) - (this%uhm(2:this%NCells-2) ** 2.0_Dbl)  / this%hm(1:this%NCells-2) - 0.5_Dbl * this%Gravity * ( this%hm(1:this%NCells-2) ** 2.0_Dbl) ) / this%Discretization%LengthCell(2:this%NCells-1) - ( dt / 2.0_Dbl ) * ( this%s_m(2:this%NCells-1) + this%s_m(1:this%NCells-2) )
 
     ! apply boundary condition
     call this%BC()
@@ -291,7 +296,7 @@ implicit none
 ! - logical variables -----------------------------------------------------------------------------
 !#logical   ::
 ! - types -----------------------------------------------------------------------------------------
-class(Richtmyer) :: this
+class(Richtmyer(*)) :: this
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
@@ -318,10 +323,10 @@ write(FileInfo,*) " subroutine < Impose_Boundary_Condition_1D_sub >: "
 
 
 this%h(1) = this%h(2)
-this%h(NCells)  = h_downstream
+this%h(this%NCells)  = this%AnalysisInfo%h_dw
 
-this%uh(1) = q_upstream/B
-this%uh(NCells)  = this%uh(NCells-1)
+this%uh(1) = this%AnalysisInfo%Q_Up/ this%Discretization%WidthCell(1)
+this%uh(this%NCells)  = this%uh(this%NCells-1)
 
 write(*,       *) " end subroutine < Impose_Boundary_Condition_1D_sub >"
 write(FileInfo,*) " end subroutine < Impose_Boundary_Condition_1D_sub >"

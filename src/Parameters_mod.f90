@@ -78,7 +78,7 @@ integer(kind=Smll), Parameter, Public  :: FileResults=602 ! output file containi
 
 
 ! Analysis case number ============================================================================
-integer(kind=Smll), Parameter, Public :: AnalysisType_1D=100 ! 1D Shallow water simulation
+integer(kind=Smll), Parameter, Public :: AnalysisType_1D=1 ! 1D Shallow water simulation
 
 
 ! Element Types Number ============================================================================

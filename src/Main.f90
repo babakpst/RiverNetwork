@@ -151,11 +151,22 @@ call Discretize(Geometry, Discretization, ModelInfo)
     ! Analysis ====================================================================================
       SELECT CASE(ModelInfo%AnalysisType)
 
-        CASE(AnalysisType_1D)    ! # 1
+        CASE(AnalysisType_1D)    ! # 1: Richtmyer
+
+          allocate(Richtmyer(NCells=Discretization%NCells) :: Experiment,     stat=ERR_Alloc)
+
+            if (ERR_Alloc /= 0) then
+              write (*, Fmt_ALLCT) ERR_Alloc;  write (FileInfo, Fmt_ALLCT) ERR_Alloc;
+              write(*, Fmt_FL);  write(FileInfo, Fmt_FL); read(*, Fmt_End);  stop;
+            end if
+
 
           Experiment%AnalysisInfo = AnalysisInfo
-          Experiment%Geometry = Geometry
-          call Solve()
+          Experiment%Discretization = Discretization
+          Experiment%Domain%ModelInfo = ModelInfo
+          Experiment%Domain%XCoor(:) = Discretization%X_Disc(:)
+          Experiment%Domain%ZCoor(:) = Discretization%ZCell(:)
+          call Experiment%Solve()
 
         ! Error in analysis numbering
         CASE DEFAULT
