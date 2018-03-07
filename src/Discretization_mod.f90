@@ -121,8 +121,9 @@ implicit none
 !#logical   ::
 ! - types -----------------------------------------------------------------------------------------
 type(Geometry_tp),       intent(in)  :: Geometry
-type(Input_Data_tp),     intent(in)  :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
 type(discretization_tp), intent(out) :: Discretization
+
+type(Input_Data_tp),     intent(in)  :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
@@ -154,11 +155,11 @@ real(kind=Dbl)    :: ProjectionLength
 ! - logical variables -----------------------------------------------------------------------------
 !#logical   ::
 ! - type ------------------------------------------------------------------------------------------
-type(Plot_domain_1D_tp(NCells=:)),allocatable :: Plot ! Plots the discretized domain
+type(Plot_domain_1D_tp(NCells=:)), allocatable :: Plot ! Plots the discretized domain
 
 ! code ============================================================================================
-write(*,       *) " subroutine <Discretize_1D>: "
-write(FileInfo,*) " subroutine <Discretize_1D>: "
+write(*,       *) " subroutine < Discretize_1D_sub >: "
+write(FileInfo,*) " subroutine < Discretize_1D_sub >: "
 
 write(*,       *) " -Discretizing the domain ..."
 write(FileInfo,*) " -Discretizing the domain ..."
@@ -323,8 +324,7 @@ write(*,        fmt="(' -Plotting the discretized domain ... ')")
 write(FileInfo, fmt="(' -Plotting the discretized domain ... ')")
 
 ! Plot the discretized domain (cell centers)
-Plot%ModelInfo = ModelInfo
-allocate( Plot_domain_1D_tp(Discretization%NCells) :: Plot, stat=ERR_Alloc)
+allocate(Plot_domain_1D_tp(CellCounter) :: Plot, stat=ERR_Alloc)
 
   if (ERR_Alloc /= 0) then
     write (*, Fmt_ALLCT) ERR_Alloc;  write (FileInfo, Fmt_ALLCT) ERR_Alloc;
@@ -335,11 +335,11 @@ allocate( Plot_domain_1D_tp(Discretization%NCells) :: Plot, stat=ERR_Alloc)
 Plot%XCoor(:)  = Discretization%X_Disc(:)
 Plot%ZCoor(:)  = Discretization%ZCell(:)
 
+call Plot%plot(ModelInfo)
 
-call Plot%plot()
+write(*,       *) " end subroutine < Discretize_1D_sub >"
+write(FileInfo,*) " end subroutine < Discretize_1D_sub >"
 
-write(*,       *) " end subroutine < Discretize_1D >"
-write(FileInfo,*) " end subroutine < Discretize_1D >"
 return
 end subroutine Discretize_1D_sub
 

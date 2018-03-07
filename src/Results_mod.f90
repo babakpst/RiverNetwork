@@ -48,22 +48,23 @@ type Plot_domain_1D_tp(NCells)
   real(kind=DBL), dimension(NCells) :: XCoor  ! Horizontal points
   real(kind=DBL), dimension(NCells) :: ZCoor  ! Horizontal points
 
-  type(Input_Data_tp) :: ModelInfo
-
   contains
     procedure plot => Plot_Domain_1D_sub
 end type Plot_domain_1D_tp
-
-
-
 
 
 type Plot_Results_1D_tp(NCells)
   integer(kind=Lng), len :: NCells
   real(kind=dbl), dimension(NCells) :: h
   real(kind=dbl), dimension(NCells)  :: uh
+  real(kind=dbl), dimension(NCells)  :: s_f
+  real(kind=dbl), dimension(NCells)  :: s
+  real(kind=dbl), dimension(NCells-1)  :: hm
+  real(kind=dbl), dimension(NCells-1)  :: uhm
+  real(kind=dbl), dimension(NCells-1)  :: s_f_m
+  real(kind=dbl), dimension(NCells-1)  :: s_m
 
-  type(Plot_domain_1D_tp(NCells)) :: Domain
+  type(Input_Data_tp) :: ModelInfo
 
   contains
     procedure plot_results => Plot_Results_1D_sub
@@ -114,7 +115,7 @@ subroutine Plot_Domain_1D_sub(                                        &
 !                                                                     & ! integer arrays
 !                                                                     & ! real arrays
 !                                                                     & ! characters
-this                                                                  & ! type
+this,ModelInfo                                                        & ! type
 )
 
 
@@ -154,6 +155,7 @@ integer(kind=Lng)  :: i_points       ! Loop index on the points
 ! - logical variables -----------------------------------------------------------------------------
 !#logical   ::
 ! - type ------------------------------------------------------------------------------------------
+type(Input_Data_tp), intent(in) :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
 
 ! code ============================================================================================
 write(*,       *) " subroutine < Plot_Domain_1D_sub >: "
@@ -165,8 +167,8 @@ UnFile = FileDomain
 write(*,       *) " -Writing down the domain in the .Domain file ... "
 write(FileInfo,*) " -Writing down the domain in the .Domain file ... "
 
-open(unit=UnFile, file=trim(this%ModelInfo%ModelName)//'.Domain', Err=1001, iostat=IO_File, &
-access='sequential', action='write', asynchronous='no', blank='NULL', blocksize=0, defaultfile=trim(this%ModelInfo%AnalysisOutputDir), &
+open(unit=UnFile, file=trim(ModelInfo%ModelName)//'.Domain', Err=1001, iostat=IO_File, &
+access='sequential', action='write', asynchronous='no', blank='NULL', blocksize=0, defaultfile=trim(ModelInfo%OutputDir), &
 dispose='keep', form='formatted', position='asis', status='replace')
 
 UnFile = FileDomain
@@ -179,10 +181,8 @@ write(unit=UnFile, fmt="(' x   --      z ')", advance='yes', asynchronous='no', 
     write(unit=UnFile, fmt="(2F20.5)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%XCoor(i_points), this%ZCoor(i_points)
   end do
 
-
 write(*,       *) " Domain coordinates was written successfully in the file. "
 write(FileInfo,*) " Domain coordinates was written successfully in the file. "
-
 
 ! - Closing the domain file -----------------------------------------------------------------------
 UnFile =  FileDomain
@@ -311,7 +311,8 @@ integer(kind=Lng)  :: i_points       ! Loop index on the points
 !#real (kind=Dbl), dimension (:)      ::
 !#real (kind=Dbl), allocatable, dimension (:)  ::
 ! - character variables ---------------------------------------------------------------------------
-!#character (kind = ?, Len = ? ) ::
+character (kind = 1, Len = 30) :: extfile
+
 ! - logical variables -----------------------------------------------------------------------------
 !#logical   ::
 ! - type ------------------------------------------------------------------------------------------
@@ -326,11 +327,10 @@ UnFile = FileResults
 write(*,       *) " -Writing down the results in the .Res file ... "
 write(FileInfo,*) " -Writing down the results in the .Res file ... "
 
-print*, this%Domain%ModelInfo%ModelName
-print*, this%Domain%ModelInfo%AnalysisOutputDir
+write (extfile,*) i_step
 
-open(unit=UnFile, file=trim(this%Domain%ModelInfo%ModelName)//'.Res', Err=1001, iostat=IO_File, &
-access='sequential', action='write', asynchronous='no', blank='NULL', blocksize=0, defaultfile=trim(this%Domain%ModelInfo%AnalysisOutputDir), &
+open(unit=UnFile, file=trim(this%ModelInfo%ModelName)//'_'//trim(ADJUSTL(extfile))//'.Res', Err=1001, iostat=IO_File, &
+access='sequential', action='write', asynchronous='no', blank='NULL', blocksize=0, defaultfile=trim(this%ModelInfo%AnalysisOutputDir), &
 dispose='keep', form='formatted', position='asis', status='replace')
 
 UnFile = FileResults
@@ -340,11 +340,13 @@ write(unit=UnFile, fmt="(I20)", advance='yes', asynchronous='no', iostat=IO_writ
 write(unit=UnFile, fmt="(' h      --      uh ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
 
   do i_points = 1_Lng, this%NCells
-    write(unit=UnFile, fmt="(2F20.5)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%h(i_points), this%uh(i_points)
+    write(unit=UnFile, fmt="(I6, 8F16.5)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) i_points, this%h(i_points), this%uh(i_points), this%s_f(i_points), this%s(i_points), this%hm(i_points), this%uhm(i_points), this%s_f_m(i_points), this%s_m(i_points)
   end do
+  write(unit=UnFile, fmt="(I6, 8F16.5)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%h(i_points), this%uh(i_points), this%s_f(i_points), this%s(i_points)
 
-write(*,        fmt = "(A,F23.10)") " Results was written successfully in the file for time step: ", i_step
-write(FileInfo, fmt = "(A,F23.10)") " Results was written successfully in the file for time step: ", i_step
+
+write(*,        fmt = "(A,I10)") " Results was written successfully in the file for time step: ", i_step
+write(FileInfo, fmt = "(A,I10)") " Results was written successfully in the file for time step: ", i_step
 
 ! - Closing the domain file -----------------------------------------------------------------------
 UnFile =  FileResults

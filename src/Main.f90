@@ -128,9 +128,9 @@ Call cpu_time(SimulationTime%Input_Ends)
 ! Discretization ----------------------------------------------------------------------------------
 write(*,        fmt="(A)") " -Discretization ..."
 write(FileInfo, fmt="(A)") " -Discretization ..."
-
+print*," check 001"
 call Discretize(Geometry, Discretization, ModelInfo)
-
+print*," check 000"
 ! Simulations =====================================================================================
 
   do i_analyses = 1, ModelInfo%NumberOfAnalyses
@@ -154,18 +154,15 @@ call Discretize(Geometry, Discretization, ModelInfo)
         CASE(AnalysisType_1D)    ! # 1: Richtmyer
 
           allocate(Richtmyer(NCells=Discretization%NCells) :: Experiment,     stat=ERR_Alloc)
-
             if (ERR_Alloc /= 0) then
               write (*, Fmt_ALLCT) ERR_Alloc;  write (FileInfo, Fmt_ALLCT) ERR_Alloc;
               write(*, Fmt_FL);  write(FileInfo, Fmt_FL); read(*, Fmt_End);  stop;
             end if
 
 
+          Experiment%ModelInfo = ModelInfo
           Experiment%AnalysisInfo = AnalysisInfo
           Experiment%Discretization = Discretization
-          Experiment%Domain%ModelInfo = ModelInfo
-          Experiment%Domain%XCoor(:) = Discretization%X_Disc(:)
-          Experiment%Domain%ZCoor(:) = Discretization%ZCell(:)
           call Experiment%Solve()
 
         ! Error in analysis numbering

@@ -42,15 +42,14 @@ implicit none
 !private
 
 type, public :: Richtmyer(NCells)
-
   integer(kind=Lng), len :: NCells
-  integer(kind=Lng) :: Plot = 100
+  integer(kind=Lng)      :: Plot_Inc = 100
 
   real(kind=DBL)    :: Gravity = 9.81_Dbl
   real(kind=DBL)    :: h(NCells)   ! water height at each step
   real(kind=DBL)    :: uh(NCells)  ! water height*velocity at each step
-  real(kind=DBL)    :: hm(NCells)  ! water height at each half step
-  real(kind=DBL)    :: uhm(NCells) ! water height*velocity at each half step
+  real(kind=DBL)    :: hm(NCells-1_Lng)  ! water height at each half step
+  real(kind=DBL)    :: uhm(NCells-1_Lng) ! water height*velocity at each half step
 
   real(kind=DBL)    :: s_0(NCells) ! bottom slope
   real(kind=DBL)    :: s_f(NCells) ! friction slope at each step
@@ -60,7 +59,8 @@ type, public :: Richtmyer(NCells)
 
   type(discretization_tp) :: Discretization
   type(AnalysisData_tp)   :: AnalysisInfo
-  type(Plot_domain_1D_tp(NCells)) :: Domain
+  type(Input_Data_tp) :: ModelInfo
+  !type(Plot_domain_1D_tp(NCells)) :: Domain
 
   contains
     procedure Solve => Slover_1D_Richtmyer_sub
@@ -149,7 +149,8 @@ implicit none
 !#logical   ::
 ! - types -----------------------------------------------------------------------------------------
 class(Richtmyer(*)) :: this
-type(Plot_Results_1D_tp(NCells = this%NCells)) :: Results
+!type(Plot_Results_1D_tp(NCells = this%NCells)) :: Results
+type(Plot_Results_1D_tp(NCells = :)), allocatable :: Results
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
@@ -170,7 +171,7 @@ real (kind=Dbl)      :: dt
 ! - character variables ---------------------------------------------------------------------------
 !#character (kind = ?, Len = ? ) ::
 ! - logical variables -----------------------------------------------------------------------------
-!#logical   ::
+logical   :: PrintResults
 ! - type ------------------------------------------------------------------------------------------
 
 ! code ============================================================================================
@@ -184,6 +185,7 @@ write(FileInfo,*) " -Solving the shallow water equation ..."
 write(*,       *) " -Applying initial conditions ..."
 write(FileInfo,*) " -Applying initial conditions ..."
 
+allocate(Plot_Results_1D_tp(NCells = this%NCells) :: Results)
 
 
 this%h(:) = this%AnalysisInfo%CntrlV
@@ -192,11 +194,36 @@ this%uh(:) = 0.0_Dbl
 NSteps = this%AnalysisInfo%TotalTime / this%AnalysisInfo%TimeStep
 dt     = this%AnalysisInfo%TimeStep
 
+PrintResults = .false.
+
+this%s_f(:) = 0.0_Dbl
+this%s(:) = 0.0_Dbl
+this%hm(:) = 0.0_Dbl
+this%uhm(:) = 0.0_Dbl
+this%s_f_m(:) = 0.0_Dbl
+this%s_m(:) = 0.0_Dbl
+
+call this%BC()
+Results%ModelInfo = this%ModelInfo
+
   do i_steps = 1_Lng, NSteps
 
+    print*, i_steps*dt
     ! write down data for visualization
-    call Results%plot_results(i_steps)
 
+
+      if (mod(i_steps,this%Plot_Inc)==1 .or. PrintResults) then
+        Results%h(:) = this%h(:)
+        Results%uh(:) = this%uh(:)
+        Results%s_f(:) = this%s_f(:)
+        Results%s(:) = this%s(:)
+        Results%hm(:) = this%hm(:)
+        Results%uhm(:) = this%uhm(:)
+        Results%s_f_m(:) = this%s_f_m(:)
+        Results%s_m(:) = this%s_m(:)
+
+        call Results%plot_results(i_steps)
+      end if
 
     ! find the solution at the half step
     this%s_f(:) = (this%Discretization%ManningCell(:)**2.0_Dbl)*((this%uh(:)/this%h(:)) &
@@ -211,7 +238,7 @@ dt     = this%AnalysisInfo%TimeStep
     this%s_m (1:this%NCells-1) = - this%Gravity * this%hm(1:this%NCells-1)*(this%s_0(1:this%NCells-1) - this%s_f_m(1:this%NCells-1))
 
     this%h(2:this%NCells-1) = this%h(2:this%NCells-1) - dt * ( this%uhm(2:this%NCells-1) - this%uhm(1:this%NCells-2) ) / this%Discretization%LengthCell(2:this%NCells-1)
-    this%uh(2:this%NCells-1) = this%uh(2:this%NCells-1) - dt * ((this%uhm(2:this%NCells-1) ** 2.0_Dbl)  / this%hm(2:this%NCells-1) + 0.5_Dbl * this%Gravity * ( this%hm(2:this%NCells-1) ** 2.0_Dbl) - (this%uhm(2:this%NCells-2) ** 2.0_Dbl)  / this%hm(1:this%NCells-2) - 0.5_Dbl * this%Gravity * ( this%hm(1:this%NCells-2) ** 2.0_Dbl) ) / this%Discretization%LengthCell(2:this%NCells-1) - ( dt / 2.0_Dbl ) * ( this%s_m(2:this%NCells-1) + this%s_m(1:this%NCells-2) )
+    this%uh(2:this%NCells-1) = this%uh(2:this%NCells-1) - dt * ((this%uhm(2:this%NCells-1) ** 2.0_Dbl)  / this%hm(2:this%NCells-1) + 0.5_Dbl * this%Gravity * ( this%hm(2:this%NCells-1) ** 2.0_Dbl) - (this%uhm(1:this%NCells-2) ** 2.0_Dbl)  / this%hm(1:this%NCells-2) - 0.5_Dbl * this%Gravity * ( this%hm(1:this%NCells-2) ** 2.0_Dbl) ) / this%Discretization%LengthCell(1:this%NCells-2) - ( dt / 2.0_Dbl ) * ( this%s_m(2:this%NCells-1) + this%s_m(1:this%NCells-2) )
 
     ! apply boundary condition
     call this%BC()
@@ -320,6 +347,7 @@ class(Richtmyer(*)) :: this
 ! code ============================================================================================
 write(*,       *) " subroutine < Impose_Boundary_Condition_1D_sub >: "
 write(FileInfo,*) " subroutine < Impose_Boundary_Condition_1D_sub >: "
+
 
 
 this%h(1) = this%h(2)

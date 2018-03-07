@@ -66,6 +66,13 @@ def main(arg):
   plt.show()
   
 
+  Input = open("EX1.Domain","r")
+  Temp = Input.readline().rstrip("\n")  # 1
+  Temp = Input.readline().rstrip("\n")  # 1
+  npoints = int(Input.readline().rstrip("\n"))  # 1
+
+
+
 if __name__ == '__main__':
     import sys    
     main(sys.argv)

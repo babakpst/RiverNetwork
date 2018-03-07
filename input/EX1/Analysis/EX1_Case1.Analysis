@@ -1,10 +1,10 @@
-Name: ex3 - Flow over a hump
+Name: ex1 - Flow over a hump without shock
 
 Total run time (in seconds): 
-6000.
+200.0
 
 Time step (in seconds):
-0.005 
+0.001 
 
 Upstream boundary condition, constant flow (m^3/s):  
 4.42
