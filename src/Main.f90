@@ -16,6 +16,7 @@
 ! V0.02: 02/26/2018  - Adding discretize module
 ! V0.03: 03/02/2018  - Adding the result module
 ! V0.04: 03/02/2018  - Adding the solver module
+! V0.10: 03/08/2018 - Initiated: Compiled without error.
 !
 ! File version $Id $
 !
@@ -73,13 +74,15 @@ allocate(Arguments%Length(Arguments%ArgCount), Arguments%Arg(Arguments%ArgCount)
 
 ! Directories, input, and output Files ============================================================
 ! Address File ------------------------------------------------------------------------------------
-write(*,fmt="(A)") " -Reading Address.txt file ..."
+write(*,        fmt="(A)") " -Reading Address.txt file ..."
+!write(FileInfo, fmt="(A)") " -Reading Address.txt file ..."
 
 call Input(ModelInfo)
 
 
 ! Opening the information File --------------------------------------------------------------------
-write(*,fmt="(A)") " -Creating the info.txt file in the output folder ..."
+write(*,        fmt="(A)") " -Creating the info.txt file in the output folder ..."
+!write(FileInfo, fmt="(A)") " -Creating the info.txt file in the output folder ..."
 
 UnFile=FileInfo
 Open(Unit=UnFile, File=trim(ModelInfo%ModelName)//'.infM',     &
@@ -195,6 +198,9 @@ DEallocate(Arguments%Length, Arguments%Arg, Arguments%Argstatus,      stat = ERR
 Call cpu_time(SimulationTime%Time_End)
 !Call Info()
 
+! End the code ====================================================================================
+write(*, Fmt_SUC); write(FileInfo, Fmt_SUC);
+write(*, Fmt_End)
 
 ! Close Files -------------------------------------------------------------------------------------
 ! Close information File
@@ -205,9 +211,7 @@ UnFile= UnInptAna
 Close(Unit=UnFile, status='Keep', Err=1002, IOstat=IO_File)
 
 
-! End the code ====================================================================================
-write(*, Fmt_SUC); write(FileInfo, Fmt_SUC);
-write(*, Fmt_End)
+
 
 !#read(*,*)
 stop

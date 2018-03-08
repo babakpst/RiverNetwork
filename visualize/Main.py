@@ -78,7 +78,7 @@ def main(arg):
   plt.close(fig)  
   
 
-  for ii in range(160):
+  for ii in range(1999):
 
     FileName ="EX1_Case1/EX1_" + str(ii*100 + 1) + ".Res"
     File_Input = open(FileName,"r")

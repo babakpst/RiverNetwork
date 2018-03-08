@@ -11,14 +11,17 @@
 ! ================================ V E R S I O N ==================================================
 ! V0.00: 03/02/2018 - File initiated.
 ! V0.01: 03/02/2018 - Initiated: Compiled without error for the first time.
+! V0.10: 03/08/2018 - Initiated: Compiled without error.
 !
 ! File version $Id $
 !
 ! Last update: 03/02/2018
 !
 ! ================================ S U B R O U T I N E ============================================
-! Slover_1D_Richtmyer: Solves the 1D shallow water equation, using the Richtmyer method.
+! Solver_1D_Richtmyer: Solves the 1D shallow water equation, using the Richtmyer method.
 ! Impose_Boundary_Condition_1D_sub: Imposes boundary conditions on the 1D model
+!
+!
 ! ================================ F U N C T I O N ================================================
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
@@ -63,12 +66,12 @@ type, public :: Richtmyer(NCells)
   !type(Plot_domain_1D_tp(NCells)) :: Domain
 
   contains
-    procedure Solve => Slover_1D_Richtmyer_sub
+    procedure Solve => Solver_1D_Richtmyer_sub
     procedure BC => Impose_Boundary_Condition_1D_sub
 end type Richtmyer
 
   interface Solve
-    module procedure Slover_1D_Richtmyer_sub
+    module procedure Solver_1D_Richtmyer_sub
   end interface
 
 contains
@@ -96,7 +99,7 @@ contains
 !
 !##################################################################################################
 
-subroutine Slover_1D_Richtmyer_sub(                                       &
+subroutine Solver_1D_Richtmyer_sub(                                       &
 !                                                                     & ! integer (1) variables
 !                                                                     & ! integer (2) variables
 !                                                                     & ! integer (4) variables
@@ -192,7 +195,7 @@ NSteps = this%AnalysisInfo%TotalTime/this%AnalysisInfo%TimeStep
 dt     = this%AnalysisInfo%TimeStep
 dx     = this%Discretization%LengthCell(1)
 
-PrintResults = .true.
+PrintResults = .false.
 
 this%s_f(:)   = 0.0_Dbl
 this%s(:)     = 0.0_Dbl
@@ -224,7 +227,7 @@ Results%ModelInfo = this%ModelInfo
       end if
 
     ! find the solution at the half step
-    this%s_f(:) = (this%Discretization%ManningCell(:)**2.0_Dbl)*((this%uh(:)/this%h(:)) *dabs(this%uh(:)/this%h(:)))/(((this%Discretization%WidthCell(:)*this%h(:))/(this%Discretization%WidthCell(:)+2.0_Dbl*this%h(:)) )**(4.0_Dbl/3.0_Dbl))
+    this%s_f(:) = (this%Discretization%ManningCell(:)**2.0_Dbl)*((this%uh(:)/this%h(:)) *dabs(this%uh(:)/this%h(:)))/ (((this%Discretization%WidthCell(:)*this%h(:))/(this%Discretization%WidthCell(:)+2.0_Dbl*this%h(:)) )**(4.0_Dbl/3.0_Dbl))
     this%s(:) = - this%Gravity * this%h(:)*(this%Discretization%SlopeCell(:) - this%s_f(:))
 
     !this%hm(1:this%NCells-1)  = (this%h(1:this%NCells-1)  + this%h(2:this%NCells) ) / 2.0_Dbl - ( dt / 2.0_Dbl ) * (this%uh(2:this%NCells) - this%uh(1:this%NCells-1) ) / this%Discretization%LengthCell(1:this%NCells-1)
@@ -250,10 +253,11 @@ Results%ModelInfo = this%ModelInfo
 
   end do
 
-write(*,       *) " end subroutine < Slover_1D_Richtmyer_sub >"
-write(FileInfo,*) " end subroutine < Slover_1D_Richtmyer_sub >"
+write(*,       *) " end subroutine < Solver_1D_Richtmyer_sub >"
+write(FileInfo,*) " end subroutine < Solver_1D_Richtmyer_sub >"
 return
-end subroutine Slover_1D_Richtmyer_sub
+
+end subroutine Solver_1D_Richtmyer_sub
 
 
 !##################################################################################################
@@ -268,6 +272,7 @@ end subroutine Slover_1D_Richtmyer_sub
 ! ================================ V E R S I O N ==================================================
 ! V0.00: 03/05/2018 - File initiated.
 ! V0.01: 03/05/2018 - Initiated: Compiled without error for the first time.
+! V0.10: 03/08/2018 - Initiated: Compiled without error.
 !
 ! File version $Id $
 !
@@ -363,6 +368,14 @@ write(*,       *) " end subroutine < Impose_Boundary_Condition_1D_sub >"
 write(FileInfo,*) " end subroutine < Impose_Boundary_Condition_1D_sub >"
 return
 end subroutine Impose_Boundary_Condition_1D_sub
+
+
+
+
+
+
+
+
 
 end module Solver_mod
 

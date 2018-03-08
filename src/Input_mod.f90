@@ -10,6 +10,7 @@
 !
 ! ================================ V E R S I O N ==================================================
 ! V0.1: 02/22/2018 - Initiation.
+! V0.10: 03/08/2018 - Initiated: Compiled without error.
 !
 ! File version $Id $
 !
@@ -145,8 +146,8 @@ Logical (kind=Shrt)  :: Directory
 
 write(*,       *)
 write(*,       *) " Subroutine < Input_Address_sub >: "
-write(FileInfo,*)
-write(FileInfo,*) " Subroutine < Input_Address_sub >: "
+!write(FileInfo,*)
+!write(FileInfo,*) " Subroutine < Input_Address_sub >: "
 
 
 UnFile=FileAdr
@@ -206,15 +207,15 @@ write(*,fmt="(2A)")" The output directory is: ", ModelInfo%OutputDir
 
 ! - Closing the address file ----------------------------------------------------------------------
 write(*,        fmt="(A)") " -Closing the address file"
-write(FileInfo, fmt="(A)") " -Closing the address file"
+!write(FileInfo, fmt="(A)") " -Closing the address file"
 UnFile =  FileAdr
 Close(unit = UnFile, status = 'KEEP', ERR =  1002, IOSTAT = IO_File)
 
 
 write(*,       *) ' End Subroutine < Input_Address_sub >'
 write(*,       *)
-write(FileInfo,*) ' End Subroutine < Input_Address_sub >'
-write(FileInfo,*)
+!write(FileInfo,*) ' End Subroutine < Input_Address_sub >'
+!write(FileInfo,*)
 Return
 
 ! Errors ==========================================================================================

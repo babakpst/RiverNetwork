@@ -212,7 +212,8 @@ End Subroutine InfBasic
 ! The University of Texas at Austin
 !
 ! ================================ V E R S I O N ==================================================
-! V0.1: 02/12/2018 - Initiation.
+! V0.01: 02/12/2018 - Initiation.
+! V0.10: 03/08/2018 - Initiated: Compiled without error.
 !
 ! File version $Id $
 !
