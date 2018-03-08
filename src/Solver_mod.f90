@@ -188,7 +188,7 @@ write(FileInfo,*) " -Applying initial conditions ..."
 allocate(Plot_Results_1D_tp(NCells = this%NCells) :: Results)
 
 
-this%h(:) = this%AnalysisInfo%CntrlV
+this%h(:) = this%AnalysisInfo%CntrlV(:)-this%Discretization%ZCell(:)
 this%uh(:) = 0.0_Dbl
 
 NSteps = this%AnalysisInfo%TotalTime / this%AnalysisInfo%TimeStep

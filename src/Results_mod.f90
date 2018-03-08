@@ -342,7 +342,7 @@ write(unit=UnFile, fmt="(' h      --      uh ')", advance='yes', asynchronous='n
   do i_points = 1_Lng, this%NCells
     write(unit=UnFile, fmt="(I6, 8F16.5)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) i_points, this%h(i_points), this%uh(i_points), this%s_f(i_points), this%s(i_points), this%hm(i_points), this%uhm(i_points), this%s_f_m(i_points), this%s_m(i_points)
   end do
-  write(unit=UnFile, fmt="(I6, 8F16.5)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%h(i_points), this%uh(i_points), this%s_f(i_points), this%s(i_points)
+  !write(unit=UnFile, fmt="(I6, 8F16.5)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%h(i_points), this%uh(i_points), this%s_f(i_points), this%s(i_points)
 
 
 write(*,        fmt = "(A,I10)") " Results was written successfully in the file for time step: ", i_step
