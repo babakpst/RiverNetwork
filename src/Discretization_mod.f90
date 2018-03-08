@@ -174,7 +174,6 @@ write(FileInfo, fmt="(A)") " Calculating the total number of the cells in the do
     Discretization%NCells = Discretization%NCells + Geometry%ReachDisc(i_reach)
   end do
 
-
 write(*,        fmt="(A,I15)") " Total number of cells: ", Discretization%NCells
 write(FileInfo, fmt="(A,I15)") " Total number of cells: ", Discretization%NCells
 
@@ -186,7 +185,7 @@ allocate(Discretization%LengthCell(Discretization%NCells),              &
          Discretization%WidthCell(Discretization%NCells),               &
          Discretization%X_Disc(Discretization%NCells),                  &
          Discretization%X_Full(Discretization%NCells*2_Sgl + 1_Sgl),    &
-        stat=ERR_Alloc)
+         stat=ERR_Alloc)
 
   if (ERR_Alloc /= 0) then
     write (*, Fmt_ALLCT) ERR_Alloc;  write (FileInfo, Fmt_ALLCT) ERR_Alloc;
@@ -295,7 +294,7 @@ CellCounter = 0_Lng
             Discretization%X_Full(CellCounter*2_Lng)       = XCoordinate - 0.5_Dbl * ProjectionLength
             Discretization%X_Full(CellCounter*2_Lng+1_Lng) = XCoordinate
 
-            Discretization%SlopeCell(CellCounter)  = Domain_Func_1D_D(XCoordinate)
+            Discretization%SlopeCell(CellCounter)  = -Domain_Func_1D_D(XCoordinate)
             Discretization%ZCell(CellCounter)      = Height + Z_loss
             Discretization%ZFull(CellCounter*2)    = Height + Domain_Func_1D(XCoordinate - 0.5_Dbl * ProjectionLength)
             Discretization%ZFull(CellCounter*2+1)  = Height + Z_loss
@@ -332,8 +331,9 @@ allocate(Plot_domain_1D_tp(CellCounter) :: Plot, stat=ERR_Alloc)
   end if
 
 ! Filling the coordinates for plot
-Plot%XCoor(:)  = Discretization%X_Disc(:)
-Plot%ZCoor(:)  = Discretization%ZCell(:)
+Plot%XCoor(:)      = Discretization%X_Disc(:)
+Plot%ZCoor(:)      = Discretization%ZCell(:)
+Plot%SlopeCell(:)  = Discretization%SlopeCell(:)
 
 call Plot%plot(ModelInfo)
 
@@ -384,13 +384,15 @@ Bathymetry = 0.2_Dbl - 0.05_Dbl * (x-10.0_Dbl)**2
 
 end function Domain_Func_1D
 
+
+
+
 function Domain_Func_1D_D(x) result(DBathymetry)
 
 implicit none
 
 real(kind=Dbl) :: x
 real(kind=Dbl) :: DBathymetry
-
 
 
 ! code ============================================================================================

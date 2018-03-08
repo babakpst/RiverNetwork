@@ -47,6 +47,7 @@ type Plot_domain_1D_tp(NCells)
 
   real(kind=DBL), dimension(NCells) :: XCoor  ! Horizontal points
   real(kind=DBL), dimension(NCells) :: ZCoor  ! Horizontal points
+  real(kind=DBL), dimension(NCells) :: SlopeCell  ! Horizontal points
 
   contains
     procedure plot => Plot_Domain_1D_sub
@@ -55,10 +56,10 @@ end type Plot_domain_1D_tp
 
 type Plot_Results_1D_tp(NCells)
   integer(kind=Lng), len :: NCells
-  real(kind=dbl), dimension(NCells) :: h
-  real(kind=dbl), dimension(NCells)  :: uh
-  real(kind=dbl), dimension(NCells)  :: s_f
-  real(kind=dbl), dimension(NCells)  :: s
+  real(kind=dbl), dimension(NCells)    :: h
+  real(kind=dbl), dimension(NCells)    :: uh
+  real(kind=dbl), dimension(NCells)    :: s_f
+  real(kind=dbl), dimension(NCells)    :: s
   real(kind=dbl), dimension(NCells-1)  :: hm
   real(kind=dbl), dimension(NCells-1)  :: uhm
   real(kind=dbl), dimension(NCells-1)  :: s_f_m
@@ -69,9 +70,6 @@ type Plot_Results_1D_tp(NCells)
   contains
     procedure plot_results => Plot_Results_1D_sub
 end type Plot_Results_1D_tp
-
-
-
 
 
 
@@ -178,7 +176,7 @@ write(unit=UnFile, fmt="(I20)", advance='yes', asynchronous='no', iostat=IO_writ
 write(unit=UnFile, fmt="(' x   --      z ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
 
   do i_points = 1_Lng, this%NCells
-    write(unit=UnFile, fmt="(2F20.5)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%XCoor(i_points), this%ZCoor(i_points)
+    write(unit=UnFile, fmt="(i16,3F16.5)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) i_points, this%XCoor(i_points), this%ZCoor(i_points), this%SlopeCell(i_points)
   end do
 
 write(*,       *) " Domain coordinates was written successfully in the file. "
@@ -334,10 +332,10 @@ access='sequential', action='write', asynchronous='no', blank='NULL', blocksize=
 dispose='keep', form='formatted', position='asis', status='replace')
 
 UnFile = FileResults
-write(unit=UnFile, fmt="(' Results: ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
-write(unit=UnFile, fmt="(' Number of points: ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
-write(unit=UnFile, fmt="(I20)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%NCells
-write(unit=UnFile, fmt="(' h      --      uh ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
+!write(unit=UnFile, fmt="(' Results: ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
+!write(unit=UnFile, fmt="(' Number of points: ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
+!write(unit=UnFile, fmt="(I20)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%NCells
+!write(unit=UnFile, fmt="(' h      --      uh ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
 
   do i_points = 1_Lng, this%NCells
     write(unit=UnFile, fmt="(I6, 8F16.5)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) i_points, this%h(i_points), this%uh(i_points), this%s_f(i_points), this%s(i_points), this%hm(i_points), this%uhm(i_points), this%s_f_m(i_points), this%s_m(i_points)
