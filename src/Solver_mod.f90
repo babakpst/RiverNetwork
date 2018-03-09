@@ -371,9 +371,112 @@ end subroutine Impose_Boundary_Condition_1D_sub
 
 
 
+!##################################################################################################
+! Purpose: This subroutine solves the 1D Saint Venant Equation (Shallow water equation), using the
+!          combination of forward/backward Euler method with Lax-Wendroff method, using various
+!          limiters.
+!
+! Developed by: Babak Poursartip
+! Supervised by: Clint Dawson
+!
+! The Institute for Computational Engineering and Sciences (ICES)
+! The University of Texas at Austin
+!
+! ================================ V E R S I O N ==================================================
+! V0.00: 03/09/2018 - Subroutine initiated.
+! V0.01: 03/09/2018 - Initiated: Compiled without error for the first time.
+!
+! File version $Id $
+!
+! Last update: 03/09/2018
+!
+! ================================ L O C A L   V A R I A B L E S ==================================
+! (Refer to the main code to see the list of imported variables)
+!  . . . . . . . . . . . . . . . . Variables . . . . . . . . . . . . . . . . . . . . . . . . . . .
+!
+!
+!##################################################################################################
+
+subroutine Solve_1D SWE_with_limiter(                                 &
+!                                                                     & ! integer (1) variables
+!                                                                     & ! integer (2) variables
+!                                                                     & ! integer (4) variables
+!                                                                     & ! integer (8) variables
+!                                                                     & ! real variables
+!                                                                     & ! integer arrays
+!                                                                     & ! real arrays
+!                                                                     & ! characters
+!                                                                     & ! type
+)
 
 
+! Libraries =======================================================================================
 
+! User defined modules ============================================================================
+
+
+implicit none
+
+! Global variables ================================================================================
+
+! - integer variables -----------------------------------------------------------------------------
+!#integer (kind=Shrt), intent(in)    ::
+!#integer (kind=Shrt), intent(inout) ::
+!#integer (kind=Shrt), intent(out)   ::
+! - real variables --------------------------------------------------------------------------------
+!#real (kind=Dbl),     intent(in)    ::
+!#real (kind=Dbl),     intent(inout) ::
+!#real (kind=Dbl),     intent(out)   ::
+! - complex variables -----------------------------------------------------------------------------
+!#complex,             intent(in)    ::
+!#complex,             intent(inout) ::
+!#complex,             intent(out)   ::
+! - integer Arrays --------------------------------------------------------------------------------
+!#integer (kind=Shrt), intent(in),    dimension (:  )  ::
+!#integer (kind=Shrt), intent(in),    dimension (:,:)  ::
+!#integer (kind=Shrt), intent(in)    ::
+!#integer (kind=Shrt), intent(inout) ::
+!#integer (kind=Shrt), intent(out)   ::
+! - real Arrays -----------------------------------------------------------------------------------
+!#real (kind=Dbl),     intent(in),    dimension (:  )  ::
+!#real (kind=Dbl),     intent(inout), dimension (:  )  ::
+!#real (kind=Dbl),     intent(out),   dimension (:  )  ::
+! - character variables ---------------------------------------------------------------------------
+!#character (kind = ?, Len = ? ) ::
+! - logical variables -----------------------------------------------------------------------------
+!#logical   ::
+! - types -----------------------------------------------------------------------------------------
+!#type() ::
+
+
+! Local variables =================================================================================
+! - integer variables -----------------------------------------------------------------------------
+!#integer (kind=Shrt)  ::
+! - real variables --------------------------------------------------------------------------------
+!#real (kind=Dbl)      ::
+! - complex variables -----------------------------------------------------------------------------
+!#complex              ::
+! - integer Arrays --------------------------------------------------------------------------------
+!#integer (kind=Shrt), dimension (:)  ::
+!#integer (kind=Shrt), Allocatable, dimension (:)  ::
+! - real Arrays -----------------------------------------------------------------------------------
+!#real (kind=Dbl), dimension (:)      ::
+!#real (kind=Dbl), allocatable, dimension (:)  ::
+! - character variables ---------------------------------------------------------------------------
+!#character (kind = ?, Len = ? ) ::
+! - logical variables -----------------------------------------------------------------------------
+!#logical   ::
+! - type ------------------------------------------------------------------------------------------
+
+! code ============================================================================================
+write(*,       *) " subroutine < Solve_1D SWE_with_limiter >: "
+write(FileInfo,*) " subroutine < Solve_1D SWE_with_limiter >: "
+
+
+write(*,       *) " end subroutine < Solve_1D SWE_with_limiter >"
+write(FileInfo,*) " end subroutine < Solve_1D SWE_with_limiter >"
+return
+end subroutine Solve_1D SWE_with_limiter
 
 
 
