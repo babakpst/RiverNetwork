@@ -54,16 +54,14 @@ type, public :: Richtmyer(NCells)
   real(kind=DBL)    :: hm(NCells-1_Lng)  ! water height at each half step
   real(kind=DBL)    :: uhm(NCells-1_Lng) ! water height*velocity at each half step
 
-  !real(kind=DBL)    :: s_0(NCells) ! bottom slope
-  real(kind=DBL)    :: s_f(NCells) ! friction slope at each step
-  real(kind=DBL)    :: s(NCells)   ! temp
+  real(kind=DBL)    :: s_f(NCells)         ! friction slope at each step
+  real(kind=DBL)    :: s(NCells)           ! temp
   real(kind=DBL)    :: s_f_m(NCells-1_Lng) ! friction slope at each step
-  real(kind=DBL)    :: s_m(NCells-1_Lng-1_Lng)   ! temp
+  real(kind=DBL)    :: s_m(NCells-1_Lng)   ! temp
 
   type(discretization_tp) :: Discretization
   type(AnalysisData_tp)   :: AnalysisInfo
   type(Input_Data_tp)     :: ModelInfo
-  !type(Plot_domain_1D_tp(NCells)) :: Domain
 
   contains
     procedure Solve => Solver_1D_Richtmyer_sub
@@ -240,7 +238,7 @@ Results%ModelInfo = this%ModelInfo
 
     ! find the solution at the full step
     this%S_f_m(1:this%NCells-1) = (this%Discretization%ManningCell(1:this%NCells-1) **2.0) * ( (this%uhm(1:this%NCells-1)/this%hm(1:this%NCells-1)) * dabs(this%uhm(1:this%NCells-1)/this%hm(1:this%NCells-1)) ) / ((( this%Discretization%WidthCell(1:this%NCells-1) * this%hm(1:this%NCells-1)) /(this%Discretization%WidthCell(1:this%NCells-1) + 2.0_Dbl * this%hm(1:this%NCells-1)) )**(4.0_Dbl/3.0_Dbl))
-    this%s_m (1:this%NCells-1) = - this%Gravity * this%hm(1:this%NCells-1)*(this%Discretization%SlopeCell(1:this%NCells-1) - this%s_f_m(1:this%NCells-1))
+    this%s_m(1:this%NCells-1) = - this%Gravity * this%hm(1:this%NCells-1)*(this%Discretization%SlopeCell(1:this%NCells-1) - this%s_f_m(1:this%NCells-1))
 
     !this%h(2:this%NCells-1) = this%h(2:this%NCells-1) - dt * ( this%uhm(2:this%NCells-1) - this%uhm(1:this%NCells-2) ) / this%Discretization%LengthCell(2:this%NCells-1)
     !this%uh(2:this%NCells-1) = this%uh(2:this%NCells-1) - dt * ((this%uhm(2:this%NCells-1) ** 2.0_Dbl)  / this%hm(2:this%NCells-1) + 0.5_Dbl * this%Gravity * ( this%hm(2:this%NCells-1) ** 2.0_Dbl) - (this%uhm(1:this%NCells-2) ** 2.0_Dbl)  / this%hm(1:this%NCells-2) - 0.5_Dbl * this%Gravity * ( this%hm(1:this%NCells-2) ** 2.0_Dbl) ) / this%Discretization%LengthCell(1:this%NCells-2) - ( dt / 2.0_Dbl ) * ( this%s_m(2:this%NCells-1) + this%s_m(1:this%NCells-2) )
@@ -368,6 +366,7 @@ write(*,       *) " end subroutine < Impose_Boundary_Condition_1D_sub >"
 write(FileInfo,*) " end subroutine < Impose_Boundary_Condition_1D_sub >"
 return
 end subroutine Impose_Boundary_Condition_1D_sub
+
 
 
 
