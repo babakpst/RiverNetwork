@@ -20,7 +20,7 @@
 ! ================================ S U B R O U T I N E ============================================
 ! Solver_1D_Richtmyer: Solves the 1D shallow water equation, using the Richtmyer method.
 ! Impose_Boundary_Condition_1D_sub: Imposes boundary conditions on the 1D model
-!
+! Solve_1D_SWE_with_Limiter_sub: Solves the 1D SVE with limiter
 !
 ! ================================ F U N C T I O N ================================================
 !
@@ -368,14 +368,6 @@ write(*,       *) " end subroutine < Impose_Boundary_Condition_1D_sub >"
 write(FileInfo,*) " end subroutine < Impose_Boundary_Condition_1D_sub >"
 return
 end subroutine Impose_Boundary_Condition_1D_sub
-
-
-
-
-
-
-
-
 
 end module Solver_mod
 
