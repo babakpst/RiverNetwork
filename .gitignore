@@ -1,4 +1,5 @@
 # ignore the following file types:
+
 *.cbp
 *.layout
 *.o
