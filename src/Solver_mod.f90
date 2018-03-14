@@ -54,25 +54,43 @@ type, public :: Richtmyer(NCells)
   real(kind=DBL)    :: hm(NCells-1_Lng)  ! water height at each half step
   real(kind=DBL)    :: uhm(NCells-1_Lng) ! water height*velocity at each half step
 
-  !real(kind=DBL)    :: s_0(NCells) ! bottom slope
   real(kind=DBL)    :: s_f(NCells) ! friction slope at each step
   real(kind=DBL)    :: s(NCells)   ! temp
   real(kind=DBL)    :: s_f_m(NCells-1_Lng) ! friction slope at each step
-  real(kind=DBL)    :: s_m(NCells-1_Lng-1_Lng)   ! temp
+  real(kind=DBL)    :: s_m(NCells-1_Lng)   ! temp
 
   type(discretization_tp) :: Discretization
   type(AnalysisData_tp)   :: AnalysisInfo
   type(Input_Data_tp)     :: ModelInfo
-  !type(Plot_domain_1D_tp(NCells)) :: Domain
 
   contains
     procedure Solve => Solver_1D_Richtmyer_sub
     procedure BC => Impose_Boundary_Condition_1D_sub
 end type Richtmyer
 
-  interface Solve
-    module procedure Solver_1D_Richtmyer_sub
-  end interface
+
+type, public :: Limiter(NCells)
+  integer(kind=Lng), len :: NCells
+  integer(kind=Lng)      :: Plot_Inc = 100
+
+  real(kind=DBL)    :: Gravity= 9.81_Dbl ! Ground acceleration
+  real(kind=DBL)    :: h(NCells)         ! water height at each step
+  real(kind=DBL)    :: uh(NCells)        ! water height*velocity at each step
+  real(kind=DBL)    :: hm(NCells-1_Lng)  ! water height at each half step
+  real(kind=DBL)    :: uhm(NCells-1_Lng) ! water height*velocity at each half step
+
+  real(kind=DBL)    :: s_f(NCells) ! friction slope at each step
+  real(kind=DBL)    :: s(NCells)   ! temp
+  real(kind=DBL)    :: s_f_m(NCells-1_Lng) ! friction slope at each step
+  real(kind=DBL)    :: s_m(NCells-1_Lng)   ! temp
+
+  type(discretization_tp) :: Discretization
+  type(AnalysisData_tp)   :: AnalysisInfo
+  type(Input_Data_tp)     :: ModelInfo
+
+  contains
+    procedure Solve => Solve_1D_SWE_with_Limiter_sub
+end type Limiter
 
 contains
 
@@ -99,7 +117,7 @@ contains
 !
 !##################################################################################################
 
-subroutine Solver_1D_Richtmyer_sub(                                       &
+subroutine Solver_1D_Richtmyer_sub(                                   &
 !                                                                     & ! integer (1) variables
 !                                                                     & ! integer (2) variables
 !                                                                     & ! integer (4) variables
@@ -470,14 +488,15 @@ write(*,       *) " subroutine < Solve_1D_SWE_with_Limiter_sub >: "
 write(FileInfo,*) " subroutine < Solve_1D_SWE_with_Limiter_sub >: "
 
 
+
+
+
+
+
 write(*,       *) " end subroutine < Solve_1D_SWE_with_Limiter_sub >"
 write(FileInfo,*) " end subroutine < Solve_1D_SWE_with_Limiter_sub >"
 return
 end subroutine Solve_1D_SWE_with_Limiter_sub
-
-
-
-
 
 
 end module Solver_mod
