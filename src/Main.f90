@@ -40,7 +40,7 @@ use Parameters_mod
 use Information_mod
 use Input_mod
 use Discretization_mod
-use Solver_mod
+use LaxWendroff_mod
 
 ! Global Variables ================================================================================
 Implicit None
