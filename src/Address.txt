@@ -1,9 +1,6 @@
 Input file name:
 EX1
 
-Analysis type: 1: 1D -2: 2D
-1
-
 Input directory:
 "/h1/babak/Documents/SVE_2D/input"
 

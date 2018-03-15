@@ -107,7 +107,6 @@ type Input_Data_tp
   character (kind = 1, Len = 150) :: AnalysisOutputDir! Directory of output file for each analysis
   character (kind = 1, Len = 150), dimension(:), allocatable :: AnalysesNames! Holds the name of the analysis input file
 
-  integer(kind=Smll) :: AnalysisType      ! Analysis Type: 1: 1D-2: 2D
   !integer(kind=Smll):: OutputType        ! Output Type: 1: ordinary-2: HDF5
   integer(kind=Smll) :: NumberOfAnalyses  ! Number of analysis
 
@@ -131,6 +130,8 @@ end type timing
 
 ! Contains all information about the domain, required
 type AnalysisData_tp
+  integer(kind=Smll) :: AnalysisType      ! Analysis Type: 1: 1D-2: 2D
+
   real(kind=DBL):: TotalTime ! Total simulation time (in seconds)
   real(kind=DBL):: TimeStep  ! Time Step
   real(kind=DBL):: Q_Up      ! Upstream boundary condition, constant flow (m^3/s)

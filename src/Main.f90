@@ -153,7 +153,7 @@ print*," check 000"
     !     position='ASIS', status='REPLACE')
 
     ! Analysis ====================================================================================
-      select case(ModelInfo%AnalysisType)
+      select case(AnalysisInfo%AnalysisType)
 
         case(AnalysisType_1D)    ! # 1: Richtmyer
 

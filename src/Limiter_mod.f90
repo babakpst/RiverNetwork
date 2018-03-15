@@ -22,6 +22,7 @@
 ! Solver_1D_with_Limiter_sub: Solves the 1D shallow water equation, with limiter.
 ! Impose_Boundary_Condition_1D_sub: Imposes boundary conditions on the 1D model.
 ! Limiters_sub: Contains various limiters.
+! Jacobian_sub: computes the Jacobian matrix, Jacobian plus, and Jacobian minus at each cell.
 !
 ! ================================ F U N C T I O N ================================================
 !
@@ -47,6 +48,7 @@ implicit none
 
 type LimiterFunc_tp ! contains all variable to compute the limiter value
   integer(kind=Smll) :: limiter_Type ! Indicates the type of limiter function
+
   real(kind=Dbl)     :: phi          ! the value of limiter
   real(kind=Dbl)     :: theta          ! the argument of the limiter
 
@@ -55,9 +57,27 @@ type LimiterFunc_tp ! contains all variable to compute the limiter value
 end type LimiterFunc_tp
 
 
-type Jacobian
-  real(kind=Dbl),dimension(2,2) :: A
-end type
+type Jacobians_tp
+  real(kind=Dbl) :: u  ! the average velocity at the cell
+  real(kind=Dbl) :: h  ! the average height at the cell
+  real(kind=Dbl) :: Gravity  ! the ground acceleration
+
+  real(kind=Dbl),dimension(2)   :: Lambda   ! Contains the eigenvalues
+
+  real(kind=Dbl),dimension(2,2) :: A        ! Contains the Jacobian matrix
+  real(kind=Dbl),dimension(2,2) :: R        ! Contains the eigenvectors
+  real(kind=Dbl),dimension(2,2) :: RI       ! Contains the eigenvectors inverse
+
+  real(kind=Dbl),dimension(2,2) :: A_plus   ! Contains the Jacobian matrix with + eigenvalues
+  real(kind=Dbl),dimension(2,2) :: A_minus  ! Contains the Jacobian matrix with - eigenvalues
+  real(kind=Dbl),dimension(2,2) :: A_abs    ! Contains the Jacobian matrix with abs eigenvalues
+  real(kind=Dbl),dimension(2,2) :: Gam      ! Contains the Jacobian matrix with - eigenvalues
+  real(kind=Dbl),dimension(2,2) :: Gam_plus ! Contains the Jacobian matrix with - eigenvalues
+  real(kind=Dbl),dimension(2,2) :: Gam_minus! Contains the Jacobian matrix with - eigenvalues
+
+  contains
+    procedure Jacobian => Jacobian_sub
+end type Jacobians_tp
 
 type, public :: SolverWithLimiter(NCells)
   integer(kind=Lng), len :: NCells
@@ -73,8 +93,6 @@ type, public :: SolverWithLimiter(NCells)
   real(kind=DBL), dimension(NCells,2) :: phi   ! Holds the value of the limiter function <delete>
   real(kind=DBL), dimension(NCells,2) :: theta ! Holds the value of the limiter function <delete>
 
-
-  type(Jacobian),dimension(NCells) :: A_Jac ! Contains the Jacobian matrix at each cell
   type(discretization_tp) :: Discretization ! Contains the discretization of the domain
   type(AnalysisData_tp)   :: AnalysisInfo   ! Holds information for the analysis
   type(Input_Data_tp)     :: ModelInfo      ! Holds information for the model
@@ -110,18 +128,7 @@ contains
 !
 !##################################################################################################
 
-subroutine Solver_1D_with_Limiter_sub(                                &
-!                                                                     & ! integer (1) variables
-!                                                                     & ! integer (2) variables
-!                                                                     & ! integer (4) variables
-!                                                                     & ! integer (8) variables
-!                                                                     & ! real variables
-!                                                                     & ! integer arrays
-!                                                                     & ! real arrays
-!                                                                     & ! characters
-this                                                                  & ! type
-)
-
+subroutine Solver_1D_with_Limiter_sub(this)
 
 ! Libraries =======================================================================================
 
@@ -161,6 +168,7 @@ implicit none
 ! - types -----------------------------------------------------------------------------------------
 class(SolverWithLimiter(*)) :: this
 
+type(Jacobians_tp)     :: Jacobian
 type(LimiterFunc_tp)   :: LimiterFunc
 type(Plot_Results_1D_limiter_tp(NCells = :)), allocatable :: Results
 
@@ -216,7 +224,6 @@ PrintResults = .false.
 this%s_f(:)   = 0.0_Dbl
 this%s(:)     = 0.0_Dbl
 
-
 call this%BC()
 Results%ModelInfo = this%ModelInfo
 
@@ -238,10 +245,24 @@ Results%ModelInfo = this%ModelInfo
       end if
 
 
-
     LimiterFunc%theta = ! <modify>
 
 
+
+
+
+
+    ! Update the results
+    this%h(2:this%NCells-1)  = this%h(2:this%NCells-1)  +
+    this%uh(2:this%NCells-1) = this%uh(2:this%NCells-1) +
+
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! find the solution at the half step
     this%s_f(:) = (this%Discretization%ManningCell(:)**2.0_Dbl)*((this%uh(:)/this%h(:)) *dabs(this%uh(:)/this%h(:)))/ (((this%Discretization%WidthCell(:)*this%h(:))/(this%Discretization%WidthCell(:)+2.0_Dbl*this%h(:)) )**(4.0_Dbl/3.0_Dbl))
     this%s(:) = - this%Gravity * this%h(:)*(this%Discretization%SlopeCell(:) - this%s_f(:))
@@ -457,7 +478,108 @@ return
 end subroutine Limiters_sub
 
 
+!##################################################################################################
+! Purpose: This subroutine computes the Jacobian matrix, Jacobian plus, and Jacobian minus at each cell.
+!
+! Developed by: Babak Poursartip
+! Supervised by: Clint Dawson
+!
+! The Institute for Computational Engineering and Sciences (ICES)
+! The University of Texas at Austin
+!
+! ================================ V E R S I O N ==================================================
+! V0.00: 03/15/2018 - Subroutine initiated.
+! V0.01: 03/15/2018 - Initiated: Compiled without error for the first time.
+!
+! File version $Id $
+!
+! Last update: 03/15/2018
+!
+! ================================ L O C A L   V A R I A B L E S ==================================
+! (Refer to the main code to see the list of imported variables)
+!  . . . . . . . . . . . . . . . . Variables . . . . . . . . . . . . . . . . . . . . . . . . . . .
+!
+!##################################################################################################
 
+subroutine Jacobian_sub(this)
+
+
+! Libraries =======================================================================================
+
+! User defined modules ============================================================================
+
+
+implicit none
+
+! Global variables ================================================================================
+! - types -----------------------------------------------------------------------------------------
+class(Jacobians_tp) :: this
+
+! Local variables =================================================================================
+
+! code ============================================================================================
+write(*,       *) " subroutine < Jacobian_sub >: "
+write(FileInfo,*) " subroutine < Jacobian_sub >: "
+
+c = dsqrt (this%Gravity * this%h) ! wave speed
+
+! Computing the Jacobian - A
+A(1,1) = 0.0_Dbl
+A(1,2) = 1.0_Dbl
+A(2,1) = this%Gravity * this%h - this%u**2
+A(2,2) = 2.0_Dbl * this%u
+
+! Computing the eigenvalues
+this%Lambda(1) = u - dsqrt(this%Gravity *  this%h)
+this%Lambda(2) = u + dsqrt(this%Gravity *  this%h)
+
+! Computing the eigenvectors
+this%R(1,1) = 1.0_Dbl
+this%R(1,2) = this%Lambda(1)
+
+this%R(1,2) = 1.0_Dbl
+this%R(2,2) = this%Lambda(2)
+
+! Computing the eigenvectors inverse
+this%RI(1,1) = this%Lambda(2)
+this%RI(1,2) = -1.0_Dbl
+
+this%RI(2,1) = -this%Lambda(1)
+this%RI(2,2) = 1.0_Dbl
+
+this%RI(:,:)  =  this%RI(:,:)   /(2.0_Dbl * c)
+
+! Fill eigenvalue matrix
+this%Gam(1,1) = this%Lambda(1)
+this%Gam(1,2) = 0.0_Dbl
+this%Gam(2,1) = 0.0_Dbl
+this%Gam(2,2) = this%Lambda(2)
+
+! Fill Gamma plus
+this%Gam(1,1) = dmax1(this%Lambda(1), 0.0_Dbl)
+this%Gam(1,2) = 0.0_Dbl
+this%Gam(2,1) = 0.0_Dbl
+this%Gam(2,2) = dmax1(this%Lambda(2), 0.0_Dbl)
+
+! Fill Gamma plus
+this%Gam(1,1) = dmin1(this%Lambda(1), 0.0_Dbl)
+this%Gam(1,2) = 0.0_Dbl
+this%Gam(2,1) = 0.0_Dbl
+this%Gam(2,2) = dmin1(this%Lambda(2), 0.0_Dbl)
+
+! Compute A plus
+this%A_plus  = matmul(matmul(this%R, this%Gam_plus), this%RI)
+
+! Compute A minus
+this%A_minus = matmul(matmul(this%R, this%Gam_minus), this%RI)
+
+! Compute A abs
+this%A_abs = this%A_plus - this%A_minus
+
+write(*,       *) " end subroutine < Jacobian_sub >"
+write(FileInfo,*) " end subroutine < Jacobian_sub >"
+return
+end subroutine Jacobian_sub
 
 
 end module LaxWendroff_with_limiter_mod

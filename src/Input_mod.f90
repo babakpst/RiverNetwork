@@ -160,9 +160,6 @@ read(FileAdr,*)
 read(FileAdr,*) ModelInfo%ModelName; write(*,*) ModelInfo%ModelName
 read(FileAdr,*)
 read(FileAdr,*)
-read(FileAdr,*) ModelInfo%AnalysisType; !write(*,*) ModelInfo%AnalysisType
-read(FileAdr,*)
-read(FileAdr,*)
 read(FileAdr,*) ModelInfo%InputDir; !write(*,*) ModelInfo%InputDir
 read(FileAdr,*)
 read(FileAdr,*)
@@ -678,6 +675,7 @@ End Subroutine Input_Array_sub
 !  . . . . . . . . . . . . . . . . Variables . . . . . . . . . . . . . . . . . . . . . . . . . . .
 !
 !##################################################################################################
+
 Subroutine Input_Analysis_sub(                                        &
 !                                                                     & ! integer(1) Variables
 !                                                                     & ! integer(2) Variables
@@ -787,14 +785,29 @@ Directory=MakeDirQQ (trim(AdjustL (ModelInfo%OutputDir))//'/'//trim(AdjustL(Mode
 
 ModelInfo%AnalysisOutputDir=trim(AdjustL(ModelInfo%OutputDir))//'/'//trim(AdjustL(ModelInfo%AnalysesNames(i_analyses)))
 
+
 UnFile = UnInptAna
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) AnalysisInfo%%AnalysisType
+UnFile = FileInfo
+write(unit=*,      fmt="(' The total simulation time is: ', F23.10, ' s')") AnalysisInfo%TotalTime
+write(unit=UnFile, fmt="(' The total simulation time is: ', F23.10, ' s')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) AnalysisInfo%%AnalysisType
+
+UnFile = UnInptAna
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) AnalysisInfo%TotalTime
 UnFile = FileInfo
 write(unit=*,      fmt="(' The total simulation time is: ', F23.10, ' s')") AnalysisInfo%TotalTime
 write(unit=UnFile, fmt="(' The total simulation time is: ', F23.10, ' s')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) AnalysisInfo%TotalTime
+
+
+
+
+
+
 
 UnFile = UnInptAna
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
