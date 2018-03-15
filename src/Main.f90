@@ -157,17 +157,30 @@ print*," check 000"
 
         CASE(AnalysisType_1D)    ! # 1: Richtmyer
 
-          allocate(Richtmyer(NCells=Discretization%NCells) :: Experiment,     stat=ERR_Alloc)
+          allocate(Richtmyer(NCells=Discretization%NCells) :: Experiment_TypeI,     stat=ERR_Alloc)
             if (ERR_Alloc /= 0) then
               write (*, Fmt_ALLCT) ERR_Alloc;  write (FileInfo, Fmt_ALLCT) ERR_Alloc;
               write(*, Fmt_FL);  write(FileInfo, Fmt_FL); read(*, Fmt_End);  stop;
             end if
 
 
-          Experiment%ModelInfo = ModelInfo
-          Experiment%AnalysisInfo = AnalysisInfo
-          Experiment%Discretization = Discretization
-          call Experiment%Solve()
+          Experiment_TypeI%ModelInfo = ModelInfo
+          Experiment_TypeI%AnalysisInfo = AnalysisInfo
+          Experiment_TypeI%Discretization = Discretization
+          call Experiment_TypeI%Solve()
+
+        CASE(AnalysisType_1D)    ! # 2: Lax-Wendroff with limiter in combination with upwind method
+
+          allocate(Richtmyer(NCells=Discretization%NCells) :: Experiment_TypeII,     stat=ERR_Alloc)
+            if (ERR_Alloc /= 0) then
+              write (*, Fmt_ALLCT) ERR_Alloc;  write (FileInfo, Fmt_ALLCT) ERR_Alloc;
+              write(*, Fmt_FL);  write(FileInfo, Fmt_FL); read(*, Fmt_End);  stop;
+            end if
+
+          Experiment_TypeII%ModelInfo = ModelInfo
+          Experiment_TypeII%AnalysisInfo = AnalysisInfo
+          Experiment_TypeII%Discretization = Discretization
+          call Experiment_TypeII%Solve()
 
         ! Error in analysis numbering
         CASE DEFAULT
