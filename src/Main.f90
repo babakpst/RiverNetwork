@@ -153,9 +153,9 @@ print*," check 000"
     !     position='ASIS', status='REPLACE')
 
     ! Analysis ====================================================================================
-      SELECT CASE(ModelInfo%AnalysisType)
+      select case(ModelInfo%AnalysisType)
 
-        CASE(AnalysisType_1D)    ! # 1: Richtmyer
+        case(AnalysisType_1D)    ! # 1: Richtmyer
 
           allocate(Richtmyer(NCells=Discretization%NCells) :: Experiment_TypeI,     stat=ERR_Alloc)
             if (ERR_Alloc /= 0) then
@@ -169,7 +169,7 @@ print*," check 000"
           Experiment_TypeI%Discretization = Discretization
           call Experiment_TypeI%Solve()
 
-        CASE(AnalysisType_1D)    ! # 2: Lax-Wendroff with limiter in combination with upwind method
+        case(AnalysisType_1D)    ! # 2: Lax-Wendroff with limiter in combination with upwind method
 
           allocate(Richtmyer(NCells=Discretization%NCells) :: Experiment_TypeII,     stat=ERR_Alloc)
             if (ERR_Alloc /= 0) then
@@ -183,7 +183,7 @@ print*," check 000"
           call Experiment_TypeII%Solve()
 
         ! Error in analysis numbering
-        CASE DEFAULT
+        case default
           write(*,*)" The analysis type  is not available in this code. Modify the analysis type."
           write(FileInfo,*)" The analysis type  is not available in this code. Modify the analysis type."
           write(*,*)
@@ -191,7 +191,7 @@ print*," check 000"
           write(*,*)" Simulation terminated with error."
           write(*, Fmt_End);  read(*,*);   stop;
 
-      End SELECT
+      end select
 
     write(*,*)" Simulation was conducted successfully for:"
     write(*,"(' Model Name: ',A30,'Analysis Name: ', A30)")ModelInfo%ModelName, ModelInfo%AnalysesNames(i_analyses)

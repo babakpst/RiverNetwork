@@ -45,6 +45,13 @@ implicit none
 !public
 !private
 
+type LimiterFunc_tp ! contains all variable to compute the limiter value
+  integer(kind=Smll) :: limiter_Type ! Indicates the type of limiter function
+  real(kind=Dbl)     :: phi          ! the value of limiter
+  real(kind=Dbl)     :: theta          ! the argument of the limiter
+end type LimiterFunc_tp
+
+
 type, public :: SolverWithLimiter(NCells)
   integer(kind=Lng), len :: NCells
   integer(kind=Lng)      :: Plot_Inc = 100
@@ -146,7 +153,10 @@ implicit none
 !#logical   ::
 ! - types -----------------------------------------------------------------------------------------
 class(SolverWithLimiter(*)) :: this
+
+type(LimiterFunc_tp)   :: LimiterFunc
 type(Plot_Results_1D_tp(NCells = :)), allocatable :: Results
+
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
@@ -191,6 +201,9 @@ NSteps = this%AnalysisInfo%TotalTime/this%AnalysisInfo%TimeStep
 dt     = this%AnalysisInfo%TimeStep
 dx     = this%Discretization%LengthCell(1)
 
+
+! Initialization
+LimiterFunc%limiter_Type = !<modify>
 PrintResults = .false.
 
 this%s_f(:)   = 0.0_Dbl
@@ -221,7 +234,7 @@ Results%ModelInfo = this%ModelInfo
 
 
 
-
+    LimiterFunc%theta = ! <modify>
 
 
     ! find the solution at the half step
@@ -409,17 +422,7 @@ end subroutine Impose_Boundary_Condition_1D_sub
 !
 !##################################################################################################
 
-subroutine Limiters_sub(                                              &
-!                                                                     & ! integer (1) variables
-!                                                                     & ! integer (2) variables
-!                                                                     & ! integer (4) variables
-!                                                                     & ! integer (8) variables
-!                                                                     & ! real variables
-!                                                                     & ! integer arrays
-!                                                                     & ! real arrays
-!                                                                     & ! characters
-!                                                                     & ! type
-)
+subroutine Limiters_sub(this)
 
 
 ! Libraries =======================================================================================
@@ -430,59 +433,34 @@ subroutine Limiters_sub(                                              &
 implicit none
 
 ! Global variables ================================================================================
-
-! - integer variables -----------------------------------------------------------------------------
-!#integer (kind=Shrt), intent(in)    ::
-!#integer (kind=Shrt), intent(inout) ::
-!#integer (kind=Shrt), intent(out)   ::
-! - real variables --------------------------------------------------------------------------------
-!#real (kind=Dbl),     intent(in)    ::
-!#real (kind=Dbl),     intent(inout) ::
-!#real (kind=Dbl),     intent(out)   ::
-! - complex variables -----------------------------------------------------------------------------
-!#complex,             intent(in)    ::
-!#complex,             intent(inout) ::
-!#complex,             intent(out)   ::
-! - integer Arrays --------------------------------------------------------------------------------
-!#integer (kind=Shrt), intent(in),    dimension (:  )  ::
-!#integer (kind=Shrt), intent(in),    dimension (:,:)  ::
-!#integer (kind=Shrt), intent(in)    ::
-!#integer (kind=Shrt), intent(inout) ::
-!#integer (kind=Shrt), intent(out)   ::
-! - real Arrays -----------------------------------------------------------------------------------
-!#real (kind=Dbl),     intent(in),    dimension (:  )  ::
-!#real (kind=Dbl),     intent(inout), dimension (:  )  ::
-!#real (kind=Dbl),     intent(out),   dimension (:  )  ::
-! - character variables ---------------------------------------------------------------------------
-!#character (kind = ?, Len = ? ) ::
-! - logical variables -----------------------------------------------------------------------------
-!#logical   ::
 ! - types -----------------------------------------------------------------------------------------
-!#type() ::
-
+class(LimiterFunc_tp) :: this
 
 ! Local variables =================================================================================
-! - integer variables -----------------------------------------------------------------------------
-!#integer (kind=Shrt)  ::
-! - real variables --------------------------------------------------------------------------------
-!#real (kind=Dbl)      ::
-! - complex variables -----------------------------------------------------------------------------
-!#complex              ::
-! - integer Arrays --------------------------------------------------------------------------------
-!#integer (kind=Shrt), dimension (:)  ::
-!#integer (kind=Shrt), Allocatable, dimension (:)  ::
-! - real Arrays -----------------------------------------------------------------------------------
-!#real (kind=Dbl), dimension (:)      ::
-!#real (kind=Dbl), allocatable, dimension (:)  ::
-! - character variables ---------------------------------------------------------------------------
-!#character (kind = ?, Len = ? ) ::
-! - logical variables -----------------------------------------------------------------------------
-!#logical   ::
-! - type ------------------------------------------------------------------------------------------
 
 ! code ============================================================================================
 write(*,       *) " subroutine < Limiters_sub >: "
 write(FileInfo,*) " subroutine < Limiters_sub >: "
+
+  select case (this%limiter_Type)
+
+    case(1)  ! minmod: most diffusive
+      this%phi = dmax1(  0.0_Dbl, dmin1( 1.0_Dbl, this%theta )  )
+    case(2)  !superbee
+      this%phi = dmax1( 0.0_Dbl, dmin1( 1.0_Dbl, 2.0_Dbl*this%theta ), dmin1( 2.0_Dbl, this%theta))
+    case(3)  ! MC (Woodward)
+      this%phi = dmax1( 0.0_Dbl, dmin1( (1.0_Dbl + this%theta)/2.0_Dbl, 2.0_Dbl, 2.0_Dbl*this%theta ) )
+    case(4)  ! van Leer
+      this%phi = ( this%theta +  dabs(this%theta) ) / ( 1.0_Dbl + dabs(this%theta) )
+    case default
+      write(*,*)" The limiter type does exist, please select a limiter from the list and modify the input file."
+      write(FileInfo,*)" The limiter type does exist, please select a limiter from the list and modify the input file."
+      write(*,*)
+      write(FileInfo,*)
+      write(*,*)" Simulation terminated with error."
+      write(*, Fmt_End);  read(*,*);   stop;
+
+  end select
 
 
 write(*,       *) " end subroutine < Limiters_sub >"
