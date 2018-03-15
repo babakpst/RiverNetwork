@@ -49,31 +49,38 @@ type LimiterFunc_tp ! contains all variable to compute the limiter value
   integer(kind=Smll) :: limiter_Type ! Indicates the type of limiter function
   real(kind=Dbl)     :: phi          ! the value of limiter
   real(kind=Dbl)     :: theta          ! the argument of the limiter
+
+  contains
+   procedure LimiterValue => Limiters_sub
 end type LimiterFunc_tp
 
+
+type Jacobian
+  real(kind=Dbl),dimension(2,2) :: A
+end type
 
 type, public :: SolverWithLimiter(NCells)
   integer(kind=Lng), len :: NCells
   integer(kind=Lng)      :: Plot_Inc = 100
 
   real(kind=DBL)    :: Gravity = 9.81_Dbl
-  real(kind=DBL)    :: h(NCells)   ! water height at each step
-  real(kind=DBL)    :: uh(NCells)  ! water height*velocity at each step
-  real(kind=DBL)    :: hm(NCells-1_Lng)  ! water height at each half step
-  real(kind=DBL)    :: uhm(NCells-1_Lng) ! water height*velocity at each half step
+  real(kind=DBL), dimension(NCells) :: h   ! water height at each step
+  real(kind=DBL), dimension(NCells) :: uh  ! water height*velocity at each step
 
-  real(kind=DBL)    :: s_f(NCells) ! friction slope at each step
-  real(kind=DBL)    :: s(NCells)   ! temp
-  real(kind=DBL)    :: s_f_m(NCells-1_Lng) ! friction slope at each step
-  real(kind=DBL)    :: s_m(NCells-1_Lng)   ! temp
+  real(kind=DBL), dimension(NCells) :: s_f ! friction slope at each step
+  real(kind=DBL), dimension(NCells) :: s   ! temp
 
-  type(discretization_tp) :: Discretization
-  type(AnalysisData_tp)   :: AnalysisInfo
-  type(Input_Data_tp)     :: ModelInfo
+  real(kind=DBL), dimension(NCells,2) :: phi   ! Holds the value of the limiter function <delete>
+  real(kind=DBL), dimension(NCells,2) :: theta ! Holds the value of the limiter function <delete>
+
+
+  type(Jacobian),dimension(NCells) :: A_Jac ! Contains the Jacobian matrix at each cell
+  type(discretization_tp) :: Discretization ! Contains the discretization of the domain
+  type(AnalysisData_tp)   :: AnalysisInfo   ! Holds information for the analysis
+  type(Input_Data_tp)     :: ModelInfo      ! Holds information for the model
 
   contains
     procedure Solve => Solver_1D_with_Limiter_sub
-    procedure Limiter => Limiter_Sub
     procedure BC => Impose_Boundary_Condition_1D_sub
 end type SolverWithLimiter
 
@@ -155,7 +162,7 @@ implicit none
 class(SolverWithLimiter(*)) :: this
 
 type(LimiterFunc_tp)   :: LimiterFunc
-type(Plot_Results_1D_tp(NCells = :)), allocatable :: Results
+type(Plot_Results_1D_limiter_tp(NCells = :)), allocatable :: Results
 
 
 ! Local variables =================================================================================
@@ -224,13 +231,11 @@ Results%ModelInfo = this%ModelInfo
         Results%uh(:)     = this%uh(:)
         Results%s_f(:)    = this%s_f(:)
         Results%s(:)      = this%s(:)
+        Results%phi(:,:)  = this%phi(:,:)
+        Results%theta(:,:)= this%theta(:,:)
 
         call Results%plot_results(i_steps)
       end if
-
-
-
-
 
 
 
@@ -263,23 +268,6 @@ Results%ModelInfo = this%ModelInfo
     call this%BC()
 
   end do
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 write(*,       *) " end subroutine < Solver_1D_with_Limiter_sub >"
 write(FileInfo,*) " end subroutine < Solver_1D_with_Limiter_sub >"
