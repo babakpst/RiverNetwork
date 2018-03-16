@@ -849,6 +849,16 @@ UnFile = FileInfo
 write(unit=UnFile, fmt="(' The ratio of control volume is: ', F23.10)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) AnalysisInfo%CntrlV_ratio
 write(unit=*,      fmt="(' The ratio of control volume is: ', F23.10)") AnalysisInfo%CntrlV_ratio
 
+UnFile = UnInptAna
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) AnalysisInfo%limiter
+UnFile = FileInfo
+write(unit=UnFile, fmt="(' The ratio of control volume is: ', F23.10)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) AnalysisInfo%limiter
+write(unit=*,      fmt="(' The ratio of control volume is: ', F23.10)") AnalysisInfo%CntrlV_ratio
+
+
+
 write(*,       *) " End Subroutine < Input_Analysis_sub >"
 write(*,       *)
 write(FileInfo,*) " End Subroutine < Input_Analysis_sub >"

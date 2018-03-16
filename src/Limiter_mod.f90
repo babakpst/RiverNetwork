@@ -79,13 +79,16 @@ type Jacobians_tp
     procedure Jacobian => Jacobian_sub
 end type Jacobians_tp
 
+type vector
+  real(kind=Dbl), dimension(2) :: U
+end type U
+
+
 type, public :: SolverWithLimiter(NCells)
   integer(kind=Lng), len :: NCells
   integer(kind=Lng)      :: Plot_Inc = 100
 
   real(kind=DBL)    :: Gravity = 9.81_Dbl
-  real(kind=DBL), dimension(NCells) :: h   ! water height at each step
-  real(kind=DBL), dimension(NCells) :: uh  ! water height*velocity at each step
 
   real(kind=DBL), dimension(NCells) :: s_f ! friction slope at each step
   real(kind=DBL), dimension(NCells) :: s   ! temp
@@ -93,6 +96,7 @@ type, public :: SolverWithLimiter(NCells)
   real(kind=DBL), dimension(NCells,2) :: phi   ! Holds the value of the limiter function <delete>
   real(kind=DBL), dimension(NCells,2) :: theta ! Holds the value of the limiter function <delete>
 
+  type(vector), dimension(NCells)  :: U     ! the first term holds "h" and the second holds "uh"
   type(discretization_tp) :: Discretization ! Contains the discretization of the domain
   type(AnalysisData_tp)   :: AnalysisInfo   ! Holds information for the analysis
   type(Input_Data_tp)     :: ModelInfo      ! Holds information for the model
@@ -172,7 +176,6 @@ type(Jacobians_tp)     :: Jacobian
 type(LimiterFunc_tp)   :: LimiterFunc
 type(Plot_Results_1D_limiter_tp(NCells = :)), allocatable :: Results
 
-
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
 integer(kind=Lng)  :: i_steps   ! loop index over the number steps
@@ -209,16 +212,15 @@ write(FileInfo,*) " -Applying initial conditions ..."
 
 allocate(Plot_Results_1D_tp(NCells = this%NCells) :: Results)
 
-this%h(:) = this%AnalysisInfo%CntrlV-    this%Discretization%ZCell(:)
-this%uh(:) = 0.0_Dbl
+this%U(:)%U(1) = this%AnalysisInfo%CntrlV-    this%Discretization%ZCell(:)
+this%U(:)%U(2) = 0.0_Dbl
 
 NSteps = this%AnalysisInfo%TotalTime/this%AnalysisInfo%TimeStep
 dt     = this%AnalysisInfo%TimeStep
 dx     = this%Discretization%LengthCell(1)
 
-
 ! Initialization
-LimiterFunc%limiter_Type = !<modify>
+LimiterFunc%limiter_Type = this%AnalysisInfo%limiter !<modify>
 PrintResults = .false.
 
 this%s_f(:)   = 0.0_Dbl
@@ -227,15 +229,15 @@ this%s(:)     = 0.0_Dbl
 call this%BC()
 Results%ModelInfo = this%ModelInfo
 
+  ! Time marching
   do i_steps = 1_Lng, NSteps
 
     print*, i_steps*dt
     ! write down data for visualization
 
-
       if (mod(i_steps,this%Plot_Inc)==1 .or. PrintResults) then
-        Results%h(:)      = this%h(:)
-        Results%uh(:)     = this%uh(:)
+        Results%h(:)      = this%U(:)%U(1)
+        Results%uh(:)     = this%U(:)%U(2)
         Results%s_f(:)    = this%s_f(:)
         Results%s(:)      = this%s(:)
         Results%phi(:,:)  = this%phi(:,:)
@@ -244,17 +246,25 @@ Results%ModelInfo = this%ModelInfo
         call Results%plot_results(i_steps)
       end if
 
-
-    LimiterFunc%theta = ! <modify>
-
+      do i_Cell = 1, NCells  ! Loop over the cells
 
 
 
 
 
-    ! Update the results
-    this%h(2:this%NCells-1)  = this%h(2:this%NCells-1)  +
-    this%uh(2:this%NCells-1) = this%uh(2:this%NCells-1) +
+        LimiterFunc%theta = ! <modify>
+
+        ! Update the results
+        this%h(2:this%NCells-1)  = this%h(2:this%NCells-1)  +
+        this%uh(2:this%NCells-1) = this%uh(2:this%NCells-1) +
+
+      end do
+
+
+
+
+
+
 
 
 

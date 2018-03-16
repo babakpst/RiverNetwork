@@ -90,7 +90,6 @@ integer(kind=Smll), Parameter, Public :: AnalysisType_1D=1 ! 1D Shallow water si
 
 ! Spectral Element
 
-
 ! User defined types ==============================================================================
 ! Time signature of the model
 type TimeDate_tp
@@ -130,7 +129,8 @@ end type timing
 
 ! Contains all information about the domain, required
 type AnalysisData_tp
-  integer(kind=Smll) :: AnalysisType      ! Analysis Type: 1: 1D-2: 2D
+  integer(kind=Smll) :: AnalysisType      ! Analysis Type: 1: 1D-Lax-Wendroff- 2: 1D-Lax-Wendroff with limiter
+  integer(kind=Smll) :: limiter           ! limiter type
 
   real(kind=DBL):: TotalTime ! Total simulation time (in seconds)
   real(kind=DBL):: TimeStep  ! Time Step
