@@ -171,7 +171,7 @@ print*," check 000"
 
         case(AnalysisType_1D)    ! # 2: Lax-Wendroff with limiter in combination with upwind method
 
-          allocate(Richtmyer(NCells=Discretization%NCells) :: Experiment_TypeII,     stat=ERR_Alloc)
+          allocate(SolverWithLimiter(NCells=Discretization%NCells) :: Experiment_TypeII,     stat=ERR_Alloc)
             if (ERR_Alloc /= 0) then
               write (*, Fmt_ALLCT) ERR_Alloc;  write (FileInfo, Fmt_ALLCT) ERR_Alloc;
               write(*, Fmt_FL);  write(FileInfo, Fmt_FL); read(*, Fmt_End);  stop;

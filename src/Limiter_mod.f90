@@ -12,11 +12,11 @@
 !
 ! ================================ V E R S I O N ==================================================
 ! V0.00: 03/15/2018 - File initiated.
-! V0.01: 03/15/2018 - Initiated: Compiled without error for the first time.
+! V0.01: 03/20/2018 - Initiated: Compiled without error for the first time.
 !
 ! File version $Id $
 !
-! Last update: 03/15/2018
+! Last update: 03/20/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! Solver_1D_with_Limiter_sub: Solves the 1D shallow water equation, with limiter.
@@ -64,16 +64,16 @@ type Jacobians_tp
 
   real(kind=Dbl),dimension(2)   :: Lambda   ! Contains the eigenvalues
 
-  real(kind=Dbl),dimension(2,2) :: A        ! Contains the Jacobian matrix
-  real(kind=Dbl),dimension(2,2) :: R        ! Contains the eigenvectors
-  real(kind=Dbl),dimension(2,2) :: RI       ! Contains the eigenvectors inverse
+  real(kind=Dbl),dimension(2,2) :: A        ! Contains the Jacobian matrix at each time step at the cell interface i-1/2
+  real(kind=Dbl),dimension(2,2) :: R        ! Contains the eigenvectors at each time step at the cell interface i-1/2
+  real(kind=Dbl),dimension(2,2) :: L       ! Contains the eigenvectors inverse at each time step at the cell interface i-1/2
 
-  real(kind=Dbl),dimension(2,2) :: A_plus   ! Contains the Jacobian matrix with + eigenvalues
-  real(kind=Dbl),dimension(2,2) :: A_minus  ! Contains the Jacobian matrix with - eigenvalues
-  real(kind=Dbl),dimension(2,2) :: A_abs    ! Contains the Jacobian matrix with abs eigenvalues
-  real(kind=Dbl),dimension(2,2) :: Gam      ! Contains the Jacobian matrix with - eigenvalues
-  real(kind=Dbl),dimension(2,2) :: Gam_plus ! Contains the Jacobian matrix with - eigenvalues
-  real(kind=Dbl),dimension(2,2) :: Gam_minus! Contains the Jacobian matrix with - eigenvalues
+  real(kind=Dbl),dimension(2,2) :: A_plus   ! Contains the Jacobian matrix with + eigenvalues at each time step at the cell interface i-1/2
+  real(kind=Dbl),dimension(2,2) :: A_minus  ! Contains the Jacobian matrix with - eigenvalues at each time step at the cell interface i-1/2
+  real(kind=Dbl),dimension(2,2) :: A_abs    ! Contains the Jacobian matrix with abs eigenvalues at each time step at the cell interface i-1/2
+  real(kind=Dbl),dimension(2,2) :: Gam      ! Contains the Jacobian matrix with - eigenvalues at each time step at the cell interface i-1/2
+  real(kind=Dbl),dimension(2,2) :: Gam_plus ! Contains the Jacobian matrix with - eigenvalues at each time step at the cell interface i-1/2
+  real(kind=Dbl),dimension(2,2) :: Gam_minus! Contains the Jacobian matrix with - eigenvalues at each time step at the cell interface i-1/2
 
   contains
     procedure Jacobian => Jacobian_sub
@@ -82,7 +82,6 @@ end type Jacobians_tp
 type vector
   real(kind=Dbl), dimension(2) :: U
 end type U
-
 
 type, public :: SolverWithLimiter(NCells)
   integer(kind=Lng), len :: NCells
