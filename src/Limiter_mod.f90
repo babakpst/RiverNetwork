@@ -53,10 +53,10 @@ type LimiterFunc_tp ! contains all variable to compute the limiter value
   real(kind=Dbl)     :: theta          ! the argument of the limiter
 
   contains
-   procedure LimiterValue => Limiters_sub
+    procedure LimiterValue => Limiters_sub
 end type LimiterFunc_tp
 
-
+! This type consists of all variables/arrays regarding the Jacobian, used to apply the limiter.
 type Jacobians_tp
   real(kind=Dbl) :: u  ! the average velocity at the cell
   real(kind=Dbl) :: h  ! the average height at the cell
@@ -66,7 +66,7 @@ type Jacobians_tp
 
   real(kind=Dbl),dimension(2,2) :: A        ! Contains the Jacobian matrix at each time step at the cell interface i-1/2
   real(kind=Dbl),dimension(2,2) :: R        ! Contains the eigenvectors at each time step at the cell interface i-1/2
-  real(kind=Dbl),dimension(2,2) :: L       ! Contains the eigenvectors inverse at each time step at the cell interface i-1/2
+  real(kind=Dbl),dimension(2,2) :: L        ! Contains the eigenvectors inverse at each time step at the cell interface i-1/2
 
   real(kind=Dbl),dimension(2,2) :: A_plus   ! Contains the Jacobian matrix with + eigenvalues at each time step at the cell interface i-1/2
   real(kind=Dbl),dimension(2,2) :: A_minus  ! Contains the Jacobian matrix with - eigenvalues at each time step at the cell interface i-1/2
@@ -79,6 +79,7 @@ type Jacobians_tp
     procedure Jacobian => Jacobian_sub
 end type Jacobians_tp
 
+! This vector will be used in the main type as the solution in each type step
 type vector
   real(kind=Dbl), dimension(2) :: U
 end type U
@@ -89,13 +90,16 @@ type, public :: SolverWithLimiter(NCells)
 
   real(kind=DBL)    :: Gravity = 9.81_Dbl
 
-  real(kind=DBL), dimension(NCells) :: s_f ! friction slope at each step
-  real(kind=DBL), dimension(NCells) :: s   ! temp
+  real(kind=DBL),  dimension(NCells) :: s_f ! friction slope at each step
 
-  real(kind=DBL), dimension(NCells,2) :: phi   ! Holds the value of the limiter function <delete>
-  real(kind=DBL), dimension(NCells,2) :: theta ! Holds the value of the limiter function <delete>
+  type(vector),  dimension(NCells) :: s   ! temp to hold bathymetry
 
-  type(vector), dimension(NCells)  :: U     ! the first term holds "h" and the second holds "uh"
+  type(vector),  dimension(NCells) :: phi   ! Holds the value of the limiter function <delete>
+  type(vector),  dimension(NCells) :: theta ! Holds the value of the limiter function <delete>
+
+  type(vector), dimension(NCells)  :: U     ! This vector holds the solution at the current step,
+                                            ! the first term holds "h" and the second holds "uh"
+
   type(discretization_tp) :: Discretization ! Contains the discretization of the domain
   type(AnalysisData_tp)   :: AnalysisInfo   ! Holds information for the analysis
   type(Input_Data_tp)     :: ModelInfo      ! Holds information for the model
@@ -119,11 +123,11 @@ contains
 !
 ! ================================ V E R S I O N ==================================================
 ! V0.00: 03/15/2018 - File initiated.
-! V0.01: 03/15/2018 - Initiated: Compiled without error for the first time.
+! V0.01: 03/19/2018 - Initiated: Compiled without error for the first time.
 !
 ! File version $Id $
 !
-! Last update: 03/16/2018
+! Last update: 03/19/2018
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
 ! (Refer to the main code to see the list of imported variables)
@@ -136,7 +140,6 @@ subroutine Solver_1D_with_Limiter_sub(this)
 ! Libraries =======================================================================================
 
 ! User defined modules ============================================================================
-
 
 implicit none
 
@@ -181,17 +184,19 @@ integer(kind=Lng)  :: i_steps   ! loop index over the number steps
 integer(kind=Lng)  :: NSteps    ! Total number of steps for time marching
 
 ! - real variables --------------------------------------------------------------------------------
-real (kind=Dbl)      :: dt
-real (kind=Dbl)      :: dx
+real(kind=Dbl)      :: dt
+real(kind=Dbl)      :: dx
 
 ! - complex variables -----------------------------------------------------------------------------
 !#complex              ::
 ! - integer Arrays --------------------------------------------------------------------------------
 !#integer (kind=Shrt), dimension (:)  ::
 !#integer (kind=Shrt), Allocatable, dimension (:)  ::
+
 ! - real Arrays -----------------------------------------------------------------------------------
-!#real (kind=Dbl), dimension (:)      ::
-!#real (kind=Dbl), allocatable, dimension (:)  ::
+real(kind=Dbl), dimension (2) :: F_L ! Contribution of low-resolution method (Upwind) in the solution.
+real(kind=Dbl), dimension (2) :: F_H ! Contribution of high-resolution method (Lax-Wendroff) in the solution.
+
 ! - character variables ---------------------------------------------------------------------------
 !#character (kind = ?, Len = ? ) ::
 ! - logical variables -----------------------------------------------------------------------------
@@ -218,12 +223,14 @@ NSteps = this%AnalysisInfo%TotalTime/this%AnalysisInfo%TimeStep
 dt     = this%AnalysisInfo%TimeStep
 dx     = this%Discretization%LengthCell(1)
 
+coe = dt / dx
+
 ! Initialization
-LimiterFunc%limiter_Type = this%AnalysisInfo%limiter !<modify>
+LimiterFunc%limiter_Type = this%AnalysisInfo%limiter ! Define what limiter to use in the algorithm
 PrintResults = .false.
 
-this%s_f(:)   = 0.0_Dbl
-this%s(:)     = 0.0_Dbl
+this%s_f(:)%U(:)   = 0.0_Dbl
+this%s(:)%U(:)     = 0.0_Dbl
 
 call this%BC()
 Results%ModelInfo = this%ModelInfo
@@ -232,20 +239,21 @@ Results%ModelInfo = this%ModelInfo
   do i_steps = 1_Lng, NSteps
 
     print*, i_steps*dt
-    ! write down data for visualization
 
+    ! write down data for visualization
       if (mod(i_steps,this%Plot_Inc)==1 .or. PrintResults) then
-        Results%h(:)      = this%U(:)%U(1)
-        Results%uh(:)     = this%U(:)%U(2)
+        Results%U(:)      = this%U(:)
+
         Results%s_f(:)    = this%s_f(:)
         Results%s(:)      = this%s(:)
-        Results%phi(:,:)  = this%phi(:,:)
-        Results%theta(:,:)= this%theta(:,:)
+
+        Results%phi(:)  = this%phi(:)
+        Results%theta(:)= this%theta(:)
 
         call Results%plot_results(i_steps)
       end if
 
-      do i_Cell = 1, NCells  ! Loop over the cells
+      do i_Cell = 2_Lng, NCells-1  ! Loop over the cells except the boundary cells.
 
 
 
@@ -253,7 +261,18 @@ Results%ModelInfo = this%ModelInfo
 
         LimiterFunc%theta = ! <modify>
 
-        ! Update the results
+        call Jacobian%Jacobian()   ! <modify>
+
+        ! The upwind flux
+        F_L(:) =
+
+        ! The Lax-Wendroff flux
+        F_H(:)
+
+        ! Update the results  ! <modify> this part. delete the U_Update
+        this%U(i_cell) =  this%U(i_cell) - coe * F_L(:)  - coe * F_H(:)
+
+
         this%h(2:this%NCells-1)  = this%h(2:this%NCells-1)  +
         this%uh(2:this%NCells-1) = this%uh(2:this%NCells-1) +
 
@@ -378,7 +397,8 @@ implicit none
 ! - logical variables -----------------------------------------------------------------------------
 !#logical   ::
 ! - types -----------------------------------------------------------------------------------------
-class(Richtmyer(*)) :: this
+class(SolverWithLimiter(*)) :: this
+
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
@@ -403,11 +423,14 @@ class(Richtmyer(*)) :: this
 write(*,       *) " subroutine < Impose_Boundary_Condition_1D_sub >: "
 write(FileInfo,*) " subroutine < Impose_Boundary_Condition_1D_sub >: "
 
-this%h(1) = this%h(2)
-this%h(this%NCells)  = this%AnalysisInfo%h_dw
 
-this%uh(1) = this%AnalysisInfo%Q_Up/ this%Discretization%WidthCell(1)
-this%uh(this%NCells)  = this%uh(this%NCells-1)
+! Boundary conditions on the height
+this%U(1)%U(1) = this%U(2)%U(1)   ! h at the upstream
+this%U(this%NCells)%U(1) = this%AnalysisInfo%h_dw ! h at the downstream
+
+! Boundary conditions on the discharge
+this%U(1)%U(2)           = this%AnalysisInfo%Q_Up/ this%Discretization%WidthCell(1)  ! h at the upstream
+this%U(this%NCells)%U(2) = this%uh(this%NCells-1) ! h at the downstream
 
 write(*,       *) " end subroutine < Impose_Boundary_Condition_1D_sub >"
 write(FileInfo,*) " end subroutine < Impose_Boundary_Condition_1D_sub >"

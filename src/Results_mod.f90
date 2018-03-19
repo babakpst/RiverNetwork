@@ -74,17 +74,23 @@ type Plot_Results_1D_tp(NCells)
     procedure plot_results => Plot_Results_1D_sub
 end type Plot_Results_1D_tp
 
+! This vector will be used in the main type as the solution in each type step
+type vector
+  real(kind=Dbl), dimension(2) :: U
+end type U
 
 type Plot_Results_1D_limiter_tp(NCells)
   integer(kind=Lng), len :: NCells
-  real(kind=dbl), dimension(NCells)    :: h
-  real(kind=dbl), dimension(NCells)    :: uh
-  real(kind=dbl), dimension(NCells)    :: s_f
-  real(kind=dbl), dimension(NCells)    :: s
 
-  real(kind=DBL), dimension(NCells,2) :: phi   ! Holds the value of the limiter function <delete>
-  real(kind=DBL), dimension(NCells,2) :: theta ! Holds the value of the limiter function <delete>
+  real(kind=DBL), dimension(NCells) :: s_f ! friction slope at each step
 
+  type(vector),  dimension(NCells) :: s   ! temp to hold bathymetry
+
+  type(vector),  dimension(NCells) :: phi   ! Holds the value of the limiter function <delete>
+  type(vector),  dimension(NCells) :: theta ! Holds the value of the limiter function <delete>
+
+  type(vector), dimension(NCells)  :: U     ! This vector holds the solution at previous step,
+                                            ! the first term holds "h" and the second holds "uh"
   type(Input_Data_tp) :: ModelInfo
 
   contains
