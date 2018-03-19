@@ -58,8 +58,14 @@ end type LimiterFunc_tp
 
 ! This type consists of all variables/arrays regarding the Jacobian, used to apply the limiter.
 type Jacobians_tp
-  real(kind=Dbl) :: u  ! the average velocity at the cell
-  real(kind=Dbl) :: h  ! the average height at the cell
+  integer(kind=Tiny) :: option   ! indicates how to interpolate the Jacobian at the interface: 1: for average on the solution-2: direct average on the Jacobian itself
+
+  real(kind=Dbl) :: u_up  ! the velocity at the upstream grid
+  real(kind=Dbl) :: u_dw  ! the velocity at the downstream grid
+
+  real(kind=Dbl) :: uh_up  ! the discharge at the upstream grid
+  real(kind=Dbl) :: uh_dw  ! the discharge at the downstream grid
+
   real(kind=Dbl) :: Gravity  ! the ground acceleration
 
   real(kind=Dbl),dimension(2)   :: Lambda   ! Contains the eigenvalues
@@ -180,6 +186,7 @@ type(Plot_Results_1D_limiter_tp(NCells = :)), allocatable :: Results
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
+
 integer(kind=Lng)  :: i_steps   ! loop index over the number steps
 integer(kind=Lng)  :: NSteps    ! Total number of steps for time marching
 
@@ -225,6 +232,9 @@ dx     = this%Discretization%LengthCell(1)
 
 coe = dt / dx
 
+! <modify>
+Jacobian%option = 1
+
 ! Initialization
 LimiterFunc%limiter_Type = this%AnalysisInfo%limiter ! Define what limiter to use in the algorithm
 PrintResults = .false.
@@ -255,16 +265,26 @@ Results%ModelInfo = this%ModelInfo
 
       do i_Cell = 2_Lng, NCells-1  ! Loop over the cells except the boundary cells.
 
-
-
-
-
-        LimiterFunc%theta = ! <modify>
+        ! Computing the Jacobian and all other items at the upstream
 
         call Jacobian%Jacobian()   ! <modify>
 
+        ! The limiter function
+        LimiterFunc%theta = ! <modify>
+
+
+
         ! The upwind flux
-        F_L(:) =
+        F_L(:) = 0.0_Dbl
+
+          ! option 1: average the solution
+
+          ! option 2: average the Jacobian
+
+
+
+        F_L(:) = F_L(:) +   ! the minus part
+        F_L(:) = F_L(:) +   ! the plus part
 
         ! The Lax-Wendroff flux
         F_H(:)
@@ -548,65 +568,161 @@ implicit none
 class(Jacobians_tp) :: this
 
 ! Local variables =================================================================================
+real(kind=Dbl) :: u_ave   ! the average velocity at the interface
+real(kind=Dbl) :: uh_ave  ! the average discharge at the interface
+
+real(kind=Dbl), dimension(2,2) :: A_up  ! the average discharge at the interface
+real(kind=Dbl), dimension(2,2) :: A_dw  ! the average discharge at the interface
 
 ! code ============================================================================================
 write(*,       *) " subroutine < Jacobian_sub >: "
 write(FileInfo,*) " subroutine < Jacobian_sub >: "
 
-c = dsqrt (this%Gravity * this%h) ! wave speed
+  if (this%option == 1 ) then  ! find the average solution at the interface and then compute the Jacobian
 
-! Computing the Jacobian - A
-A(1,1) = 0.0_Dbl
-A(1,2) = 1.0_Dbl
-A(2,1) = this%Gravity * this%h - this%u**2
-A(2,2) = 2.0_Dbl * this%u
+    u_ave  = 0.5_Dbl( this%u_up + this%u_dw )   ! <modify> for unstructured discretization
+    uh_ave = 0.5_Dbl( this%uh_up + this%uh_dw ) ! <modify> for unstructured discretization
 
-! Computing the eigenvalues
-this%Lambda(1) = u - dsqrt(this%Gravity *  this%h)
-this%Lambda(2) = u + dsqrt(this%Gravity *  this%h)
+    h_ave = uh_ave/ u_ave
 
-! Computing the eigenvectors
-this%R(1,1) = 1.0_Dbl
-this%R(1,2) = this%Lambda(1)
+    c = dsqrt (this%Gravity * h_ave) ! wave speed
 
-this%R(1,2) = 1.0_Dbl
-this%R(2,2) = this%Lambda(2)
+    ! Computing the Jacobian - A
+    this%A(1,1) = 0.0_Dbl
+    this%A(1,2) = 1.0_Dbl
+    this%A(2,1) = this%Gravity * h_ave - u_ave**2
+    this%A(2,2) = 2.0_Dbl * u_ave
 
-! Computing the eigenvectors inverse
-this%RI(1,1) = this%Lambda(2)
-this%RI(1,2) = -1.0_Dbl
+    ! Computing the eigenvalues
+    this%Lambda(1) = u_ave - dsqrt(this%Gravity *  h_ave)
+    this%Lambda(2) = u_ave + dsqrt(this%Gravity *  h_ave)
 
-this%RI(2,1) = -this%Lambda(1)
-this%RI(2,2) = 1.0_Dbl
+    ! Computing the eigenvectors
+    this%R(1,1) = 1.0_Dbl
+    this%R(1,2) = this%Lambda(1)
 
-this%RI(:,:)  =  this%RI(:,:)   /(2.0_Dbl * c)
+    this%R(1,2) = 1.0_Dbl
+    this%R(2,2) = this%Lambda(2)
 
-! Fill eigenvalue matrix
-this%Gam(1,1) = this%Lambda(1)
-this%Gam(1,2) = 0.0_Dbl
-this%Gam(2,1) = 0.0_Dbl
-this%Gam(2,2) = this%Lambda(2)
+    ! Computing the eigenvectors inverse
+    this%RI(1,1) = this%Lambda(2)
+    this%RI(1,2) = -1.0_Dbl
 
-! Fill Gamma plus
-this%Gam(1,1) = dmax1(this%Lambda(1), 0.0_Dbl)
-this%Gam(1,2) = 0.0_Dbl
-this%Gam(2,1) = 0.0_Dbl
-this%Gam(2,2) = dmax1(this%Lambda(2), 0.0_Dbl)
+    this%RI(2,1) = -this%Lambda(1)
+    this%RI(2,2) = 1.0_Dbl
 
-! Fill Gamma plus
-this%Gam(1,1) = dmin1(this%Lambda(1), 0.0_Dbl)
-this%Gam(1,2) = 0.0_Dbl
-this%Gam(2,1) = 0.0_Dbl
-this%Gam(2,2) = dmin1(this%Lambda(2), 0.0_Dbl)
+    this%RI(:,:)  =  this%RI(:,:)   /(2.0_Dbl * c)
 
-! Compute A plus
-this%A_plus  = matmul(matmul(this%R, this%Gam_plus), this%RI)
+    ! Fill eigenvalue matrix
+    this%Gam(1,1) = this%Lambda(1)
+    this%Gam(1,2) = 0.0_Dbl
+    this%Gam(2,1) = 0.0_Dbl
+    this%Gam(2,2) = this%Lambda(2)
 
-! Compute A minus
-this%A_minus = matmul(matmul(this%R, this%Gam_minus), this%RI)
+    ! Fill Gamma plus
+    this%Gam(1,1) = dmax1(this%Lambda(1), 0.0_Dbl)
+    this%Gam(1,2) = 0.0_Dbl
+    this%Gam(2,1) = 0.0_Dbl
+    this%Gam(2,2) = dmax1(this%Lambda(2), 0.0_Dbl)
 
-! Compute A abs
-this%A_abs = this%A_plus - this%A_minus
+    ! Fill Gamma plus
+    this%Gam(1,1) = dmin1(this%Lambda(1), 0.0_Dbl)
+    this%Gam(1,2) = 0.0_Dbl
+    this%Gam(2,1) = 0.0_Dbl
+    this%Gam(2,2) = dmin1(this%Lambda(2), 0.0_Dbl)
+
+    ! Compute A plus
+    this%A_plus  = matmul(matmul(this%R, this%Gam_plus), this%RI)
+
+    ! Compute A minus
+    this%A_minus = matmul(matmul(this%R, this%Gam_minus), this%RI)
+
+    ! Compute A abs
+    this%A_abs = this%A_plus - this%A_minus
+
+
+  else if (this%option == 2 ) then  ! find the Jacobian at each grid and average the Jacobian to find the Jacobian at the interface
+
+    h_up = this%uh_up / this%u_up
+
+    ! Computing the Jacobian at the upstream - A
+    A_up(1,1) = 0.0_Dbl
+    A_up(1,2) = 1.0_Dbl
+    A_up(2,1) = this%Gravity * h_up - this%u_up**2
+    A_up(2,2) = 2.0_Dbl * this%u_up
+
+    h_dw = this%uh_dw / this%u_dw
+
+    ! Computing the Jacobian at the upstream - A
+    A_dw(1,1) = 0.0_Dbl
+    A_dw(1,2) = 1.0_Dbl
+    A_dw(2,1) = this%Gravity * h_dw - this%u_dw**2
+    A_dw(2,2) = 2.0_Dbl * this%u_dw
+
+    ! average Jacobian
+    this%A(:,:) = 0.5_Dbl * ( A_up(:,:) + A_dw(:,:) )
+
+
+
+    c = dsqrt (this%Gravity * h_ave) ! wave speed
+
+
+    ! Computing the eigenvalues
+    this%Lambda(1) = u_ave - dsqrt(this%Gravity *  h_ave)
+    this%Lambda(2) = u_ave + dsqrt(this%Gravity *  h_ave)
+
+    ! Computing the eigenvectors
+    this%R(1,1) = 1.0_Dbl
+    this%R(1,2) = this%Lambda(1)
+
+    this%R(1,2) = 1.0_Dbl
+    this%R(2,2) = this%Lambda(2)
+
+    ! Computing the eigenvectors inverse
+    this%RI(1,1) = this%Lambda(2)
+    this%RI(1,2) = -1.0_Dbl
+
+    this%RI(2,1) = -this%Lambda(1)
+    this%RI(2,2) = 1.0_Dbl
+
+    this%RI(:,:)  =  this%RI(:,:)   /(2.0_Dbl * c)
+
+    ! Fill eigenvalue matrix
+    this%Gam(1,1) = this%Lambda(1)
+    this%Gam(1,2) = 0.0_Dbl
+    this%Gam(2,1) = 0.0_Dbl
+    this%Gam(2,2) = this%Lambda(2)
+
+    ! Fill Gamma plus
+    this%Gam(1,1) = dmax1(this%Lambda(1), 0.0_Dbl)
+    this%Gam(1,2) = 0.0_Dbl
+    this%Gam(2,1) = 0.0_Dbl
+    this%Gam(2,2) = dmax1(this%Lambda(2), 0.0_Dbl)
+
+    ! Fill Gamma plus
+    this%Gam(1,1) = dmin1(this%Lambda(1), 0.0_Dbl)
+    this%Gam(1,2) = 0.0_Dbl
+    this%Gam(2,1) = 0.0_Dbl
+    this%Gam(2,2) = dmin1(this%Lambda(2), 0.0_Dbl)
+
+    ! Compute A plus
+    this%A_plus  = matmul(matmul(this%R, this%Gam_plus), this%RI)
+
+    ! Compute A minus
+    this%A_minus = matmul(matmul(this%R, this%Gam_minus), this%RI)
+
+    ! Compute A abs
+    this%A_abs = this%A_plus - this%A_minus
+
+
+
+  end if
+
+
+
+
+
+
 
 write(*,       *) " end subroutine < Jacobian_sub >"
 write(FileInfo,*) " end subroutine < Jacobian_sub >"
