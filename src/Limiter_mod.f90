@@ -19,11 +19,11 @@
 ! Last update: 03/20/2018
 !
 ! ================================ S U B R O U T I N E ============================================
-! Solver_1D_with_Limiter_sub: Solves the 1D shallow water equation, with limiter.
-! Impose_Boundary_Condition_1D_sub: Imposes boundary conditions on the 1D model.
-! Limiters_sub: Contains various limiters.
-! Jacobian_sub: computes the Jacobian matrix, Jacobian plus, and Jacobian minus at each cell.
-! Eigenvalues_sub: computes the eigenvalues of a 2x2 matrix.
+! -Solver_1D_with_Limiter_sub: Solves the 1D shallow water equation, with limiter.
+! -Impose_Boundary_Condition_1D_sub: Imposes boundary conditions on the 1D model.
+! -Limiters_sub: Contains various limiters.
+! -Jacobian_sub: computes the Jacobian matrix, Jacobian plus, and Jacobian minus at each cell.
+! -Eigenvalues_sub: computes the eigenvalues of a 2x2 matrix.
 !
 ! ================================ F U N C T I O N ================================================
 !
@@ -742,11 +742,11 @@ end subroutine Jacobian_sub
 !
 ! ================================ V E R S I O N ==================================================
 ! V0.00: 03/19/2018 - Subroutine initiated.
-! V0.01: 03/19/2018 - Initiated: Compiled without error for the first time.
+! V0.01: 03/20/2018 - Initiated: Compiled without error for the first time.
 !
 ! File version $Id $
 !
-! Last update: 03/19/2018
+! Last update: 03/20/2018
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
 ! (Refer to the main code to see the list of imported variables)
@@ -754,85 +754,48 @@ end subroutine Jacobian_sub
 !
 !##################################################################################################
 
-subroutine Eigenvalues_sub(                                           &
-!                                                                     & ! integer (1) variables
-!                                                                     & ! integer (2) variables
-!                                                                     & ! integer (4) variables
-!                                                                     & ! integer (8) variables
-!                                                                     & ! real variables
-!                                                                     & ! integer arrays
-!                                                                     & ! real arrays
-!                                                                     & ! characters
-!                                                                     & ! type
-)
+subroutine Eigenvalues_sub(A, Lambda1, Lambda2)
 
 
 ! Libraries =======================================================================================
 
 ! User defined modules ============================================================================
 
-
 implicit none
 
 ! Global variables ================================================================================
 
 ! - integer variables -----------------------------------------------------------------------------
-!#integer(kind=Shrt), intent(in)    ::
-!#integer(kind=Shrt), intent(inout) ::
-!#integer(kind=Shrt), intent(out)   ::
-! - real variables --------------------------------------------------------------------------------
-!#real(kind=Dbl),     intent(in)    ::
-!#real(kind=Dbl),     intent(inout) ::
-!#real(kind=Dbl),     intent(out)   ::
-! - complex variables -----------------------------------------------------------------------------
-!#complex,             intent(in)    ::
-!#complex,             intent(inout) ::
-!#complex,             intent(out)   ::
-! - integer Arrays --------------------------------------------------------------------------------
-!#integer(kind=Shrt), intent(in),    dimension (:  )  ::
-!#integer(kind=Shrt), intent(in),    dimension (:,:)  ::
-!#integer(kind=Shrt), intent(in)    ::
-!#integer(kind=Shrt), intent(inout) ::
-!#integer(kind=Shrt), intent(out)   ::
-! - real Arrays -----------------------------------------------------------------------------------
-!#real(kind=Dbl),     intent(in),    dimension (:  )  ::
-!#real(kind=Dbl),     intent(inout), dimension (:  )  ::
-!#real(kind=Dbl),     intent(out),   dimension (:  )  ::
-! - character variables ---------------------------------------------------------------------------
-!#character(kind = ?, Len = ? ) ::
-! - logical variables -----------------------------------------------------------------------------
-!#logical   ::
-! - types -----------------------------------------------------------------------------------------
-!#type() ::
 
+! - real variables --------------------------------------------------------------------------------
+real(kind=Dbl),     intent(out)    :: Lambda1, Lambda2
+
+! - complex variables -----------------------------------------------------------------------------
+
+! - integer Arrays --------------------------------------------------------------------------------
+
+! - real Arrays -----------------------------------------------------------------------------------
+real(kind=Dbl), intent(in), dimension (:,:)  :: A
+
+! - character variables ---------------------------------------------------------------------------
+! - logical variables -----------------------------------------------------------------------------
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
-!#integer(kind=Shrt)  ::
 ! - real variables --------------------------------------------------------------------------------
-!#real(kind=Dbl)      ::
-! - complex variables -----------------------------------------------------------------------------
-!#complex              ::
-! - integer Arrays --------------------------------------------------------------------------------
-!#integer(kind=Shrt), dimension (:)  ::
-!#integer(kind=Shrt), Allocatable, dimension (:)  ::
-! - real Arrays -----------------------------------------------------------------------------------
-!#real(kind=Dbl), dimension (:)      ::
-!#real(kind=Dbl), allocatable, dimension (:)  ::
-! - character variables ---------------------------------------------------------------------------
-!#character(kind = ?, Len = ? ) ::
-! - logical variables -----------------------------------------------------------------------------
-!#logical   ::
-! - type ------------------------------------------------------------------------------------------
+real(kind=Dbl)      :: a, b, c, d
 
 ! code ============================================================================================
 write(*,       *) " subroutine < Eigenvalues_sub >: "
 write(FileInfo,*) " subroutine < Eigenvalues_sub >: "
 
+a = A (1,1)
+b = A (1,2)
+c = A (2,1)
+d = A (2,2)
 
-
-
-
+Lambda1 = ((a+d) + dsqrt((a+d)**2 - 4.0_Dbl*(a*d-b*c)))/2.0_Dbl
+Lambda2 = ((a+d) - dsqrt((a+d)**2 - 4.0_Dbl*(a*d-b*c)))/2.0_Dbl
 
 write(*,       *) " end subroutine < Eigenvalues_sub >"
 write(FileInfo,*) " end subroutine < Eigenvalues_sub >"
