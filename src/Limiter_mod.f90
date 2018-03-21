@@ -16,7 +16,7 @@
 !
 ! File version $Id $
 !
-! Last update: 03/20/2018
+! Last update: 03/21/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! - Solver_1D_with_Limiter_sub: Solves the 1D shallow water equation, with limiter.
@@ -68,15 +68,11 @@ end type U
 type Jacobian_tp
   integer(kind=Tiny) :: option   ! indicates how to interpolate the Jacobian at the interface: 1: for average on the solution-2: direct average on the Jacobian itself
 
-  type(vector) :: U_up, U_dw ! Holds the solution at the upstream and downstream of each cell
-
   real(kind=Dbl) :: Gravity  ! the ground acceleration
-
-  real(kind=Dbl),dimension(2)   :: Lambda   ! Contains the eigenvalues
 
   real(kind=Dbl),dimension(2,2) :: A        ! Contains the Jacobian matrix at each time step at the cell interface i-1/2
   real(kind=Dbl),dimension(2,2) :: R        ! Contains the eigenvectors at each time step at the cell interface i-1/2
-  real(kind=Dbl),dimension(2,2) :: L        ! Contains the eigenvectors inverse at each time step at the cell interface i-1/2
+  real(kind=Dbl),dimension(2,2) :: L        ! Contains the eigenvectors inverse (R^(-1))at each time step at the cell interface i-1/2
 
   real(kind=Dbl),dimension(2,2) :: A_plus   ! Contains the Jacobian matrix with + eigenvalues at each time step at the cell interface i-1/2
   real(kind=Dbl),dimension(2,2) :: A_minus  ! Contains the Jacobian matrix with - eigenvalues at each time step at the cell interface i-1/2
@@ -84,6 +80,12 @@ type Jacobian_tp
   real(kind=Dbl),dimension(2,2) :: Gam      ! Contains the Jacobian matrix with - eigenvalues at each time step at the cell interface i-1/2
   real(kind=Dbl),dimension(2,2) :: Gam_plus ! Contains the Jacobian matrix with - eigenvalues at each time step at the cell interface i-1/2
   real(kind=Dbl),dimension(2,2) :: Gam_minus! Contains the Jacobian matrix with - eigenvalues at each time step at the cell interface i-1/2
+
+  type(vector) :: U_up, U_dw ! Holds the solution at the upstream and downstream of each cell
+
+  type(vector) :: Lambda       ! Contains the eigenvalues
+  type(vector) :: Lambda_plus  ! Contains the positive eigenvalues
+  type(vector) :: Lambda_minus ! Contains the negative eigenvalues
 
   contains
     procedure Jacobian => Jacobian_sub
@@ -185,9 +187,15 @@ integer(kind=Lng)  :: i_Cell    ! loop index over the Cells
 integer(kind=Lng)  :: i_steps   ! loop index over the number steps
 integer(kind=Lng)  :: NSteps    ! Total number of steps for time marching
 
+integer(kind=Tiny)  :: i_eigen     ! loop index over the eigenvalues (only two in case of 1D SWE)
+integer(kind=Tiny)  :: i_Interface ! loop index over the interfaces (only two in case of 1D SWE)
+
+
 ! - real variables --------------------------------------------------------------------------------
-real(kind=Dbl)      :: dt
-real(kind=Dbl)      :: dx
+real(kind=Dbl)      :: dt      ! time step, should be structured/constant in each reach
+real(kind=Dbl)      :: dx      ! cell length, should be structured/constant in each reach
+real(kind=Dbl)      :: speed   ! characteristic speed, equal to positive or negative eiqenvalues in each interface
+real(kind=Dbl)      :: Coefficient   ! This will take care of the sign of the flux for the high-resolution part
 
 ! - complex variables -----------------------------------------------------------------------------
 !#complex              ::
@@ -215,6 +223,8 @@ type(vector) :: Wave_tilda           ! Wave = alpha_tilda * R
 
 type(vector) :: F_L ! Contribution of low-resolution method (Upwind) in the solution.
 type(vector) :: F_H ! Contribution of high-resolution method (Lax-Wendroff) in the solution.
+
+type(vector) :: Delta_U           ! holds (U_i- U_i-1)
 
 ! code ============================================================================================
 write(*,       *) " subroutine < Solver_1D_with_Limiter_sub >: "
@@ -277,24 +287,39 @@ Results%ModelInfo = this%ModelInfo
 
         ON_Interface:  do i_Interface = 1, 2  ! the first one is on i-1/2, and the second one is on i+1/2
 
+          ! Compute the jump (U_i- U_i-1)
+          Delta_U%U(:) = this%U(i_Cell+(i_Interface-1_Lng))%U(:) - this%U(i_Cell+(i_Interface-2_Lng))%U(:)
+
           ! Computing the Jacobian and all other items at the upstream
           Jacobian%U_up(:) = this%U(i_Cell+(i_Interface-2_Lng))%U(:)
           Jacobian%U_dw(:) = this%U(i_Cell+(i_Interface-1_Lng))%U(:)
 
           call Jacobian%Jacobian()   ! <modify>
 
-            ON_Eigenvalues: do i_eigen = 1, 2
+          ! Compute alpha(= RI*(U_i - U_(i-1))
+          alpha%U(:) = matmul(Jacobian%L, Delta_U%U(:))
 
-              F_L(:) = F_L(:) +   ! the minus part
-              F_L(:) = F_L(:) +   ! the plus part
+            ON_Eigenvalues: do i_eigen = 1_Tiny, 2_Tiny
+
+              Wave%U(:) = alpha%U(i_eigen) * Jacobian%R(:,i_eigen)
+                if (i_Interface == 1_Tiny) then ! we use the positive eigenvalues on the upstream interface
+                  speed = Jacobian%Lambda_plus%U(i_eigen)
+                else if (i_Interface == 2_Tiny) then ! we use the negative eigenvalues on the downstream interface
+                  speed = Jacobian%Lambda_minus%U(i_eigen)
+                end if
+
+              ! The upwind part
+              F_L%U(:) = F_L%U(:) + speed * Wave%U(:)
 
 
               ! The limiter function
               LimiterFunc%theta = ! <modify>
 
-              ! The Lax-Wendroff flux
+              Wave_tilda%U(:)
 
-              F_H(:)
+              ! The high-resolution (Lax-Wendroff) part
+              Coefficient =    ! This will take care of the sign of the flux for the high-resolution part
+              F_H%U(:) = F_H%U(:) + Coefficient * 0.5_Dbl * dabs()   *() * Wave_tilda%U(:)
 
               ! Update the results  ! <modify> this part. delete the U_Update
               this%U(i_cell) =  this%U(i_cell) - coe * F_L(:)  - coe * F_H(:)
@@ -618,6 +643,12 @@ write(FileInfo,*) " subroutine < Jacobian_sub >: "
     this%Lambda(1) = u_ave - dsqrt(this%Gravity *  h_ave)
     this%Lambda(2) = u_ave + dsqrt(this%Gravity *  h_ave)
 
+    this%Lambda_plus%U(1) =  dmax1(this%Lambda(1), 0.0_Dbl)
+    this%Lambda_plus%U(2) =  dmax1(this%Lambda(2), 0.0_Dbl)
+
+    this%Lambda_minus%U(1) =  dmin1(this%Lambda(1), 0.0_Dbl)
+    this%Lambda_minus%U(2) =  dmin1(this%Lambda(2), 0.0_Dbl)
+
     ! Computing the eigenvectors
     this%R(1,1) = 1.0_Dbl
     this%R(1,2) = this%Lambda(1)
@@ -641,16 +672,16 @@ write(FileInfo,*) " subroutine < Jacobian_sub >: "
     this%Gam(2,2) = this%Lambda(2)
 
     ! Fill Gamma plus
-    this%Gam(1,1) = dmax1(this%Lambda(1), 0.0_Dbl)
-    this%Gam(1,2) = 0.0_Dbl
-    this%Gam(2,1) = 0.0_Dbl
-    this%Gam(2,2) = dmax1(this%Lambda(2), 0.0_Dbl)
+    this%Gam_plus(1,1) = dmax1(this%Lambda(1), 0.0_Dbl)
+    this%Gam_plus(1,2) = 0.0_Dbl
+    this%Gam_plus(2,1) = 0.0_Dbl
+    this%Gam_plus(2,2) = dmax1(this%Lambda(2), 0.0_Dbl)
 
-    ! Fill Gamma plus
-    this%Gam(1,1) = dmin1(this%Lambda(1), 0.0_Dbl)
-    this%Gam(1,2) = 0.0_Dbl
-    this%Gam(2,1) = 0.0_Dbl
-    this%Gam(2,2) = dmin1(this%Lambda(2), 0.0_Dbl)
+    ! Fill Gamma minus
+    this%Gam_minus(1,1) = dmin1(this%Lambda(1), 0.0_Dbl)
+    this%Gam_minus(1,2) = 0.0_Dbl
+    this%Gam_minus(2,1) = 0.0_Dbl
+    this%Gam_minus(2,2) = dmin1(this%Lambda(2), 0.0_Dbl)
 
     ! Compute A plus
     this%A_plus  = matmul(matmul(this%R, this%Gam_plus), this%RI)
@@ -711,16 +742,17 @@ write(FileInfo,*) " subroutine < Jacobian_sub >: "
     this%Gam(2,2) = this%Lambda(2)
 
     ! Fill Gamma plus
-    this%Gam(1,1) = dmax1(this%Lambda(1), 0.0_Dbl)
-    this%Gam(1,2) = 0.0_Dbl
-    this%Gam(2,1) = 0.0_Dbl
-    this%Gam(2,2) = dmax1(this%Lambda(2), 0.0_Dbl)
+    this%Gam_plus(1,1) = dmax1(this%Lambda(1), 0.0_Dbl)
+    this%Gam_plus(1,2) = 0.0_Dbl
+    this%Gam_plus(2,1) = 0.0_Dbl
+    this%Gam_plus(2,2) = dmax1(this%Lambda(2), 0.0_Dbl)
 
-    ! Fill Gamma plus
-    this%Gam(1,1) = dmin1(this%Lambda(1), 0.0_Dbl)
-    this%Gam(1,2) = 0.0_Dbl
-    this%Gam(2,1) = 0.0_Dbl
-    this%Gam(2,2) = dmin1(this%Lambda(2), 0.0_Dbl)
+    ! Fill Gamma minus
+    this%Gam_minus(1,1) = dmin1(this%Lambda(1), 0.0_Dbl)
+    this%Gam_minus(1,2) = 0.0_Dbl
+    this%Gam_minus(2,1) = 0.0_Dbl
+    this%Gam_minus(2,2) = dmin1(this%Lambda(2), 0.0_Dbl)
+
 
     ! Compute A plus
     this%A_plus  = matmul(matmul(this%R, this%Gam_plus), this%RI)
