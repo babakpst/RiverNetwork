@@ -195,6 +195,7 @@ integer(kind=Tiny)  :: i_Interface ! loop index over the interfaces (only two in
 real(kind=Dbl)      :: dt      ! time step, should be structured/constant in each reach
 real(kind=Dbl)      :: dx      ! cell length, should be structured/constant in each reach
 real(kind=Dbl)      :: speed   ! characteristic speed, equal to positive or negative eiqenvalues in each interface
+real(kind=Dbl)      :: dtdx    ! The ratio dt/dx, used in the final equation
 real(kind=Dbl)      :: Coefficient   ! This will take care of the sign of the flux for the high-resolution part
 
 ! - complex variables -----------------------------------------------------------------------------
@@ -246,7 +247,7 @@ NSteps = this%AnalysisInfo%TotalTime/this%AnalysisInfo%TimeStep
 dt     = this%AnalysisInfo%TimeStep
 dx     = this%Discretization%LengthCell(1)
 
-coe = dt / dx
+dtdx = dt / dx
 
 ! <modify>
 Jacobian%option = 1
@@ -304,8 +305,10 @@ Results%ModelInfo = this%ModelInfo
               Wave%U(:) = alpha%U(i_eigen) * Jacobian%R(:,i_eigen)
                 if (i_Interface == 1_Tiny) then ! we use the positive eigenvalues on the upstream interface
                   speed = Jacobian%Lambda_plus%U(i_eigen)
+                  Coefficient = -1.0_Dbl               ! This will take care of the sign of the flux for the high-resolution part
                 else if (i_Interface == 2_Tiny) then ! we use the negative eigenvalues on the downstream interface
                   speed = Jacobian%Lambda_minus%U(i_eigen)
+                  Coefficient = +1.0_Dbl                ! This will take care of the sign of the flux for the high-resolution part
                 end if
 
               ! The upwind part
@@ -315,18 +318,18 @@ Results%ModelInfo = this%ModelInfo
               ! The limiter function
               LimiterFunc%theta = ! <modify>
 
-              Wave_tilda%U(:)
+
+              alpha_tilda%U(:) =  LimiterFunc%phi * alpha%U(:)
+
+              Wave_tilda%U(:) = alpha_tilda%U(i_eigen) * Jacobian%R(:,i_eigen)
 
               ! The high-resolution (Lax-Wendroff) part
-              Coefficient =    ! This will take care of the sign of the flux for the high-resolution part
-              F_H%U(:) = F_H%U(:) + Coefficient * 0.5_Dbl * dabs()   *() * Wave_tilda%U(:)
-
-              ! Update the results  ! <modify> this part. delete the U_Update
-              this%U(i_cell) =  this%U(i_cell) - coe * F_L(:)  - coe * F_H(:)
+              F_H%U(:) = F_H%U(:) + Coefficient * 0.5_Dbl * dabs( Jacobian%Lambda%U(i_eigen) ) * ( 1.0_Dbl - dtdx * dabs( Jacobian%Lambda%U(i_eigen) ) ) * Wave_tilda%U(:)
 
 
-              this%h(2:this%NCells-1)  = this%h(2:this%NCells-1)  +
-              this%uh(2:this%NCells-1) = this%uh(2:this%NCells-1) +
+
+              ! Final update the results
+              this%U(i_cell) =  this%U(i_cell) - dtdx * F_L(:) - dtdx * F_H(:)
 
 
             end do ON_Eigenvalies
