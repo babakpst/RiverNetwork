@@ -62,14 +62,13 @@ type vector
   real(kind=Dbl), dimension(2) :: U
 end type U
 
-! This type consists of all variables/arrays regarding the Jacobian, used to apply the limiter.
-type Jacobians_tp
+
+
+! This type consists of all variables/arrays regarding the Jacobian, used to apply the limiter. The input variables is U_up and U_dw
+type Jacobian_tp
   integer(kind=Tiny) :: option   ! indicates how to interpolate the Jacobian at the interface: 1: for average on the solution-2: direct average on the Jacobian itself
 
-
   type(vector) :: U_up, U_dw ! Holds the solution at the upstream and downstream of each cell
-
-
 
   real(kind=Dbl) :: Gravity  ! the ground acceleration
 
@@ -88,7 +87,7 @@ type Jacobians_tp
 
   contains
     procedure Jacobian => Jacobian_sub
-end type Jacobians_tp
+end type Jacobian_tp
 
 type, public :: SolverWithLimiter(NCells)
   integer(kind=Lng), len :: NCells
@@ -180,13 +179,9 @@ implicit none
 ! - types -----------------------------------------------------------------------------------------
 class(SolverWithLimiter(*)) :: this
 
-type(Jacobians_tp)     :: Jacobian
-type(LimiterFunc_tp)   :: LimiterFunc
-type(Plot_Results_1D_limiter_tp(NCells = :)), allocatable :: Results
-
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
-
+integer(kind=Lng)  :: i_Cell    ! loop index over the Cells
 integer(kind=Lng)  :: i_steps   ! loop index over the number steps
 integer(kind=Lng)  :: NSteps    ! Total number of steps for time marching
 
@@ -196,19 +191,30 @@ real(kind=Dbl)      :: dx
 
 ! - complex variables -----------------------------------------------------------------------------
 !#complex              ::
+
 ! - integer Arrays --------------------------------------------------------------------------------
 !#integer (kind=Shrt), dimension (:)  ::
 !#integer (kind=Shrt), Allocatable, dimension (:)  ::
 
 ! - real Arrays -----------------------------------------------------------------------------------
-real(kind=Dbl), dimension (2) :: F_L ! Contribution of low-resolution method (Upwind) in the solution.
-real(kind=Dbl), dimension (2) :: F_H ! Contribution of high-resolution method (Lax-Wendroff) in the solution.
-
 ! - character variables ---------------------------------------------------------------------------
 !#character (kind = ?, Len = ? ) ::
+
 ! - logical variables -----------------------------------------------------------------------------
 logical   :: PrintResults
 ! - type ------------------------------------------------------------------------------------------
+type(Jacobian_tp)      :: Jacobian    ! Contains the Jacobian and all related items.
+type(LimiterFunc_tp)   :: LimiterFunc ! Contains the values of the limiter
+type(Plot_Results_1D_limiter_tp(NCells = :)), allocatable :: Results ! Holds the results in each time step in all cells.
+
+type(vector) :: alpha                 ! alpha = R^-1 (U_i- U_i-1) See notes for detail.
+type(vector) :: alpha_tilda           ! alpha_tilda = alpha * limiter
+
+type(vector) :: Wave                 ! Wave = alpha * R
+type(vector) :: Wave_tilda           ! Wave = alpha_tilda * R
+
+type(vector) :: F_L ! Contribution of low-resolution method (Upwind) in the solution.
+type(vector) :: F_H ! Contribution of high-resolution method (Lax-Wendroff) in the solution.
 
 ! code ============================================================================================
 write(*,       *) " subroutine < Solver_1D_with_Limiter_sub >: "
@@ -263,48 +269,43 @@ Results%ModelInfo = this%ModelInfo
         call Results%plot_results(i_steps)
       end if
 
+    ! Initialize fluxes
+    F_L%U(:) = 0.0_Dbl ! upwind flux (not exactly, see notes)
+    F_H%U(:) = 0.0_Dbl ! lax-Wendroff flux (not exactly, see notes)
+
       ON_Cells: do i_Cell = 2_Lng, NCells-1  ! Loop over the cells except the boundary cells.
 
-        ON_Eigenvalues: do i_eigen = 1, 2
+        ON_Interface:  do i_Interface = 1, 2  ! the first one is on i-1/2, and the second one is on i+1/2
 
-          ON_Interface:  do i_Interface = 1, 2  ! the first one is on i-1/2, and the second one is on i+1/2
+          ! Computing the Jacobian and all other items at the upstream
+          Jacobian%U_up(:) = this%U(i_Cell+(i_Interface-2_Lng))%U(:)
+          Jacobian%U_dw(:) = this%U(i_Cell+(i_Interface-1_Lng))%U(:)
 
+          call Jacobian%Jacobian()   ! <modify>
 
-            ! Computing the Jacobian and all other items at the upstream
-            Jacobian%u_dw =
+            ON_Eigenvalues: do i_eigen = 1, 2
 
-            call Jacobian%Jacobian()   ! <modify>
-
-
-            ! The limiter function
-            LimiterFunc%theta = ! <modify>
-
+              F_L(:) = F_L(:) +   ! the minus part
+              F_L(:) = F_L(:) +   ! the plus part
 
 
+              ! The limiter function
+              LimiterFunc%theta = ! <modify>
+
+              ! The Lax-Wendroff flux
+
+              F_H(:)
+
+              ! Update the results  ! <modify> this part. delete the U_Update
+              this%U(i_cell) =  this%U(i_cell) - coe * F_L(:)  - coe * F_H(:)
 
 
+              this%h(2:this%NCells-1)  = this%h(2:this%NCells-1)  +
+              this%uh(2:this%NCells-1) = this%uh(2:this%NCells-1) +
 
 
-            ! The upwind flux
-            F_L(:) = 0.0_Dbl
-
-
-            F_L(:) = F_L(:) +   ! the minus part
-            F_L(:) = F_L(:) +   ! the plus part
-
-            ! The Lax-Wendroff flux
-            F_H(:)
-
-            ! Update the results  ! <modify> this part. delete the U_Update
-            this%U(i_cell) =  this%U(i_cell) - coe * F_L(:)  - coe * F_H(:)
-
-
-            this%h(2:this%NCells-1)  = this%h(2:this%NCells-1)  +
-            this%uh(2:this%NCells-1) = this%uh(2:this%NCells-1) +
-
-          end do ON_Interface
-
-        end do ON_Eigenvalies
+            end do ON_Eigenvalies
+        end do ON_Interface
 
       end do ON_Cells
 
@@ -575,20 +576,17 @@ implicit none
 
 ! Global variables ================================================================================
 ! - types -----------------------------------------------------------------------------------------
-class(Jacobians_tp) :: this
+class(Jacobian_tp) :: this
 
 ! Local variables =================================================================================
-  real(kind=Dbl) :: u_up  ! the velocity at the upstream grid
-  real(kind=Dbl) :: uh_up  ! the discharge at the upstream grid
+real(kind=Dbl) :: h_dw  ! the height at the downstream grid
+real(kind=Dbl) :: u_dw  ! the velocity at the downstream grid
 
-  real(kind=Dbl) :: u_dw  ! the velocity at the downstream grid
-  real(kind=Dbl) :: uh_dw  ! the discharge at the downstream grid
-
-
-
+real(kind=Dbl) :: h_up  ! the height at the upstream grid
+real(kind=Dbl) :: u_up  ! the velocity at the upstream grid
 
 real(kind=Dbl) :: u_ave   ! the average velocity at the interface
-real(kind=Dbl) :: uh_ave  ! the average discharge at the interface
+real(kind=Dbl) :: h_ave  ! the average height at the interface
 
 real(kind=Dbl), dimension(2,2) :: A_up  ! the average discharge at the interface
 real(kind=Dbl), dimension(2,2) :: A_dw  ! the average discharge at the interface
@@ -599,10 +597,14 @@ write(FileInfo,*) " subroutine < Jacobian_sub >: "
 
   if (this%option == 1 ) then  ! find the average solution at the interface and then compute the Jacobian
 
-    u_ave  = 0.5_Dbl( this%u_up + this%u_dw )   ! <modify> for unstructured discretization
-    uh_ave = 0.5_Dbl( this%uh_up + this%uh_dw ) ! <modify> for unstructured discretization
+    h_dw = this%U_dw(1)
+    u_dw = this%U_dw(2) / this%U_dw(1)
 
-    h_ave = uh_ave/ u_ave
+    h_up = this%U_up(1)
+    u_up = this%U_up(2) / this%U_up(1)
+
+    h_ave = 0.5_Dbl(h_up+h_dw)    ! <modify> for unstructured discretization
+    u_ave = 0.5_Dbl(u_up+u_dw)   ! <modify> for unstructured discretization
 
     c = dsqrt (this%Gravity * h_ave) ! wave speed
 
@@ -662,21 +664,22 @@ write(FileInfo,*) " subroutine < Jacobian_sub >: "
 
   else if (this%option == 2 ) then  ! find the Jacobian at each grid and average the Jacobian to find the Jacobian at the interface
 
-    h_up = this%uh_up / this%u_up
-
     ! Computing the Jacobian at the upstream - A
+    h_up = this%U_up(1)
+    u_up = this%U_up(2) / this%U_up(1)
     A_up(1,1) = 0.0_Dbl
     A_up(1,2) = 1.0_Dbl
-    A_up(2,1) = this%Gravity * h_up - this%u_up**2
-    A_up(2,2) = 2.0_Dbl * this%u_up
+    A_up(2,1) = this%Gravity * h_up - u_up**2
+    A_up(2,2) = 2.0_Dbl * u_up
 
-    h_dw = this%uh_dw / this%u_dw
 
     ! Computing the Jacobian at the upstream - A
+    h_dw = this%U_dw(1)
+    u_dw = this%U_dw(2) / this%U_dw(1)
     A_dw(1,1) = 0.0_Dbl
     A_dw(1,2) = 1.0_Dbl
-    A_dw(2,1) = this%Gravity * h_dw - this%u_dw**2
-    A_dw(2,2) = 2.0_Dbl * this%u_dw
+    A_dw(2,1) = this%Gravity * h_dw - u_dw**2
+    A_dw(2,2) = 2.0_Dbl * u_dw
 
     ! average Jacobian
     this%A(:,:) = 0.5_Dbl * ( A_up(:,:) + A_dw(:,:) )
