@@ -19,11 +19,11 @@
 ! Last update: 03/20/2018
 !
 ! ================================ S U B R O U T I N E ============================================
-! -Solver_1D_with_Limiter_sub: Solves the 1D shallow water equation, with limiter.
-! -Impose_Boundary_Condition_1D_sub: Imposes boundary conditions on the 1D model.
-! -Limiters_sub: Contains various limiters.
-! -Jacobian_sub: computes the Jacobian matrix, Jacobian plus, and Jacobian minus at each cell.
-! -Eigenvalues_sub: computes the eigenvalues of a 2x2 matrix.
+! - Solver_1D_with_Limiter_sub: Solves the 1D shallow water equation, with limiter.
+! - Impose_Boundary_Condition_1D_sub: Imposes boundary conditions on the 1D model.
+! - Limiters_sub: Contains various limiters.
+! - Jacobian_sub: computes the Jacobian matrix, Jacobian plus, and Jacobian minus at each cell.
+! - Eigenvalues_sub: computes the eigenvalues of a 2x2 matrix.
 !
 ! ================================ F U N C T I O N ================================================
 !
@@ -57,15 +57,19 @@ type LimiterFunc_tp ! contains all variable to compute the limiter value
     procedure LimiterValue => Limiters_sub
 end type LimiterFunc_tp
 
+! This vector will be used in the main type as the solution in each type step
+type vector
+  real(kind=Dbl), dimension(2) :: U
+end type U
+
 ! This type consists of all variables/arrays regarding the Jacobian, used to apply the limiter.
 type Jacobians_tp
   integer(kind=Tiny) :: option   ! indicates how to interpolate the Jacobian at the interface: 1: for average on the solution-2: direct average on the Jacobian itself
 
-  real(kind=Dbl) :: u_up  ! the velocity at the upstream grid
-  real(kind=Dbl) :: u_dw  ! the velocity at the downstream grid
 
-  real(kind=Dbl) :: uh_up  ! the discharge at the upstream grid
-  real(kind=Dbl) :: uh_dw  ! the discharge at the downstream grid
+  type(vector) :: U_up, U_dw ! Holds the solution at the upstream and downstream of each cell
+
+
 
   real(kind=Dbl) :: Gravity  ! the ground acceleration
 
@@ -85,11 +89,6 @@ type Jacobians_tp
   contains
     procedure Jacobian => Jacobian_sub
 end type Jacobians_tp
-
-! This vector will be used in the main type as the solution in each type step
-type vector
-  real(kind=Dbl), dimension(2) :: U
-end type U
 
 type, public :: SolverWithLimiter(NCells)
   integer(kind=Lng), len :: NCells
@@ -264,40 +263,50 @@ Results%ModelInfo = this%ModelInfo
         call Results%plot_results(i_steps)
       end if
 
-      do i_Cell = 2_Lng, NCells-1  ! Loop over the cells except the boundary cells.
+      ON_Cells: do i_Cell = 2_Lng, NCells-1  ! Loop over the cells except the boundary cells.
 
-        ! Computing the Jacobian and all other items at the upstream
+        ON_Eigenvalues: do i_eigen = 1, 2
 
-        call Jacobian%Jacobian()   ! <modify>
-
-        ! The limiter function
-        LimiterFunc%theta = ! <modify>
+          ON_Interface:  do i_Interface = 1, 2  ! the first one is on i-1/2, and the second one is on i+1/2
 
 
+            ! Computing the Jacobian and all other items at the upstream
+            Jacobian%u_dw =
 
-        ! The upwind flux
-        F_L(:) = 0.0_Dbl
+            call Jacobian%Jacobian()   ! <modify>
 
-          ! option 1: average the solution
 
-          ! option 2: average the Jacobian
+            ! The limiter function
+            LimiterFunc%theta = ! <modify>
 
 
 
-        F_L(:) = F_L(:) +   ! the minus part
-        F_L(:) = F_L(:) +   ! the plus part
-
-        ! The Lax-Wendroff flux
-        F_H(:)
-
-        ! Update the results  ! <modify> this part. delete the U_Update
-        this%U(i_cell) =  this%U(i_cell) - coe * F_L(:)  - coe * F_H(:)
 
 
-        this%h(2:this%NCells-1)  = this%h(2:this%NCells-1)  +
-        this%uh(2:this%NCells-1) = this%uh(2:this%NCells-1) +
 
-      end do
+
+            ! The upwind flux
+            F_L(:) = 0.0_Dbl
+
+
+            F_L(:) = F_L(:) +   ! the minus part
+            F_L(:) = F_L(:) +   ! the plus part
+
+            ! The Lax-Wendroff flux
+            F_H(:)
+
+            ! Update the results  ! <modify> this part. delete the U_Update
+            this%U(i_cell) =  this%U(i_cell) - coe * F_L(:)  - coe * F_H(:)
+
+
+            this%h(2:this%NCells-1)  = this%h(2:this%NCells-1)  +
+            this%uh(2:this%NCells-1) = this%uh(2:this%NCells-1) +
+
+          end do ON_Interface
+
+        end do ON_Eigenvalies
+
+      end do ON_Cells
 
 
 
@@ -569,6 +578,15 @@ implicit none
 class(Jacobians_tp) :: this
 
 ! Local variables =================================================================================
+  real(kind=Dbl) :: u_up  ! the velocity at the upstream grid
+  real(kind=Dbl) :: uh_up  ! the discharge at the upstream grid
+
+  real(kind=Dbl) :: u_dw  ! the velocity at the downstream grid
+  real(kind=Dbl) :: uh_dw  ! the discharge at the downstream grid
+
+
+
+
 real(kind=Dbl) :: u_ave   ! the average velocity at the interface
 real(kind=Dbl) :: uh_ave  ! the average discharge at the interface
 
@@ -663,14 +681,8 @@ write(FileInfo,*) " subroutine < Jacobian_sub >: "
     ! average Jacobian
     this%A(:,:) = 0.5_Dbl * ( A_up(:,:) + A_dw(:,:) )
 
-
-
-    c = dsqrt (this%Gravity * h_ave) ! wave speed
-
-
     ! Computing the eigenvalues
-    this%Lambda(1) = u_ave - dsqrt(this%Gravity *  h_ave)
-    this%Lambda(2) = u_ave + dsqrt(this%Gravity *  h_ave)
+    call Eigenvalues_sub(this%A, this%Lambda(1), this%Lambda(2))
 
     ! Computing the eigenvectors
     this%R(1,1) = 1.0_Dbl
@@ -686,6 +698,7 @@ write(FileInfo,*) " subroutine < Jacobian_sub >: "
     this%RI(2,1) = -this%Lambda(1)
     this%RI(2,2) = 1.0_Dbl
 
+    c = this%Lambda(2) - this%Lambda(1)
     this%RI(:,:)  =  this%RI(:,:)   /(2.0_Dbl * c)
 
     ! Fill eigenvalue matrix
@@ -715,14 +728,7 @@ write(FileInfo,*) " subroutine < Jacobian_sub >: "
     ! Compute A abs
     this%A_abs = this%A_plus - this%A_minus
 
-
-
   end if
-
-
-
-
-
 
 
 write(*,       *) " end subroutine < Jacobian_sub >"
