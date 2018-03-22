@@ -62,8 +62,6 @@ type vector
   real(kind=Dbl), dimension(2) :: U
 end type U
 
-
-
 ! This type consists of all variables/arrays regarding the Jacobian, used to apply the limiter. The input variables is U_up and U_dw
 type Jacobian_tp
   integer(kind=Tiny) :: option   ! indicates how to interpolate the Jacobian at the interface: 1: for average on the solution-2: direct average on the Jacobian itself
@@ -104,7 +102,7 @@ type, public :: SolverWithLimiter(NCells)
   type(vector),  dimension(NCells) :: phi   ! Holds the value of the limiter function <delete>
   type(vector),  dimension(NCells) :: theta ! Holds the value of the limiter function <delete>
 
-  type(vector), dimension(NCells)  :: U     ! This vector holds the solution at the current step,
+  type(vector), dimension(-1_Lng:NCells+2_Lng)  :: U     ! This vector holds the solution at the current step,
                                             ! the first term holds "h" and the second holds "uh"
 
   type(discretization_tp) :: Discretization ! Contains the discretization of the domain
@@ -212,14 +210,16 @@ real(kind=Dbl)      :: Coefficient   ! This will take care of the sign of the fl
 ! - logical variables -----------------------------------------------------------------------------
 logical   :: PrintResults
 ! - type ------------------------------------------------------------------------------------------
-type(Jacobian_tp)      :: Jacobian    ! Contains the Jacobian and all related items.
+type(Jacobian_tp)      :: Jacobian, Jacobian_neighbor ! Contains the Jacobian and all related items.
 type(LimiterFunc_tp)   :: LimiterFunc ! Contains the values of the limiter
 type(Plot_Results_1D_limiter_tp(NCells = :)), allocatable :: Results ! Holds the results in each time step in all cells.
 
 type(vector) :: alpha                 ! alpha = R^-1 (U_i- U_i-1) See notes for detail.
+type(vector) :: alpha_neighbor        ! alpha = R^-1 (U_i- U_i-1) See notes for detail.
 type(vector) :: alpha_tilda           ! alpha_tilda = alpha * limiter
 
 type(vector) :: Wave                 ! Wave = alpha * R
+type(vector) :: Wave_neighbor        ! Wave = alpha * R
 type(vector) :: Wave_tilda           ! Wave = alpha_tilda * R
 
 type(vector) :: F_L ! Contribution of low-resolution method (Upwind) in the solution.
@@ -315,28 +315,44 @@ Results%ModelInfo = this%ModelInfo
               ! The upwind part
               F_L%U(:) = F_L%U(:) + speed * Wave%U(:)
 
-                if  ( Jacobian%Lambda%U(i_eigen)  > 0.0_Dbl ) then
+                ! This if condition computes the W_(I-1/2)
+                if  (Jacobian%Lambda%U(i_eigen)  > 0.0_Dbl ) then
+
                   ! Compute the jump (U_i- U_i-1)
-                  Delta_U%U(:) = this%U(i_Cell+(i_Interface-1_Lng))%U(:)     - this%U(i_Cell+(i_Interface-2_Lng))%U(:)
+                  Delta_U%U(:) = this%U(i_Cell-2_Lng * (2_Lng-i_Interface)+1_Lng)%U(:) - this%U(i_Cell-2_Lng * (2_Lng-i_Interface) )%U(:)
 
                   ! Computing the Jacobian and all other items at the upstream
-                  Jacobian%U_up(:) = this%U(i_Cell+(i_Interface-2_Lng))%U(:)
-                  Jacobian%U_dw(:) = this%U(i_Cell+(i_Interface-1_Lng))%U(:)
+                  Jacobian_neighbor%U_up(:) = this%U(i_Cell-2_Lng * (2_Lng-i_Interface)      )%U(:)
+                  Jacobian_neighbor%U_dw(:) = this%U(i_Cell-2_Lng * (2_Lng-i_Interface)+1_Lng)%U(:)
 
                   call Jacobian%Jacobian()   ! <modify>
 
+
                   ! Compute alpha(= RI*(U_i - U_(i-1))
-                  alpha%U(:) = matmul(Jacobian%L, Delta_U%U(:))
+                  alpha_neighbor%U(:) = matmul(Jacobian_neighbor%L, Delta_U%U(:))
+                  Wave_neighbor%U(:)  = alpha_neighbor%U(i_eigen) * Jacobian_neighbor%R(:,i_eigen)
 
                 else if  ( Jacobian%Lambda%U(i_eigen)  < 0.0_Dbl ) then
 
+                 ! Compute the jump (U_i- U_i-1)
+                  Delta_U%U(:) = this%U(i_Cell-2_Lng * (1_Lng-i_Interface))%U(:) - this%U(i_Cell-2_Lng * (1_Lng-i_Interface)-1_Lng )%U(:)
+
+                  ! Computing the Jacobian and all other items at the upstream
+                  Jacobian_neighbor%U_up(:) = this%U(i_Cell-2_Lng * (1_Lng-i_Interface)-1_Lng )%U(:)
+                  Jacobian_neighbor%U_dw(:) = this%U(i_Cell-2_Lng * (1_Lng-i_Interface)       )%U(:)
+
+                  call Jacobian%Jacobian()   ! <modify>
+
+
+                  ! Compute alpha(= RI*(U_i - U_(i-1))
+                  alpha_neighbor%U(:) = matmul(Jacobian_neighbor%L, Delta_U%U(:))
+                  Wave_neighbor%U(:)  = alpha_neighbor%U(i_eigen) * Jacobian_neighbor%R(:,i_eigen)
                 else
                   write(*,*) " Something is wrong. Check the limiter subroutine."
                   stop
                 end if
 
-
-              LimiterFunc%theta = ( dot_product( , Wave%U(:) ) ) / ( dot_product(Wave%U(:), Wave%U(:) )  )
+              LimiterFunc%theta = ( dot_product( Wave_neighbor%U(:), Wave%U(:) ) ) / ( dot_product(Wave%U(:), Wave%U(:) )  )
               ! The limiter function
               call LimiterFunc%LimiterValue()
 
@@ -345,7 +361,7 @@ Results%ModelInfo = this%ModelInfo
               Wave_tilda%U(:) = alpha_tilda%U(i_eigen) * Jacobian%R(:,i_eigen)
 
               ! The high-resolution (Lax-Wendroff) part
-              F_H%U(:) = F_H%U(:) + Coefficient * 0.5_Dbl * dabs( Jacobian%Lambda%U(i_eigen) ) * ( 1.0_Dbl - dtdx * dabs( Jacobian%Lambda%U(i_eigen) ) ) * Wave_tilda%U(:)
+              F_H%U(:) = F_H%U(:) + Coefficient * 0.5_Dbl * dabs(Jacobian%Lambda%U(i_eigen) ) * ( 1.0_Dbl - dtdx * dabs( Jacobian%Lambda%U(i_eigen) ) ) * Wave_tilda%U(:)
 
               ! Final update the results
               this%U(i_cell) =  this%U(i_cell) - dtdx * F_L(:) - dtdx * F_H(:)
@@ -358,23 +374,10 @@ Results%ModelInfo = this%ModelInfo
 
 
 
-
-
-
-
-
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! find the solution at the half step
     this%s_f(:) = (this%Discretization%ManningCell(:)**2.0_Dbl)*((this%uh(:)/this%h(:)) *dabs(this%uh(:)/this%h(:)))/ (((this%Discretization%WidthCell(:)*this%h(:))/(this%Discretization%WidthCell(:)+2.0_Dbl*this%h(:)) )**(4.0_Dbl/3.0_Dbl))
     this%s(:) = - this%Gravity * this%h(:)*(this%Discretization%SlopeCell(:) - this%s_f(:))
 
-    !this%hm(1:this%NCells-1)  = (this%h(1:this%NCells-1)  + this%h(2:this%NCells) ) / 2.0_Dbl - ( dt / 2.0_Dbl ) * (this%uh(2:this%NCells) - this%uh(1:this%NCells-1) ) / this%Discretization%LengthCell(1:this%NCells-1)
-    !this%uhm(1:this%NCells-1) = (this%uh(1:this%NCells-1) + this%uh(2:this%NCells)) / 2.0_Dbl - ( dt / 2.0_Dbl ) * ((this%uh(2:this%NCells) ** 2.0_Dbl) / this%h(2:this%NCells) + 0.5_Dbl * this%Gravity * ( this%h(2:this%NCells) ** 2.0_Dbl) - (this%uh(1:this%NCells-1)** 2.0_Dbl)/ this%h(1:this%NCells-1) - 0.5_Dbl * this%Gravity * (this%h(1:this%NCells-1) ** 2.0_Dbl )) / this%Discretization%LengthCell(1:this%NCells-1) - ( dt / 4.0_Dbl ) * ( this%s(2:this%NCells) + this%s(1:this%NCells-1) )
 
     this%hm(1:this%NCells-1)  = (this%h(1:this%NCells-1)  + this%h(2:this%NCells) ) / 2.0_Dbl - ( dt / 2.0_Dbl ) * (this%uh(2:this%NCells) - this%uh(1:this%NCells-1) ) / dx
     this%uhm(1:this%NCells-1) = (this%uh(1:this%NCells-1) + this%uh(2:this%NCells)) / 2.0_Dbl &
@@ -390,6 +393,13 @@ Results%ModelInfo = this%ModelInfo
 
     this%h(2:this%NCells-1) = this%h(2:this%NCells-1)   - dt * ( this%uhm(2:this%NCells-1) - this%uhm(1:this%NCells-2) ) / dx
     this%uh(2:this%NCells-1) = this%uh(2:this%NCells-1) - dt * ((this%uhm(2:this%NCells-1) ** 2.0_Dbl)  / this%hm(2:this%NCells-1) + 0.5_Dbl * this%Gravity * ( this%hm(2:this%NCells-1) ** 2.0_Dbl) - (this%uhm(1:this%NCells-2) ** 2.0_Dbl)  / this%hm(1:this%NCells-2) - 0.5_Dbl * this%Gravity * ( this%hm(1:this%NCells-2) ** 2.0_Dbl) ) / dx - ( dt / 2.0_Dbl ) * ( this%s_m(2:this%NCells-1) + this%s_m(1:this%NCells-2) )
+
+
+
+
+
+
+
 
     ! apply boundary condition
     call this%BC()
@@ -503,12 +513,23 @@ write(FileInfo,*) " subroutine < Impose_Boundary_Condition_1D_sub >: "
 
 
 ! Boundary conditions on the height
-this%U(1)%U(1) = this%U(2)%U(1)   ! h at the upstream
-this%U(this%NCells)%U(1) = this%AnalysisInfo%h_dw ! h at the downstream
+this%U(-1_Lng)%U(1) = this%U(2)%U(1) ! h at the upstream
+this%U( 0_Lng)%U(1) = this%U(2)%U(1) ! h at the upstream
+this%U( 1_Lng)%U(1) = this%U(2)%U(1) ! h at the upstream
+
+this%U(this%NCells      )%U(1) = this%AnalysisInfo%h_dw ! h at the downstream
+this%U(this%NCells+1_Lng)%U(1) = this%AnalysisInfo%h_dw ! h at the downstream
+this%U(this%NCells+2_Lng)%U(1) = this%AnalysisInfo%h_dw ! h at the downstream
 
 ! Boundary conditions on the discharge
-this%U(1)%U(2)           = this%AnalysisInfo%Q_Up/ this%Discretization%WidthCell(1)  ! h at the upstream
-this%U(this%NCells)%U(2) = this%uh(this%NCells-1) ! h at the downstream
+this%U(-1_Lng)%U(2) = this%AnalysisInfo%Q_Up / this%Discretization%WidthCell(1)  ! h at the upstream
+this%U( 0_Lng)%U(2) = this%AnalysisInfo%Q_Up / this%Discretization%WidthCell(1)  ! h at the upstream
+this%U( 1_Lng)%U(2) = this%AnalysisInfo%Q_Up / this%Discretization%WidthCell(1)  ! h at the upstream
+
+
+this%U(this%NCells      )%U(2) = this%uh(this%NCells-1) ! h at the downstream
+this%U(this%NCells+1_Lng)%U(2) = this%uh(this%NCells-1) ! h at the downstream
+this%U(this%NCells+2_Lng)%U(2) = this%uh(this%NCells-1) ! h at the downstream
 
 write(*,       *) " end subroutine < Impose_Boundary_Condition_1D_sub >"
 write(FileInfo,*) " end subroutine < Impose_Boundary_Condition_1D_sub >"
