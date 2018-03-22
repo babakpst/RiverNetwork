@@ -303,6 +303,7 @@ Results%ModelInfo = this%ModelInfo
             ON_Eigenvalues: do i_eigen = 1_Tiny, 2_Tiny
 
               Wave%U(:) = alpha%U(i_eigen) * Jacobian%R(:,i_eigen)
+
                 if (i_Interface == 1_Tiny) then ! we use the positive eigenvalues on the upstream interface
                   speed = Jacobian%Lambda_plus%U(i_eigen)
                   Coefficient = -1.0_Dbl               ! This will take care of the sign of the flux for the high-resolution part
@@ -314,10 +315,30 @@ Results%ModelInfo = this%ModelInfo
               ! The upwind part
               F_L%U(:) = F_L%U(:) + speed * Wave%U(:)
 
+                if  ( Jacobian%Lambda%U(i_eigen)  > 0.0_Dbl ) then
+                  ! Compute the jump (U_i- U_i-1)
+                  Delta_U%U(:) = this%U(i_Cell+(i_Interface-1_Lng))%U(:)     - this%U(i_Cell+(i_Interface-2_Lng))%U(:)
 
+                  ! Computing the Jacobian and all other items at the upstream
+                  Jacobian%U_up(:) = this%U(i_Cell+(i_Interface-2_Lng))%U(:)
+                  Jacobian%U_dw(:) = this%U(i_Cell+(i_Interface-1_Lng))%U(:)
+
+                  call Jacobian%Jacobian()   ! <modify>
+
+                  ! Compute alpha(= RI*(U_i - U_(i-1))
+                  alpha%U(:) = matmul(Jacobian%L, Delta_U%U(:))
+
+                else if  ( Jacobian%Lambda%U(i_eigen)  < 0.0_Dbl ) then
+
+                else
+                  write(*,*) " Something is wrong. Check the limiter subroutine."
+                  stop
+                end if
+
+
+              LimiterFunc%theta = ( dot_product( , Wave%U(:) ) ) / ( dot_product(Wave%U(:), Wave%U(:) )  )
               ! The limiter function
-              LimiterFunc%theta = ! <modify>
-
+              call LimiterFunc%LimiterValue()
 
               alpha_tilda%U(:) =  LimiterFunc%phi * alpha%U(:)
 
@@ -325,8 +346,6 @@ Results%ModelInfo = this%ModelInfo
 
               ! The high-resolution (Lax-Wendroff) part
               F_H%U(:) = F_H%U(:) + Coefficient * 0.5_Dbl * dabs( Jacobian%Lambda%U(i_eigen) ) * ( 1.0_Dbl - dtdx * dabs( Jacobian%Lambda%U(i_eigen) ) ) * Wave_tilda%U(:)
-
-
 
               ! Final update the results
               this%U(i_cell) =  this%U(i_cell) - dtdx * F_L(:) - dtdx * F_H(:)
