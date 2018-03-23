@@ -89,6 +89,19 @@ type Jacobian_tp
     procedure Jacobian => Jacobian_sub
 end type Jacobian_tp
 
+! Contains the parameters for considering the source term within the solution.
+type SoureceTerms_tp
+  real(kind=Dbl)  :: S_f ! friction slope
+
+  type(vector)  :: Source ! contribution of the source term in updating the solution
+  type(vector)  :: S      ! source term
+
+  real(kind=Dbl),dimension(2,2) :: B ! This is in fact dS / dU
+  real(kind=Dbl),dimension(2,2) :: BI ! B inverse, see notes
+end type SoureceTerms_tp
+
+
+! Contains the parameters for the solution
 type, public :: SolverWithLimiter(NCells)
   integer(kind=Lng), len :: NCells
   integer(kind=Lng)      :: Plot_Inc = 100
@@ -97,11 +110,9 @@ type, public :: SolverWithLimiter(NCells)
 
   real(kind=DBL),  dimension(NCells) :: s_f ! friction slope at each step
 
-  type(vector),  dimension(NCells) :: s   ! temp to hold bathymetry
-
-  type(vector),  dimension(NCells) :: phi   ! Holds the value of the limiter function <delete>
-  type(vector),  dimension(NCells) :: theta ! Holds the value of the limiter function <delete>
-
+  type(vector), dimension(NCells) :: s   ! temp to hold bathymetry
+  type(vector), dimension(NCells) :: phi   ! Holds the value of the limiter function <delete>
+  type(vector), dimension(NCells) :: theta ! Holds the value of the limiter function <delete>
   type(vector), dimension(-1_Lng:NCells+2_Lng)  :: U     ! This vector holds the solution at the current step,
                                             ! the first term holds "h" and the second holds "uh"
 
@@ -113,6 +124,7 @@ type, public :: SolverWithLimiter(NCells)
     procedure Solve => Solver_1D_with_Limiter_sub
     procedure BC => Impose_Boundary_Condition_1D_sub
 end type SolverWithLimiter
+
 
 contains
 
