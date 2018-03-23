@@ -12,11 +12,11 @@
 !
 ! ================================ V E R S I O N ==================================================
 ! V0.00: 03/15/2018 - File initiated.
-! V0.01: 03/20/2018 - Initiated: Compiled without error for the first time.
+! V0.01: 03/24/2018 - Initiated: Compiled without error for the first time.
 !
 ! File version $Id $
 !
-! Last update: 03/21/2018
+! Last update: 03/24/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! - Solver_1D_with_Limiter_sub: Solves the 1D shallow water equation, with limiter.
@@ -128,11 +128,11 @@ contains
 !
 ! ================================ V E R S I O N ==================================================
 ! V0.00: 03/15/2018 - File initiated.
-! V0.01: 03/19/2018 - Initiated: Compiled without error for the first time.
+! V0.01: 03/24/2018 - Initiated: Compiled without error for the first time.
 !
 ! File version $Id $
 !
-! Last update: 03/19/2018
+! Last update: 03/24/2018
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
 ! (Refer to the main code to see the list of imported variables)
@@ -373,7 +373,7 @@ Results%ModelInfo = this%ModelInfo
       end do ON_Cells
 
 
-
+! delete
     ! find the solution at the half step
     this%s_f(:) = (this%Discretization%ManningCell(:)**2.0_Dbl)*((this%uh(:)/this%h(:)) *dabs(this%uh(:)/this%h(:)))/ (((this%Discretization%WidthCell(:)*this%h(:))/(this%Discretization%WidthCell(:)+2.0_Dbl*this%h(:)) )**(4.0_Dbl/3.0_Dbl))
     this%s(:) = - this%Gravity * this%h(:)*(this%Discretization%SlopeCell(:) - this%s_f(:))
@@ -393,12 +393,7 @@ Results%ModelInfo = this%ModelInfo
 
     this%h(2:this%NCells-1) = this%h(2:this%NCells-1)   - dt * ( this%uhm(2:this%NCells-1) - this%uhm(1:this%NCells-2) ) / dx
     this%uh(2:this%NCells-1) = this%uh(2:this%NCells-1) - dt * ((this%uhm(2:this%NCells-1) ** 2.0_Dbl)  / this%hm(2:this%NCells-1) + 0.5_Dbl * this%Gravity * ( this%hm(2:this%NCells-1) ** 2.0_Dbl) - (this%uhm(1:this%NCells-2) ** 2.0_Dbl)  / this%hm(1:this%NCells-2) - 0.5_Dbl * this%Gravity * ( this%hm(1:this%NCells-2) ** 2.0_Dbl) ) / dx - ( dt / 2.0_Dbl ) * ( this%s_m(2:this%NCells-1) + this%s_m(1:this%NCells-2) )
-
-
-
-
-
-
+! delete
 
 
     ! apply boundary condition
@@ -624,7 +619,7 @@ end subroutine Limiters_sub
 !
 ! File version $Id $
 !
-! Last update: 03/15/2018
+! Last update: 03/20/2018
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
 ! (Refer to the main code to see the list of imported variables)
