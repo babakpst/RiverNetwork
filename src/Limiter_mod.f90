@@ -98,7 +98,7 @@ type SoureceTerms_tp
 
   type(vector), dimension(NCells) :: S_0   ! temp to hold bathymetry
 
-  real(kind=Dbl),dimension(2,2) :: B ! This is in fact dS / dU
+  real(kind=Dbl),dimension(2,2) :: B  ! This is in fact dS / dU
   real(kind=Dbl),dimension(2,2) :: BI ! B inverse, see notes
 end type SoureceTerms_tp
 
@@ -125,6 +125,8 @@ end type SolverWithLimiter
 
 
 contains
+
+
 
 !##################################################################################################
 ! Purpose: This module solves the shallow water equations using a combination of upwind method with
@@ -204,7 +206,7 @@ real(kind=Dbl)      :: dt      ! time step, should be structured/constant in eac
 real(kind=Dbl)      :: dx      ! cell length, should be structured/constant in each reach
 real(kind=Dbl)      :: speed   ! characteristic speed, equal to positive or negative eiqenvalues in each interface
 real(kind=Dbl)      :: dtdx    ! The ratio dt/dx, used in the final equation
-real(kind=Dbl)      :: Coefficient   ! This will take care of the sign of the flux for the high-resolution part
+real(kind=Dbl)      :: Coefficient ! This will take care of the sign of the flux for the high-resolution part
 
 ! - complex variables -----------------------------------------------------------------------------
 !#complex              ::
