@@ -332,14 +332,13 @@ SourceTerms%S_0(:) = this%Discretization%SlopeCell(:)
                 if  (Jacobian%Lambda%U(i_eigen)  > 0.0_Dbl ) then
 
                   ! Compute the jump (U_i- U_i-1)
-                  Delta_U%U(:) = this%U(i_Cell-2_Lng * (2_Lng-i_Interface)+1_Lng)%U(:) - this%U(i_Cell-2_Lng * (2_Lng-i_Interface) )%U(:)
+                  Delta_U%U(:) = this%U(i_Cell+i_Interface-2_Tiny))%U(:) - this%U( i_Cell+i_Interface-3_Tiny )%U(:)
 
                   ! Computing the Jacobian and all other items at the upstream
-                  Jacobian_neighbor%U_up(:) = this%U(i_Cell-2_Lng * (2_Lng-i_Interface)      )%U(:)
-                  Jacobian_neighbor%U_dw(:) = this%U(i_Cell-2_Lng * (2_Lng-i_Interface)+1_Lng)%U(:)
+                  Jacobian_neighbor%U_up(:) = this%U( i_Cell+i_Interface-3_Tiny  )%U(:)
+                  Jacobian_neighbor%U_dw(:) = this%U( i_Cell+i_Interface-2_Tiny  )%U(:)
 
                   call Jacobian%Jacobian()   ! <modify>
-
 
                   ! Compute alpha(= RI*(U_i - U_(i-1))
                   alpha_neighbor%U(:) = matmul(Jacobian_neighbor%L, Delta_U%U(:))
@@ -348,14 +347,13 @@ SourceTerms%S_0(:) = this%Discretization%SlopeCell(:)
                 else if  ( Jacobian%Lambda%U(i_eigen)  < 0.0_Dbl ) then
 
                  ! Compute the jump (U_i- U_i-1)
-                  Delta_U%U(:) = this%U(i_Cell-2_Lng * (1_Lng-i_Interface))%U(:) - this%U(i_Cell-2_Lng * (1_Lng-i_Interface)-1_Lng )%U(:)
+                  Delta_U%U(:) = this%U( i_Cell+i_Interface )%U(:) - this%U( i_Cell+i_Interface-1_Tiny )%U(:)
 
                   ! Computing the Jacobian and all other items at the upstream
-                  Jacobian_neighbor%U_up(:) = this%U(i_Cell-2_Lng * (1_Lng-i_Interface)-1_Lng )%U(:)
-                  Jacobian_neighbor%U_dw(:) = this%U(i_Cell-2_Lng * (1_Lng-i_Interface)       )%U(:)
+                  Jacobian_neighbor%U_up(:) = this%U(i_Cell+i_Interface-1_Tiny )%U(:)
+                  Jacobian_neighbor%U_dw(:) = this%U(i_Cell+i_Interface        )%U(:)
 
                   call Jacobian%Jacobian()   ! <modify>
-
 
                   ! Compute alpha(= RI*(U_i - U_(i-1))
                   alpha_neighbor%U(:) = matmul(Jacobian_neighbor%L, Delta_U%U(:))
@@ -386,7 +384,7 @@ SourceTerms%S_0(:) = this%Discretization%SlopeCell(:)
       end do ON_Cells
 
 
-! delete
+! <delete> this section
     ! find the solution at the half step
     this%s_f(:) = (this%Discretization%ManningCell(:)**2.0_Dbl)*((this%uh(:)/this%h(:)) *dabs(this%uh(:)/this%h(:)))/ (((this%Discretization%WidthCell(:)*this%h(:))/(this%Discretization%WidthCell(:)+2.0_Dbl*this%h(:)) )**(4.0_Dbl/3.0_Dbl))
     this%s(:) = - this%Gravity * this%h(:)*(this%Discretization%SlopeCell(:) - this%s_f(:))
@@ -406,7 +404,7 @@ SourceTerms%S_0(:) = this%Discretization%SlopeCell(:)
 
     this%h(2:this%NCells-1) = this%h(2:this%NCells-1)   - dt * ( this%uhm(2:this%NCells-1) - this%uhm(1:this%NCells-2) ) / dx
     this%uh(2:this%NCells-1) = this%uh(2:this%NCells-1) - dt * ((this%uhm(2:this%NCells-1) ** 2.0_Dbl)  / this%hm(2:this%NCells-1) + 0.5_Dbl * this%Gravity * ( this%hm(2:this%NCells-1) ** 2.0_Dbl) - (this%uhm(1:this%NCells-2) ** 2.0_Dbl)  / this%hm(1:this%NCells-2) - 0.5_Dbl * this%Gravity * ( this%hm(1:this%NCells-2) ** 2.0_Dbl) ) / dx - ( dt / 2.0_Dbl ) * ( this%s_m(2:this%NCells-1) + this%s_m(1:this%NCells-2) )
-! delete
+! <delete> this section
 
 
     ! apply boundary condition
