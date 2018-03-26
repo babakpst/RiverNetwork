@@ -96,6 +96,8 @@ type SoureceTerms_tp
   type(vector)  :: Source ! contribution of the source term in updating the solution
   type(vector)  :: S      ! source term
 
+  type(vector), dimension(NCells) :: S_0   ! temp to hold bathymetry
+
   real(kind=Dbl),dimension(2,2) :: B ! This is in fact dS / dU
   real(kind=Dbl),dimension(2,2) :: BI ! B inverse, see notes
 end type SoureceTerms_tp
@@ -108,14 +110,10 @@ type, public :: SolverWithLimiter(NCells)
 
   real(kind=DBL)    :: Gravity = 9.81_Dbl
 
-  real(kind=DBL),  dimension(NCells) :: s_f ! friction slope at each step
-
-  type(vector), dimension(NCells) :: s   ! temp to hold bathymetry
   type(vector), dimension(NCells) :: phi   ! Holds the value of the limiter function <delete>
   type(vector), dimension(NCells) :: theta ! Holds the value of the limiter function <delete>
   type(vector), dimension(-1_Lng:NCells+2_Lng)  :: U     ! This vector holds the solution at the current step,
                                             ! the first term holds "h" and the second holds "uh"
-
   type(discretization_tp) :: Discretization ! Contains the discretization of the domain
   type(AnalysisData_tp)   :: AnalysisInfo   ! Holds information for the analysis
   type(Input_Data_tp)     :: ModelInfo      ! Holds information for the model
@@ -221,10 +219,12 @@ real(kind=Dbl)      :: Coefficient   ! This will take care of the sign of the fl
 
 ! - logical variables -----------------------------------------------------------------------------
 logical   :: PrintResults
+
 ! - type ------------------------------------------------------------------------------------------
 type(Jacobian_tp)      :: Jacobian, Jacobian_neighbor ! Contains the Jacobian and all related items.
 type(LimiterFunc_tp)   :: LimiterFunc ! Contains the values of the limiter
 type(Plot_Results_1D_limiter_tp(NCells = :)), allocatable :: Results ! Holds the results in each time step in all cells.
+type (SoureceTerms_tp) :: SourceTerms
 
 type(vector) :: alpha                 ! alpha = R^-1 (U_i- U_i-1) See notes for detail.
 type(vector) :: alpha_neighbor        ! alpha = R^-1 (U_i- U_i-1) See notes for detail.
@@ -268,11 +268,12 @@ Jacobian%option = 1
 LimiterFunc%limiter_Type = this%AnalysisInfo%limiter ! Define what limiter to use in the algorithm
 PrintResults = .false.
 
-this%s_f(:)%U(:)   = 0.0_Dbl
-this%s(:)%U(:)     = 0.0_Dbl
-
 call this%BC()
 Results%ModelInfo = this%ModelInfo
+
+
+SourceTerms%S_0(:) = this%Discretization%SlopeCell(:)
+
 
   ! Time marching
   do i_steps = 1_Lng, NSteps

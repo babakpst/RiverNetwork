@@ -65,7 +65,6 @@ allocate(Arguments%Length(Arguments%ArgCount), Arguments%Arg(Arguments%ArgCount)
     write(*, Fmt_FL); write(FileInfo, Fmt_FL); read(*, Fmt_End); stop;
   end if
 
-
   do ii=1,Arguments%ArgCount
     call get_command_argument(ii, Arguments%Arg(ii), Arguments%Length(ii), Arguments%Argstatus(ii))
     !if (Arguments%Arg(1:2) /= "-") then
