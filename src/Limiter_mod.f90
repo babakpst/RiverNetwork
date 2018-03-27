@@ -93,10 +93,13 @@ end type Jacobian_tp
 type SoureceTerms_tp
   real(kind=Dbl)  :: S_f ! friction slope
 
-  type(vector)  :: Source ! contribution of the source term in updating the solution
   type(vector)  :: S      ! source term
 
-  type(vector), dimension(NCells) :: S_0   ! temp to hold bathymetry
+  type(vector)  :: Source_1 ! contribution of the source term in updating the solution
+  type(vector)  :: Source_2 ! contribution of the source term in updating the solution
+
+  real(kind=Dbl), dimension(NCells) :: S_0   ! temp to hold bathymetry
+  real(kind=Dbl), dimension(NCells) :: Manning  ! temp to hold bathymetry
 
   real(kind=Dbl), dimension(2,2) :: B  ! This is in fact dS / dU
   real(kind=Dbl), dimension(2,2) :: BI ! B inverse, see notes
@@ -111,8 +114,10 @@ type, public :: SolverWithLimiter(NCells)
 
   real(kind=DBL)    :: Gravity = 9.81_Dbl
 
-  type(vector), dimension(NCells) :: phi   ! Holds the value of the limiter function <delete>
-  type(vector), dimension(NCells) :: theta ! Holds the value of the limiter function <delete>
+  type(vector), dimension(NCells) :: S     ! Source term
+
+  type(vector), dimension(NCells) :: phi   ! Holds the value of the limiter function <delete> <modify>
+  type(vector), dimension(NCells) :: theta ! Holds the value of the limiter function <delete> <modify>
   type(vector), dimension(-1_Lng:NCells+2_Lng)  :: U     ! This vector holds the solution at the current step,
                                             ! the first term holds "h" and the second holds "uh"
   type(discretization_tp) :: Discretization ! Contains the discretization of the domain
@@ -209,6 +214,10 @@ real(kind=Dbl)      :: speed   ! characteristic speed, equal to positive or nega
 real(kind=Dbl)      :: dtdx    ! The ratio dt/dx, used in the final equation
 real(kind=Dbl)      :: Coefficient ! This will take care of the sign of the flux for the high-resolution part
 
+real(kind=Dbl)      :: height   ! height of water at the current cell/time
+real(kind=Dbl)      :: velocity ! velocity of water at the current cell/time
+
+
 ! - complex variables -----------------------------------------------------------------------------
 !#complex              ::
 
@@ -281,37 +290,55 @@ Results%ModelInfo = this%ModelInfo
 
 
 SourceTerms%S_0(:) = this%Discretization%SlopeCell(:)
+SourceTerms%Manning(:) = this%Discretization%ManningCell(:)
 
 
-  ! Time marching
-  do i_steps = 1_Lng, NSteps
+  ! Time marching  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  Time_Marching: do i_steps = 1_Lng, NSteps
 
     print*, i_steps*dt
 
     ! write down data for visualization
       if (mod(i_steps,this%Plot_Inc)==1 .or. PrintResults) then
         Results%U(:)      = this%U(:)
-
-        Results%s_f(:)    = this%s_f(:)
-        Results%s(:)      = this%s(:)
-
+        Results%s(:)      = this%S(:)
         Results%phi(:)  = this%phi(:)
         Results%theta(:)= this%theta(:)
 
         call Results%plot_results(i_steps)
       end if
 
-    ! Initialize fluxes
-    F_L%U(:) = 0.0_Dbl ! upwind flux (not exactly, see notes)
-    F_H%U(:) = 0.0_Dbl ! lax-Wendroff flux (not exactly, see notes)
-
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       ON_Cells: do i_Cell = 2_Lng, NCells-1  ! Loop over the cells except the boundary cells.
+
+        ! Initialize fluxes
+        F_L%U(:) = 0.0_Dbl ! upwind flux (not exactly, see notes)
+        F_H%U(:) = 0.0_Dbl ! lax-Wendroff flux (not exactly, see notes)
+
+        ! Solution at this cell
+        height   = this%U(i_Cell)%U(1)
+        velocity = this%U(i_Cell)%U(2) / height
+
+        ! Find the B matrix for this cell
+        SourceTerms%S_f = SourceTerms%Manning(i_Cell)  * velocity * dabs(velocity) /( height**(4.0_Dbl/3.0_Dbl) )
+
+        SourceTerms%B(1,1) = 0.0_Dbl
+        SourceTerms%B(1,2) = 0.0_Dbl
+        SourceTerms%B(2,1) = - this%Gravity * ( SourceTerms%S_0(i_Cell) + (7.0_Dbl/3.0_Dbl) * SourceTerms%S_f  )
+        SourceTerms%B(2,2) =   2.0_Dbl * SourceTerms%S_f / velocity
 
         ! Find the BI
         SourceTerms%BI(:,:) = SourceTerms%Identity - 0.5_Dbl * dt * SourceTerms%B(:,:)
         call Inverse(SourceTerms%BI(:,:), SourceTerms%BI(:,:)) ! the inverse
 
+        ! Source terms at the current cell/time
+        SourceTerms%S%U(1) = 0.0_Dbl
+        SourceTerms%S%U(1) = - this%Gravity * height  * ( SourceTerms%S_0(i_Cell) - SourceTerms%S_f )
 
+        ! The first contribution of the source term in the solution
+        SourceTerms%Source_1(:) = dt * ( SourceTerms%S%U(:)  - 0.5_Dbl * matmul( SourceTerms%B(:,:), this%U(i_Cell)%U(:) )  )
+
+          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           ON_Interface:  do i_Interface = 1, 2  ! the first one is on i-1/2, and the second one is on i+1/2
 
             ! Compute the jump (U_i- U_i-1)
@@ -424,7 +451,7 @@ SourceTerms%S_0(:) = this%Discretization%SlopeCell(:)
     ! apply boundary condition
     call this%BC()
 
-  end do
+  end do Time_Marching:
 
 write(*,       *) " end subroutine < Solver_1D_with_Limiter_sub >"
 write(FileInfo,*) " end subroutine < Solver_1D_with_Limiter_sub >"
