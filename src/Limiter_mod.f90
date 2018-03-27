@@ -16,7 +16,7 @@
 !
 ! File version $Id $
 !
-! Last update: 03/24/2018
+! Last update: 03/27/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! - Solver_1D_with_Limiter_sub: Solves the 1D shallow water equation, with limiter.
@@ -98,8 +98,9 @@ type SoureceTerms_tp
 
   type(vector), dimension(NCells) :: S_0   ! temp to hold bathymetry
 
-  real(kind=Dbl),dimension(2,2) :: B  ! This is in fact dS / dU
-  real(kind=Dbl),dimension(2,2) :: BI ! B inverse, see notes
+  real(kind=Dbl), dimension(2,2) :: B  ! This is in fact dS / dU
+  real(kind=Dbl), dimension(2,2) :: BI ! B inverse, see notes
+  real(kind=Dbl), dimension(2,2) :: Identity ! Identity matrix
 end type SoureceTerms_tp
 
 
@@ -216,6 +217,7 @@ real(kind=Dbl)      :: Coefficient ! This will take care of the sign of the flux
 !#integer (kind=Shrt), Allocatable, dimension (:)  ::
 
 ! - real Arrays -----------------------------------------------------------------------------------
+type(vector) :: TempSolution
 ! - character variables ---------------------------------------------------------------------------
 !#character (kind = ?, Len = ? ) ::
 
@@ -226,7 +228,7 @@ logical   :: PrintResults
 type(Jacobian_tp)      :: Jacobian, Jacobian_neighbor ! Contains the Jacobian and all related items.
 type(LimiterFunc_tp)   :: LimiterFunc ! Contains the values of the limiter
 type(Plot_Results_1D_limiter_tp(NCells = :)), allocatable :: Results ! Holds the results in each time step in all cells.
-type (SoureceTerms_tp) :: SourceTerms
+type(SoureceTerms_tp) :: SourceTerms
 
 type(vector) :: alpha                 ! alpha = R^-1 (U_i- U_i-1) See notes for detail.
 type(vector) :: alpha_neighbor        ! alpha = R^-1 (U_i- U_i-1) See notes for detail.
@@ -263,12 +265,16 @@ dx     = this%Discretization%LengthCell(1)
 
 dtdx = dt / dx
 
+
 ! <modify>
 Jacobian%option = 1
 
 ! Initialization
 LimiterFunc%limiter_Type = this%AnalysisInfo%limiter ! Define what limiter to use in the algorithm
 PrintResults = .false.
+SourceTerms%Identity(:,:) = 0.0_Dbl
+SourceTerms%Identity(1,1) = 1.0_Dbl
+SourceTerms%Identity(2,2) = 1.0_Dbl
 
 call this%BC()
 Results%ModelInfo = this%ModelInfo
@@ -301,87 +307,93 @@ SourceTerms%S_0(:) = this%Discretization%SlopeCell(:)
 
       ON_Cells: do i_Cell = 2_Lng, NCells-1  ! Loop over the cells except the boundary cells.
 
-        ON_Interface:  do i_Interface = 1, 2  ! the first one is on i-1/2, and the second one is on i+1/2
-
-          ! Compute the jump (U_i- U_i-1)
-          Delta_U%U(:) = this%U(i_Cell+(i_Interface-1_Lng))%U(:) - this%U(i_Cell+(i_Interface-2_Lng))%U(:)
-
-          ! Computing the Jacobian and all other items at the upstream
-          Jacobian%U_up(:) = this%U(i_Cell+(i_Interface-2_Lng))%U(:)
-          Jacobian%U_dw(:) = this%U(i_Cell+(i_Interface-1_Lng))%U(:)
-
-          call Jacobian%Jacobian()   ! <modify>
-
-          ! Compute alpha(= RI*(U_i - U_(i-1))
-          alpha%U(:) = matmul(Jacobian%L, Delta_U%U(:))
-
-            ON_Eigenvalues: do i_eigen = 1_Tiny, 2_Tiny
-
-              Wave%U(:) = alpha%U(i_eigen) * Jacobian%R(:,i_eigen)
-
-                if (i_Interface == 1_Tiny) then ! we use the positive eigenvalues on the upstream interface
-                  speed = Jacobian%Lambda_plus%U(i_eigen)
-                  Coefficient = -1.0_Dbl               ! This will take care of the sign of the flux for the high-resolution part
-                else if (i_Interface == 2_Tiny) then ! we use the negative eigenvalues on the downstream interface
-                  speed = Jacobian%Lambda_minus%U(i_eigen)
-                  Coefficient = +1.0_Dbl                ! This will take care of the sign of the flux for the high-resolution part
-                end if
-
-              ! The upwind part
-              F_L%U(:) = F_L%U(:) + speed * Wave%U(:)
-
-                ! This if condition computes the W_(I-1/2)
-                if  (Jacobian%Lambda%U(i_eigen)  > 0.0_Dbl ) then
-
-                  ! Compute the jump (U_i- U_i-1)
-                  Delta_U%U(:) = this%U(i_Cell+i_Interface-2_Tiny))%U(:) - this%U( i_Cell+i_Interface-3_Tiny )%U(:)
-
-                  ! Computing the Jacobian and all other items at the upstream
-                  Jacobian_neighbor%U_up(:) = this%U( i_Cell+i_Interface-3_Tiny  )%U(:)
-                  Jacobian_neighbor%U_dw(:) = this%U( i_Cell+i_Interface-2_Tiny  )%U(:)
-
-                  call Jacobian%Jacobian()   ! <modify>
-
-                  ! Compute alpha(= RI*(U_i - U_(i-1))
-                  alpha_neighbor%U(:) = matmul(Jacobian_neighbor%L, Delta_U%U(:))
-                  Wave_neighbor%U(:)  = alpha_neighbor%U(i_eigen) * Jacobian_neighbor%R(:,i_eigen)
-
-                else if  ( Jacobian%Lambda%U(i_eigen)  < 0.0_Dbl ) then
-
-                 ! Compute the jump (U_i- U_i-1)
-                  Delta_U%U(:) = this%U( i_Cell+i_Interface )%U(:) - this%U( i_Cell+i_Interface-1_Tiny )%U(:)
-
-                  ! Computing the Jacobian and all other items at the upstream
-                  Jacobian_neighbor%U_up(:) = this%U(i_Cell+i_Interface-1_Tiny )%U(:)
-                  Jacobian_neighbor%U_dw(:) = this%U(i_Cell+i_Interface        )%U(:)
-
-                  call Jacobian%Jacobian()   ! <modify>
-
-                  ! Compute alpha(= RI*(U_i - U_(i-1))
-                  alpha_neighbor%U(:) = matmul(Jacobian_neighbor%L, Delta_U%U(:))
-                  Wave_neighbor%U(:)  = alpha_neighbor%U(i_eigen) * Jacobian_neighbor%R(:,i_eigen)
-                else
-                  write(*,*) " Something is wrong. Check the limiter subroutine."
-                  stop
-                end if
-
-              LimiterFunc%theta = ( dot_product( Wave_neighbor%U(:), Wave%U(:) ) ) / ( dot_product(Wave%U(:), Wave%U(:) )  )
-              ! The limiter function
-              call LimiterFunc%LimiterValue()
-
-              alpha_tilda%U(:) =  LimiterFunc%phi * alpha%U(:)
-
-              Wave_tilda%U(:) = alpha_tilda%U(i_eigen) * Jacobian%R(:,i_eigen)
-
-              ! The high-resolution (Lax-Wendroff) part
-              F_H%U(:) = F_H%U(:) + Coefficient * 0.5_Dbl * dabs(Jacobian%Lambda%U(i_eigen) ) * ( 1.0_Dbl - dtdx * dabs( Jacobian%Lambda%U(i_eigen) ) ) * Wave_tilda%U(:)
-
-              ! Final update the results
-              this%U(i_cell) =  this%U(i_cell) - dtdx * F_L(:) - dtdx * F_H(:)
+        ! Find the BI
+        SourceTerms%BI(:,:) = SourceTerms%Identity - 0.5_Dbl * dt * SourceTerms%B(:,:)
+        call Inverse(SourceTerms%BI(:,:), SourceTerms%BI(:,:)) ! the inverse
 
 
-            end do ON_Eigenvalies
-        end do ON_Interface
+          ON_Interface:  do i_Interface = 1, 2  ! the first one is on i-1/2, and the second one is on i+1/2
+
+            ! Compute the jump (U_i- U_i-1)
+            Delta_U%U(:) = this%U(i_Cell+(i_Interface-1_Lng))%U(:) - this%U(i_Cell+(i_Interface-2_Lng))%U(:)
+
+            ! Computing the Jacobian and all other items at the upstream
+            Jacobian%U_up(:) = this%U(i_Cell+(i_Interface-2_Lng))%U(:)
+            Jacobian%U_dw(:) = this%U(i_Cell+(i_Interface-1_Lng))%U(:)
+
+            call Jacobian%Jacobian()   ! <modify>
+
+            ! Compute alpha(= RI*(U_i - U_(i-1))
+            alpha%U(:) = matmul(Jacobian%L, Delta_U%U(:))
+
+              ON_Eigenvalues: do i_eigen = 1_Tiny, 2_Tiny
+
+                Wave%U(:) = alpha%U(i_eigen) * Jacobian%R(:,i_eigen)
+
+                  if (i_Interface == 1_Tiny) then ! we use the positive eigenvalues on the upstream interface
+                    speed = Jacobian%Lambda_plus%U(i_eigen)
+                    Coefficient = -1.0_Dbl               ! This will take care of the sign of the flux for the high-resolution part
+                  else if (i_Interface == 2_Tiny) then ! we use the negative eigenvalues on the downstream interface
+                    speed = Jacobian%Lambda_minus%U(i_eigen)
+                    Coefficient = +1.0_Dbl                ! This will take care of the sign of the flux for the high-resolution part
+                  end if
+
+                ! The upwind part
+                F_L%U(:) = F_L%U(:) + speed * Wave%U(:)
+
+                  ! This if condition computes the W_(I-1/2)
+                  if  (Jacobian%Lambda%U(i_eigen)  > 0.0_Dbl ) then
+
+                    ! Compute the jump (U_i- U_i-1)
+                    Delta_U%U(:) = this%U(i_Cell+i_Interface-2_Tiny))%U(:) - this%U( i_Cell+i_Interface-3_Tiny )%U(:)
+
+                    ! Computing the Jacobian and all other items at the upstream
+                    Jacobian_neighbor%U_up(:) = this%U( i_Cell+i_Interface-3_Tiny  )%U(:)
+                    Jacobian_neighbor%U_dw(:) = this%U( i_Cell+i_Interface-2_Tiny  )%U(:)
+
+                    call Jacobian%Jacobian()   ! <modify>
+
+                    ! Compute alpha(= RI*(U_i - U_(i-1))
+                    alpha_neighbor%U(:) = matmul(Jacobian_neighbor%L, Delta_U%U(:))
+                    Wave_neighbor%U(:)  = alpha_neighbor%U(i_eigen) * Jacobian_neighbor%R(:,i_eigen)
+
+                  else if  ( Jacobian%Lambda%U(i_eigen)  < 0.0_Dbl ) then
+
+                   ! Compute the jump (U_i- U_i-1)
+                    Delta_U%U(:) = this%U( i_Cell+i_Interface )%U(:) - this%U( i_Cell+i_Interface-1_Tiny )%U(:)
+
+                    ! Computing the Jacobian and all other items at the upstream
+                    Jacobian_neighbor%U_up(:) = this%U(i_Cell+i_Interface-1_Tiny )%U(:)
+                    Jacobian_neighbor%U_dw(:) = this%U(i_Cell+i_Interface        )%U(:)
+
+                    call Jacobian%Jacobian()   ! <modify>
+
+                    ! Compute alpha(= RI*(U_i - U_(i-1))
+                    alpha_neighbor%U(:) = matmul(Jacobian_neighbor%L, Delta_U%U(:))
+                    Wave_neighbor%U(:)  = alpha_neighbor%U(i_eigen) * Jacobian_neighbor%R(:,i_eigen)
+                  else
+                    write(*,*) " Something is wrong. Check the limiter subroutine."
+                    stop
+                  end if
+
+                LimiterFunc%theta = ( dot_product( Wave_neighbor%U(:), Wave%U(:) ) ) / ( dot_product(Wave%U(:), Wave%U(:) )  )
+                ! The limiter function
+                call LimiterFunc%LimiterValue()
+
+                alpha_tilda%U(:) =  LimiterFunc%phi * alpha%U(:)
+
+                Wave_tilda%U(:) = alpha_tilda%U(i_eigen) * Jacobian%R(:,i_eigen)
+
+                ! The high-resolution (Lax-Wendroff) part
+                F_H%U(:) = F_H%U(:) + Coefficient * 0.5_Dbl * dabs(Jacobian%Lambda%U(i_eigen) ) * ( 1.0_Dbl - dtdx * dabs( Jacobian%Lambda%U(i_eigen) ) ) * Wave_tilda%U(:)
+
+              end do ON_Eigenvalies
+          end do ON_Interface
+
+      ! Final update the results
+      TempSolution%U(:) = this%U(i_cell) - dtdx * F_L(:) - dtdx * F_H(:) +  -
+      this%U(i_cell) = matmul(SourceTerms%BI(:,:), TempSolution%U(:))
+
 
       end do ON_Cells
 
@@ -827,7 +839,7 @@ end subroutine Jacobian_sub
 ! Purpose: This subroutine computes the eiqenvalues of a 2x2 matrix.
 !
 ! Developed by: Babak Poursartip
-! Supervised by:
+! Supervised by: Clint Dawson
 !
 ! The Institute for Computational Engineering and Sciences (ICES)
 ! The University of Texas at Austin
@@ -893,6 +905,81 @@ write(*,       *) " end subroutine < Eigenvalues_sub >"
 write(FileInfo,*) " end subroutine < Eigenvalues_sub >"
 return
 end subroutine Eigenvalues_sub
+
+
+!##################################################################################################
+! Purpose: This subroutine computes the inverse of a 2x2 matrix.
+!
+! Developed by: Babak Poursartip
+! Supervised by: Clint Dawson
+!
+! The Institute for Computational Engineering and Sciences (ICES)
+! The University of Texas at Austin
+!
+! ================================ V E R S I O N ==================================================
+! V0.00: 03/26/2018 - Subroutine initiated.
+! V0.01: 03/26/2018 - Initiated: Compiled without error for the first time.
+!
+! File version $Id $
+!
+! Last update: 03/26/2018
+!
+! ================================ L O C A L   V A R I A B L E S ==================================
+! (Refer to the main code to see the list of imported variables)
+!  . . . . . . . . . . . . . . . . Variables . . . . . . . . . . . . . . . . . . . . . . . . . . .
+!
+!##################################################################################################
+
+subroutine Inverse(Matrix_in, Matrix_out)
+
+
+! Libraries =======================================================================================
+
+! User defined modules ============================================================================
+
+
+implicit none
+
+! Global variables ================================================================================
+
+! - integer variables -----------------------------------------------------------------------------
+! - real variables --------------------------------------------------------------------------------
+! - complex variables -----------------------------------------------------------------------------
+! - integer Arrays --------------------------------------------------------------------------------
+! - real Arrays -----------------------------------------------------------------------------------
+real(kind=Dbl),  intent(in),  dimension (:,:)  :: Matrix_in
+real(kind=Dbl),  intent(out), dimension (:,:)  :: Matrix_out
+
+
+! Local variables =================================================================================
+! - integer variables -----------------------------------------------------------------------------
+! - real variables --------------------------------------------------------------------------------
+real(kind=Dbl) :: determinant
+! - real Arrays -----------------------------------------------------------------------------------
+
+! code ============================================================================================
+!write(*,       *) " subroutine < Inverse >: "
+!write(FileInfo,*) " subroutine < Inverse >: "
+
+! determinant
+determinant = Matrix_in(1,1) * Matrix_in(2,2) - Matrix_in(1,2) * Matrix_in(2,1)
+
+
+Matrix_out(1,1) = +Matrix_in(2,2)
+Matrix_out(1,2) = -Matrix_in(1,2)
+Matrix_out(2,1) = -Matrix_in(2,1)
+Matrix_out(2,2) = +Matrix_in(1,1)
+
+Matrix_out(:,:) = Matrix_out(:,:) / determinant
+
+
+!write(*,       *) " end subroutine < Inverse >"
+!write(FileInfo,*) " end subroutine < Inverse >"
+return
+end subroutine Inverse
+
+
+
 
 end module LaxWendroff_with_limiter_mod
 
