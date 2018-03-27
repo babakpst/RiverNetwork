@@ -92,8 +92,10 @@ end type Jacobian_tp
 ! Contains the parameters for considering the source term within the solution.
 type SoureceTerms_tp
   real(kind=Dbl)  :: S_f ! friction slope
+  real(kind=Dbl)  :: S_f_interface ! friction slope at the interface
 
   type(vector)  :: S      ! source term
+  type(vector)  :: S_interface      ! source term at the interface
 
   type(vector)  :: Source_1 ! contribution of the source term in updating the solution
   type(vector)  :: Source_2 ! contribution of the source term in updating the solution
@@ -217,6 +219,8 @@ real(kind=Dbl)      :: Coefficient ! This will take care of the sign of the flux
 real(kind=Dbl)      :: height   ! height of water at the current cell/time
 real(kind=Dbl)      :: velocity ! velocity of water at the current cell/time
 
+real(kind=Dbl)      :: height_interface   ! height of water at the current interface/time
+real(kind=Dbl)      :: velocity_interface ! velocity of water at the current interface/time
 
 ! - complex variables -----------------------------------------------------------------------------
 !#complex              ::
@@ -315,6 +319,10 @@ SourceTerms%Manning(:) = this%Discretization%ManningCell(:)
         F_L%U(:) = 0.0_Dbl ! upwind flux (not exactly, see notes)
         F_H%U(:) = 0.0_Dbl ! lax-Wendroff flux (not exactly, see notes)
 
+        SourceTerms%Source_1%U(:)  = 0.0_Dbl
+        SourceTerms%Source_2%U(:)  = 0.0_Dbl
+
+
         ! Solution at this cell
         height   = this%U(i_Cell)%U(1)
         velocity = this%U(i_Cell)%U(2) / height
@@ -333,7 +341,7 @@ SourceTerms%Manning(:) = this%Discretization%ManningCell(:)
 
         ! Source terms at the current cell/time
         SourceTerms%S%U(1) = 0.0_Dbl
-        SourceTerms%S%U(1) = - this%Gravity * height  * ( SourceTerms%S_0(i_Cell) - SourceTerms%S_f )
+        SourceTerms%S%U(2) = - this%Gravity * height  * ( SourceTerms%S_0(i_Cell) - SourceTerms%S_f )
 
         ! The first contribution of the source term in the solution
         SourceTerms%Source_1(:) = dt * ( SourceTerms%S%U(:)  - 0.5_Dbl * matmul( SourceTerms%B(:,:), this%U(i_Cell)%U(:) )  )
@@ -345,15 +353,33 @@ SourceTerms%Manning(:) = this%Discretization%ManningCell(:)
             Delta_U%U(:) = this%U(i_Cell+(i_Interface-1_Lng))%U(:) - this%U(i_Cell+(i_Interface-2_Lng))%U(:)
 
             ! Computing the Jacobian and all other items at the upstream
-            Jacobian%U_up(:) = this%U(i_Cell+(i_Interface-2_Lng))%U(:)
-            Jacobian%U_dw(:) = this%U(i_Cell+(i_Interface-1_Lng))%U(:)
+            Jacobian%U_up%U(:) = this%U(i_Cell+(i_Interface-2_Lng))%U(:)
+            Jacobian%U_dw%U(:) = this%U(i_Cell+(i_Interface-1_Lng))%U(:)
 
             call Jacobian%Jacobian()   ! <modify>
 
             ! Compute alpha(= RI*(U_i - U_(i-1))
             alpha%U(:) = matmul(Jacobian%L, Delta_U%U(:))
 
-              ON_Eigenvalues: do i_eigen = 1_Tiny, 2_Tiny
+            ! Source terms
+            if (i_Interface == 1_Tiny) then
+              Coefficient = -1.0_Dbl               ! This will take care of the sign of the flux for the high-resolution part
+            else if (i_Interface == 2_Tiny) then
+              Coefficient = +1.0_Dbl                ! This will take care of the sign of the flux for the high-resolution part
+            end if
+
+            height_interface = 0.5_Dbl * (Jacobian%U_up%U(1) +Jacobian%U_dw%U(1) )
+            velocity_interface = 0.5_Dbl * (Jacobian%U_up%U(2)/Jacobian%U_up%U(1) + Jacobian%U_dw%U(2)/Jacobian%U_dw%U(1) )
+
+            SourceTerms%S_f_interface = SourceTerms%Manning(i_Cell)  * velocity_interface * dabs(velocity_interface) /( height_interface**(4.0_Dbl/3.0_Dbl) )
+
+            SourceTerms%S_interface%U(1) = 0.0_Dbl
+            SourceTerms%S_interface%U(2) = - this%Gravity * height_interface  * ( SourceTerms%S_0(i_Cell) - SourceTerms%S_f )
+
+            SourceTerms%Source_2%U(:) = SourceTerms%Source_2%U(:) + 0.5_Dbl * (dt**2) / dx * ( Coefficient * matmul( Jacobian%A, ) )
+
+
+               ON_Eigenvalues: do i_eigen = 1_Tiny, 2_Tiny
 
                 Wave%U(:) = alpha%U(i_eigen) * Jacobian%R(:,i_eigen)
 
@@ -367,6 +393,7 @@ SourceTerms%Manning(:) = this%Discretization%ManningCell(:)
 
                 ! The upwind part
                 F_L%U(:) = F_L%U(:) + speed * Wave%U(:)
+
 
                   ! This if condition computes the W_(I-1/2)
                   if  (Jacobian%Lambda%U(i_eigen)  > 0.0_Dbl ) then
@@ -418,35 +445,11 @@ SourceTerms%Manning(:) = this%Discretization%ManningCell(:)
           end do ON_Interface
 
       ! Final update the results
-      TempSolution%U(:) = this%U(i_cell) - dtdx * F_L(:) - dtdx * F_H(:) +  -
+      TempSolution%U(:) = this%U(i_cell) - dtdx * F_L(:) - dtdx * F_H(:) + SourceTerms%Source_1(:) - SourceTerms%Source_2(:)
       this%U(i_cell) = matmul(SourceTerms%BI(:,:), TempSolution%U(:))
 
 
       end do ON_Cells
-
-
-! <delete> this section
-    ! find the solution at the half step
-    this%s_f(:) = (this%Discretization%ManningCell(:)**2.0_Dbl)*((this%uh(:)/this%h(:)) *dabs(this%uh(:)/this%h(:)))/ (((this%Discretization%WidthCell(:)*this%h(:))/(this%Discretization%WidthCell(:)+2.0_Dbl*this%h(:)) )**(4.0_Dbl/3.0_Dbl))
-    this%s(:) = - this%Gravity * this%h(:)*(this%Discretization%SlopeCell(:) - this%s_f(:))
-
-
-    this%hm(1:this%NCells-1)  = (this%h(1:this%NCells-1)  + this%h(2:this%NCells) ) / 2.0_Dbl - ( dt / 2.0_Dbl ) * (this%uh(2:this%NCells) - this%uh(1:this%NCells-1) ) / dx
-    this%uhm(1:this%NCells-1) = (this%uh(1:this%NCells-1) + this%uh(2:this%NCells)) / 2.0_Dbl &
-                                - (dt/(2.0_Dbl*dx) ) * ((this%uh(2:this%NCells) ** 2.0_Dbl)/this%h(2:this%NCells)+0.5_Dbl*this%Gravity * ( this%h(2:this%NCells) ** 2.0_Dbl) - (this%uh(1:this%NCells-1)** 2.0_Dbl)/this%h(1:this%NCells-1) - 0.5_Dbl * this%Gravity*(this%h(1:this%NCells-1) ** 2.0_Dbl ))  &
-                                -  ( dt / 4.0_Dbl ) * ( this%s(2:this%NCells) + this%s(1:this%NCells-1) )
-
-    ! find the solution at the full step
-    this%S_f_m(1:this%NCells-1) = (this%Discretization%ManningCell(1:this%NCells-1) **2.0) * ( (this%uhm(1:this%NCells-1)/this%hm(1:this%NCells-1)) * dabs(this%uhm(1:this%NCells-1)/this%hm(1:this%NCells-1)) ) / ((( this%Discretization%WidthCell(1:this%NCells-1) * this%hm(1:this%NCells-1)) /(this%Discretization%WidthCell(1:this%NCells-1) + 2.0_Dbl * this%hm(1:this%NCells-1)) )**(4.0_Dbl/3.0_Dbl))
-    this%s_m (1:this%NCells-1) = - this%Gravity * this%hm(1:this%NCells-1)*(this%Discretization%SlopeCell(1:this%NCells-1) - this%s_f_m(1:this%NCells-1))
-
-    !this%h(2:this%NCells-1) = this%h(2:this%NCells-1) - dt * ( this%uhm(2:this%NCells-1) - this%uhm(1:this%NCells-2) ) / this%Discretization%LengthCell(2:this%NCells-1)
-    !this%uh(2:this%NCells-1) = this%uh(2:this%NCells-1) - dt * ((this%uhm(2:this%NCells-1) ** 2.0_Dbl)  / this%hm(2:this%NCells-1) + 0.5_Dbl * this%Gravity * ( this%hm(2:this%NCells-1) ** 2.0_Dbl) - (this%uhm(1:this%NCells-2) ** 2.0_Dbl)  / this%hm(1:this%NCells-2) - 0.5_Dbl * this%Gravity * ( this%hm(1:this%NCells-2) ** 2.0_Dbl) ) / this%Discretization%LengthCell(1:this%NCells-2) - ( dt / 2.0_Dbl ) * ( this%s_m(2:this%NCells-1) + this%s_m(1:this%NCells-2) )
-
-    this%h(2:this%NCells-1) = this%h(2:this%NCells-1)   - dt * ( this%uhm(2:this%NCells-1) - this%uhm(1:this%NCells-2) ) / dx
-    this%uh(2:this%NCells-1) = this%uh(2:this%NCells-1) - dt * ((this%uhm(2:this%NCells-1) ** 2.0_Dbl)  / this%hm(2:this%NCells-1) + 0.5_Dbl * this%Gravity * ( this%hm(2:this%NCells-1) ** 2.0_Dbl) - (this%uhm(1:this%NCells-2) ** 2.0_Dbl)  / this%hm(1:this%NCells-2) - 0.5_Dbl * this%Gravity * ( this%hm(1:this%NCells-2) ** 2.0_Dbl) ) / dx - ( dt / 2.0_Dbl ) * ( this%s_m(2:this%NCells-1) + this%s_m(1:this%NCells-2) )
-! <delete> this section
-
 
     ! apply boundary condition
     call this%BC()
@@ -712,11 +715,11 @@ write(FileInfo,*) " subroutine < Jacobian_sub >: "
 
   if (this%option == 1 ) then  ! find the average solution at the interface and then compute the Jacobian
 
-    h_dw = this%U_dw(1)
-    u_dw = this%U_dw(2) / this%U_dw(1)
+    h_dw = this%U_dw%U(1)
+    u_dw = this%U_dw%U(2) / this%U_dw(1)
 
-    h_up = this%U_up(1)
-    u_up = this%U_up(2) / this%U_up(1)
+    h_up = this%U_up%U(1)
+    u_up = this%U_up%U(2) / this%U_up%U(1)
 
     h_ave = 0.5_Dbl(h_up+h_dw)    ! <modify> for unstructured discretization
     u_ave = 0.5_Dbl(u_up+u_dw)   ! <modify> for unstructured discretization
