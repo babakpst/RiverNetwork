@@ -11,6 +11,7 @@
 # =================================================================================================
 
 F90=ifort
+#F90= gfortran -ffree-line-length-none
 FFLAGS=-O2
 
 SOURCESF=	Parameters_mod.f90 \

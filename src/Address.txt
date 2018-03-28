@@ -1,5 +1,5 @@
 Input file name:
-EX1
+EX1_Limiter
 
 Input directory:
 "/h1/babak/Documents/SVE_2D/input"

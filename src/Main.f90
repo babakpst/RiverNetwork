@@ -41,6 +41,7 @@ use Information_mod
 use Input_mod
 use Discretization_mod
 use LaxWendroff_mod
+use LaxWendroff_with_limiter_mod
 
 ! Global Variables ================================================================================
 Implicit None
@@ -168,7 +169,7 @@ print*," check 000"
           Experiment_TypeI%Discretization = Discretization
           call Experiment_TypeI%Solve()
 
-        case(AnalysisType_1D)    ! # 2: Lax-Wendroff with limiter in combination with upwind method
+        case(AnalysisType_1D_Limiter)    ! # 2: Lax-Wendroff with limiter in combination with upwind method
 
           allocate(SolverWithLimiter(NCells=Discretization%NCells) :: Experiment_TypeII,     stat=ERR_Alloc)
             if (ERR_Alloc /= 0) then

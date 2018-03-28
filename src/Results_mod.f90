@@ -75,22 +75,25 @@ type Plot_Results_1D_tp(NCells)
 end type Plot_Results_1D_tp
 
 ! This vector will be used in the main type as the solution in each type step
+!type vector_results
+!  real(kind=Dbl), dimension(2) :: U
+!end type vector_results
+
+! This vector will be used in the main type as the solution in each type step
 type vector
   real(kind=Dbl), dimension(2) :: U
-end type U
+end type vector
 
 type Plot_Results_1D_limiter_tp(NCells)
   integer(kind=Lng), len :: NCells
 
-  real(kind=DBL), dimension(NCells) :: s_f ! friction slope at each step
-
   type(vector),  dimension(NCells) :: s   ! temp to hold bathymetry
 
-  type(vector),  dimension(NCells) :: phi   ! Holds the value of the limiter function <delete>
-  type(vector),  dimension(NCells) :: theta ! Holds the value of the limiter function <delete>
+  type(vector),  dimension(NCells*2) :: phi   ! Holds the value of the limiter function <delete>
+  type(vector),  dimension(NCells*2) :: theta ! Holds the value of the limiter function <delete>
 
   type(vector), dimension(NCells)  :: U     ! This vector holds the solution at previous step,
-                                            ! the first term holds "h" and the second holds "uh"
+                                                    ! the first term holds "h" and the second holds "uh"
   type(Input_Data_tp) :: ModelInfo
 
   contains
@@ -507,7 +510,7 @@ UnFile = FileResults
 !write(unit=UnFile, fmt="(' h      --      uh ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
 
   do i_points = 1_Lng, this%NCells
-    write(unit=UnFile, fmt="(I6, 8F16.5)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) i_points, this%h(i_points), this%uh(i_points), this%s_f(i_points), this%s(i_points), this%theta(i_points,1), this%theta(i_points,2), this%phi(i_points,1), this%phi(i_points,2)
+    write(unit=UnFile, fmt="(I6, 10F16.5)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) i_points, this%U(i_points)%U(1), this%U(i_points)%U(2), this%theta( 2*(i_points-1) +1  )%U(1), this%theta(2*(i_points-1) +1)%U(2),  this%theta( 2*(i_points-1) +2  )%U(1), this%theta(2*(i_points-1) +2)%U(2), this%phi(2*(i_points-1) +1)%U(1), this%phi(2*(i_points-1) +1)%U(2), this%phi(2*(i_points-1) +2)%U(1), this%phi(2*(i_points-1) +2)%U(2)
   end do
 
 write(*,        fmt = "(A,I10)") " Results was written successfully in the file for time step: ", i_step

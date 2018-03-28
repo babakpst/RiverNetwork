@@ -58,19 +58,19 @@ type LimiterFunc_tp ! contains all variable to compute the limiter value
 end type LimiterFunc_tp
 
 ! This vector will be used in the main type as the solution in each type step
-type vector
-  real(kind=Dbl), dimension(2) :: U
-end type U
+!type vector
+!  real(kind=Dbl), dimension(2) :: U
+!end type vector
 
 ! This type consists of all variables/arrays regarding the Jacobian, used to apply the limiter. The input variables is U_up and U_dw
 type Jacobian_tp
   integer(kind=Tiny) :: option   ! indicates how to interpolate the Jacobian at the interface: 1: for average on the solution-2: direct average on the Jacobian itself
 
-  real(kind=Dbl) :: Gravity  ! the ground acceleration
+  real(kind=Dbl) :: Gravity=9.81  ! the ground acceleration
 
   real(kind=Dbl),dimension(2,2) :: A        ! Contains the Jacobian matrix at each time step at the cell interface i-1/2
   real(kind=Dbl),dimension(2,2) :: R        ! Contains the eigenvectors at each time step at the cell interface i-1/2
-  real(kind=Dbl),dimension(2,2) :: L        ! Contains the eigenvectors inverse (R^(-1))at each time step at the cell interface i-1/2
+  real(kind=Dbl),dimension(2,2) :: L       ! Contains the eigenvectors inverse (R^(-1))at each time step at the cell interface i-1/2
 
   real(kind=Dbl),dimension(2,2) :: A_plus   ! Contains the Jacobian matrix with + eigenvalues at each time step at the cell interface i-1/2
   real(kind=Dbl),dimension(2,2) :: A_minus  ! Contains the Jacobian matrix with - eigenvalues at each time step at the cell interface i-1/2
@@ -100,9 +100,6 @@ type SoureceTerms_tp
   type(vector)  :: Source_1 ! contribution of the source term in updating the solution
   type(vector)  :: Source_2 ! contribution of the source term in updating the solution
 
-  real(kind=Dbl), dimension(NCells) :: S_0   ! temp to hold bathymetry
-  real(kind=Dbl), dimension(NCells) :: Manning  ! temp to hold bathymetry
-
   real(kind=Dbl), dimension(2,2) :: B  ! This is in fact dS / dU
   real(kind=Dbl), dimension(2,2) :: BI ! B inverse, see notes
   real(kind=Dbl), dimension(2,2) :: Identity ! Identity matrix
@@ -118,8 +115,8 @@ type, public :: SolverWithLimiter(NCells)
 
   type(vector), dimension(NCells) :: S     ! Source term
 
-  type(vector), dimension(NCells) :: phi   ! Holds the value of the limiter function <delete> <modify>
-  type(vector), dimension(NCells) :: theta ! Holds the value of the limiter function <delete> <modify>
+  type(vector), dimension(NCells*2) :: phi   ! Holds the value of the limiter function <delete> <modify>
+  type(vector), dimension(NCells*2) :: theta ! Holds the value of the limiter function <delete> <modify>
   type(vector), dimension(-1_Lng:NCells+2_Lng)  :: U     ! This vector holds the solution at the current step,
                                             ! the first term holds "h" and the second holds "uh"
   type(discretization_tp) :: Discretization ! Contains the discretization of the domain
@@ -133,8 +130,6 @@ end type SolverWithLimiter
 
 
 contains
-
-
 
 !##################################################################################################
 ! Purpose: This module solves the shallow water equations using a combination of upwind method with
@@ -267,10 +262,17 @@ write(FileInfo,*) " -Solving the shallow water equation with a limiter ..."
 write(*,       *) " -Applying initial conditions ..."
 write(FileInfo,*) " -Applying initial conditions ..."
 
-allocate(Plot_Results_1D_tp(NCells = this%NCells) :: Results)
+allocate(Plot_Results_1D_limiter_tp(NCells = this%NCells) :: Results)
 
 this%U(:)%U(1) = this%AnalysisInfo%CntrlV-    this%Discretization%ZCell(:)
 this%U(:)%U(2) = 0.0_Dbl
+
+this%S(:)%U(1)     = 0.0_Dbl
+this%S(:)%U(2)     = 0.0_Dbl
+this%phi(:)%U(1)   = 0.0_Dbl
+this%phi(:)%U(2)   = 0.0_Dbl
+this%theta(:)%U(1) = 0.0_Dbl
+this%theta(:)%U(2) = 0.0_Dbl
 
 NSteps = this%AnalysisInfo%TotalTime/this%AnalysisInfo%TimeStep
 dt     = this%AnalysisInfo%TimeStep
@@ -293,27 +295,27 @@ call this%BC()
 Results%ModelInfo = this%ModelInfo
 
 
-SourceTerms%S_0(:) = this%Discretization%SlopeCell(:)
-SourceTerms%Manning(:) = this%Discretization%ManningCell(:)
-
-
   ! Time marching  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   Time_Marching: do i_steps = 1_Lng, NSteps
 
-    print*, i_steps*dt
+    print*, "----------------Step:", i_steps
 
     ! write down data for visualization
       if (mod(i_steps,this%Plot_Inc)==1 .or. PrintResults) then
-        Results%U(:)      = this%U(:)
-        Results%s(:)      = this%S(:)
+        Results%U(:)    = this%U(1:this%NCells)
+        Results%s(:)    = this%S(:)
         Results%phi(:)  = this%phi(:)
         Results%theta(:)= this%theta(:)
 
         call Results%plot_results(i_steps)
       end if
 
+      print*, "cellssssssssssssssssssss", this%NCells ! <delete>
+
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      ON_Cells: do i_Cell = 2_Lng, NCells-1  ! Loop over the cells except the boundary cells.
+      ON_Cells: do i_Cell = 2_Lng,this%NCells-1  ! Loop over the cells except the boundary cells.
+
+        print*, "=============Cell:", i_Cell
 
         ! Initialize fluxes
         F_L%U(:) = 0.0_Dbl ! upwind flux (not exactly, see notes)
@@ -322,32 +324,38 @@ SourceTerms%Manning(:) = this%Discretization%ManningCell(:)
         SourceTerms%Source_1%U(:)  = 0.0_Dbl
         SourceTerms%Source_2%U(:)  = 0.0_Dbl
 
-
         ! Solution at this cell
         height   = this%U(i_Cell)%U(1)
         velocity = this%U(i_Cell)%U(2) / height
 
         ! Find the B matrix for this cell
-        SourceTerms%S_f = SourceTerms%Manning(i_Cell)  * velocity * dabs(velocity) /( height**(4.0_Dbl/3.0_Dbl) )
+        SourceTerms%S_f = (this%Discretization%ManningCell(i_Cell)**2.0)  * velocity * dabs(velocity) /( height**(4.0_Dbl/3.0_Dbl) )
 
         SourceTerms%B(1,1) = 0.0_Dbl
         SourceTerms%B(1,2) = 0.0_Dbl
-        SourceTerms%B(2,1) = - this%Gravity * ( SourceTerms%S_0(i_Cell) + (7.0_Dbl/3.0_Dbl) * SourceTerms%S_f  )
-        SourceTerms%B(2,2) =   2.0_Dbl * SourceTerms%S_f / velocity
+        SourceTerms%B(2,1) = - this%Gravity * ( this%Discretization%SlopeCell(i_Cell) + (7.0_Dbl/3.0_Dbl) * SourceTerms%S_f  )
+        SourceTerms%B(2,2) =   (2.0_Dbl * this%Discretization%ManningCell(i_Cell)**2.0)  * dabs(velocity) /( height**(4.0_Dbl/3.0_Dbl) )
+
+        !print*,"B: ",SourceTerms%B
 
         ! Find the BI
         SourceTerms%BI(:,:) = SourceTerms%Identity - 0.5_Dbl * dt * SourceTerms%B(:,:)
+        !print*,"BI before",SourceTerms%BI
         call Inverse(SourceTerms%BI(:,:), SourceTerms%BI(:,:)) ! the inverse
-
+        !print*,"BI ",SourceTerms%BI
         ! Source terms at the current cell/time
         SourceTerms%S%U(1) = 0.0_Dbl
-        SourceTerms%S%U(2) = - this%Gravity * height  * ( SourceTerms%S_0(i_Cell) - SourceTerms%S_f )
+        SourceTerms%S%U(2) = - this%Gravity * height  * ( this%Discretization%SlopeCell(i_Cell) - SourceTerms%S_f )
 
         ! The first contribution of the source term in the solution
-        SourceTerms%Source_1(:) = dt * ( SourceTerms%S%U(:)  - 0.5_Dbl * matmul( SourceTerms%B(:,:), this%U(i_Cell)%U(:) )  )
+        SourceTerms%Source_1%U(:) = dt * ( SourceTerms%S%U(:)  - 0.5_Dbl * matmul( SourceTerms%B(:,:), this%U(i_Cell)%U(:) )  )
 
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           ON_Interface:  do i_Interface = 1, 2  ! the first one is on i-1/2, and the second one is on i+1/2
+
+            print*, "*****************Interface:", i_Interface
+
+
 
             ! Compute the jump (U_i- U_i-1)
             Delta_U%U(:) = this%U(i_Cell+(i_Interface-1_Lng))%U(:) - this%U(i_Cell+(i_Interface-2_Lng))%U(:)
@@ -356,7 +364,15 @@ SourceTerms%Manning(:) = this%Discretization%ManningCell(:)
             Jacobian%U_up%U(:) = this%U(i_Cell+(i_Interface-2_Lng))%U(:)
             Jacobian%U_dw%U(:) = this%U(i_Cell+(i_Interface-1_Lng))%U(:)
 
+            print*,Jacobian%U_up%U(1)
+            print*,Jacobian%U_up%U(2)
+
+            print*,Jacobian%U_dw%U(1)
+            print*,Jacobian%U_dw%U(2)
+
             call Jacobian%Jacobian()   ! <modify>
+            print*,"Jacobian",Jacobian%Lambda%U(1)  ! <delete>
+            print*,"Jacobian",Jacobian%Lambda%U(2)  ! <delete>
 
             ! Compute alpha(= RI*(U_i - U_(i-1))
             alpha%U(:) = matmul(Jacobian%L, Delta_U%U(:))
@@ -371,15 +387,18 @@ SourceTerms%Manning(:) = this%Discretization%ManningCell(:)
             height_interface = 0.5_Dbl * (Jacobian%U_up%U(1) +Jacobian%U_dw%U(1) )
             velocity_interface = 0.5_Dbl * (Jacobian%U_up%U(2)/Jacobian%U_up%U(1) + Jacobian%U_dw%U(2)/Jacobian%U_dw%U(1) )
 
-            SourceTerms%S_f_interface = SourceTerms%Manning(i_Cell)  * velocity_interface * dabs(velocity_interface) /( height_interface**(4.0_Dbl/3.0_Dbl) )
+            SourceTerms%S_f_interface = this%Discretization%ManningCell(i_Cell)  * velocity_interface * dabs(velocity_interface) /( height_interface**(4.0_Dbl/3.0_Dbl) )
 
             SourceTerms%S_interface%U(1) = 0.0_Dbl
-            SourceTerms%S_interface%U(2) = - this%Gravity * height_interface  * ( SourceTerms%S_0(i_Cell) - SourceTerms%S_f )
+            SourceTerms%S_interface%U(2) = - this%Gravity * height_interface  * ( this%Discretization%SlopeCell(i_Cell) - SourceTerms%S_f )
 
-            SourceTerms%Source_2%U(:) = SourceTerms%Source_2%U(:) + 0.5_Dbl * (dt**2) / dx * ( Coefficient * matmul( Jacobian%A, ) )
+            SourceTerms%Source_2%U(:) = SourceTerms%Source_2%U(:) + 0.5_Dbl * (dt**2) / dx * ( Coefficient * matmul( Jacobian%A, SourceTerms%S_interface%U(:)) )
 
+            if ( alpha%U(1) ==0.0_Dbl .and. alpha%U(2) ==0.0_Dbl) cycle
 
-               ON_Eigenvalues: do i_eigen = 1_Tiny, 2_Tiny
+              ON_Eigenvalues: do i_eigen = 1_Tiny, 2_Tiny
+
+                print*, "*****************Eigen:", i_eigen
 
                 Wave%U(:) = alpha%U(i_eigen) * Jacobian%R(:,i_eigen)
 
@@ -393,19 +412,22 @@ SourceTerms%Manning(:) = this%Discretization%ManningCell(:)
 
                 ! The upwind part
                 F_L%U(:) = F_L%U(:) + speed * Wave%U(:)
+                !print*,"F_LLLLL", speed, Wave%U(:)
 
+
+                print*,"Jacobian",Jacobian%Lambda%U(i_eigen)  ! <delete>
 
                   ! This if condition computes the W_(I-1/2)
                   if  (Jacobian%Lambda%U(i_eigen)  > 0.0_Dbl ) then
 
                     ! Compute the jump (U_i- U_i-1)
-                    Delta_U%U(:) = this%U(i_Cell+i_Interface-2_Tiny))%U(:) - this%U( i_Cell+i_Interface-3_Tiny )%U(:)
+                    Delta_U%U(:) = this%U(i_Cell+i_Interface-2_Tiny)%U(:) - this%U( i_Cell+i_Interface-3_Tiny )%U(:)
 
                     ! Computing the Jacobian and all other items at the upstream
-                    Jacobian_neighbor%U_up(:) = this%U( i_Cell+i_Interface-3_Tiny  )%U(:)
-                    Jacobian_neighbor%U_dw(:) = this%U( i_Cell+i_Interface-2_Tiny  )%U(:)
+                    Jacobian_neighbor%U_up%U(:) = this%U( i_Cell+i_Interface-3_Tiny  )%U(:)
+                    Jacobian_neighbor%U_dw%U(:) = this%U( i_Cell+i_Interface-2_Tiny  )%U(:)
 
-                    call Jacobian%Jacobian()   ! <modify>
+                    call Jacobian_neighbor%Jacobian()   ! <modify>
 
                     ! Compute alpha(= RI*(U_i - U_(i-1))
                     alpha_neighbor%U(:) = matmul(Jacobian_neighbor%L, Delta_U%U(:))
@@ -417,10 +439,10 @@ SourceTerms%Manning(:) = this%Discretization%ManningCell(:)
                     Delta_U%U(:) = this%U( i_Cell+i_Interface )%U(:) - this%U( i_Cell+i_Interface-1_Tiny )%U(:)
 
                     ! Computing the Jacobian and all other items at the upstream
-                    Jacobian_neighbor%U_up(:) = this%U(i_Cell+i_Interface-1_Tiny )%U(:)
-                    Jacobian_neighbor%U_dw(:) = this%U(i_Cell+i_Interface        )%U(:)
+                    Jacobian_neighbor%U_up%U(:) = this%U(i_Cell+i_Interface-1_Tiny )%U(:)
+                    Jacobian_neighbor%U_dw%U(:) = this%U(i_Cell+i_Interface        )%U(:)
 
-                    call Jacobian%Jacobian()   ! <modify>
+                    call Jacobian_neighbor%Jacobian()   ! <modify>
 
                     ! Compute alpha(= RI*(U_i - U_(i-1))
                     alpha_neighbor%U(:) = matmul(Jacobian_neighbor%L, Delta_U%U(:))
@@ -431,30 +453,39 @@ SourceTerms%Manning(:) = this%Discretization%ManningCell(:)
                   end if
 
                 LimiterFunc%theta = ( dot_product( Wave_neighbor%U(:), Wave%U(:) ) ) / ( dot_product(Wave%U(:), Wave%U(:) )  )
+
+                !print*,"before theta",( dot_product( Wave_neighbor%U(:), Wave%U(:) ) ), ( dot_product(Wave%U(:), Wave%U(:) )  ) ! <delete>
+                !print*,"thetaaaaaa",LimiterFunc%theta ! <delete>
+
                 ! The limiter function
                 call LimiterFunc%LimiterValue()
 
                 alpha_tilda%U(:) =  LimiterFunc%phi * alpha%U(:)
 
+                this%theta(2*(i_Cell-1)+i_Interface)%U(i_eigen) = LimiterFunc%theta
+                this%phi(2*(i_Cell-1)+i_Interface)%U(i_eigen) = LimiterFunc%phi
+
                 Wave_tilda%U(:) = alpha_tilda%U(i_eigen) * Jacobian%R(:,i_eigen)
 
                 ! The high-resolution (Lax-Wendroff) part
                 F_H%U(:) = F_H%U(:) + Coefficient * 0.5_Dbl * dabs(Jacobian%Lambda%U(i_eigen) ) * ( 1.0_Dbl - dtdx * dabs( Jacobian%Lambda%U(i_eigen) ) ) * Wave_tilda%U(:)
-
-              end do ON_Eigenvalies
+                print*,"F_HHHHH", Wave_tilda%U(:)
+              end do ON_Eigenvalues
           end do ON_Interface
 
       ! Final update the results
-      TempSolution%U(:) = this%U(i_cell) - dtdx * F_L(:) - dtdx * F_H(:) + SourceTerms%Source_1(:) - SourceTerms%Source_2(:)
-      this%U(i_cell) = matmul(SourceTerms%BI(:,:), TempSolution%U(:))
+      TempSolution%U(:) = this%U(i_cell)%U(:) - dtdx * F_L%U(:) - dtdx * F_H%U(:) + SourceTerms%Source_1%U(:) - SourceTerms%Source_2%U(:)
 
+      print*,"pre results", TempSolution%U(:), F_H%U(:)!,F_H%U(:), SourceTerms%Source_1%U(:), SourceTerms%Source_2%U(:)
+      this%U(i_cell)%U(:) = matmul(SourceTerms%BI(:,:), TempSolution%U(:))
+      print*,"results", this%U(i_cell)%U(:)
 
       end do ON_Cells
 
     ! apply boundary condition
     call this%BC()
 
-  end do Time_Marching:
+  end do Time_Marching
 
 write(*,       *) " end subroutine < Solver_1D_with_Limiter_sub >"
 write(FileInfo,*) " end subroutine < Solver_1D_with_Limiter_sub >"
@@ -576,10 +607,9 @@ this%U(-1_Lng)%U(2) = this%AnalysisInfo%Q_Up / this%Discretization%WidthCell(1) 
 this%U( 0_Lng)%U(2) = this%AnalysisInfo%Q_Up / this%Discretization%WidthCell(1)  ! h at the upstream
 this%U( 1_Lng)%U(2) = this%AnalysisInfo%Q_Up / this%Discretization%WidthCell(1)  ! h at the upstream
 
-
-this%U(this%NCells      )%U(2) = this%uh(this%NCells-1) ! h at the downstream
-this%U(this%NCells+1_Lng)%U(2) = this%uh(this%NCells-1) ! h at the downstream
-this%U(this%NCells+2_Lng)%U(2) = this%uh(this%NCells-1) ! h at the downstream
+this%U(this%NCells      )%U(2) = this%U(this%NCells-1)%U(2) ! h at the downstream
+this%U(this%NCells+1_Lng)%U(2) = this%U(this%NCells-1)%U(2) ! h at the downstream
+this%U(this%NCells+2_Lng)%U(2) = this%U(this%NCells-1)%U(2) ! h at the downstream
 
 write(*,       *) " end subroutine < Impose_Boundary_Condition_1D_sub >"
 write(FileInfo,*) " end subroutine < Impose_Boundary_Condition_1D_sub >"
@@ -706,6 +736,8 @@ real(kind=Dbl) :: u_up  ! the velocity at the upstream grid
 real(kind=Dbl) :: u_ave   ! the average velocity at the interface
 real(kind=Dbl) :: h_ave  ! the average height at the interface
 
+real(kind=Dbl) :: c  ! wave speed
+
 real(kind=Dbl), dimension(2,2) :: A_up  ! the average discharge at the interface
 real(kind=Dbl), dimension(2,2) :: A_dw  ! the average discharge at the interface
 
@@ -716,13 +748,16 @@ write(FileInfo,*) " subroutine < Jacobian_sub >: "
   if (this%option == 1 ) then  ! find the average solution at the interface and then compute the Jacobian
 
     h_dw = this%U_dw%U(1)
-    u_dw = this%U_dw%U(2) / this%U_dw(1)
+    u_dw = this%U_dw%U(2) / this%U_dw%U(1)
 
     h_up = this%U_up%U(1)
     u_up = this%U_up%U(2) / this%U_up%U(1)
 
-    h_ave = 0.5_Dbl(h_up+h_dw)    ! <modify> for unstructured discretization
-    u_ave = 0.5_Dbl(u_up+u_dw)   ! <modify> for unstructured discretization
+    h_ave = 0.5_Dbl*(h_up+h_dw)    ! <modify> for unstructured discretization
+    u_ave = 0.5_Dbl*(u_up+u_dw)   ! <modify> for unstructured discretization
+
+    print*,"hh",h_ave
+    print*,"uu",u_ave
 
     c = dsqrt (this%Gravity * h_ave) ! wave speed
 
@@ -733,54 +768,54 @@ write(FileInfo,*) " subroutine < Jacobian_sub >: "
     this%A(2,2) = 2.0_Dbl * u_ave
 
     ! Computing the eigenvalues
-    this%Lambda(1) = u_ave - dsqrt(this%Gravity *  h_ave)
-    this%Lambda(2) = u_ave + dsqrt(this%Gravity *  h_ave)
+    this%Lambda%U(1) = u_ave - dsqrt(this%Gravity *  h_ave)
+    this%Lambda%U(2) = u_ave + dsqrt(this%Gravity *  h_ave)
 
-    this%Lambda_plus%U(1) =  dmax1(this%Lambda(1), 0.0_Dbl)
-    this%Lambda_plus%U(2) =  dmax1(this%Lambda(2), 0.0_Dbl)
+    this%Lambda_plus%U(1) =  dmax1(this%Lambda%U(1), 0.0_Dbl)
+    this%Lambda_plus%U(2) =  dmax1(this%Lambda%U(2), 0.0_Dbl)
 
-    this%Lambda_minus%U(1) =  dmin1(this%Lambda(1), 0.0_Dbl)
-    this%Lambda_minus%U(2) =  dmin1(this%Lambda(2), 0.0_Dbl)
+    this%Lambda_minus%U(1) =  dmin1(this%Lambda%U(1), 0.0_Dbl)
+    this%Lambda_minus%U(2) =  dmin1(this%Lambda%U(2), 0.0_Dbl)
 
     ! Computing the eigenvectors
     this%R(1,1) = 1.0_Dbl
-    this%R(1,2) = this%Lambda(1)
+    this%R(1,2) = this%Lambda%U(1)
 
     this%R(1,2) = 1.0_Dbl
-    this%R(2,2) = this%Lambda(2)
+    this%R(2,2) = this%Lambda%U(2)
 
     ! Computing the eigenvectors inverse
-    this%RI(1,1) = this%Lambda(2)
-    this%RI(1,2) = -1.0_Dbl
+    this%L(1,1) = this%Lambda%U(2)
+    this%L(1,2) = -1.0_Dbl
 
-    this%RI(2,1) = -this%Lambda(1)
-    this%RI(2,2) = 1.0_Dbl
+    this%L(2,1) = -this%Lambda%U(1)
+    this%L(2,2) = 1.0_Dbl
 
-    this%RI(:,:)  =  this%RI(:,:)   /(2.0_Dbl * c)
+    this%L(:,:)  =  this%L(:,:)   /(2.0_Dbl * c)
 
     ! Fill eigenvalue matrix
-    this%Gam(1,1) = this%Lambda(1)
+    this%Gam(1,1) = this%Lambda%U(1)
     this%Gam(1,2) = 0.0_Dbl
     this%Gam(2,1) = 0.0_Dbl
-    this%Gam(2,2) = this%Lambda(2)
+    this%Gam(2,2) = this%Lambda%U(2)
 
     ! Fill Gamma plus
-    this%Gam_plus(1,1) = dmax1(this%Lambda(1), 0.0_Dbl)
+    this%Gam_plus(1,1) = dmax1(this%Lambda%U(1), 0.0_Dbl)
     this%Gam_plus(1,2) = 0.0_Dbl
     this%Gam_plus(2,1) = 0.0_Dbl
-    this%Gam_plus(2,2) = dmax1(this%Lambda(2), 0.0_Dbl)
+    this%Gam_plus(2,2) = dmax1(this%Lambda%U(2), 0.0_Dbl)
 
     ! Fill Gamma minus
-    this%Gam_minus(1,1) = dmin1(this%Lambda(1), 0.0_Dbl)
+    this%Gam_minus(1,1) = dmin1(this%Lambda%U(1), 0.0_Dbl)
     this%Gam_minus(1,2) = 0.0_Dbl
     this%Gam_minus(2,1) = 0.0_Dbl
-    this%Gam_minus(2,2) = dmin1(this%Lambda(2), 0.0_Dbl)
+    this%Gam_minus(2,2) = dmin1(this%Lambda%U(2), 0.0_Dbl)
 
     ! Compute A plus
-    this%A_plus  = matmul(matmul(this%R, this%Gam_plus), this%RI)
+    this%A_plus  = matmul(matmul(this%R, this%Gam_plus), this%L)
 
     ! Compute A minus
-    this%A_minus = matmul(matmul(this%R, this%Gam_minus), this%RI)
+    this%A_minus = matmul(matmul(this%R, this%Gam_minus), this%L)
 
     ! Compute A abs
     this%A_abs = this%A_plus - this%A_minus
@@ -789,8 +824,8 @@ write(FileInfo,*) " subroutine < Jacobian_sub >: "
   else if (this%option == 2 ) then  ! find the Jacobian at each grid and average the Jacobian to find the Jacobian at the interface
 
     ! Computing the Jacobian at the upstream - A
-    h_up = this%U_up(1)
-    u_up = this%U_up(2) / this%U_up(1)
+    h_up = this%U_up%U(1)
+    u_up = this%U_up%U(2) / this%U_up%U(1)
     A_up(1,1) = 0.0_Dbl
     A_up(1,2) = 1.0_Dbl
     A_up(2,1) = this%Gravity * h_up - u_up**2
@@ -798,8 +833,8 @@ write(FileInfo,*) " subroutine < Jacobian_sub >: "
 
 
     ! Computing the Jacobian at the upstream - A
-    h_dw = this%U_dw(1)
-    u_dw = this%U_dw(2) / this%U_dw(1)
+    h_dw = this%U_dw%U(1)
+    u_dw = this%U_dw%U(2) / this%U_dw%U(1)
     A_dw(1,1) = 0.0_Dbl
     A_dw(1,2) = 1.0_Dbl
     A_dw(2,1) = this%Gravity * h_dw - u_dw**2
@@ -809,49 +844,49 @@ write(FileInfo,*) " subroutine < Jacobian_sub >: "
     this%A(:,:) = 0.5_Dbl * ( A_up(:,:) + A_dw(:,:) )
 
     ! Computing the eigenvalues
-    call Eigenvalues_sub(this%A, this%Lambda(1), this%Lambda(2))
+    call Eigenvalues_sub(this%A, this%Lambda%U(1), this%Lambda%U(2))
 
     ! Computing the eigenvectors
     this%R(1,1) = 1.0_Dbl
-    this%R(1,2) = this%Lambda(1)
+    this%R(1,2) = this%Lambda%U(1)
 
     this%R(1,2) = 1.0_Dbl
-    this%R(2,2) = this%Lambda(2)
+    this%R(2,2) = this%Lambda%U(2)
 
     ! Computing the eigenvectors inverse
-    this%RI(1,1) = this%Lambda(2)
-    this%RI(1,2) = -1.0_Dbl
+    this%L(1,1) = this%Lambda%U(2)
+    this%L(1,2) = -1.0_Dbl
 
-    this%RI(2,1) = -this%Lambda(1)
-    this%RI(2,2) = 1.0_Dbl
+    this%L(2,1) = -this%Lambda%U(1)
+    this%L(2,2) = 1.0_Dbl
 
-    c = this%Lambda(2) - this%Lambda(1)
-    this%RI(:,:)  =  this%RI(:,:)   /(2.0_Dbl * c)
+    c = this%Lambda%U(2) - this%Lambda%U(1)
+    this%L(:,:)  =  this%L(:,:)   /(2.0_Dbl * c)
 
     ! Fill eigenvalue matrix
-    this%Gam(1,1) = this%Lambda(1)
+    this%Gam(1,1) = this%Lambda%U(1)
     this%Gam(1,2) = 0.0_Dbl
     this%Gam(2,1) = 0.0_Dbl
-    this%Gam(2,2) = this%Lambda(2)
+    this%Gam(2,2) = this%Lambda%U(2)
 
     ! Fill Gamma plus
-    this%Gam_plus(1,1) = dmax1(this%Lambda(1), 0.0_Dbl)
+    this%Gam_plus(1,1) = dmax1(this%Lambda%U(1), 0.0_Dbl)
     this%Gam_plus(1,2) = 0.0_Dbl
     this%Gam_plus(2,1) = 0.0_Dbl
-    this%Gam_plus(2,2) = dmax1(this%Lambda(2), 0.0_Dbl)
+    this%Gam_plus(2,2) = dmax1(this%Lambda%U(2), 0.0_Dbl)
 
     ! Fill Gamma minus
-    this%Gam_minus(1,1) = dmin1(this%Lambda(1), 0.0_Dbl)
+    this%Gam_minus(1,1) = dmin1(this%Lambda%U(1), 0.0_Dbl)
     this%Gam_minus(1,2) = 0.0_Dbl
     this%Gam_minus(2,1) = 0.0_Dbl
-    this%Gam_minus(2,2) = dmin1(this%Lambda(2), 0.0_Dbl)
+    this%Gam_minus(2,2) = dmin1(this%Lambda%U(2), 0.0_Dbl)
 
 
     ! Compute A plus
-    this%A_plus  = matmul(matmul(this%R, this%Gam_plus), this%RI)
+    this%A_plus  = matmul(matmul(this%R, this%Gam_plus), this%L)
 
     ! Compute A minus
-    this%A_minus = matmul(matmul(this%R, this%Gam_minus), this%RI)
+    this%A_minus = matmul(matmul(this%R, this%Gam_minus), this%L)
 
     ! Compute A abs
     this%A_abs = this%A_plus - this%A_minus
@@ -917,19 +952,19 @@ real(kind=Dbl), intent(in), dimension (:,:)  :: A
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
 ! - real variables --------------------------------------------------------------------------------
-real(kind=Dbl)      :: a, b, c, d
+real(kind=Dbl)      :: a11, a12, a21, a22
 
 ! code ============================================================================================
 write(*,       *) " subroutine < Eigenvalues_sub >: "
 write(FileInfo,*) " subroutine < Eigenvalues_sub >: "
 
-a = A (1,1)
-b = A (1,2)
-c = A (2,1)
-d = A (2,2)
+a11 = A (1,1)
+a12 = A (1,2)
+a21 = A (2,1)
+a22 = A (2,2)
 
-Lambda1 = ((a+d) + dsqrt((a+d)**2 - 4.0_Dbl*(a*d-b*c)))/2.0_Dbl
-Lambda2 = ((a+d) - dsqrt((a+d)**2 - 4.0_Dbl*(a*d-b*c)))/2.0_Dbl
+Lambda1 = ((a11+a22) + dsqrt((a11+a22)**2 - 4.0_Dbl*(a11*a22-a12*a21)))/2.0_Dbl
+Lambda2 = ((a11+a22) - dsqrt((a11+a22)**2 - 4.0_Dbl*(a11*a22-a12*a21)))/2.0_Dbl
 
 write(*,       *) " end subroutine < Eigenvalues_sub >"
 write(FileInfo,*) " end subroutine < Eigenvalues_sub >"
@@ -1009,7 +1044,4 @@ return
 end subroutine Inverse
 
 
-
-
 end module LaxWendroff_with_limiter_mod
-
