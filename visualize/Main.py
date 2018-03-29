@@ -79,7 +79,7 @@ def main(arg):
   plt.close(fig)  
   
 
-  for ii in range(1000):
+  for ii in range(2000):
 
     FileName ="EX2_Case1/EX2_Limiter_" + str(ii*100 + 1) + ".Res"
     #FileName ="EX1_Case1/EX1_" + str(ii*100 + 1) + ".Res"
@@ -88,7 +88,7 @@ def main(arg):
     #Temp = File_Input.readline().rstrip("\n")
     #Temp = File_Input.readline().rstrip("\n")    
     #Temp = Temp.split()
-    npoints = 2500 #int(Temp[0])
+    npoints = 250 #int(Temp[0])
     #Temp = File_Input.readline().rstrip("\n")    
 
     for jj in range(npoints):

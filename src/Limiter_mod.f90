@@ -265,7 +265,11 @@ write(FileInfo,*) " -Applying initial conditions ..."
 
 allocate(Plot_Results_1D_limiter_tp(NCells = this%NCells) :: Results)
 
-this%U(:)%U(1) = this%AnalysisInfo%CntrlV -    this%Discretization%ZCell(:)
+this%U(1:this%NCells)%U(1) = this%AnalysisInfo%CntrlV -    this%Discretization%ZCell(:)
+this%U(0)%U(1)  = this%U(1)%U(1)
+this%U(-1)%U(1) = this%U(1)%U(1)
+this%U(this%NCells+1)%U(1) = this%U(this%NCells)%U(1)
+this%U(this%NCells+2)%U(1) = this%U(this%NCells)%U(1)
 this%U(:)%U(2) = 0.0_Dbl
 
 
@@ -422,7 +426,6 @@ Results%ModelInfo = this%ModelInfo
                 !print*,"eigenvector", Jacobian%R(:,i_eigen)
                 !print*,"eigenvector1", Jacobian%R(:,1)
                 !print*,"eigenvector2", Jacobian%R(:,2)
-
 
                   if (i_Interface == 1_Tiny) then ! we use the positive eigenvalues on the upstream interface
                     speed = Jacobian%Lambda_plus%U(i_eigen)
