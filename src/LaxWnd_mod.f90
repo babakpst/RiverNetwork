@@ -188,6 +188,11 @@ NSteps = this%AnalysisInfo%TotalTime/this%AnalysisInfo%TimeStep
 dt     = this%AnalysisInfo%TimeStep
 dx     = this%Discretization%LengthCell(1)
 
+
+this%Discretization%SlopeCell(:) =0.0_Dbl
+
+
+!PrintResults = .true.
 PrintResults = .false.
 
 this%s_f(:)   = 0.0_Dbl

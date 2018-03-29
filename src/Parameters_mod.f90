@@ -160,6 +160,7 @@ type discretization_tp
 
   real(kind=DBL), allocatable, dimension(:) :: LengthCell  ! Stores the length of each cell
   real(kind=DBL), allocatable, dimension(:) :: SlopeCell   ! Stores the slope of each cell at the center
+  real(kind=DBL), allocatable, dimension(:) :: SlopeInter   ! Stores the slope of each cell at the center
   real(kind=DBL), allocatable, dimension(:) :: ZCell       ! Stores bottom elevation at the center of each cell
   real(kind=DBL), allocatable, dimension(:) :: ZFull       ! Stores bottom elevation at all points
   real(kind=DBL), allocatable, dimension(:) :: ManningCell ! Stores the Manning's number of each cell

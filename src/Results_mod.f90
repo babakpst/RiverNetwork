@@ -102,8 +102,6 @@ end type Plot_Results_1D_limiter_tp
 
 
 
-
-
 private :: Plot_Domain_1D_sub, Plot_Results_1D_limiter_sub
 
   interface Results
