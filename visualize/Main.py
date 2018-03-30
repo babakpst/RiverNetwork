@@ -36,7 +36,8 @@ def main(arg):
   print(" ========== Plot the domain ==========")
   print(" Allocating memory ...")
 
-  Input = open("EX1.Domain","r")
+  Input = open("EX2_Limiter.Domain","r")
+#  Input = open("EX1.Domain","r")
   Temp = Input.readline().rstrip("\n")  # 1
   Temp = Input.readline().rstrip("\n")  # 1
   npoints = int(Input.readline().rstrip("\n"))  # 1
@@ -56,8 +57,8 @@ def main(arg):
     Temp = Input.readline().rstrip("\n")  # 1
     numbers = string.split(Temp)
 
-    x[ii] = float(numbers[0])
-    z[ii] = float(numbers[1])
+    x[ii] = float(numbers[1])
+    z[ii] = float(numbers[2])
 
     #print(x[ii])
     #print(z[ii])
@@ -78,15 +79,16 @@ def main(arg):
   plt.close(fig)  
   
 
-  for ii in range(1999):
+  for ii in range(2000):
 
-    FileName ="EX1_Case1/EX1_" + str(ii*100 + 1) + ".Res"
+    FileName ="EX2_Case1/EX2_Limiter_" + str(ii*100 + 1) + ".Res"
+    #FileName ="EX1_Case1/EX1_" + str(ii*100 + 1) + ".Res"
     File_Input = open(FileName,"r")
     #Temp = File_Input.readline().rstrip("\n")
     #Temp = File_Input.readline().rstrip("\n")
     #Temp = File_Input.readline().rstrip("\n")    
     #Temp = Temp.split()
-    npoints = 2500 #int(Temp[0])
+    npoints = 250 #int(Temp[0])
     #Temp = File_Input.readline().rstrip("\n")    
 
     for jj in range(npoints):
@@ -101,9 +103,10 @@ def main(arg):
     ax1.grid(True, color='k')   
     #ax1.plot(X_Arr, Q_Arr, label ="Water flow" , color = "c", linewidth = 2.0)
     ax1.fill_between (x, z[:], z[:] +h[:])
+    #ax1.fill_between (x, z[:], h[:])
     #plt.fill_between ( x, z[:], h[:] )
     
-    title_string = ( 'H(T) - Time = %8.2f' % ( ii ) )
+    title_string = ( 'H(T) - Time = %8.2f' % ( ii*0.001 ) )
     plt.title(title_string, fontsize = 16)
 
     plt.xlabel ( 'X',  fontsize=12 )

@@ -1,7 +1,7 @@
 Name: ex1 - Flow over a hump without shock
-
+ 
 Analysis type: 1: 1D lax-wendroff  - 2: Lax-Wendroff with limiter
-1
+2
 
 Total run time (in seconds): 
 200.0

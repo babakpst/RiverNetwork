@@ -160,9 +160,6 @@ read(FileAdr,*)
 read(FileAdr,*) ModelInfo%ModelName; write(*,*) ModelInfo%ModelName
 read(FileAdr,*)
 read(FileAdr,*)
-read(FileAdr,*) ModelInfo%AnalysisType; !write(*,*) ModelInfo%AnalysisType
-read(FileAdr,*)
-read(FileAdr,*)
 read(FileAdr,*) ModelInfo%InputDir; !write(*,*) ModelInfo%InputDir
 read(FileAdr,*)
 read(FileAdr,*)
@@ -349,6 +346,9 @@ write(FileInfo,*) " Subroutine < Input_Basic_sub >: "
 ! - Opening the data model file -------------------------------------------------------------------
 write(*,        fmt="(A)") " -Opening the data model file ..."
 write(FileInfo, fmt="(A)") " -Opening the data model file ..."
+
+print*,ModelInfo%ModelName
+print*,ModelInfo%InputDir
 
 UnFile=FileDataModel
 open(Unit=UnFile, file=trim(ModelInfo%ModelName)//'.dataModel', &
@@ -678,6 +678,7 @@ End Subroutine Input_Array_sub
 !  . . . . . . . . . . . . . . . . Variables . . . . . . . . . . . . . . . . . . . . . . . . . . .
 !
 !##################################################################################################
+
 Subroutine Input_Analysis_sub(                                        &
 !                                                                     & ! integer(1) Variables
 !                                                                     & ! integer(2) Variables
@@ -785,10 +786,19 @@ Directory=MakeDirQQ (trim(AdjustL (ModelInfo%OutputDir))//'/'//trim(AdjustL(Mode
      write(FileInfo, fmt="(A)") "The output folder for this analysis already exists." ;
   end if ;
 
+
 ModelInfo%AnalysisOutputDir=trim(AdjustL(ModelInfo%OutputDir))//'/'//trim(AdjustL(ModelInfo%AnalysesNames(i_analyses)))
 
 UnFile = UnInptAna
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) AnalysisInfo%AnalysisType
+UnFile = FileInfo
+write(unit=*,      fmt="(' The Analysis type is: ', I10)") AnalysisInfo%AnalysisType
+write(unit=UnFile, fmt="(' The Analysis type is: ', I10)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) AnalysisInfo%AnalysisType
+
+UnFile = UnInptAna
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) AnalysisInfo%TotalTime
@@ -835,6 +845,16 @@ read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_re
 UnFile = FileInfo
 write(unit=UnFile, fmt="(' The ratio of control volume is: ', F23.10)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) AnalysisInfo%CntrlV_ratio
 write(unit=*,      fmt="(' The ratio of control volume is: ', F23.10)") AnalysisInfo%CntrlV_ratio
+
+UnFile = UnInptAna
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) AnalysisInfo%limiter
+UnFile = FileInfo
+write(unit=UnFile, fmt="(' The limiter is: ', I10)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) AnalysisInfo%limiter
+write(unit=*,      fmt="(' The limiter is: ', I10)") AnalysisInfo%CntrlV_ratio
+
+
 
 write(*,       *) " End Subroutine < Input_Analysis_sub >"
 write(*,       *)

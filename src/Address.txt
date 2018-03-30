@@ -1,8 +1,5 @@
 Input file name:
-EX1
-
-Analysis type: 1: 1D -2: 2D
-1
+EX2_Limiter
 
 Input directory:
 "/h1/babak/Documents/SVE_2D/input"
@@ -14,6 +11,8 @@ Number of Analysis:
 1
 
 Names of the analysis files:
+EX2_Case1
+
 EX1_Case1
 
 
@@ -29,3 +28,10 @@ EX1_Case1
 
 
 
+
+
+
+
+
+
+EX1_Limiter

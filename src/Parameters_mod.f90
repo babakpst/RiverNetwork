@@ -79,7 +79,8 @@ integer(kind=Smll), Parameter, Public  :: FileResults=602 ! output file containi
 
 
 ! Analysis case number ============================================================================
-integer(kind=Smll), Parameter, Public :: AnalysisType_1D=1 ! 1D Shallow water simulation
+integer(kind=Smll), Parameter, Public :: AnalysisType_1D=1 ! 1D Shallow water simulation Lax-wendroff
+integer(kind=Smll), Parameter, Public :: AnalysisType_1D_Limiter=2 ! 1D Shallow water simulation Lax-wendroff
 
 
 ! Element Types Number ============================================================================
@@ -89,7 +90,6 @@ integer(kind=Smll), Parameter, Public :: AnalysisType_1D=1 ! 1D Shallow water si
 ! PML Elements
 
 ! Spectral Element
-
 
 ! User defined types ==============================================================================
 ! Time signature of the model
@@ -107,7 +107,6 @@ type Input_Data_tp
   character (kind = 1, Len = 150) :: AnalysisOutputDir! Directory of output file for each analysis
   character (kind = 1, Len = 150), dimension(:), allocatable :: AnalysesNames! Holds the name of the analysis input file
 
-  integer(kind=Smll) :: AnalysisType      ! Analysis Type: 1: 1D-2: 2D
   !integer(kind=Smll):: OutputType        ! Output Type: 1: ordinary-2: HDF5
   integer(kind=Smll) :: NumberOfAnalyses  ! Number of analysis
 
@@ -131,6 +130,9 @@ end type timing
 
 ! Contains all information about the domain, required
 type AnalysisData_tp
+  integer(kind=Smll) :: AnalysisType      ! Analysis Type: 1: 1D-Lax-Wendroff- 2: 1D-Lax-Wendroff with limiter
+  integer(kind=Smll) :: limiter           ! limiter type
+
   real(kind=DBL):: TotalTime ! Total simulation time (in seconds)
   real(kind=DBL):: TimeStep  ! Time Step
   real(kind=DBL):: Q_Up      ! Upstream boundary condition, constant flow (m^3/s)
@@ -158,6 +160,7 @@ type discretization_tp
 
   real(kind=DBL), allocatable, dimension(:) :: LengthCell  ! Stores the length of each cell
   real(kind=DBL), allocatable, dimension(:) :: SlopeCell   ! Stores the slope of each cell at the center
+  real(kind=DBL), allocatable, dimension(:) :: SlopeInter   ! Stores the slope of each cell at the center
   real(kind=DBL), allocatable, dimension(:) :: ZCell       ! Stores bottom elevation at the center of each cell
   real(kind=DBL), allocatable, dimension(:) :: ZFull       ! Stores bottom elevation at all points
   real(kind=DBL), allocatable, dimension(:) :: ManningCell ! Stores the Manning's number of each cell

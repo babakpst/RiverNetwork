@@ -21,7 +21,7 @@
 !
 ! File version $Id $
 !
-! Last update: 03/09/2018
+! Last update: 03/20/2018
 !
 ! ================================ Global   V A R I A B L E S =====================================
 !  . . . . . . . . . . . . . . . . Variables . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -40,7 +40,8 @@ use Parameters_mod
 use Information_mod
 use Input_mod
 use Discretization_mod
-use Solver_mod
+use LaxWendroff_mod
+use LaxWendroff_with_limiter_mod
 
 ! Global Variables ================================================================================
 Implicit None
@@ -64,7 +65,6 @@ allocate(Arguments%Length(Arguments%ArgCount), Arguments%Arg(Arguments%ArgCount)
     write(*, Fmt_ALLCT) ERR_Alloc; write(FileInfo, Fmt_ALLCT) ERR_Alloc;
     write(*, Fmt_FL); write(FileInfo, Fmt_FL); read(*, Fmt_End); stop;
   end if
-
 
   do ii=1,Arguments%ArgCount
     call get_command_argument(ii, Arguments%Arg(ii), Arguments%Length(ii), Arguments%Argstatus(ii))
@@ -153,24 +153,36 @@ print*," check 000"
     !     position='ASIS', status='REPLACE')
 
     ! Analysis ====================================================================================
-      SELECT CASE(ModelInfo%AnalysisType)
+      select case(AnalysisInfo%AnalysisType)
 
-        CASE(AnalysisType_1D)    ! # 1: Richtmyer
+        case(AnalysisType_1D)    ! # 1: Richtmyer
 
-          allocate(Richtmyer(NCells=Discretization%NCells) :: Experiment,     stat=ERR_Alloc)
+          allocate(Richtmyer(NCells=Discretization%NCells) :: Experiment_TypeI,     stat=ERR_Alloc)
             if (ERR_Alloc /= 0) then
               write (*, Fmt_ALLCT) ERR_Alloc;  write (FileInfo, Fmt_ALLCT) ERR_Alloc;
               write(*, Fmt_FL);  write(FileInfo, Fmt_FL); read(*, Fmt_End);  stop;
             end if
 
+          Experiment_TypeI%ModelInfo = ModelInfo
+          Experiment_TypeI%AnalysisInfo = AnalysisInfo
+          Experiment_TypeI%Discretization = Discretization
+          call Experiment_TypeI%Solve()
 
-          Experiment%ModelInfo = ModelInfo
-          Experiment%AnalysisInfo = AnalysisInfo
-          Experiment%Discretization = Discretization
-          call Experiment%Solve()
+        case(AnalysisType_1D_Limiter)    ! # 2: Lax-Wendroff with limiter in combination with upwind method
+
+          allocate(SolverWithLimiter(NCells=Discretization%NCells) :: Experiment_TypeII,     stat=ERR_Alloc)
+            if (ERR_Alloc /= 0) then
+              write (*, Fmt_ALLCT) ERR_Alloc;  write (FileInfo, Fmt_ALLCT) ERR_Alloc;
+              write(*, Fmt_FL);  write(FileInfo, Fmt_FL); read(*, Fmt_End);  stop;
+            end if
+
+          Experiment_TypeII%ModelInfo = ModelInfo
+          Experiment_TypeII%AnalysisInfo = AnalysisInfo
+          Experiment_TypeII%Discretization = Discretization
+          call Experiment_TypeII%Solve()
 
         ! Error in analysis numbering
-        CASE DEFAULT
+        case default
           write(*,*)" The analysis type  is not available in this code. Modify the analysis type."
           write(FileInfo,*)" The analysis type  is not available in this code. Modify the analysis type."
           write(*,*)
@@ -178,7 +190,7 @@ print*," check 000"
           write(*,*)" Simulation terminated with error."
           write(*, Fmt_End);  read(*,*);   stop;
 
-      End SELECT
+      end select
 
     write(*,*)" Simulation was conducted successfully for:"
     write(*,"(' Model Name: ',A30,'Analysis Name: ', A30)")ModelInfo%ModelName, ModelInfo%AnalysesNames(i_analyses)

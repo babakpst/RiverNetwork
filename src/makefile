@@ -11,6 +11,7 @@
 # =================================================================================================
 
 F90=ifort
+#F90= gfortran -ffree-line-length-none
 FFLAGS=-O2
 
 SOURCESF=	Parameters_mod.f90 \
@@ -19,7 +20,8 @@ SOURCESF=	Parameters_mod.f90 \
 					Results_mod.f90 \
 					Discretization_mod.f90 \
 					BoundaryCondition_mod.f90 \
-					Solver_mod.f90 \
+					LaxWnd_mod.f90 \
+					Limiter_mod.f90 \
 					Main.f90
 
 OBJSF=$(SOURCESF:%.F90=%.o)
