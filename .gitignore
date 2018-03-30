@@ -4,6 +4,7 @@
 *.layout
 *.o
 *.mod
+*.nsf*
 
 # ignoring the following folders:
 output/
