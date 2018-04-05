@@ -36,7 +36,7 @@ def main(arg):
   print(" ========== Plot the domain ==========")
   print(" Allocating memory ...")
 
-  Input = open("EX2_Limiter.Domain","r")
+  Input = open("EX3_Limiter.Domain","r")
 #  Input = open("EX1.Domain","r")
   Temp = Input.readline().rstrip("\n")  # 1
   Temp = Input.readline().rstrip("\n")  # 1
@@ -81,7 +81,7 @@ def main(arg):
 
   for ii in range(600):
 
-    FileName ="EX2_Case1/EX2_Limiter_" + str(ii*100 + 1) + ".Res"
+    FileName ="EX3_Case1/EX3_Limiter_" + str(ii*100 + 1) + ".Res"
     #FileName ="EX1_Case1/EX1_" + str(ii*100 + 1) + ".Res"
     File_Input = open(FileName,"r")
     #Temp = File_Input.readline().rstrip("\n")
