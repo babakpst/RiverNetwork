@@ -38,7 +38,8 @@ integer(2), Parameter, Public :: Lng =SELECTED_INT_kind(10)           ! EQUIVALE
 
 ! MATHEMATICAL CONSTATNS ==========================================================================
 !#integer(kind=Shrt), Parameter, Public  ::
-real(kind=DBL), Parameter, Public  ::  PI=3.141592653589793238_DBL
+real(kind=DBL), Parameter, Public :: PI=3.141592653589793238_Dbl
+real(kind=Dbl), Parameter, Public :: Gravity=9.81_Dbl  ! the ground acceleration
 
 ! FORMATS =========================================================================================
 character(87),  Parameter, Public :: Fmt_DATE="(' DATE :  ',I2.2,' - ',I2.2,' - ',I4,/,' TIME : ',I2.2,':',I2.2,':',I2.2,':',I2.2,/ )"
@@ -98,21 +99,11 @@ type TimeDate_tp
   integer(kind=Smll)  :: Hour, Minute, Seconds, S100th   ! Time variables
 end type TimeDate_tp
 
-! Holds info. (name, Dir, output directory) of the model
-type Input_Data_tp
-  character (kind = 1, Len = 30 ) :: ModelName     ! Name of the model input file
-  character (kind = 1, Len = 150) :: InputDir      ! Directory of the input file.
-  character (kind = 1, Len = 150) :: AnalysisDir   ! Directory of Analysis input file.
-  character (kind = 1, Len = 150) :: OutputDir     ! Directory of output files (Results)
-  character (kind = 1, Len = 150) :: AnalysisOutputDir! Directory of output file for each analysis
-  character (kind = 1, Len = 150), dimension(:), allocatable :: AnalysesNames! Holds the name of the analysis input file
-
-  !integer(kind=Smll):: OutputType        ! Output Type: 1: ordinary-2: HDF5
-  integer(kind=Smll) :: NumberOfAnalyses  ! Number of analysis
-
-  real(kind=SGL) :: Version               ! Holds the version of the code.
-end type Input_Data_tp
-
+! Holds data about the run time
+type timing
+  real(kind=DBL):: Time_Start, Time_End !TIME Variables for total run time
+  real(kind=DBL):: Input_Starts, Input_Ends ! required time to read the input file
+end type timing
 
 ! Holds the command argument
 type ArgCommands
@@ -122,37 +113,6 @@ type ArgCommands
   character (kind = 1, Len = 50), allocatable, dimension(:) :: Arg  ! Holds the entered argument
 end type
 
-! Holds data about the run time
-type timing
-  real(kind=DBL):: Time_Start, Time_End !TIME Variables for total run time
-  real(kind=DBL):: Input_Starts, Input_Ends ! required time to read the input file
-end type timing
-
-! Contains all information about the domain, required
-type AnalysisData_tp
-  integer(kind=Smll) :: AnalysisType      ! Analysis Type: 1: 1D-Lax-Wendroff- 2: 1D-Lax-Wendroff with limiter
-  integer(kind=Smll) :: limiter           ! limiter type
-
-  real(kind=DBL):: TotalTime ! Total simulation time (in seconds)
-  real(kind=DBL):: TimeStep  ! Time Step
-  real(kind=DBL):: Q_Up      ! Upstream boundary condition, constant flow (m^3/s)
-  real(kind=DBL):: h_dw      ! Downstream water depth (in meters)
-  real(kind=DBL):: CntrlV    ! Initial control volume
-  real(kind=DBL):: CntrlV_ratio  ! Initial control volume ration, used to initialize data
-end type AnalysisData_tp
-
-! Contains all information about the geometry of the domain. (input)
-type Geometry_tp
-  integer(kind=Lng):: NoReaches ! Number of reaches
-
-  integer(kind=Lng),  allocatable, dimension(:) :: ReachDisc  ! Stores the no. of control volume in each reach
-  integer(kind=Shrt), allocatable, dimension(:) :: ReachType  ! Stores reach type
-
-  real(kind=DBL), allocatable, dimension(:) :: ReachLength ! Stores the length of each reach
-  real(kind=DBL), allocatable, dimension(:) :: ReachSlope  ! Stores the slope of each reach
-  real(kind=DBL), allocatable, dimension(:) :: ReachManning ! Stores the Manning's number for each reach
-  real(kind=DBL), allocatable, dimension(:) :: ReachWidth ! Stores the width of each reach
-end type Geometry_tp
 
 ! Contains all information after discretization
 type discretization_tp

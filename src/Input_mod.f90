@@ -9,12 +9,13 @@
 ! The University of Texas at Austin
 !
 ! ================================ V E R S I O N ==================================================
-! V0.1: 02/22/2018 - Initiation.
+! V0.10: 02/22/2018 - Initiation.
 ! V0.10: 03/08/2018 - Initiated: Compiled without error.
+! V1.00: 04/20/2018 - Major modifications
 !
 ! File version $Id $
 !
-! Last update: 02/23/2018
+! Last update: 04/10/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! Input_Address_sub: Reads file name and directories from the address file.
@@ -37,15 +38,70 @@ use Parameters_mod
 implicit none
 
 
-interface Input
-  module procedure Input_Address_sub, Input_Analysis_sub!, Input_Basic_sub, Input_Array_sub
-end interface Input
+! Holds info. (name, dir. output dir.) of the model, initialized by subroutine Input_Address_sub.
+type Input_Data_tp
+  character (kind = 1, Len = 30 ) :: ModelName     ! Name of the model input file
+  character (kind = 1, Len = 150) :: InputDir      ! Directory of the input file.
+  character (kind = 1, Len = 150) :: AnalysisDir   ! Directory of Analysis input file.
+  character (kind = 1, Len = 150) :: OutputDir     ! Directory of output files (Results)
+  character (kind = 1, Len = 150) :: AnalysisOutputDir! Directory of output file for each analysis
+  character (kind = 1, Len = 150), dimension(:), allocatable :: AnalysesNames! Holds the names of
+                                                                        ! the analysis input files
+  !integer(kind=Smll):: OutputType        ! Output Type: 1: ordinary-2: HDF5
+  integer(kind=Smll) :: NumberOfAnalyses  ! Number of analysis
+
+  real(kind=SGL) :: Version               ! Holds the version of the code.
+
+  contains
+    procedure Input => Input_Address_sub
+
+end type Input_Data_tp
+
+
+! Contains all information about the geometry of the domain. (input)
+type Geometry_tp
+  integer(kind=Lng):: NoReaches ! Number of reaches
+
+  integer(kind=Lng),  allocatable, dimension(:) :: ReachDisc ! no. of control volume in each reach
+  integer(kind=Shrt), allocatable, dimension(:) :: ReachType ! reach type
+
+  real(kind=DBL), allocatable, dimension(:) :: ReachLength  ! the length of each reach
+  real(kind=DBL), allocatable, dimension(:) :: ReachSlope   ! the slope of each reach
+  real(kind=DBL), allocatable, dimension(:) :: ReachManning ! the Manning's number for each reach
+  real(kind=DBL), allocatable, dimension(:) :: ReachWidth   ! Stores the width of each reach
+
+  contains
+    procedure Basic => Input_Basic_sub
+    procedure Array => Input_Array_sub
+
+end type Geometry_tp
+
+
+! Contains all information about the domain, required
+type AnalysisData_tp
+  integer(kind=Smll) :: AnalysisType ! Analysis Type      -1:1D Lax-Wendroff
+                                     !                    -2:1D Lax-Wendroff with limiter
+  integer(kind=Smll) :: limiter      ! limiter type
+
+  real(kind=DBL):: TotalTime ! Total simulation time (in seconds)
+  real(kind=DBL):: TimeStep  ! Time Step
+  real(kind=DBL):: Q_Up      ! Upstream boundary condition, constant flow (m^3/s)
+  real(kind=DBL):: h_dw      ! Downstream water depth (in meters)
+  real(kind=DBL):: CntrlV    ! Initial control volume
+  real(kind=DBL):: CntrlV_ratio  ! Initial control volume ration, used to initialize data
+
+  contains
+    procedure Analysis => Input_Analysis_sub
+
+end type AnalysisData_tp
+
 
 contains
 
 
 !##################################################################################################
-! Purpose: This subroutine/function ....
+! Purpose: This subroutine/function reads the general information about the name of the simulation
+!           model, directories, etc.
 !
 ! Developed by: Babak Poursartip
 ! Supervised by:
@@ -55,10 +111,12 @@ contains
 !
 ! ================================ V E R S I O N ==================================================
 ! V0.1: 02/21/2018 - Initiation.
+! V1.0: 03/01/2018 - Compiled without error.
+! V1.1: 04/10/2018 - Minor modifications.
 !
 ! File version $Id $
 !
-! Last update:
+! Last update: 04/10/2018
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
 ! (Refer to the main code to see the list of imported variables)
@@ -66,57 +124,18 @@ contains
 !
 !##################################################################################################
 
-Subroutine Input_Address_sub(                                         &
-!                                                                     & ! integer(1) Variables
-!                                                                     & ! integer(2) Variables
-!                                                                     & ! integer(4) Variables
-!                                                                     & ! integer(8) Variables
-!                                                                     & ! real Variables
-!                                                                     & ! integer Arrays
-!                                                                     & ! real Arrays
-!                                                                     & ! Characters
-ModelInfo                                                             & ! Type
-)
-
+Subroutine Input_Address_sub(this)
 
 ! Libraries =======================================================================================
 use ifport
 
 ! User defined modules ============================================================================
 
-
 Implicit None
 
 ! Global Variables ================================================================================
-
-! - integer Variables -----------------------------------------------------------------------------
-!#integer(kind=Shrt), intent(In)    ::
-!#integer(kind=Shrt), intent(InOut) ::
-!#integer(kind=Shrt), intent(OUT)   ::
-! - real Variables --------------------------------------------------------------------------------
-!#real(kind=Dbl),     intent(In)    ::
-!#real(kind=Dbl),     intent(InOut) ::
-!#real(kind=Dbl),     intent(OUT)   ::
-! - complex Variables -----------------------------------------------------------------------------
-!#complex,             intent(In)    ::
-!#complex,             intent(InOut) ::
-!#complex,             intent(OUT)   ::
-! - integer Arrays --------------------------------------------------------------------------------
-!#integer(kind=Shrt), intent(In),    dimension(:  )  ::
-!#integer(kind=Shrt), intent(In),    dimension(:,:)  ::
-!#integer(kind=Shrt), intent(In)    ::
-!#integer(kind=Shrt), intent(InOut) ::
-!#integer(kind=Shrt), intent(OUT)   ::
-! - real Arrays -----------------------------------------------------------------------------------
-!#real(kind=Dbl),     intent(In),    dimension(:  )  ::
-!#real(kind=Dbl),     intent(InOut), dimension(:  )  ::
-!#real(kind=Dbl),     intent(OUT),   dimension(:  )  ::
-! - Character Variables ---------------------------------------------------------------------------
-!#Character (kind = ?, Len = ? ) ::
-! - Logical Variables -----------------------------------------------------------------------------
-!#Logical   ::
 ! - Types -----------------------------------------------------------------------------------------
-type(Input_Data_tp), intent(out) :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
+class(Input_Data_tp), intent(out) :: this  ! Holds info. (name, dir, output dir) of the model
 
 ! Local Variables =================================================================================
 ! - integer Variables -----------------------------------------------------------------------------
@@ -125,22 +144,8 @@ integer(kind=Smll) :: IO_File       ! For IOSTAT: Input Output status in OPEN co
 integer(kind=Smll) :: i_analyses    ! loop index to read the analyses files
 integer(kind=Smll) :: ERR_Alloc, ERR_DeAlloc ! Allocating and DeAllocating errors
 
-! - real Variables --------------------------------------------------------------------------------
-!#real(kind=Dbl)      ::
-! - complex Variables -----------------------------------------------------------------------------
-!#complex              ::
-! - integer Arrays --------------------------------------------------------------------------------
-!#integer(kind=Shrt), dimension(:)  ::
-!#integer(kind=Shrt), allocatable, dimension(:)  ::
-! - real Arrays -----------------------------------------------------------------------------------
-!#real(kind=Dbl), dimension(:)      ::
-!#real(kind=Dbl), allocatable, dimension(:)  ::
-! - Character Variables ---------------------------------------------------------------------------
-!#Character (kind = ?, Len = ? ) ::
 ! - Logical Variables -----------------------------------------------------------------------------
 Logical (kind=Shrt)  :: Directory
-
-! - Type ------------------------------------------------------------------------------------------
 
 ! code ============================================================================================
 
@@ -157,50 +162,50 @@ Open(Unit=UnFile, File='Address.txt', Err=1001, IOStat=IO_File, Access='SEQUENTI
 
 ! Read the input fine name and directories Form "ADDRESS_File.txt" in the current directory -------
 read(FileAdr,*)
-read(FileAdr,*) ModelInfo%ModelName; write(*,*) ModelInfo%ModelName
+read(FileAdr,*) this%ModelName; write(*,*) this%ModelName
 read(FileAdr,*)
 read(FileAdr,*)
-read(FileAdr,*) ModelInfo%InputDir; !write(*,*) ModelInfo%InputDir
+read(FileAdr,*) this%InputDir; !write(*,*) this%InputDir
 read(FileAdr,*)
 read(FileAdr,*)
-read(FileAdr,*) ModelInfo%OutputDir; !write(*,*) ModelInfo%OutputDir
+read(FileAdr,*) this%OutputDir; !write(*,*) this%OutputDir
 read(FileAdr,*)
 read(FileAdr,*)
-read(FileAdr,*) ModelInfo%NumberOfAnalyses; !write(*,*) ModelInfo%NumberOfAnalyses
+read(FileAdr,*) this%NumberOfAnalyses; !write(*,*) this%NumberOfAnalyses
 
 ! Allocating
-allocate(ModelInfo%AnalysesNames(ModelInfo%NumberOfAnalyses),  stat=ERR_Alloc)
+allocate(this%AnalysesNames(this%NumberOfAnalyses),  stat=ERR_Alloc)
   if (ERR_Alloc /= 0) then
     write(*, Fmt_ALLCT) ERR_Alloc ;  write(FileInfo, Fmt_ALLCT) ERR_Alloc;
     write(*, Fmt_FL);  write(FileInfo, Fmt_FL); read(*, Fmt_End);  stop;
   end if
 read(FileAdr,*)
 read(FileAdr,*)
-  do i_analyses = 1, ModelInfo%NumberOfAnalyses
-    read(FileAdr,*) ModelInfo%AnalysesNames(i_analyses)
+  do i_analyses = 1, this%NumberOfAnalyses
+    read(FileAdr,*) this%AnalysesNames(i_analyses)
   end do
 
-ModelInfo%AnalysisDir=trim(AdjustL(ModelInfo%InputDir))//'/'// &
-                      trim(AdjustL(ModelInfo%ModelName))//'/'//'Analysis'
-ModelInfo%InputDir   =trim(AdjustL(ModelInfo%InputDir))//'/'// &
-                      trim(AdjustL(ModelInfo%ModelName))//'/'//'Model'
+this%AnalysisDir=trim(AdjustL(this%InputDir))//'/'// &
+                      trim(AdjustL(this%ModelName))//'/'//'Analysis'
+this%InputDir   =trim(AdjustL(this%InputDir))//'/'// &
+                      trim(AdjustL(this%ModelName))//'/'//'Model'
 
-write(*, fmt="(2A)")" The model directory is: ", ModelInfo%InputDir
-write(*, fmt="(2A)")" The analysis name is: ", ModelInfo%AnalysisDir
+write(*, fmt="(2A)")" The model directory is: ", this%InputDir
+write(*, fmt="(2A)")" The analysis name is: ", this%AnalysisDir
 
 ! Create the results folder
 write(*,fmt="(A)") " -Creating the output folders ..."
 
-Directory=MakeDirQQ (trim(AdjustL(ModelInfo%OutputDir))//'/'//trim(AdjustL(ModelInfo%ModelName)))
+Directory=MakeDirQQ (trim(AdjustL(this%OutputDir))//'/'//trim(AdjustL(this%ModelName)))
   if (Directory) then
     write(*,fmt="(A)") " The result folder is created."
   Else
      write(*,fmt="(A)") " The result folder already exists."
   end if
 
-ModelInfo%OutputDir=trim(AdjustL (ModelInfo%OutputDir))//'/'//trim(AdjustL (ModelInfo%ModelName))
+this%OutputDir=trim(AdjustL (this%OutputDir))//'/'//trim(AdjustL (this%ModelName))
 
-write(*,fmt="(2A)")" The output directory is: ", ModelInfo%OutputDir
+write(*,fmt="(2A)")" The output directory is: ", this%OutputDir
 
 ! - Closing the address file ----------------------------------------------------------------------
 write(*,        fmt="(A)") " -Closing the address file"
@@ -251,11 +256,14 @@ End Subroutine Input_Address_sub
 ! The University of Texas at Austin
 !
 ! ================================ V E R S I O N ==================================================
-! V0.1: 02/21/2018 - Initiation.
+! V0.10: 02/21/2018 - Initiation.
+! V1.00: 03/01/2018 - Compiled without error.
+! V1.10: 04/10/2018 - Minor modifications.
+!
 !
 ! File version $Id $
 !
-! Last update: 02/21/2018
+! Last update: 04/10/2018
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
 ! (Refer to the main code to see the list of imported variables)
@@ -263,17 +271,7 @@ End Subroutine Input_Address_sub
 !
 !##################################################################################################
 
-Subroutine Input_Basic_sub(                                           &
-!                                                                     & ! integer(1) Variables
-!                                                                     & ! integer(2) Variables
-!                                                                     & ! integer(4) Variables
-!                                                                     & ! integer(8) Variables
-!                                                                     & ! real Variables
-!                                                                     & ! integer Arrays
-!                                                                     & ! real Arrays
-!                                                                     & ! Characters
-ModelInfo, Geometry                                                   & ! Type
-)
+Subroutine Input_Basic_sub(this, ModelInfo)
 
 ! Libraries =======================================================================================
 
@@ -283,35 +281,9 @@ Implicit None
 
 ! Global Variables ================================================================================
 
-! - integer Variables -----------------------------------------------------------------------------
-!#integer(kind=Shrt), intent(In)    ::
-!#integer(kind=Shrt), intent(InOut) ::
-!#integer(kind=Shrt), intent(OUT)   ::
-! - real Variables --------------------------------------------------------------------------------
-!#real(kind=Dbl),     intent(In)    ::
-!#real(kind=Dbl),     intent(InOut) ::
-!#real(kind=Dbl),     intent(OUT)   ::
-! - complex Variables -----------------------------------------------------------------------------
-!#complex,             intent(In)    ::
-!#complex,             intent(InOut) ::
-!#complex,             intent(OUT)   ::
-! - integer Arrays --------------------------------------------------------------------------------
-!#integer(kind=Shrt), intent(In),    dimension(:  )  ::
-!#integer(kind=Shrt), intent(In),    dimension(:,:)  ::
-!#integer(kind=Shrt), intent(In)    ::
-!#integer(kind=Shrt), intent(InOut) ::
-!#integer(kind=Shrt), intent(OUT)   ::
-! - real Arrays -----------------------------------------------------------------------------------
-!#real(kind=Dbl),     intent(In),    dimension(:  )  ::
-!#real(kind=Dbl),     intent(InOut), dimension(:  )  ::
-!#real(kind=Dbl),     intent(OUT),   dimension(:  )  ::
-! - Character Variables ---------------------------------------------------------------------------
-!#Character (kind = ?, Len = ? ) ::
-! - Logical Variables -----------------------------------------------------------------------------
-!#Logical   ::
 ! - Types -----------------------------------------------------------------------------------------
-type(Input_Data_tp),  intent(In)  :: ModelInfo   ! Holds info. (name, dir, output dir) of the model
-type(Geometry_tp),    intent(out) :: Geometry   ! Holds information about the geometry of the domain
+type(Input_Data_tp),  intent(In)  :: ModelInfo ! Holds info. (name, dir, output dir) of the model
+class(Geometry_tp),   intent(out) :: this  ! Holds information about the geometry of the domain
 
 ! Local Variables =================================================================================
 ! - integer Variables -----------------------------------------------------------------------------
@@ -319,22 +291,6 @@ integer(kind=Smll) :: UnFile   ! Holds Unit of a file for error message
 integer(kind=Smll) :: IO_File  ! For IOSTAT: Input Output status in OPEN command
 integer(kind=Smll) :: IO_read  ! Holds error of read statements
 integer(kind=Smll) :: IO_write ! Used for IOSTAT - Input Output Status - in the write command.
-
-! - real Variables --------------------------------------------------------------------------------
-!#real(kind=Dbl)      ::
-! - complex Variables -----------------------------------------------------------------------------
-!#complex              ::
-! - integer Arrays --------------------------------------------------------------------------------
-!#integer(kind=Shrt), dimension(:)  ::
-!#integer(kind=Shrt), allocatable, dimension(:)  ::
-! - real Arrays -----------------------------------------------------------------------------------
-!#real(kind=Dbl), dimension(:)      ::
-!#real(kind=Dbl), allocatable, dimension(:)  ::
-! - Character Variables ---------------------------------------------------------------------------
-!#Character (kind = ?, Len = ? ) ::
-! - Logical Variables -----------------------------------------------------------------------------
-!#Logical   ::
-! - Type ------------------------------------------------------------------------------------------
 
 ! code ============================================================================================
 
@@ -360,10 +316,10 @@ UnFile = FileDataModel
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) Geometry%NoReaches
+read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%NoReaches
 UnFile = FileInfo
-write(unit=UnFile, fmt="(' Total number of reach(es) is(are): ', I10)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) Geometry%NoReaches
-write(unit=*,      fmt="(' Total number of reach(es) is(are): ', I10)") Geometry%NoReaches
+write(unit=UnFile, fmt="(' Total number of reach(es) is(are): ', I10)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%NoReaches
+write(unit=*,      fmt="(' Total number of reach(es) is(are): ', I10)") this%NoReaches
 
 
 ! - Closing the data model file -------------------------------------------------------------------
@@ -430,10 +386,12 @@ End Subroutine Input_Basic_sub
 !
 ! ================================ V E R S I O N ==================================================
 ! V0.1: 02/23/2018 - Initiation.
+! V1.0: 03/01/2018 - Compiled with no errors/warnings.
+! V1.0: 04/10/2018 - Minor modifications in the class.
 !
 ! File version $Id $
 !
-! Last update: 02/23/2018
+! Last update: 04/10/2018
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
 ! (Refer to the main code to see the list of imported variables)
@@ -441,17 +399,7 @@ End Subroutine Input_Basic_sub
 !
 !##################################################################################################
 
-Subroutine Input_Array_sub(                                           &
-!                                                                     & ! integer(1) Variables
-!                                                                     & ! integer(2) Variables
-!                                                                     & ! integer(4) Variables
-!                                                                     & ! integer(8) Variables
-!                                                                     & ! real Variables
-!                                                                     & ! integer Arrays
-!                                                                     & ! real Arrays
-!                                                                     & ! Characters
-ModelInfo, Geometry                                                   & ! Type
-)
+Subroutine Input_Array_sub(this, ModelInfo)
 
 ! Libraries =======================================================================================
 
@@ -461,35 +409,9 @@ Implicit None
 
 ! Global Variables ================================================================================
 
-! - integer Variables -----------------------------------------------------------------------------
-!#integer(kind=Shrt), intent(In)    ::
-!#integer(kind=Shrt), intent(InOut) ::
-!#integer(kind=Shrt), intent(OUT)   ::
-! - real Variables --------------------------------------------------------------------------------
-!#real(kind=Dbl),     intent(In)    ::
-!#real(kind=Dbl),     intent(InOut) ::
-!#real(kind=Dbl),     intent(OUT)   ::
-! - complex Variables -----------------------------------------------------------------------------
-!#complex,             intent(In)    ::
-!#complex,             intent(InOut) ::
-!#complex,             intent(OUT)   ::
-! - integer Arrays --------------------------------------------------------------------------------
-!#integer(kind=Shrt), intent(In),    dimension(:  )  ::
-!#integer(kind=Shrt), intent(In),    dimension(:,:)  ::
-!#integer(kind=Shrt), intent(In)    ::
-!#integer(kind=Shrt), intent(InOut) ::
-!#integer(kind=Shrt), intent(OUT)   ::
-! - real Arrays -----------------------------------------------------------------------------------
-!#real(kind=Dbl),     intent(In),    dimension(:  )  ::
-!#real(kind=Dbl),     intent(InOut), dimension(:  )  ::
-!#real(kind=Dbl),     intent(OUT),   dimension(:  )  ::
-! - Character Variables ---------------------------------------------------------------------------
-!#character (kind = ?, Len = ? ) ::
-! - Logical Variables -----------------------------------------------------------------------------
-!#logical   ::
 ! - types -----------------------------------------------------------------------------------------
-type(Input_Data_tp),  intent(In) :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
-type(Geometry_tp),    intent(inout):: Geometry   ! Holds information about the geometry of the domain
+type(Input_Data_tp), intent(In)    :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
+class(Geometry_tp),  intent(inout) :: this     ! Holds information about the geometry of the domain
 
 ! Local Variables =================================================================================
 ! - integer Variables -----------------------------------------------------------------------------
@@ -498,22 +420,6 @@ integer(kind=Smll) :: IO_File  ! For IOSTAT: Input Output status in OPEN command
 integer(kind=Smll) :: IO_read  ! Holds error of read statements
 integer(kind=Smll) :: IO_write ! Used for IOSTAT - Input Output Status - in the write command
 integer(kind=Smll) :: i_reach  ! loop index on the number of reaches
-
-! - real Variables --------------------------------------------------------------------------------
-!#real(kind=Dbl)      ::
-! - complex Variables -----------------------------------------------------------------------------
-!#complex              ::
-! - integer Arrays --------------------------------------------------------------------------------
-!#integer(kind=Shrt), dimension(:) ::
-!#integer(kind=Shrt), allocatable, dimension(:) ::
-! - real Arrays -----------------------------------------------------------------------------------
-!#real(kind=Dbl), dimension(:)      ::
-!#real(kind=Dbl), allocatable, dimension(:)  ::
-! - Character Variables ---------------------------------------------------------------------------
-!#character (kind = ?, Len = ? ) ::
-! - Logical Variables -----------------------------------------------------------------------------
-!#logical   ::
-! - Type ------------------------------------------------------------------------------------------
 
 ! code ============================================================================================
 write(*,       *)
@@ -538,72 +444,72 @@ read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, e
 
 ! Reading the length of each reach
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-  do i_reach= 1, Geometry%NoReaches
+  do i_reach= 1, this%NoReaches
     UnFile = FileDataGeo
-    read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) Geometry%ReachLength(i_reach); !write(*,*)Geometry%ReachLength(i_reach)
+    read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%ReachLength(i_reach); !write(*,*)this%ReachLength(i_reach)
     UnFile = FileInfo
-    write(unit=*,      fmt="(' The length of reach ', I5, ' is:', F23.10,' m')") i_reach, Geometry%ReachLength(i_reach)
-    write(unit=UnFile, fmt="(' The length of reach ', I5, ' is:', F23.10,' m')") i_reach, Geometry%ReachLength(i_reach)
+    write(unit=*,      fmt="(' The length of reach ', I5, ' is:', F23.10,' m')") i_reach, this%ReachLength(i_reach)
+    write(unit=UnFile, fmt="(' The length of reach ', I5, ' is:', F23.10,' m')") i_reach, this%ReachLength(i_reach)
   end do
 
 ! Reading total number of control volumes in each reach/ For now we have a constant discretization in each reach.
 UnFile = FileDataGeo
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-  do i_reach= 1, Geometry%NoReaches
+  do i_reach= 1, this%NoReaches
     UnFile = FileDataGeo
-    read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) Geometry%ReachDisc(i_reach)
+    read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%ReachDisc(i_reach)
     UnFile = FileInfo
-    write(unit=*,      fmt="(' No. of discretization of reach ', I5, ' is:', I10)") i_reach, Geometry%ReachDisc(i_reach)
-    write(unit=UnFile, fmt="(' No. of discretization of reach ', I5, ' is:', I10)") i_reach, Geometry%ReachDisc(i_reach)
+    write(unit=*,      fmt="(' No. of discretization of reach ', I5, ' is:', I10)") i_reach, this%ReachDisc(i_reach)
+    write(unit=UnFile, fmt="(' No. of discretization of reach ', I5, ' is:', I10)") i_reach, this%ReachDisc(i_reach)
   end do
 
 ! Reading reach type
 UnFile = FileDataGeo
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-  do i_reach= 1, Geometry%NoReaches
+  do i_reach= 1, this%NoReaches
     UnFile = FileDataGeo
-    read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) Geometry%ReachType(i_reach)
+    read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%ReachType(i_reach)
     UnFile = FileInfo
-    write(unit=*,      fmt="(' Rreach ', I10,' is of type: ', I5)") i_reach, Geometry%ReachType(i_reach)
-    write(unit=UnFile, fmt="(' Rreach ', I10,' is of type: ', I5)") i_reach, Geometry%ReachType(i_reach)
+    write(unit=*,      fmt="(' Rreach ', I10,' is of type: ', I5)") i_reach, this%ReachType(i_reach)
+    write(unit=UnFile, fmt="(' Rreach ', I10,' is of type: ', I5)") i_reach, this%ReachType(i_reach)
   end do
 
 ! Reading slopes of reach
 UnFile = FileDataGeo
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-  do i_reach= 1, Geometry%NoReaches
+  do i_reach= 1, this%NoReaches
     UnFile = FileDataGeo
-    read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) Geometry%ReachSlope(i_reach)
+    read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%ReachSlope(i_reach)
     UnFile = FileInfo
-    write(unit=*,      fmt="(' The slope of reach ', I10,' is: ', F23.10)") i_reach, Geometry%ReachSlope(i_reach)
-    write(unit=UnFile, fmt="(' The slope of reach ', I10,' is: ', F23.10)") i_reach, Geometry%ReachSlope(i_reach)
+    write(unit=*,      fmt="(' The slope of reach ', I10,' is: ', F23.10)") i_reach, this%ReachSlope(i_reach)
+    write(unit=UnFile, fmt="(' The slope of reach ', I10,' is: ', F23.10)") i_reach, this%ReachSlope(i_reach)
   end do
 
 ! Reading Manning number of each reach
 UnFile = FileDataGeo
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-  do i_reach= 1, Geometry%NoReaches
+  do i_reach= 1, this%NoReaches
     UnFile = FileDataGeo
-    read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) Geometry%ReachManning(i_reach)
+    read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%ReachManning(i_reach)
     UnFile = FileInfo
-    write(unit=*,      fmt="(' The Mannings no. for reach ', I10,' is: ', F23.10)") i_reach, Geometry%ReachManning(i_reach)
-    write(unit=UnFile, fmt="(' The Mannings no. for reach ', I10,' is: ', F23.10)") i_reach, Geometry%ReachManning(i_reach)
+    write(unit=*,      fmt="(' The Mannings no. for reach ', I10,' is: ', F23.10)") i_reach, this%ReachManning(i_reach)
+    write(unit=UnFile, fmt="(' The Mannings no. for reach ', I10,' is: ', F23.10)") i_reach, this%ReachManning(i_reach)
   end do
 
 ! Reading the width of each reach
 UnFile = FileDataGeo
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-  do i_reach= 1, Geometry%NoReaches
+  do i_reach= 1, this%NoReaches
     UnFile = FileDataGeo
-    read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) Geometry%ReachWidth(i_reach)
+    read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%ReachWidth(i_reach)
     UnFile = FileInfo
-    write(unit=*,      fmt="(' The width of reach ', I10,'is: ', F23.10)") i_reach, Geometry%ReachWidth(i_reach)
-    write(unit=UnFile, fmt="(' The width of reach ', I10,'is: ', F23.10)") i_reach, Geometry%ReachWidth(i_reach)
+    write(unit=*,      fmt="(' The width of reach ', I10,'is: ', F23.10)") i_reach, this%ReachWidth(i_reach)
+    write(unit=UnFile, fmt="(' The width of reach ', I10,'is: ', F23.10)") i_reach, this%ReachWidth(i_reach)
   end do
 
 ! - Closing the geometry file ---------------------------------------------------------------------
@@ -658,7 +564,7 @@ Return
 End Subroutine Input_Array_sub
 
 !##################################################################################################
-! Purpose: This subroutine reads information required for a particular analysis
+! Purpose: This subroutine reads information required for a particular analysis.
 !
 ! Developed by: Babak Poursartip
 ! Supervised by: Clint Dawson
@@ -668,10 +574,12 @@ End Subroutine Input_Array_sub
 !
 ! ================================ V E R S I O N ==================================================
 ! V0.1: 02/13/2018 - Initiation.
+! V1.0: 03/01/2018 - Compiled with no errors/warnings for the first time.
+! V1.0: 04/10/2018 - Minor modifications in the classes/objects.
 !
 ! File version $Id $
 !
-! Last update: 02/13/2018
+! Last update: 04/01/2018
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
 ! (Refer to the main code to see the list of imported variables)
@@ -679,17 +587,7 @@ End Subroutine Input_Array_sub
 !
 !##################################################################################################
 
-Subroutine Input_Analysis_sub(                                        &
-!                                                                     & ! integer(1) Variables
-!                                                                     & ! integer(2) Variables
-i_analyses,                                                           & ! integer(4) Variables
-!                                                                     & ! integer(8) Variables
-!                                                                     & ! real Variables
-!                                                                     & ! integer Arrays
-!                                                                     & ! real Arrays
-!                                                                     & ! Characters
-ModelInfo, AnalysisInfo                                               & ! Type
-)
+Subroutine Input_Analysis_sub(this, i_analyses, ModelInfo)
 
 ! Libraries =======================================================================================
 use ifport
@@ -703,31 +601,9 @@ Implicit None
 ! - integer Variables -----------------------------------------------------------------------------
 integer(kind=Smll), intent(In) :: i_analyses
 
-! - real Variables --------------------------------------------------------------------------------
-!#real(kind=Dbl), intent(In)    ::
-!#real(kind=Dbl), intent(InOut) ::
-!#real(kind=Dbl), intent(OUT)   ::
-! - complex Variables -----------------------------------------------------------------------------
-!#complex, intent(In)    ::
-!#complex, intent(InOut) ::
-!#complex, intent(OUT)   ::
-! - integer Arrays --------------------------------------------------------------------------------
-!#integer(kind=Shrt), intent(In), dimension(:  )  ::
-!#integer(kind=Shrt), intent(In), dimension(:,:)  ::
-!#integer(kind=Shrt), intent(In)    ::
-!#integer(kind=Shrt), intent(InOut) ::
-!#integer(kind=Shrt), intent(OUT)   ::
-! - real Arrays -----------------------------------------------------------------------------------
-!#real(kind=Dbl),     intent(In),    dimension(:  )  ::
-!#real(kind=Dbl),     intent(InOut), dimension(:  )  ::
-!#real(kind=Dbl),     intent(OUT),   dimension(:  )  ::
-! - Character Variables ---------------------------------------------------------------------------
-!#Character (kind = ?, Len = ? ) ::
-! - Logical Variables -----------------------------------------------------------------------------
-!#Logical   ::
 ! - Types -----------------------------------------------------------------------------------------
-type(Input_Data_tp), intent(inout) :: ModelInfo  ! Holds info. (name, dir, output dir) of the model, intent(In) :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
-type(AnalysisData_tp), intent(out) :: AnalysisInfo  ! Holds info. (name, dir, output dir) of the model, intent(In) :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
+type(Input_Data_tp), intent(inout) :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
+class(AnalysisData_tp), intent(out) :: this      ! Holds analysis information
 
 ! Local Variables =================================================================================
 ! - integer Variables -----------------------------------------------------------------------------
@@ -736,23 +612,8 @@ integer(kind=Smll) :: IO_File       ! For IOSTAT: Input Output status in OPEN co
 integer(kind=Smll) :: IO_read  ! Holds error of read statements
 integer(kind=Smll) :: IO_write ! Used for IOSTAT - Input Output Status - in the write command.
 
-! - real Variables --------------------------------------------------------------------------------
-!#real(kind=Dbl)      ::
-! - complex Variables -----------------------------------------------------------------------------
-!#complex              ::
-! - integer Arrays --------------------------------------------------------------------------------
-!#integer(kind=Shrt), dimension(:)  ::
-!#integer(kind=Shrt), allocatable, dimension(:)  ::
-! - real Arrays -----------------------------------------------------------------------------------
-!#real(kind=Dbl), dimension(:)      ::
-!#real(kind=Dbl), allocatable, dimension(:)  ::
-! - Character Variables ---------------------------------------------------------------------------
-!#Character (kind = ?, Len = ? ) ::
 ! - Logical Variables -----------------------------------------------------------------------------
 logical(kind=Shrt)  :: Directory
-
-! - Type ------------------------------------------------------------------------------------------
-
 
 ! code ============================================================================================
 write(*,       *)
@@ -794,66 +655,66 @@ UnFile = UnInptAna
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) AnalysisInfo%AnalysisType
+read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%AnalysisType
 UnFile = FileInfo
-write(unit=*,      fmt="(' The Analysis type is: ', I10)") AnalysisInfo%AnalysisType
-write(unit=UnFile, fmt="(' The Analysis type is: ', I10)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) AnalysisInfo%AnalysisType
+write(unit=*,      fmt="(' The Analysis type is: ', I10)") this%AnalysisType
+write(unit=UnFile, fmt="(' The Analysis type is: ', I10)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%AnalysisType
 
 UnFile = UnInptAna
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) AnalysisInfo%TotalTime
+read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%TotalTime
 UnFile = FileInfo
-write(unit=*,      fmt="(' The total simulation time is: ', F23.10, ' s')") AnalysisInfo%TotalTime
-write(unit=UnFile, fmt="(' The total simulation time is: ', F23.10, ' s')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) AnalysisInfo%TotalTime
+write(unit=*,      fmt="(' The total simulation time is: ', F23.10, ' s')") this%TotalTime
+write(unit=UnFile, fmt="(' The total simulation time is: ', F23.10, ' s')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%TotalTime
 
 UnFile = UnInptAna
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) AnalysisInfo%TimeStep
+read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%TimeStep
 UnFile = FileInfo
-write(unit=UnFile, fmt="(' The time step is: ', F23.10, ' s')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) AnalysisInfo%TimeStep
-write(unit=*,      fmt="(' The time step is: ', F23.10, ' s')") AnalysisInfo%TimeStep
+write(unit=UnFile, fmt="(' The time step is: ', F23.10, ' s')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%TimeStep
+write(unit=*,      fmt="(' The time step is: ', F23.10, ' s')") this%TimeStep
 
 UnFile = UnInptAna
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) AnalysisInfo%Q_Up
+read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%Q_Up
 UnFile = FileInfo
-write(unit=UnFile, fmt="(' Flow rate at the upstream is: ', F23.10, ' m/s3')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) AnalysisInfo%Q_Up
-write(unit=*,      fmt="(' Flow rate at the upstream is: ', F23.10, ' m/s3')") AnalysisInfo%Q_Up
+write(unit=UnFile, fmt="(' Flow rate at the upstream is: ', F23.10, ' m/s3')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%Q_Up
+write(unit=*,      fmt="(' Flow rate at the upstream is: ', F23.10, ' m/s3')") this%Q_Up
 
 UnFile = UnInptAna
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) AnalysisInfo%h_dw
+read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%h_dw
 UnFile = FileInfo
-write(unit=UnFile, fmt="(' Downstream water depth is: ', F23.10, ' m')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) AnalysisInfo%h_dw
-write(unit=*,      fmt="(' Downstream water depth is: ', F23.10, ' m')") AnalysisInfo%h_dw
+write(unit=UnFile, fmt="(' Downstream water depth is: ', F23.10, ' m')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%h_dw
+write(unit=*,      fmt="(' Downstream water depth is: ', F23.10, ' m')") this%h_dw
 
 UnFile = UnInptAna
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) AnalysisInfo%CntrlV
+read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%CntrlV
 UnFile = FileInfo
-write(unit=UnFile, fmt="(' Control Volume is: ', F23.10, ' m^3')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) AnalysisInfo%CntrlV
-write(unit=*,      fmt="(' Control Volume is: ', F23.10, ' m^3')") AnalysisInfo%CntrlV
+write(unit=UnFile, fmt="(' Control Volume is: ', F23.10, ' m^3')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%CntrlV
+write(unit=*,      fmt="(' Control Volume is: ', F23.10, ' m^3')") this%CntrlV
 
 UnFile = UnInptAna
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) AnalysisInfo%CntrlV_ratio
+read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%CntrlV_ratio
 UnFile = FileInfo
-write(unit=UnFile, fmt="(' The ratio of control volume is: ', F23.10)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) AnalysisInfo%CntrlV_ratio
-write(unit=*,      fmt="(' The ratio of control volume is: ', F23.10)") AnalysisInfo%CntrlV_ratio
+write(unit=UnFile, fmt="(' The ratio of control volume is: ', F23.10)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%CntrlV_ratio
+write(unit=*,      fmt="(' The ratio of control volume is: ', F23.10)") this%CntrlV_ratio
 
 UnFile = UnInptAna
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) AnalysisInfo%limiter
+read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%limiter
 UnFile = FileInfo
-write(unit=UnFile, fmt="(' The limiter is: ', I10)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) AnalysisInfo%limiter
-write(unit=*,      fmt="(' The limiter is: ', I10)") AnalysisInfo%CntrlV_ratio
+write(unit=UnFile, fmt="(' The limiter is: ', I10)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%limiter
+write(unit=*,      fmt="(' The limiter is: ', I10)") this%CntrlV_ratio
 
 
 
