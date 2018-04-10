@@ -34,6 +34,7 @@
 Module Information_mod
 
 use Parameters_mod
+use Input_mod
 
 Implicit None
 

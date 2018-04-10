@@ -66,8 +66,6 @@ end type LimiterFunc_tp
 type Jacobian_tp
   integer(kind=Tiny) :: option   ! indicates how to interpolate the Jacobian at the interface: 1: for average on the solution-2: direct average on the Jacobian itself
 
-  real(kind=Dbl) :: Gravity=9.81_Dbl  ! the ground acceleration
-
   real(kind=Dbl),dimension(2,2) :: A        ! Contains the Jacobian matrix at each time step at the cell interface i-1/2
   real(kind=Dbl),dimension(2,2) :: R        ! Contains the eigenvectors at each time step at the cell interface i-1/2
   real(kind=Dbl),dimension(2,2) :: L       ! Contains the eigenvectors inverse (R^(-1))at each time step at the cell interface i-1/2
@@ -110,8 +108,6 @@ end type SoureceTerms_tp
 type, public :: SolverWithLimiter(NCells)
   integer(kind=Lng), len :: NCells
   integer(kind=Lng)      :: Plot_Inc = 100
-
-  real(kind=DBL)    :: Gravity = 9.81_Dbl
 
   type(vector), dimension(NCells) :: S     ! Source term
 
@@ -353,7 +349,7 @@ Results%ModelInfo = this%ModelInfo
 
         SourceTerms%B(1,1) = 0.0_Dbl
         SourceTerms%B(1,2) = 0.0_Dbl
-        SourceTerms%B(2,1) = - this%Gravity * ( this%Discretization%SlopeCell(i_Cell) + (7.0_Dbl/3.0_Dbl) * SourceTerms%S_f  )
+        SourceTerms%B(2,1) = - Gravity * ( this%Discretization%SlopeCell(i_Cell) + (7.0_Dbl/3.0_Dbl) * SourceTerms%S_f  )
         SourceTerms%B(2,2) =   (2.0_Dbl * this%Discretization%ManningCell(i_Cell)**2.0)  * dabs(velocity) /( height**(4.0_Dbl/3.0_Dbl) )
 
         !print*,"B: ",i_Cell, SourceTerms%B
@@ -365,7 +361,7 @@ Results%ModelInfo = this%ModelInfo
         !print*,"BI ",SourceTerms%BI
         ! Source terms at the current cell/time
         SourceTerms%S%U(1) = 0.0_Dbl
-        SourceTerms%S%U(2) = - this%Gravity * height  * ( this%Discretization%SlopeCell(i_Cell) - SourceTerms%S_f )
+        SourceTerms%S%U(2) = - Gravity * height  * ( this%Discretization%SlopeCell(i_Cell) - SourceTerms%S_f )
 
         ! The first contribution of the source term in the solution
         SourceTerms%Source_1%U(:) = dt * ( SourceTerms%S%U(:)  - 0.5_Dbl * matmul( SourceTerms%B(:,:), this%U(i_Cell)%U(:) )  )
@@ -408,7 +404,7 @@ Results%ModelInfo = this%ModelInfo
             SourceTerms%S_f_interface = this%Discretization%ManningCell(i_Cell)  * velocity_interface * dabs(velocity_interface) /( height_interface**(4.0_Dbl/3.0_Dbl) )
 
             SourceTerms%S_interface%U(1) = 0.0_Dbl
-            SourceTerms%S_interface%U(2) = - this%Gravity * height_interface  * ( this%Discretization%SlopeInter(i_Cell + i_Interface-1_Tiny ) - SourceTerms%S_f_interface )
+            SourceTerms%S_interface%U(2) = - Gravity * height_interface  * ( this%Discretization%SlopeInter(i_Cell + i_Interface-1_Tiny ) - SourceTerms%S_f_interface )
 
             SourceTerms%Source_2%U(:) = SourceTerms%Source_2%U(:) + 0.5_Dbl * (dt**2) / dx * ( Coefficient * matmul( Jacobian%A, SourceTerms%S_interface%U(:)) )
 
@@ -814,17 +810,17 @@ real(kind=Dbl), dimension(2,2) :: A_dw  ! the average discharge at the interface
     h_ave = 0.5_Dbl*(h_up+h_dw)    ! <modify> for unstructured discretization
     u_ave = 0.5_Dbl*(u_up+u_dw)   ! <modify> for unstructured discretization
 
-    c = dsqrt (this%Gravity * h_ave) ! wave speed
+    c = dsqrt (Gravity * h_ave) ! wave speed
 
     ! Computing the Jacobian - A
     this%A(1,1) = 0.0_Dbl
     this%A(1,2) = 1.0_Dbl
-    this%A(2,1) = this%Gravity * h_ave - u_ave**2
+    this%A(2,1) = Gravity * h_ave - u_ave**2
     this%A(2,2) = 2.0_Dbl * u_ave
 
     ! Computing the eigenvalues
-    this%Lambda%U(1) = u_ave - dsqrt(this%Gravity *  h_ave)
-    this%Lambda%U(2) = u_ave + dsqrt(this%Gravity *  h_ave)
+    this%Lambda%U(1) = u_ave - dsqrt(Gravity *  h_ave)
+    this%Lambda%U(2) = u_ave + dsqrt(Gravity *  h_ave)
     !print*,"inside ", this%Lambda%U(1),i_eigen,i_Interface,i_Cell ! <delete>
     !print*,"inside ", this%Lambda%U(2),i_eigen,i_Interface,i_Cell  ! <delete>
 
@@ -886,7 +882,7 @@ real(kind=Dbl), dimension(2,2) :: A_dw  ! the average discharge at the interface
     u_up = this%U_up%U(2) / this%U_up%U(1)
     A_up(1,1) = 0.0_Dbl
     A_up(1,2) = 1.0_Dbl
-    A_up(2,1) = this%Gravity * h_up - u_up**2
+    A_up(2,1) = Gravity * h_up - u_up**2
     A_up(2,2) = 2.0_Dbl * u_up
 
 
@@ -895,7 +891,7 @@ real(kind=Dbl), dimension(2,2) :: A_dw  ! the average discharge at the interface
     u_dw = this%U_dw%U(2) / this%U_dw%U(1)
     A_dw(1,1) = 0.0_Dbl
     A_dw(1,2) = 1.0_Dbl
-    A_dw(2,1) = this%Gravity * h_dw - u_dw**2
+    A_dw(2,1) = Gravity * h_dw - u_dw**2
     A_dw(2,2) = 2.0_Dbl * u_dw
 
     ! average Jacobian

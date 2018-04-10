@@ -18,6 +18,8 @@
 ! V0.04: 03/02/2018  - Adding the solver module
 ! V0.10: 03/08/2018  - Initiated: Compiled without error.
 ! V0.11: 03/09/2018  - Adding limiter to the code
+! V0.12: 03/20/2018  - Debugging the code with limiter
+! V1.00: 04/10/2018  - Cleaning the code after having the right results
 !
 ! File version $Id $
 !
@@ -47,7 +49,7 @@ use LaxWendroff_with_limiter_mod
 Implicit None
 
 Include 'Global_Variables_Inc.f90'   ! All Global Variables are defined/described in this File
-ModelInfo%Version = 0.1_SGL          ! Reports the version of the code
+ModelInfo%Version = 1.0_SGL          ! Reports the version of the code
 
 ! Time and Date signature =========================================================================
 Call cpu_time(SimulationTime%Time_Start)
@@ -75,11 +77,10 @@ allocate(Arguments%Length(Arguments%ArgCount), Arguments%Arg(Arguments%ArgCount)
 
 ! Directories, input, and output Files ============================================================
 ! Address File ------------------------------------------------------------------------------------
-write(*,        fmt="(A)") " -Reading Address.txt file ..."
+write(*,         fmt="(A)") " -Reading Address.txt file ..."
 !write(FileInfo, fmt="(A)") " -Reading Address.txt file ..."
 
-call Input(ModelInfo)
-
+call ModelInfo%Input()
 
 ! Opening the information File --------------------------------------------------------------------
 write(*,        fmt="(A)") " -Creating the info.txt file in the output folder ..."
@@ -101,7 +102,7 @@ write(*,        fmt="(A)") " -Reading the initial data file ..."
 write(FileInfo, fmt="(A)") " -Reading the initial data file ..."
 
 ! Reading basic data: -----------------------------------------------------------------------------
-call Input_Basic_sub(ModelInfo, Geometry)
+call Geometry%Basic(ModelInfo)
 
 ! Allocating required arrays
 write(*,        fmt="(A)") " -Allocating the required arrays ..."
@@ -121,13 +122,20 @@ write(*,        fmt="(A)") " -Reading arrays form data file ..."
 write(FileInfo, fmt="(A)") " -Reading arrays form data file ..."
 
 ! Geometry
-call Input_Array_sub(ModelInfo, Geometry)
+call Geometry%Array(ModelInfo)
 
 Call cpu_time(SimulationTime%Input_Ends)
 
 ! close check File
 !UnFile= Un_CHK
 !Close(Unit=UnFile, status='Keep', Err=1002, IOstat=IO_File)
+
+
+
+
+
+
+
 
 ! Discretization ----------------------------------------------------------------------------------
 write(*,        fmt="(A)") " -Discretization ..."
@@ -143,7 +151,7 @@ print*," check 000"
     write(FileInfo, fmt="(A,I10)") " -Analyse no.", i_analyses
 
     ! Getting the required data for this specific analysis
-    call Input(i_analyses, ModelInfo, AnalysisInfo)
+    call AnalysisInfo%Analysis(i_analyses, ModelInfo)
 
     ! Test File -----------------------------------------------------------------------------------
     !UnFile=UN_CHK
