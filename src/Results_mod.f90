@@ -37,7 +37,7 @@ module Results_mod
 
 ! User defined modules ============================================================================
 use Parameters_mod
-
+use Input_mod
 
 implicit none
 
