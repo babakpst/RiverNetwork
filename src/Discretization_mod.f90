@@ -1,4 +1,4 @@
-
+Ů
 !##################################################################################################
 ! Purpose: This module discretizes the domain.
 !
@@ -44,15 +44,15 @@ implicit none
 type discretization_tp
   integer (kind=Lng)  :: NCells ! Total number of cells in the domain
 
-  real(kind=DBL), allocatable, dimension(:) :: LengthCell  ! Stores the length of each cell
-  real(kind=DBL), allocatable, dimension(:) :: SlopeCell   ! Stores the slope of each cell at the center
-  real(kind=DBL), allocatable, dimension(:) :: SlopeInter   ! Stores the slope of each cell at the center
-  real(kind=DBL), allocatable, dimension(:) :: ZCell       ! Stores bottom elevation at the center of each cell
-  real(kind=DBL), allocatable, dimension(:) :: ZFull       ! Stores bottom elevation at all points
-  real(kind=DBL), allocatable, dimension(:) :: ManningCell ! Stores the Manning's number of each cell
-  real(kind=DBL), allocatable, dimension(:) :: WidthCell   ! Stores the Manning's number of each cell
-  real(kind=DBL), allocatable, dimension(:) :: X_Disc      ! Stores the coordinates of the cell center
-  real(kind=DBL), allocatable, dimension(:) :: X_Full      ! Stores the coordinates all points
+  real(kind=DBL), allocatable, dimension(:) :: LengthCell ! the length of each cell
+  real(kind=DBL), allocatable, dimension(:) :: SlopeCell  ! the slope of each cell at the center
+  real(kind=DBL), allocatable, dimension(:) :: SlopeInter ! the slope of each cell at the center
+  real(kind=DBL), allocatable, dimension(:) :: ZCell      ! bottom elev. at the center of each cell
+  real(kind=DBL), allocatable, dimension(:) :: ZFull      ! bottom elevation at all points
+  real(kind=DBL), allocatable, dimension(:) :: ManningCell! the Manning's number of each cell
+  real(kind=DBL), allocatable, dimension(:) :: WidthCell  ! the Manning's number of each cell
+  real(kind=DBL), allocatable, dimension(:) :: X_Disc     ! the coordinates of the cell center
+  real(kind=DBL), allocatable, dimension(:) :: X_Full     ! the coordinates all points
 
   contains
     procedure Discretize => Discretize_1D_sub
@@ -258,8 +258,6 @@ CellCounter = 0_Lng
               this%ZFull(CellCounter*2+1)  = Height
               this%ManningCell(CellCounter)= Geometry%ReachManning(i_reach)
               this%WidthCell(CellCounter)  = Geometry%ReachWidth(i_reach)
-
-
           end do
 
         CellCounter = CellCounter + 1_Lng
@@ -413,8 +411,6 @@ real(kind=Dbl) :: DBathymetry
 DBathymetry = - 0.05_Dbl * 2.0_Dbl * (x-10.0_Dbl)
 
 end function Domain_Func_1D_D
-
-
 
 
 end module Discretization_mod
