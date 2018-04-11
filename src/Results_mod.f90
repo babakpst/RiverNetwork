@@ -133,17 +133,7 @@ contains
 !
 !##################################################################################################
 
-subroutine Plot_Domain_1D_sub(                                        &
-!                                                                     & ! integer (1) variables
-!                                                                     & ! integer (2) variables
-!                                                                     & ! integer (4) variables
-!                                                                     & ! integer (8) variables
-!                                                                     & ! real variables
-!                                                                     & ! integer arrays
-!                                                                     & ! real arrays
-!                                                                     & ! characters
-this,ModelInfo                                                        & ! type
-)
+subroutine Plot_Domain_1D_sub(this,ModelInfo)
 
 
 ! Libraries =======================================================================================
@@ -167,20 +157,6 @@ integer(kind=Smll) :: IO_write       ! Used for IOSTAT: Input/Output Status in t
 
 integer(kind=Lng)  :: i_points       ! Loop index on the points
 
-! - real variables --------------------------------------------------------------------------------
-!#real (kind=Dbl)      ::
-! - complex variables -----------------------------------------------------------------------------
-!#complex              ::
-! - integer Arrays --------------------------------------------------------------------------------
-!#integer (kind=Shrt), dimension (:)  ::
-!#integer (kind=Shrt), Allocatable, dimension (:)  ::
-! - real Arrays -----------------------------------------------------------------------------------
-!#real (kind=Dbl), dimension (:)      ::
-!#real (kind=Dbl), allocatable, dimension (:)  ::
-! - character variables ---------------------------------------------------------------------------
-!#character (kind = ?, Len = ? ) ::
-! - logical variables -----------------------------------------------------------------------------
-!#logical   ::
 ! - type ------------------------------------------------------------------------------------------
 type(Input_Data_tp), intent(in) :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
 
@@ -282,28 +258,6 @@ implicit none
 ! - integer variables -----------------------------------------------------------------------------
 integer(kind=Lng), intent(in) :: i_step
 
-! - real variables --------------------------------------------------------------------------------
-!#real (kind=Dbl),     intent(in)    ::
-!#real (kind=Dbl),     intent(inout) ::
-!#real (kind=Dbl),     intent(out)   ::
-! - complex variables -----------------------------------------------------------------------------
-!#complex,             intent(in)    ::
-!#complex,             intent(inout) ::
-!#complex,             intent(out)   ::
-! - integer Arrays --------------------------------------------------------------------------------
-!#integer (kind=Shrt), intent(in),    dimension (:  )  ::
-!#integer (kind=Shrt), intent(in),    dimension (:,:)  ::
-!#integer (kind=Shrt), intent(in)    ::
-!#integer (kind=Shrt), intent(inout) ::
-!#integer (kind=Shrt), intent(out)   ::
-! - real Arrays -----------------------------------------------------------------------------------
-!#real (kind=Dbl),     intent(in),    dimension (:  )  ::
-!#real (kind=Dbl),     intent(inout), dimension (:  )  ::
-!#real (kind=Dbl),     intent(out),   dimension (:  )  ::
-! - character variables ---------------------------------------------------------------------------
-!#character (kind = ?, Len = ? ) ::
-! - logical variables -----------------------------------------------------------------------------
-!#logical   ::
 ! - types -----------------------------------------------------------------------------------------
 class(Plot_Results_1D_tp(*)) :: this
 
@@ -315,21 +269,9 @@ integer(kind=Smll) :: IO_write       ! Used for IOSTAT: Input/Output Status in t
 
 integer(kind=Lng)  :: i_points       ! Loop index on the points
 
-! - real variables --------------------------------------------------------------------------------
-!#real (kind=Dbl)      ::
-! - complex variables -----------------------------------------------------------------------------
-!#complex              ::
-! - integer Arrays --------------------------------------------------------------------------------
-!#integer (kind=Shrt), dimension (:)  ::
-!#integer (kind=Shrt), Allocatable, dimension (:)  ::
-! - real Arrays -----------------------------------------------------------------------------------
-!#real (kind=Dbl), dimension (:)      ::
-!#real (kind=Dbl), allocatable, dimension (:)  ::
 ! - character variables ---------------------------------------------------------------------------
 character (kind = 1, Len = 30) :: extfile
 
-! - logical variables -----------------------------------------------------------------------------
-!#logical   ::
 ! - type ------------------------------------------------------------------------------------------
 
 ! code ============================================================================================
@@ -435,28 +377,6 @@ implicit none
 ! - integer variables -----------------------------------------------------------------------------
 integer(kind=Lng), intent(in) :: i_step
 
-! - real variables --------------------------------------------------------------------------------
-!#real (kind=Dbl),     intent(in)    ::
-!#real (kind=Dbl),     intent(inout) ::
-!#real (kind=Dbl),     intent(out)   ::
-! - complex variables -----------------------------------------------------------------------------
-!#complex,             intent(in)    ::
-!#complex,             intent(inout) ::
-!#complex,             intent(out)   ::
-! - integer Arrays --------------------------------------------------------------------------------
-!#integer (kind=Shrt), intent(in),    dimension (:  )  ::
-!#integer (kind=Shrt), intent(in),    dimension (:,:)  ::
-!#integer (kind=Shrt), intent(in)    ::
-!#integer (kind=Shrt), intent(inout) ::
-!#integer (kind=Shrt), intent(out)   ::
-! - real Arrays -----------------------------------------------------------------------------------
-!#real (kind=Dbl),     intent(in),    dimension (:  )  ::
-!#real (kind=Dbl),     intent(inout), dimension (:  )  ::
-!#real (kind=Dbl),     intent(out),   dimension (:  )  ::
-! - character variables ---------------------------------------------------------------------------
-!#character (kind = ?, Len = ? ) ::
-! - logical variables -----------------------------------------------------------------------------
-!#logical   ::
 ! - types -----------------------------------------------------------------------------------------
 class(Plot_Results_1D_limiter_tp(*)) :: this
 
@@ -468,22 +388,8 @@ integer(kind=Smll) :: IO_write       ! Used for IOSTAT: Input/Output Status in t
 
 integer(kind=Lng)  :: i_points       ! Loop index on the points
 
-! - real variables --------------------------------------------------------------------------------
-!#real (kind=Dbl)      ::
-! - complex variables -----------------------------------------------------------------------------
-!#complex              ::
-! - integer Arrays --------------------------------------------------------------------------------
-!#integer (kind=Shrt), dimension (:)  ::
-!#integer (kind=Shrt), Allocatable, dimension (:)  ::
-! - real Arrays -----------------------------------------------------------------------------------
-!#real (kind=Dbl), dimension (:)      ::
-!#real (kind=Dbl), allocatable, dimension (:)  ::
 ! - character variables ---------------------------------------------------------------------------
 character (kind = 1, Len = 30) :: extfile
-
-! - logical variables -----------------------------------------------------------------------------
-!#logical   ::
-! - type ------------------------------------------------------------------------------------------
 
 ! code ============================================================================================
 write(*,       *) " subroutine < Plot_Results_1D_limiter_sub >: "

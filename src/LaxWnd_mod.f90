@@ -92,17 +92,7 @@ contains
 !
 !##################################################################################################
 
-subroutine Solver_1D_Richtmyer_sub(                                   &
-!                                                                     & ! integer (1) variables
-!                                                                     & ! integer (2) variables
-!                                                                     & ! integer (4) variables
-!                                                                     & ! integer (8) variables
-!                                                                     & ! real variables
-!                                                                     & ! integer arrays
-!                                                                     & ! real arrays
-!                                                                     & ! characters
-this                                                                  & ! type
-)
+subroutine Solver_1D_Richtmyer_sub(this)
 
 
 ! Libraries =======================================================================================
@@ -114,32 +104,6 @@ implicit none
 
 ! Global variables ================================================================================
 
-! - integer variables -----------------------------------------------------------------------------
-!#integer (kind=Shrt), intent(in)    ::
-!#integer (kind=Shrt), intent(inout) ::
-!#integer (kind=Shrt), intent(out)   ::
-! - real variables --------------------------------------------------------------------------------
-!#real (kind=Dbl),     intent(in)    ::
-!#real (kind=Dbl),     intent(inout) ::
-!#real (kind=Dbl),     intent(out)   ::
-! - complex variables -----------------------------------------------------------------------------
-!#complex,             intent(in)    ::
-!#complex,             intent(inout) ::
-!#complex,             intent(out)   ::
-! - integer Arrays --------------------------------------------------------------------------------
-!#integer (kind=Shrt), intent(in),    dimension (:  )  ::
-!#integer (kind=Shrt), intent(in),    dimension (:,:)  ::
-!#integer (kind=Shrt), intent(in)    ::
-!#integer (kind=Shrt), intent(inout) ::
-!#integer (kind=Shrt), intent(out)   ::
-! - real Arrays -----------------------------------------------------------------------------------
-!#real (kind=Dbl),     intent(in),    dimension (:  )  ::
-!#real (kind=Dbl),     intent(inout), dimension (:  )  ::
-!#real (kind=Dbl),     intent(out),   dimension (:  )  ::
-! - character variables ---------------------------------------------------------------------------
-!#character (kind = ?, Len = ? ) ::
-! - logical variables -----------------------------------------------------------------------------
-!#logical   ::
 ! - types -----------------------------------------------------------------------------------------
 class(Richtmyer(*)) :: this
 !type(Plot_Results_1D_tp(NCells = this%NCells)) :: Results
@@ -154,19 +118,8 @@ integer(kind=Lng)  :: NSteps    ! Total number of steps for time marching
 real (kind=Dbl)      :: dt
 real (kind=Dbl)      :: dx
 
-! - complex variables -----------------------------------------------------------------------------
-!#complex              ::
-! - integer Arrays --------------------------------------------------------------------------------
-!#integer (kind=Shrt), dimension (:)  ::
-!#integer (kind=Shrt), Allocatable, dimension (:)  ::
-! - real Arrays -----------------------------------------------------------------------------------
-!#real (kind=Dbl), dimension (:)      ::
-!#real (kind=Dbl), allocatable, dimension (:)  ::
-! - character variables ---------------------------------------------------------------------------
-!#character (kind = ?, Len = ? ) ::
 ! - logical variables -----------------------------------------------------------------------------
 logical   :: PrintResults
-! - type ------------------------------------------------------------------------------------------
 
 ! code ============================================================================================
 write(*,       *) " subroutine < Slover_1D_Richtmyer_sub >: "
@@ -282,17 +235,7 @@ end subroutine Solver_1D_Richtmyer_sub
 !
 !##################################################################################################
 
-subroutine Impose_Boundary_Condition_1D_sub(                                                       &
-!                                                                     & ! integer (1) variables
-!                                                                     & ! integer (2) variables
-!                                                                     & ! integer (4) variables
-!                                                                     & ! integer (8) variables
-!                                                                     & ! real variables
-!                                                                     & ! integer arrays
-!                                                                     & ! real arrays
-!                                                                     & ! characters
-this                                                                     & ! type
-)
+subroutine Impose_Boundary_Condition_1D_sub(this)
 
 
 ! Libraries =======================================================================================
@@ -304,53 +247,10 @@ implicit none
 
 ! Global variables ================================================================================
 
-! - integer variables -----------------------------------------------------------------------------
-!#integer (kind=Shrt), intent(in)    ::
-!#integer (kind=Shrt), intent(inout) ::
-!#integer (kind=Shrt), intent(out)   ::
-! - real variables --------------------------------------------------------------------------------
-!#real (kind=Dbl),     intent(in)    ::
-!#real (kind=Dbl),     intent(inout) ::
-!#real (kind=Dbl),     intent(out)   ::
-! - complex variables -----------------------------------------------------------------------------
-!#complex,             intent(in)    ::
-!#complex,             intent(inout) ::
-!#complex,             intent(out)   ::
-! - integer Arrays --------------------------------------------------------------------------------
-!#integer (kind=Shrt), intent(in),    dimension (:  )  ::
-!#integer (kind=Shrt), intent(in),    dimension (:,:)  ::
-!#integer (kind=Shrt), intent(in)    ::
-!#integer (kind=Shrt), intent(inout) ::
-!#integer (kind=Shrt), intent(out)   ::
-! - real Arrays -----------------------------------------------------------------------------------
-!#real (kind=Dbl),     intent(in),    dimension (:  )  ::
-!#real (kind=Dbl),     intent(inout), dimension (:  )  ::
-!#real (kind=Dbl),     intent(out),   dimension (:  )  ::
-! - character variables ---------------------------------------------------------------------------
-!#character (kind = ?, Len = ? ) ::
-! - logical variables -----------------------------------------------------------------------------
-!#logical   ::
 ! - types -----------------------------------------------------------------------------------------
 class(Richtmyer(*)) :: this
 
 ! Local variables =================================================================================
-! - integer variables -----------------------------------------------------------------------------
-!#integer (kind=Shrt)  ::
-! - real variables --------------------------------------------------------------------------------
-!#real (kind=Dbl)      ::
-! - complex variables -----------------------------------------------------------------------------
-!#complex              ::
-! - integer Arrays --------------------------------------------------------------------------------
-!#integer (kind=Shrt), dimension (:)  ::
-!#integer (kind=Shrt), Allocatable, dimension (:)  ::
-! - real Arrays -----------------------------------------------------------------------------------
-!#real (kind=Dbl), dimension (:)      ::
-!#real (kind=Dbl), allocatable, dimension (:)  ::
-! - character variables ---------------------------------------------------------------------------
-!#character (kind = ?, Len = ? ) ::
-! - logical variables -----------------------------------------------------------------------------
-!#logical   ::
-! - type ------------------------------------------------------------------------------------------
 
 ! code ============================================================================================
 write(*,       *) " subroutine < Impose_Boundary_Condition_1D_sub >: "

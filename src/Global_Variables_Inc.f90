@@ -4,7 +4,6 @@
 ! Tiny Integers
 !integer(kind=Tiny)  ::                         ! ---
 
-
 ! Smll Integers
 integer(kind=Smll) :: UnFile        ! Holds Unit of a file for error message
 integer(kind=Smll) :: IO_File       ! For IOSTAT: Input Output status in OPEN command
@@ -25,7 +24,6 @@ Real (kind=DBL)      :: TimeSolveS, TimeSolveE  ! TIME Variables for Effective S
 
 ! - Logical Variable ------------------------------------------------------------------------------
 !Logical (kind=Shrt)  ::
-
 
 ! - Integer Arrays --------------------------------------------------------------------------------
 ! - Real Arrays -----------------------------------------------------------------------------------
