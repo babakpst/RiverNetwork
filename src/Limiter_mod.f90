@@ -162,32 +162,6 @@ implicit none
 
 ! Global variables ================================================================================
 
-! - integer variables -----------------------------------------------------------------------------
-!#integer (kind=Shrt), intent(in)    ::
-!#integer (kind=Shrt), intent(inout) ::
-!#integer (kind=Shrt), intent(out)   ::
-! - real variables --------------------------------------------------------------------------------
-!#real (kind=Dbl),     intent(in)    ::
-!#real (kind=Dbl),     intent(inout) ::
-!#real (kind=Dbl),     intent(out)   ::
-! - complex variables -----------------------------------------------------------------------------
-!#complex,             intent(in)    ::
-!#complex,             intent(inout) ::
-!#complex,             intent(out)   ::
-! - integer Arrays --------------------------------------------------------------------------------
-!#integer (kind=Shrt), intent(in),    dimension (:  )  ::
-!#integer (kind=Shrt), intent(in),    dimension (:,:)  ::
-!#integer (kind=Shrt), intent(in)    ::
-!#integer (kind=Shrt), intent(inout) ::
-!#integer (kind=Shrt), intent(out)   ::
-! - real Arrays -----------------------------------------------------------------------------------
-!#real (kind=Dbl),     intent(in),    dimension (:  )  ::
-!#real (kind=Dbl),     intent(inout), dimension (:  )  ::
-!#real (kind=Dbl),     intent(out),   dimension (:  )  ::
-! - character variables ---------------------------------------------------------------------------
-!#character (kind = ?, Len = ? ) ::
-! - logical variables -----------------------------------------------------------------------------
-!#logical   ::
 ! - types -----------------------------------------------------------------------------------------
 class(SolverWithLimiter(*)) :: this
 
@@ -214,17 +188,8 @@ real(kind=Dbl)      :: velocity ! velocity of water at the current cell/time
 real(kind=Dbl)      :: height_interface   ! height of water at the current interface/time
 real(kind=Dbl)      :: velocity_interface ! velocity of water at the current interface/time
 
-! - complex variables -----------------------------------------------------------------------------
-!#complex              ::
-
-! - integer Arrays --------------------------------------------------------------------------------
-!#integer (kind=Shrt), dimension (:)  ::
-!#integer (kind=Shrt), Allocatable, dimension (:)  ::
-
 ! - real Arrays -----------------------------------------------------------------------------------
 type(vector) :: TempSolution
-! - character variables ---------------------------------------------------------------------------
-!#character (kind = ?, Len = ? ) ::
 
 ! - logical variables -----------------------------------------------------------------------------
 logical   :: PrintResults
@@ -568,18 +533,7 @@ end subroutine Solver_1D_with_Limiter_sub
 !
 !##################################################################################################
 
-subroutine Impose_Boundary_Condition_1D_sub(                                                       &
-!                                                                     & ! integer (1) variables
-!                                                                     & ! integer (2) variables
-!                                                                     & ! integer (4) variables
-!                                                                     & ! integer (8) variables
-!                                                                     & ! real variables
-!                                                                     & ! integer arrays
-!                                                                     & ! real arrays
-!                                                                     & ! characters
-this                                                                  & ! type
-)
-
+subroutine Impose_Boundary_Condition_1D_sub(this)
 
 ! Libraries =======================================================================================
 
@@ -590,54 +544,11 @@ implicit none
 
 ! Global variables ================================================================================
 
-! - integer variables -----------------------------------------------------------------------------
-!#integer (kind=Shrt), intent(in)    ::
-!#integer (kind=Shrt), intent(inout) ::
-!#integer (kind=Shrt), intent(out)   ::
-! - real variables --------------------------------------------------------------------------------
-!#real (kind=Dbl),     intent(in)    ::
-!#real (kind=Dbl),     intent(inout) ::
-!#real (kind=Dbl),     intent(out)   ::
-! - complex variables -----------------------------------------------------------------------------
-!#complex,             intent(in)    ::
-!#complex,             intent(inout) ::
-!#complex,             intent(out)   ::
-! - integer Arrays --------------------------------------------------------------------------------
-!#integer (kind=Shrt), intent(in),    dimension (:  )  ::
-!#integer (kind=Shrt), intent(in),    dimension (:,:)  ::
-!#integer (kind=Shrt), intent(in)    ::
-!#integer (kind=Shrt), intent(inout) ::
-!#integer (kind=Shrt), intent(out)   ::
-! - real Arrays -----------------------------------------------------------------------------------
-!#real (kind=Dbl),     intent(in),    dimension (:  )  ::
-!#real (kind=Dbl),     intent(inout), dimension (:  )  ::
-!#real (kind=Dbl),     intent(out),   dimension (:  )  ::
-! - character variables ---------------------------------------------------------------------------
-!#character (kind = ?, Len = ? ) ::
-! - logical variables -----------------------------------------------------------------------------
-!#logical   ::
 ! - types -----------------------------------------------------------------------------------------
 class(SolverWithLimiter(*)) :: this
 
 
 ! Local variables =================================================================================
-! - integer variables -----------------------------------------------------------------------------
-!#integer (kind=Shrt)  ::
-! - real variables --------------------------------------------------------------------------------
-!#real (kind=Dbl)      ::
-! - complex variables -----------------------------------------------------------------------------
-!#complex              ::
-! - integer Arrays --------------------------------------------------------------------------------
-!#integer (kind=Shrt), dimension (:)  ::
-!#integer (kind=Shrt), Allocatable, dimension (:)  ::
-! - real Arrays -----------------------------------------------------------------------------------
-!#real (kind=Dbl), dimension (:)      ::
-!#real (kind=Dbl), allocatable, dimension (:)  ::
-! - character variables ---------------------------------------------------------------------------
-!#character (kind = ?, Len = ? ) ::
-! - logical variables -----------------------------------------------------------------------------
-!#logical   ::
-! - type ------------------------------------------------------------------------------------------
 
 ! code ============================================================================================
 !write(*,       *) " subroutine < Impose_Boundary_Condition_1D_sub >: "
@@ -666,9 +577,6 @@ this%U(this%NCells+2_Lng)%U(2) = this%U(this%NCells-1)%U(2) ! h at the downstrea
 !write(FileInfo,*) " end subroutine < Impose_Boundary_Condition_1D_sub >"
 return
 end subroutine Impose_Boundary_Condition_1D_sub
-
-
-
 
 !##################################################################################################
 ! Purpose: This subroutine contains various limiters functions.

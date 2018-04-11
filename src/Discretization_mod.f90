@@ -1,4 +1,4 @@
-Ů
+
 !##################################################################################################
 ! Purpose: This module discretizes the domain.
 !
@@ -100,32 +100,6 @@ implicit none
 
 ! Global variables ================================================================================
 
-! - integer variables -----------------------------------------------------------------------------
-!#integer (kind=Shrt), intent(in)    ::
-!#integer (kind=Shrt), intent(inout) ::
-!#integer (kind=Shrt), intent(out)   ::
-! - real variables --------------------------------------------------------------------------------
-!#real (kind=Dbl),     intent(in)    ::
-!#real (kind=Dbl),     intent(inout) ::
-!#real (kind=Dbl),     intent(out)   ::
-! - complex variables -----------------------------------------------------------------------------
-!#complex,             intent(in)    ::
-!#complex,             intent(inout) ::
-!#complex,             intent(out)   ::
-! - integer Arrays --------------------------------------------------------------------------------
-!#integer (kind=Shrt), intent(in),    dimension (:  )  ::
-!#integer (kind=Shrt), intent(in),    dimension (:,:)  ::
-!#integer (kind=Shrt), intent(in)    ::
-!#integer (kind=Shrt), intent(inout) ::
-!#integer (kind=Shrt), intent(out)   ::
-! - real Arrays -----------------------------------------------------------------------------------
-!#real (kind=Dbl),     intent(in),    dimension (:  )  ::
-!#real (kind=Dbl),     intent(inout), dimension (:  )  ::
-!#real (kind=Dbl),     intent(out),   dimension (:  )  ::
-! - character variables ---------------------------------------------------------------------------
-!#character (kind = ?, Len = ? ) ::
-! - logical variables -----------------------------------------------------------------------------
-!#logical   ::
 ! - types -----------------------------------------------------------------------------------------
 type(Geometry_tp),   intent(in)   :: Geometry   ! Holds the geometry of the domain.
 type(Input_Data_tp), intent(in)   :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
@@ -149,18 +123,6 @@ real(kind=Dbl)    :: CntrlVolumeLength ! The length of control volume
 real(kind=Dbl)    :: XCoordinate       ! Temp var to compute the coordinate of the cell center
 real(kind=Dbl)    :: ProjectionLength
 
-! - complex variables -----------------------------------------------------------------------------
-!#complex              ::
-! - integer Arrays --------------------------------------------------------------------------------
-!#integer (kind=Shrt), dimension (:)  ::
-!#integer (kind=Shrt), Allocatable, dimension (:)  ::
-! - real Arrays -----------------------------------------------------------------------------------
-!#real (kind=Dbl), dimension (:)      ::
-!#real (kind=Dbl), allocatable, dimension (:)  ::
-! - character variables ---------------------------------------------------------------------------
-!#character (kind = ?, Len = ? ) ::
-! - logical variables -----------------------------------------------------------------------------
-!#logical   ::
 ! - type ------------------------------------------------------------------------------------------
 type(Plot_domain_1D_tp(NCells=:)), allocatable :: Plot ! Plots the discretized domain
 

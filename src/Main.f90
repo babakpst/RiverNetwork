@@ -222,9 +222,6 @@ Close(Unit=UnFile, status='Keep', Err=1002, IOstat=IO_File)
 UnFile= UnInptAna
 Close(Unit=UnFile, status='Keep', Err=1002, IOstat=IO_File)
 
-
-
-
 !#read(*,*)
 stop
 

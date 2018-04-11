@@ -647,7 +647,6 @@ Directory=MakeDirQQ (trim(AdjustL (ModelInfo%OutputDir))//'/'//trim(AdjustL(Mode
      write(FileInfo, fmt="(A)") "The output folder for this analysis already exists." ;
   end if ;
 
-
 ModelInfo%AnalysisOutputDir=trim(AdjustL(ModelInfo%OutputDir))//'/'//trim(AdjustL(ModelInfo%AnalysesNames(i_analyses)))
 
 print*,"check 000", ModelInfo%AnalysisOutputDir
@@ -717,7 +716,6 @@ write(unit=UnFile, fmt="(' The limiter is: ', I10)", advance='yes', asynchronous
 write(unit=*,      fmt="(' The limiter is: ', I10)") this%CntrlV_ratio
 
 
-
 write(*,       *) " End Subroutine < Input_Analysis_sub >"
 write(*,       *)
 write(FileInfo,*) " End Subroutine < Input_Analysis_sub >"
@@ -760,10 +758,6 @@ Return
 ! - write statement error -------------------------------------------------------------------------
 1006 write(*, Fmt_write1) UnFile, IO_write; write(UnFile, Fmt_write1) UnFile, IO_write;
      write(*, Fmt_FL); write(FileInfo, Fmt_FL); write(*, Fmt_End); read(*,*);  stop;
-
-
-
-
 
 End Subroutine Input_Analysis_sub
 

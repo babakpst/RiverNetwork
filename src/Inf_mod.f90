@@ -119,48 +119,11 @@ end subroutine Header
 !
 !##################################################################################################
 
-Subroutine InfBasic ( &
-!                                               & ! Integer Variables
-!                                               & ! Real Variables
-!                                               & ! Integer Arrays
-!                                               & ! Real Arrays
-!                                               & ! Characters
-TimeDate, ModelInfo                             & ! Types
-)
+Subroutine InfBasic (TimeDate, ModelInfo)
 
 Implicit None
 
 ! =========================== Global Variables ====================================================
-
-! - Integer Variables -----------------------------------------------------------------------------
-!Integer (kind=Smll), Intent(In)     ::
-!#Integer (kind=Shrt), Intent(InOut) ::
-!#Integer (kind=Shrt), Intent(OUT)   ::
-! - Real Variables --------------------------------------------------------------------------------
-!#Real (kind=DBL), Intent(In)    ::
-!#Real (kind=DBL), Intent(InOut) ::
-!#Real (kind=DBL), Intent(OUT)   ::
-! - complex Variables -----------------------------------------------------------------------------
-!#complex, Intent(In)    ::
-!#complex, Intent(InOut) ::
-!#complex, Intent(OUT)   ::
-! - Integer Arrays --------------------------------------------------------------------------------
-!#Integer (kind=Shrt), Intent(In), Dimension (:  )  ::
-!#Integer (kind=Shrt), Intent(In), Dimension (:,:)  ::
-!#Integer (kind=Shrt), Intent(In)    ::
-!#Integer (kind=Shrt), Intent(InOut) ::
-!#Integer (kind=Shrt), Intent(OUT)   ::
-! - Real Arrays -----------------------------------------------------------------------------------
-!#Real (kind=DBL), Intent(In)    ::
-!#Real (kind=DBL), Intent(InOut) ::
-!#Real (kind=DBL), Intent(OUT)   ::
-! - complex Variables -----------------------------------------------------------------------------
-!#complex, Intent(In)    ::
-!#complex, Intent(InOut) ::
-!#complex, Intent(OUT)   ::
-! - Character Variables ---------------------------------------------------------------------------
-!Character (kind = 1, Len = 30 ), Intent(In) :: Name        ! Name of the Input file
-
 
 ! - Types -----------------------------------------------------------------------------------------
 type(TimeDate_tp)    :: TimeDate   ! Indicates the time and date of simulation
@@ -170,24 +133,6 @@ type(Input_Data_tp)  :: ModelInfo  ! Holds info. (name, dir, output dir) of the 
 !#Logical   ::
 
 ! =========================== LOCAL Variables =====================================================
-! - Integer Variables -----------------------------------------------------------------------------
-!#Integer (kind=Shrt)  ::
-! - Real Variables --------------------------------------------------------------------------------
-!#Real (kind=DBL)  ::
-! - complex Variables -----------------------------------------------------------------------------
-!#complex  ::
-! - Integer Arrays --------------------------------------------------------------------------------
-!#Integer (kind=Shrt)  ::
-! - Real Arrays -----------------------------------------------------------------------------------
-!#Real (kind=DBL)  ::
-! - complex Variables -----------------------------------------------------------------------------
-!#complex  ::
-! - Character Variables ---------------------------------------------------------------------------
-!#Character   ::
-! - Logical Variables -----------------------------------------------------------------------------
-!#Logical   ::
-! - Type DECLERATIONS -----------------------------------------------------------------------------
-!#type() ::
 
 ! CODE ============================================================================================
 
@@ -226,66 +171,16 @@ End Subroutine InfBasic
 !
 !##################################################################################################
 
-Subroutine InfTime(                                          &
-!                                                            & ! Integer Variables
-TimeE, TimeS, TimeInputE, TimeInputS, TimeSolveE, TimeSolveS & ! Real Variables
-!                                                            & ! Integer Arrays
-!                                                            & ! Real Arrays
-!                                                            & ! Characters
-!                                                            & ! Type
-)
+Subroutine InfTime(TimeE, TimeS, TimeInputE, TimeInputS, TimeSolveE, TimeSolveS)
 
 Implicit None
 
 ! =========================== Global Variables ====================================================
 
-! - Integer Variables -----------------------------------------------------------------------------
-!Integer (kind=Lng ), Intent(In) ::
-
 ! - Real Variables --------------------------------------------------------------------------------
 Real (kind=Dbl), Intent(In)    :: TimeE, TimeS, TimeInputE, TimeInputS, TimeSolveE, TimeSolveS
 
-! - complex Variables -----------------------------------------------------------------------------
-!#complex, Intent(In)    ::
-!#complex, Intent(InOut) ::
-!#complex, Intent(OUT)   ::
-! - Integer Arrays --------------------------------------------------------------------------------
-!#Integer (kind=Shrt), Intent(In), Dimension (:  )  ::
-!#Integer (kind=Shrt), Intent(In), Dimension (:,:)  ::
-!#Integer (kind=Shrt), Intent(In)    ::
-!#Integer (kind=Shrt), Intent(InOut) ::
-!#Integer (kind=Shrt), Intent(OUT)   ::
-! - Real Arrays -----------------------------------------------------------------------------------
-!#Real (kind=Dbl), Intent(In), Dimension (:  )  ::
-!#Real (kind=Dbl), Intent(InOut), Dimension (:  )  ::
-!#Real (kind=Dbl), Intent(OUT), Dimension (:  )  ::
-! - complex Variables -----------------------------------------------------------------------------
-!#complex, Intent(In)    ::
-!#complex, Intent(InOut) ::
-!#complex, Intent(OUT)   ::
-! - Character Variables ---------------------------------------------------------------------------
-!#Character   ::
-! - Logical Variables -----------------------------------------------------------------------------
-!#Logical   ::
-! - Type DECLERATIONS -----------------------------------------------------------------------------
-!#type() ::
 ! =========================== Local Variables =====================================================
-! - Integer Variables -----------------------------------------------------------------------------
-!#Integer (kind=Shrt)  ::
-! - Real Variables --------------------------------------------------------------------------------
-!#Real (kind=Dbl)  ::
-! - complex Variables -----------------------------------------------------------------------------
-!#complex  ::
-! - Integer Arrays --------------------------------------------------------------------------------
-!#Integer (kind=Shrt)  ::
-! - Real Arrays -----------------------------------------------------------------------------------
-!#Real (kind=Dbl)  ::
-! - complex Variables -----------------------------------------------------------------------------
-!#complex  ::
-! - Character Variables ---------------------------------------------------------------------------
-!#Character   ::
-! - Logical Variables -----------------------------------------------------------------------------
-!#Logical   ::
 
 ! =========================== Subroutine CODE =====================================================
 
