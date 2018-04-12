@@ -52,7 +52,7 @@ type LimiterFunc_tp ! contains all variable to compute the limiter value
   integer(kind=Smll) :: limiter_Type ! Indicates the type of limiter function
 
   real(kind=Dbl)     :: phi          ! the value of limiter
-  real(kind=Dbl)     :: theta          ! the argument of the limiter
+  real(kind=Dbl)     :: theta        ! the argument of the limiter
 
   contains
     procedure LimiterValue => Limiters_sub
@@ -69,7 +69,7 @@ type Jacobian_tp
 
   real(kind=Dbl),dimension(2,2) :: A        ! Contains the Jacobian matrix at each time step at the cell interface i-1/2
   real(kind=Dbl),dimension(2,2) :: R        ! Contains the eigenvectors at each time step at the cell interface i-1/2
-  real(kind=Dbl),dimension(2,2) :: L       ! Contains the eigenvectors inverse (R^(-1))at each time step at the cell interface i-1/2
+  real(kind=Dbl),dimension(2,2) :: L        ! Contains the eigenvectors inverse (R^(-1))at each time step at the cell interface i-1/2
 
   real(kind=Dbl),dimension(2,2) :: A_plus   ! Contains the Jacobian matrix with + eigenvalues at each time step at the cell interface i-1/2
   real(kind=Dbl),dimension(2,2) :: A_minus  ! Contains the Jacobian matrix with - eigenvalues at each time step at the cell interface i-1/2
