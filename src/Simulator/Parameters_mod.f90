@@ -83,15 +83,6 @@ integer(kind=Smll), Parameter, Public  :: FileResults=602 ! output file containi
 integer(kind=Smll), Parameter, Public :: AnalysisType_1D=1 ! 1D Shallow water simulation Lax-wendroff
 integer(kind=Smll), Parameter, Public :: AnalysisType_1D_Limiter=2 ! 1D Shallow water simulation Lax-wendroff
 
-
-! Element Types Number ============================================================================
-! Solid Element
-!integer(kind=Tiny), Parameter, Public  :: El2d4NSldPS  =1 ! Element: 2D-4 node-Solid
-
-! PML Elements
-
-! Spectral Element
-
 ! User defined types ==============================================================================
 ! Time signature of the model
 type TimeDate_tp

@@ -15,7 +15,7 @@ Upstream boundary condition, constant flow (m^3/s):
 Downstream water depth (in meters):
 2.0
 
-Initial control volume: ( V = L * B * h)
+Initial control volume: (V = L * B * h)
 2.0
 
 Control Volume ratio:
@@ -23,3 +23,4 @@ Control Volume ratio:
 
 Limiter type
 1
+

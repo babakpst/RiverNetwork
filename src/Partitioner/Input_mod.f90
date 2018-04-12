@@ -11,11 +11,12 @@
 ! ================================ V E R S I O N ==================================================
 ! V0.10: 02/22/2018 - Initiation.
 ! V0.10: 03/08/2018 - Initiated: Compiled without error.
-! V1.00: 04/20/2018 - Major modifications
+! V1.00: 04/10/2018 - Major modifications
+! V2.00: 04/12/2018 - Partitioner
 !
 ! File version $Id $
 !
-! Last update: 04/10/2018
+! Last update: 04/12/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! Input_Address_sub: Reads file name and directories from the address file.
@@ -60,7 +61,8 @@ end type Input_Data_tp
 
 ! Contains all information about the geometry of the domain. (input)
 type Geometry_tp
-  integer(kind=Lng):: NoReaches ! Number of reaches
+  integer(kind=Lng) :: NoReaches ! Number of reaches
+  integer(kind=Shrt):: size ! Number of reaches
 
   integer(kind=Lng),  allocatable, dimension(:) :: ReachDisc ! no. of control volume in each reach
   integer(kind=Shrt), allocatable, dimension(:) :: ReachType ! reach type
@@ -312,7 +314,7 @@ open(Unit=UnFile, file=trim(ModelInfo%ModelName)//'.dataModel', &
      blank='null', blocksize=0, defaultfile=trim(ModelInfo%InputDir), DisPOSE='keep', form='formatted', &
      position='asis', status='old')
 
-UnFile = FileDataModel
+UnFile = FileDataModel  ! Total number of reaches in the domain
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
@@ -321,6 +323,13 @@ UnFile = FileInfo
 write(unit=UnFile, fmt="(' Total number of reach(es) is(are): ', I10)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%NoReaches
 write(unit=*,      fmt="(' Total number of reach(es) is(are): ', I10)") this%NoReaches
 
+UnFile = FileDataModel  ! Number of cores
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%Size
+UnFile = FileInfo
+write(unit=UnFile, fmt="(' Total number of core(s) is(are): ', I10)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%size
+write(unit=*,      fmt="(' Total number of core(s) is(are): ', I10)") this%NoReaches
 
 ! - Closing the data model file -------------------------------------------------------------------
 write(*,        fmt="(A)") " -Closing the data model file"

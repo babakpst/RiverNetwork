@@ -234,8 +234,6 @@ this%U(this%NCells+1)%U(1) = this%U(this%NCells)%U(1)
 this%U(this%NCells+2)%U(1) = this%U(this%NCells)%U(1)
 this%U(:)%U(2) = 0.0_Dbl
 
-
-
 this%S(:)%U(1)     = 0.0_Dbl
 this%S(:)%U(2)     = 0.0_Dbl
 this%phi(:)%U(1)   = 0.0_Dbl

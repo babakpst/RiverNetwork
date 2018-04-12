@@ -1,6 +1,6 @@
 
 !##################################################################################################
-! Purpose: This code solves the 2D Shallow Water Equation
+! Purpose: This code partitions the domain for main simulator.
 !
 ! Developed by: Babak Poursartip
 ! Supervised by: Clint Dawson
@@ -20,10 +20,11 @@
 ! V0.11: 03/09/2018  - Adding limiter to the code
 ! V0.12: 03/20/2018  - Debugging the code with limiter
 ! V1.00: 04/10/2018  - Cleaning the code after having the right results
+! V2.00: 04/12/2018  - Developing the partitioner code.
 !
 ! File version $Id $
 !
-! Last update: 03/20/2018
+! Last update: 04/12/2018
 !
 ! ================================ Global   V A R I A B L E S =====================================
 !  . . . . . . . . . . . . . . . . Variables . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -42,14 +43,12 @@ use Parameters_mod
 use Information_mod
 use Input_mod
 use Discretization_mod
-use LaxWendroff_mod
-use LaxWendroff_with_limiter_mod
 
 ! Global Variables ================================================================================
 Implicit None
 
 Include 'Global_Variables_Inc.f90'   ! All Global Variables are defined/described in this File
-ModelInfo%Version = 1.0_SGL          ! Reports the version of the code
+ModelInfo%Version = 2.0_SGL          ! Reports the version of the code
 
 ! Time and Date signature =========================================================================
 Call cpu_time(SimulationTime%Time_Start)
@@ -133,69 +132,34 @@ Call cpu_time(SimulationTime%Input_Ends)
 ! Discretization ----------------------------------------------------------------------------------
 write(*,        fmt="(A)") " -Discretization ..."
 write(FileInfo, fmt="(A)") " -Discretization ..."
+
 call Discretization%Discretize(Geometry, ModelInfo)
-! Simulations =====================================================================================
 
-  do i_analyses = 1, ModelInfo%NumberOfAnalyses
+! Writes down the results of partitioning.
+call Results()
 
-    write(*,        fmt="(A,I10)") " -Analyse no.", i_analyses
-    write(FileInfo, fmt="(A,I10)") " -Analyse no.", i_analyses
 
-    ! Getting the required data for this specific analysis
-    call AnalysisInfo%Analysis(i_analyses, ModelInfo)
 
-    ! Test File -----------------------------------------------------------------------------------
-    !UnFile=UN_CHK
-    !Open( Unit=UnFile, File=trim(AnaName)//'_'//trim(AdjustL(IndexSize))//'_'//trim(AdjustL(IndexRank))//'.Chk', &
-    !     Err= 1001, IOstat=IO_File, Access='SEQUENTIAL', Action='write', Asynchronous='NO', &
-    !     Blank='NULL', blocksize=0, defaultfile=trim(InlDirAna), DisPOSE='Keep', Form='formatted', &
-    !     position='ASIS', status='REPLACE')
 
-    ! Analysis ====================================================================================
-      select case(AnalysisInfo%AnalysisType)
 
-        case(AnalysisType_1D)    ! # 1: Richtmyer
 
-          allocate(Richtmyer(NCells=Discretization%NCells) :: Experiment_TypeI,     stat=ERR_Alloc)
-            if (ERR_Alloc /= 0) then
-              write (*, Fmt_ALLCT) ERR_Alloc;  write (FileInfo, Fmt_ALLCT) ERR_Alloc;
-              write(*, Fmt_FL);  write(FileInfo, Fmt_FL); read(*, Fmt_End);  stop;
-            end if
 
-          Experiment_TypeI%ModelInfo = ModelInfo
-          Experiment_TypeI%AnalysisInfo = AnalysisInfo
-          Experiment_TypeI%Discretization = Discretization
-          call Experiment_TypeI%Solve()
 
-        case(AnalysisType_1D_Limiter)    ! # 2: Lax-Wendroff with limiter in combination with upwind method
 
-          allocate(SolverWithLimiter(NCells=Discretization%NCells) :: Experiment_TypeII,     stat=ERR_Alloc)
-            if (ERR_Alloc /= 0) then
-              write (*, Fmt_ALLCT) ERR_Alloc;  write (FileInfo, Fmt_ALLCT) ERR_Alloc;
-              write(*, Fmt_FL);  write(FileInfo, Fmt_FL); read(*, Fmt_End);  stop;
-            end if
 
-          Experiment_TypeII%ModelInfo = ModelInfo
-          Experiment_TypeII%AnalysisInfo = AnalysisInfo
-          Experiment_TypeII%Discretization = Discretization
-          call Experiment_TypeII%Solve()
 
-        ! Error in analysis numbering
-        case default
-          write(*,*)" The analysis type  is not available in this code. Modify the analysis type."
-          write(FileInfo,*)" The analysis type  is not available in this code. Modify the analysis type."
-          write(*,*)
-          write(FileInfo,*)
-          write(*,*)" Simulation terminated with error."
-          write(*, Fmt_End);  read(*,*);   stop;
 
-      end select
 
-    write(*,*)" Simulation was conducted successfully for:"
-    write(*,"(' Model Name: ',A30,'Analysis Name: ', A30)")ModelInfo%ModelName, ModelInfo%AnalysesNames(i_analyses)
-    write(*,*)
 
-  end do
+
+
+
+
+
+
+
+
+
 
 
 ! Deallocating arrays
