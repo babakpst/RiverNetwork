@@ -10,3 +10,4 @@ src/Partitioner/.nsf*
 # ignoring the following folders:
 output/
 visualize/
+.metadata
