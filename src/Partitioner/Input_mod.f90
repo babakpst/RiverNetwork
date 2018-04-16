@@ -295,7 +295,6 @@ integer(kind=Smll) :: IO_read  ! Holds error of read statements
 integer(kind=Smll) :: IO_write ! Used for IOSTAT - Input Output Status - in the write command.
 
 ! code ============================================================================================
-
 write(*,       *)
 write(*,       *) " Subroutine < Input_Basic_sub >: "
 write(FileInfo,*)
@@ -305,8 +304,8 @@ write(FileInfo,*) " Subroutine < Input_Basic_sub >: "
 write(*,        fmt="(A)") " -Opening the data model file ..."
 write(FileInfo, fmt="(A)") " -Opening the data model file ..."
 
-print*,ModelInfo%ModelName
-print*,ModelInfo%InputDir
+print*, ModelInfo%ModelName
+print*, ModelInfo%InputDir
 
 UnFile=FileDataModel
 open(Unit=UnFile, file=trim(ModelInfo%ModelName)//'.dataModel', &
@@ -323,10 +322,10 @@ UnFile = FileInfo
 write(unit=UnFile, fmt="(' Total number of reach(es) is(are): ', I10)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%NoReaches
 write(unit=*,      fmt="(' Total number of reach(es) is(are): ', I10)") this%NoReaches
 
-UnFile = FileDataModel  ! Number of cores
+UnFile = FileDataModel  ! Number of cores - required for mesh partitioning.
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%Size
+read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%size
 UnFile = FileInfo
 write(unit=UnFile, fmt="(' Total number of core(s) is(are): ', I10)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%size
 write(unit=*,      fmt="(' Total number of core(s) is(are): ', I10)") this%NoReaches

@@ -17,11 +17,11 @@
 !
 ! File version $Id $
 !
-! Last update: 04/15/2018
+! Last update: 04/16/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! 1D_Domain: Plot the discretized domain.
-! Partitioner: Creates the input files for various processes.
+! Partitioner_1D_Sub: Creates the input files for various processes.
 !
 ! ================================ F U N C T I O N ================================================
 !
@@ -45,6 +45,11 @@ implicit none
 !public
 !private
 
+! This vector will be used in the main type as the solution in each type step
+type vector
+  real(kind=Dbl), dimension(2) :: U
+end type vector
+
 ! Plot domain
 type Plot_domain_1D_tp(NCells)
   integer(kind=Lng), len :: NCells
@@ -58,56 +63,20 @@ type Plot_domain_1D_tp(NCells)
 end type Plot_domain_1D_tp
 
 
-type Plot_Results_1D_tp(NCells)
-  integer(kind=Lng), len :: NCells
-  real(kind=dbl), dimension(NCells)    :: h
-  real(kind=dbl), dimension(NCells)    :: uh
-  real(kind=dbl), dimension(NCells)    :: s_f
-  real(kind=dbl), dimension(NCells)    :: s
-  real(kind=dbl), dimension(NCells-1)  :: hm
-  real(kind=dbl), dimension(NCells-1)  :: uhm
-  real(kind=dbl), dimension(NCells-1)  :: s_f_m
-  real(kind=dbl), dimension(NCells-1)  :: s_m
 
-  type(Input_Data_tp) :: ModelInfo
+
+
+type partition_tp
 
   contains
-    procedure plot_results => Plot_Results_1D_sub
-end type Plot_Results_1D_tp
+   procedure partition => Partitioner_1D_Sub
 
-! This vector will be used in the main type as the solution in each type step
-!type vector_results
-!  real(kind=Dbl), dimension(2) :: U
-!end type vector_results
-
-! This vector will be used in the main type as the solution in each type step
-type vector
-  real(kind=Dbl), dimension(2) :: U
-end type vector
-
-type Plot_Results_1D_limiter_tp(NCells)
-  integer(kind=Lng), len :: NCells
-
-  type(vector),  dimension(NCells) :: s   ! temp to hold bathymetry
-
-  type(vector),  dimension(NCells*2) :: phi   ! Holds the value of the limiter function <delete>
-  type(vector),  dimension(NCells*2) :: theta ! Holds the value of the limiter function <delete>
-
-  type(vector), dimension(NCells)  :: U     ! This vector holds the solution at previous step,
-                                                    ! the first term holds "h" and the second holds "uh"
-  type(Input_Data_tp) :: ModelInfo
-
-  contains
-    procedure plot_results => Plot_Results_1D_limiter_sub
-end type Plot_Results_1D_limiter_tp
+end type partition_tp
 
 
 
-private :: Plot_Domain_1D_sub, Plot_Results_1D_limiter_sub
 
-  interface Results
-    module procedure Plot_Domain_1D_sub
-  end interface
+
 
 contains
 
@@ -172,17 +141,19 @@ write(*,       *) " -Writing down the domain in the .Domain file ... "
 write(FileInfo,*) " -Writing down the domain in the .Domain file ... "
 
 open(unit=UnFile, file=trim(ModelInfo%ModelName)//'.Domain', Err=1001, iostat=IO_File, &
-access='sequential', action='write', asynchronous='no', blank='NULL', blocksize=0, defaultfile=trim(ModelInfo%OutputDir), &
-dispose='keep', form='formatted', position='asis', status='replace')
+     access='sequential', action='write', asynchronous='no', blank='NULL', blocksize=0, &
+     defaultfile=trim(ModelInfo%OutputDir), dispose='keep', form='formatted', position='asis', &
+     status='replace')
 
 UnFile = FileDomain
 write(unit=UnFile, fmt="(' Domain coordinates: ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
-write(unit=UnFile, fmt="(' Number of points: ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
-write(unit=UnFile, fmt="(I20)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%NCells
-write(unit=UnFile, fmt="(' x   --      z ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
+write(unit=UnFile, fmt="(' Number of points: ')",   advance='yes', asynchronous='no', iostat=IO_write, err=1006)
+write(unit=UnFile, fmt="(I20)",                     advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%NCells
+write(unit=UnFile, fmt="(' x   --      z ')",       advance='yes', asynchronous='no', iostat=IO_write, err=1006)
 
   do i_points = 1_Lng, this%NCells
-    write(unit=UnFile, fmt="(i16,3F16.5)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) i_points, this%XCoor(i_points), this%ZCoor(i_points), this%SlopeCell(i_points)
+    write(unit=UnFile, fmt="(i16,3F16.5)", advance='yes', asynchronous='no', iostat=IO_write, &
+          err=1006) i_points, this%XCoor(i_points), this%ZCoor(i_points), this%SlopeCell(i_points)
   end do
 
 write(*,       *) " Domain coordinates was written successfully in the file. "
@@ -232,11 +203,11 @@ end subroutine Plot_Domain_1D_sub
 !
 ! ================================ V E R S I O N ==================================================
 ! V0.00: 04/15/2018 - Subroutine initiated.
-! V0.01: 04/15/2018 - Initiated: Compiled without error for the first time.
+! V0.01: 04/16/2018 - Initiated: Compiled without error for the first time.
 !
 ! File version $Id $
 !
-! Last update: 04/15/2018
+! Last update: 04/16/2018
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
 ! (Refer to the main code to see the list of imported variables)
@@ -244,13 +215,11 @@ end subroutine Plot_Domain_1D_sub
 !
 !##################################################################################################
 
-subroutine Partitioner_Sub( )
-
+subroutine Partitioner_1D_Sub(this, Geometry)
 
 ! Libraries =======================================================================================
 
 ! User defined modules ============================================================================
-
 
 implicit none
 
@@ -283,12 +252,14 @@ implicit none
 ! - logical variables -----------------------------------------------------------------------------
 !#logical   ::
 ! - types -----------------------------------------------------------------------------------------
-!#type() ::
+class(partition_tp) :: this
+type(Geometry_tp)   :: Geometry
 
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
-!#integer(kind=Shrt)  ::
+integer(kind=Shrt) :: i_partition ! Loop index for the number of processes/ranks
+
 ! - real variables --------------------------------------------------------------------------------
 !#real(kind=Dbl)      ::
 ! - complex variables -----------------------------------------------------------------------------
@@ -306,15 +277,29 @@ implicit none
 ! - type ------------------------------------------------------------------------------------------
 
 ! code ============================================================================================
-write(*,       *) " subroutine < Partitioner_Sub >: "
-write(FileInfo,*) " subroutine < Partitioner_Sub >: "
+write(*,       *) " subroutine < Partitioner_1D_Sub >: "
+write(FileInfo,*) " subroutine < Partitioner_1D_Sub >: "
+
+! Computing the chunk of each process
+
+
+  On_Partitions: do i_partition = 1, Geometry%size
+    write(*,       *) " Creating input files for process no.: ", i_partition-1_Shrt
+    write(FileInfo,*) " Creating input files for process no.: ", i_partition-1_Shrt
 
 
 
-write(*,       *) " end subroutine < Partitioner_Sub >"
-write(FileInfo,*) " end subroutine < Partitioner_Sub >"
+
+
+  end do
+
+write(*,       *) " Partitioning conducted successfully."
+write(FileInfo,*) " Partitioning conducted successfully."
+
+write(*,       *) " end subroutine < Partitioner_1D_Sub >"
+write(FileInfo,*) " end subroutine < Partitioner_1D_Sub >"
 return
-end subroutine Partitioner_Sub
+end subroutine Partitioner_1D_Sub
 
 
 

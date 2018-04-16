@@ -262,20 +262,7 @@ SourceTerms%Identity(2,2) = 1.0_Dbl
 call this%BC()
 Results%ModelInfo = this%ModelInfo
 
-!this%Discretization%SlopeCell(:) =0.0
-!this%Discretization%SlopeInter(:) =0.0
-
-!print*,this%Discretization%SlopeInter(:)
-!stop
-
-!print*,this%Discretization%SlopeCell(800)
-!print*,this%Discretization%SlopeCell(801)
-!print*,this%Discretization%SlopeCell(802)
-!print*,this%Discretization%SlopeCell(900)
-!print*,this%Discretization%SlopeCell(950)
-!stop
-
-  ! Time marching  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  ! Time marching
   Time_Marching: do i_steps = 1_Lng, NSteps
 
     print*, "----------------Step:", i_steps
@@ -290,9 +277,6 @@ Results%ModelInfo = this%ModelInfo
         call Results%plot_results(i_steps)
       end if
 
-      !print*, "cellssssssssssssssssssss", this%NCells ! <delete>
-
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       ON_Cells: do i_Cell = 2_Lng,this%NCells-1  ! Loop over the cells except the boundary cells.
 
         !print*, "=============Cell:", i_Cell
@@ -330,10 +314,7 @@ Results%ModelInfo = this%ModelInfo
         ! The first contribution of the source term in the solution
         SourceTerms%Source_1%U(:) = dt * ( SourceTerms%S%U(:)  - 0.5_Dbl * matmul( SourceTerms%B(:,:), this%U(i_Cell)%U(:) )  )
 
-          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           ON_Interface:  do i_Interface = 1, 2  ! the first one is on i-1/2, and the second one is on i+1/2
-
-            !print*, "*****************Interface:", i_Interface
 
             ! Compute the jump (U_i- U_i-1)
             Delta_U%U(:) = this%U(i_Cell+(i_Interface-1_Lng))%U(:) - this%U(i_Cell+(i_Interface-2_Lng))%U(:)
@@ -342,15 +323,7 @@ Results%ModelInfo = this%ModelInfo
             Jacobian%U_up%U(:) = this%U(i_Cell+(i_Interface-2_Lng))%U(:)
             Jacobian%U_dw%U(:) = this%U(i_Cell+(i_Interface-1_Lng))%U(:)
 
-            !*,Jacobian%U_up%U(1)
-            !print*,Jacobian%U_up%U(2)
-
-            !print*,Jacobian%U_dw%U(1)
-            !print*,Jacobian%U_dw%U(2)
-
             call Jacobian%Jacobian( i_eigen,i_Interface,i_Cell )   ! <modify>
-            !print*,"Jacobian",Jacobian%Lambda%U(1)  ! <delete>
-            !print*,"Jacobian",Jacobian%Lambda%U(2)  ! <delete>
 
             ! Compute alpha(= RI*(U_i - U_(i-1))
             alpha%U(:) = matmul(Jacobian%L, Delta_U%U(:))
@@ -376,16 +349,7 @@ Results%ModelInfo = this%ModelInfo
 
               ON_Eigenvalues: do i_eigen = 1_Tiny, 2_Tiny
 
-                !print*, "*****************Eigen:", i_eigen
-
                 Wave%U(:) = alpha%U(i_eigen) * Jacobian%R(:,i_eigen)
-                !print*,"wave", Wave%U(:)
-                !print*,"alphd", alpha%U(:)
-                !print*,"lambdas",Jacobian%Lambda%U(i_eigen)
-                !print*,"lambdas",Jacobian%Lambda%U(:)
-                !print*,"eigenvector", Jacobian%R(:,i_eigen)
-                !print*,"eigenvector1", Jacobian%R(:,1)
-                !print*,"eigenvector2", Jacobian%R(:,2)
 
                   if (i_Interface == 1_Tiny) then ! we use the positive eigenvalues on the upstream interface
                     speed = Jacobian%Lambda_plus%U(i_eigen)
@@ -398,28 +362,17 @@ Results%ModelInfo = this%ModelInfo
                 ! The upwind part
                 F_L%U(:) = F_L%U(:) + speed * Wave%U(:)
 
-
-                !print*,"Jacobian",Jacobian%Lambda%U(i_eigen)  ! <delete>
-
                   ! This if condition computes the W_(I-1/2)
                   if  (Jacobian%Lambda%U(i_eigen)  > 0.0_Dbl ) then
 
                     ! Compute the jump (U_i- U_i-1)
                     Delta_U%U(:) = this%U(i_Cell+i_Interface-2_Tiny)%U(:) - this%U( i_Cell+i_Interface-3_Tiny )%U(:)
 
-                    !print*,"Delta-positive", Delta_U%U(1),Delta_U%U(2)
                     ! Computing the Jacobian and all other items at the upstream
                     Jacobian_neighbor%U_up%U(:) = this%U( i_Cell+i_Interface-3_Tiny  )%U(:)
                     Jacobian_neighbor%U_dw%U(:) = this%U( i_Cell+i_Interface-2_Tiny  )%U(:)
 
-                    !print*,"Up positive", Jacobian_neighbor%U_up%U(:)
-                    !print*,"Dw positive", Jacobian_neighbor%U_dw%U(:)
-
                     call Jacobian_neighbor%Jacobian(i_eigen,i_Interface,i_Cell)   ! <modify>
-
-                    !print*,"Lambda positive ",i_eigen, Jacobian_neighbor%Lambda%U(1), Jacobian_neighbor%Lambda%U(1)
-                    !print*,"R positive      ",Jacobian_neighbor%R(:, i_eigen)
-                    !print*,"L positive      ",Jacobian_neighbor%L(:, i_eigen)
 
                     ! Compute alpha(= RI*(U_i - U_(i-1))
                     alpha_neighbor%U(:) = matmul(Jacobian_neighbor%L(:,:), Delta_U%U(:))
@@ -429,20 +382,12 @@ Results%ModelInfo = this%ModelInfo
 
                    ! Compute the jump (U_i- U_i-1)
                     Delta_U%U(:) = this%U( i_Cell+i_Interface )%U(:) - this%U( i_Cell+i_Interface-1_Tiny )%U(:)
-                    !print*,"Delta-negative", Delta_U%U(1),Delta_U%U(2)
+
                     ! Computing the Jacobian and all other items at the upstream
                     Jacobian_neighbor%U_up%U(:) = this%U(i_Cell+i_Interface-1_Tiny )%U(:)
                     Jacobian_neighbor%U_dw%U(:) = this%U(i_Cell+i_Interface        )%U(:)
 
-                    !print*,"Up negative", Jacobian_neighbor%U_up%U(:)
-                    !print*,"Dw negative", Jacobian_neighbor%U_dw%U(:)
-
                     call Jacobian_neighbor%Jacobian(i_eigen,i_Interface,i_Cell)   ! <modify>
-
-                    !print*,"Lambda negative ",i_eigen,Jacobian_neighbor%Lambda%U(1), Jacobian_neighbor%Lambda%U(1)
-                    !print*,"Lambda negative ",Jacobian_neighbor%Lambda%U(1),Jacobian_neighbor%Lambda%U(1)
-                    !print*,"R negative      ",Jacobian_neighbor%R(:, i_eigen)
-                    !print*,"L negative      ",Jacobian_neighbor%L(:, i_eigen)
 
                     ! Compute alpha(= RI*(U_i - U_(i-1))
                     alpha_neighbor%U(:) = matmul(Jacobian_neighbor%L(:,:), Delta_U%U(:))
@@ -459,46 +404,34 @@ Results%ModelInfo = this%ModelInfo
                     LimiterFunc%theta = 0.0_Dbl
                   end if
 
-                !print*,"before theta",( dot_product( Wave_neighbor%U(:), Wave%U(:) ) ), ( dot_product(Wave%U(:), Wave%U(:) )  ) ! <delete>
-                !print*,"thetaaaaaa",LimiterFunc%theta ! <delete>
-
                 ! The limiter function
                 call LimiterFunc%LimiterValue()
 
                 !LimiterFunc%phi =0.0
                 alpha_tilda%U(:) =  LimiterFunc%phi * alpha%U(:)
-                !print *, 'limiter',LimiterFunc%phi
+
                 this%theta (2*(i_Cell-1)+i_Interface)%U(i_eigen) = LimiterFunc%theta
                 this%phi   (2*(i_Cell-1)+i_Interface)%U(i_eigen) = LimiterFunc%phi
 
-                !print*,"theta", LimiterFunc%theta
-                !print*,"phi", LimiterFunc%phi
-
                 Wave_tilda%U(:) = alpha_tilda%U(i_eigen) * Jacobian%R(:,i_eigen)
-                !print *,"alpha_tilda%U", alpha_tilda%U(i_eigen)
-                !print *,"Wave_tilda", Wave_tilda%U(:)
+
                 ! The high-resolution (Lax-Wendroff) part
                 F_H%U(:) = F_H%U(:) + Coefficient * 0.5_Dbl * dabs(Jacobian%Lambda%U(i_eigen) ) * ( 1.0_Dbl - dtdx * dabs( Jacobian%Lambda%U(i_eigen) ) ) * Wave_tilda%U(:)
-                !print*,"F_HHHHH", Wave_tilda%U(:)  ! <delete>
+
               end do ON_Eigenvalues
           end do ON_Interface
 
       ! Final update the results
       TempSolution%U(:) = this%U(i_cell)%U(:) - dtdx * F_L%U(:) - dtdx * F_H%U(:) + SourceTerms%Source_1%U(:) - SourceTerms%Source_2%U(:)
 
-      !print*,i_Cell, SourceTerms%Source_1%U(:)
 
-      !print*,"pre results", TempSolution%U(:), F_H%U(:)!,F_H%U(:), SourceTerms%Source_1%U(:), SourceTerms%Source_2%U(:)
       this%U(i_cell)%U(:) = matmul(SourceTerms%BI(:,:), TempSolution%U(:))
-      !print*,"results", this%U(i_cell)%U(:)
 
       end do ON_Cells
 
     ! apply boundary condition
     call this%BC()
 
-  !print*,i_steps
-  !read(*,*)
   end do Time_Marching
 
 write(*,       *) " end subroutine < Solver_1D_with_Limiter_sub >"
