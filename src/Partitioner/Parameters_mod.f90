@@ -9,12 +9,14 @@
 ! The University of Texas at Austin
 !
 ! ================================ V E R S I O N ==================================================
-! V0.1: 08/02/2018 - Initiation.
+! V0.00: 04/16/2018 - Initiation.
 ! V0.10: 03/08/2018 - Initiated: Compiled without error.
+! V1.00: 03/20/2018 - Finalized: Compiled without error.
+! V2.00: 04/16/2018 - Initiating the partitioner.
 !
 ! File version $Id
 !
-! Last update: 08/02/2018
+! Last update: 04/16/2018
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
 ! (Refer to the main code to see the list of imported variables)
@@ -77,7 +79,7 @@ integer(kind=Smll), Parameter, Public  :: Un_CHK=599 ! Scratch file for debuggin
 integer(kind=Smll), Parameter, Public  :: FileInfo=600    ! Model information file (.Inf)
 integer(kind=Smll), Parameter, Public  :: FileDomain=601  ! output file containing the domain (.domain)
 integer(kind=Smll), Parameter, Public  :: FileResults=602 ! output file containing results (.res)
-
+integer(kind=Smll), Parameter, Public  :: FilePartition=603 ! partitioned data (.par)
 
 ! Analysis case number ============================================================================
 integer(kind=Smll), Parameter, Public :: AnalysisType_1D=1 ! 1D Shallow water simulation Lax-wendroff

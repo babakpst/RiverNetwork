@@ -39,6 +39,7 @@ module Results_mod
 ! User defined modules ============================================================================
 use Parameters_mod
 use Input_mod
+use Discretization_mod
 
 implicit none
 
@@ -135,11 +136,10 @@ write(*,       *) " subroutine < Plot_Domain_1D_sub >: "
 write(FileInfo,*) " subroutine < Plot_Domain_1D_sub >: "
 
 ! - Opening the domain file -----------------------------------------------------------------------
-UnFile = FileDomain
-
 write(*,       *) " -Writing down the domain in the .Domain file ... "
 write(FileInfo,*) " -Writing down the domain in the .Domain file ... "
 
+UnFile = FileDomain
 open(unit=UnFile, file=trim(ModelInfo%ModelName)//'.Domain', Err=1001, iostat=IO_File, &
      access='sequential', action='write', asynchronous='no', blank='NULL', blocksize=0, &
      defaultfile=trim(ModelInfo%OutputDir), dispose='keep', form='formatted', position='asis', &
@@ -215,7 +215,7 @@ end subroutine Plot_Domain_1D_sub
 !
 !##################################################################################################
 
-subroutine Partitioner_1D_Sub(this, Geometry)
+subroutine Partitioner_1D_Sub(this, Geometry, Discretization)
 
 ! Libraries =======================================================================================
 
@@ -254,7 +254,7 @@ implicit none
 ! - types -----------------------------------------------------------------------------------------
 class(partition_tp) :: this
 type(Geometry_tp)   :: Geometry
-
+type(discretization_tp) :: Discretization
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
@@ -271,7 +271,9 @@ integer(kind=Shrt) :: i_partition ! Loop index for the number of processes/ranks
 !#real(kind=Dbl), dimension (:)      ::
 !#real(kind=Dbl), allocatable, dimension (:)  ::
 ! - character variables ---------------------------------------------------------------------------
-!#character(kind = ?, Len = ? ) ::
+Character(kind = 1, len = 20) :: IndexRank ! Rank no in the Char. fmt to add to the input file Name
+Character(kind = 1, len = 20) :: IndexSize ! Size no in the Char. fmt to add to the input file Name
+
 ! - logical variables -----------------------------------------------------------------------------
 !#logical   ::
 ! - type ------------------------------------------------------------------------------------------
@@ -281,17 +283,50 @@ write(*,       *) " subroutine < Partitioner_1D_Sub >: "
 write(FileInfo,*) " subroutine < Partitioner_1D_Sub >: "
 
 ! Computing the chunk of each process
+Discretization%NCells
 
+! Check load balancing based on the remainder
+
+
+write(*,       *) " -Data partitioning ... "
+write(FileInfo,*) " -Data partitioning ... "
 
   On_Partitions: do i_partition = 1, Geometry%size
-    write(*,       *) " Creating input files for process no.: ", i_partition-1_Shrt
-    write(FileInfo,*) " Creating input files for process no.: ", i_partition-1_Shrt
+    write(*,        fmt="(A,I10)") " Partitioning for process no.: ", i_partition-1_Shrt
+    write(FileInfo, fmt="(A,I10)") " Partitioning for process no.: ", i_partition-1_Shrt
+
+    ! Opening the output files.
+    write(*,       *) " Creating input files ..."
+    write(FileInfo,*) " Creating input files ..."
+
+    ! Directories for the input files <modify>
 
 
+    ! open file for this partition
+    write(part,fmt"('I10')")i_partition
+
+    write (IndexRank, *) i_partition - 1_Shrt ! Converts Rank to Character format for the file Name
+    write (IndexSize, *) Geometry%size          ! Converts Size to Character format for the file Name
 
 
+    UnFile = FilePartition
+    open(unit=UnFile, &
+    file=trim(ModelInfo%ModelName)// &
+              '_s'//Trim(AdjustL(IndexSize))//'_p'//Trim(AdjustL(IndexRank))//'.par', &
+         Err=1001, iostat=IO_File, &
+         access='sequential', action='write', asynchronous='no', blank='NULL', blocksize=0, &
+         defaultfile=trim(ModelInfo%OutputDir), dispose='keep', form='formatted', position='asis',&
+         status='replace')
 
-  end do
+
+    ! - Closing the input file for this partition -------------------------------------------------
+    write(*,        *) " Closing the input file ... "
+    write(FileInfo, *) " Closing the input file ... "
+
+    UnFile =  FilePartition
+    close(unit=UnFile, status="keep", err=1002, iostat=IO_File)
+
+  end do On_Partitions
 
 write(*,       *) " Partitioning conducted successfully."
 write(FileInfo,*) " Partitioning conducted successfully."
