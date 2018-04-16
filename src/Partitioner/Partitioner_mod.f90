@@ -128,10 +128,22 @@ Character(kind = 1, len = 20) :: IndexSize ! Size no in the Char. fmt to add to 
 ! - logical variables -----------------------------------------------------------------------------
 !#logical   ::
 ! - type ------------------------------------------------------------------------------------------
+type(vector), dimension(-1_Lng:NCells+2_Lng)  :: U ! The solution, required for initialization
 
 ! code ============================================================================================
 write(*,       *) " subroutine < Partitioner_1D_Sub >: "
 write(FileInfo,*) " subroutine < Partitioner_1D_Sub >: "
+
+
+! Initialization of the solution
+U(1:Discretization%NCells)%U(1) = this%AnalysisInfo%CntrlV -    Discretization%ZCell(:)
+U(0 )%U(1) = U(1)%U(1)
+U(-1)%U(1) = U(1)%U(1)
+
+U(Discretization%NCells+1)%U(1) = U(Discretization%NCells)%U(1)
+U(Discretization%NCells+2)%U(1) = U(Discretization%NCells)%U(1)
+
+U(:)%U(2) = 0.0_Dbl   ! Setting the discharge/velocity equal to zero <modify> read this from the input file
 
 ! Computing the chunk of each process
 remainder = mod(Discretization%NCells, Geometry%size)
@@ -165,6 +177,20 @@ write(FileInfo,*) " -Data partitioning ... "
          access='sequential', action='write', asynchronous='no', blank='NULL', blocksize=0, &
          defaultfile=trim(ModelInfo%InputDir), dispose='keep', form='formatted', position='asis',&
          status='replace')
+
+    ! Partitioning
+    UnFile = FilePartition
+    write(unit=UnFile, fmt="('I23')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) chunk(i_partition)
+
+
+
+
+
+
+
+
+
+
 
 
 

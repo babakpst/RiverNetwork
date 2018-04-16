@@ -114,7 +114,7 @@ type, public :: SolverWithLimiter(NCells)
 
   type(vector), dimension(NCells*2) :: phi   ! Holds the value of the limiter function <delete> <modify>
   type(vector), dimension(NCells*2) :: theta ! Holds the value of the limiter function <delete> <modify>
-  type(vector), dimension(-1_Lng:NCells+2_Lng)  :: U     ! This vector holds the solution at the current step,
+  type(vector), dimension(-1_Lng:NCells+2_Lng)  :: U ! This vector holds the solution at the current step,
                                             ! the first term holds "h" and the second holds "uh"
   type(discretization_tp) :: Discretization ! Contains the discretization of the domain
   type(AnalysisData_tp)   :: AnalysisInfo   ! Holds information for the analysis
@@ -124,7 +124,6 @@ type, public :: SolverWithLimiter(NCells)
     procedure Solve => Solver_1D_with_Limiter_sub
     procedure BC => Impose_Boundary_Condition_1D_sub
 end type SolverWithLimiter
-
 
 contains
 
@@ -230,9 +229,12 @@ allocate(Plot_Results_1D_limiter_tp(NCells = this%NCells) :: Results)
 this%U(1:this%NCells)%U(1) = this%AnalysisInfo%CntrlV -    this%Discretization%ZCell(:)
 this%U(0)%U(1)  = this%U(1)%U(1)
 this%U(-1)%U(1) = this%U(1)%U(1)
+
 this%U(this%NCells+1)%U(1) = this%U(this%NCells)%U(1)
 this%U(this%NCells+2)%U(1) = this%U(this%NCells)%U(1)
+
 this%U(:)%U(2) = 0.0_Dbl
+
 
 this%S(:)%U(1)     = 0.0_Dbl
 this%S(:)%U(2)     = 0.0_Dbl
@@ -240,6 +242,9 @@ this%phi(:)%U(1)   = 0.0_Dbl
 this%phi(:)%U(2)   = 0.0_Dbl
 this%theta(:)%U(1) = 0.0_Dbl
 this%theta(:)%U(2) = 0.0_Dbl
+
+
+
 
 NSteps = this%AnalysisInfo%TotalTime/this%AnalysisInfo%TimeStep
 dt     = this%AnalysisInfo%TimeStep
@@ -484,7 +489,6 @@ class(SolverWithLimiter(*)) :: this
 ! code ============================================================================================
 !write(*,       *) " subroutine < Impose_Boundary_Condition_1D_sub >: "
 !write(FileInfo,*) " subroutine < Impose_Boundary_Condition_1D_sub >: "
-
 
 ! Boundary conditions on the height
 this%U(-1_Lng)%U(1) = this%U(2)%U(1) ! h at the upstream
