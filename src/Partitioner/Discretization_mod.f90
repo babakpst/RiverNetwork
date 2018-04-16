@@ -37,6 +37,8 @@ module Discretization_mod
 
 ! User defined modules ============================================================================
 use Parameters_mod
+use Input_mod
+use Results_mod
 
 implicit none
 
@@ -94,7 +96,6 @@ subroutine Discretize_1D_sub(this, Geometry, ModelInfo)
 
 
 ! User defined modules ============================================================================
-use Results_mod
 
 implicit none
 

@@ -95,8 +95,6 @@ write(*,*)
 end subroutine Header
 
 
-
-
 !##################################################################################################
 ! Purpose: This subroutine writes down the initial data about the simulation.
 !

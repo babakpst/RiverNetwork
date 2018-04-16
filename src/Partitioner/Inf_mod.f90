@@ -12,10 +12,11 @@
 ! V0.1: 02/12/2018 - Initiation.
 ! V0.2: 02/23/2018 - Adding the header subroutine.
 ! V1.0: 03/20/2018 - Code compiled with no error/warning.
+! V2.0: 04/16/2018 - Initiation of the partitioner.
 !
 ! File version $Id $
 !
-! Last update: 04/12/2018
+! Last update: 04/16/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 !
@@ -146,3 +147,56 @@ write(*, *) 'End Subroutine < InfBasic >'
 Return
 End Subroutine InfBasic
 
+!##################################################################################################
+! Purpose: This subroutine writes down the initial data about the simulation.
+!
+! Developed by: Babak Poursartip
+! Supervised by: Clint Dawson
+!
+! The Institute for Computational Engineering and Sciences (ICES)
+! The University of Texas at Austin
+!
+! ================================ V E R S I O N ==================================================
+! V0.01: 02/12/2018 - Initiation.
+! V0.10: 03/08/2018 - Initiated: Compiled without error.
+!
+! File version $Id $
+!
+! Last update: 12/02/2018
+!
+! ================================ L O C A L   V A R I A B L E S ==================================
+! (Refer to the main code to see the list of imported variables)
+!  . . . . . . . . . . . . . . . . Variables . . . . . . . . . . . . . . . . . . . . . . . . . . .
+!
+!##################################################################################################
+
+Subroutine InfTime(TimeE, TimeS, TimeInputE, TimeInputS, TimeSolveE, TimeSolveS)
+
+Implicit None
+
+! =========================== Global Variables ====================================================
+
+! - Real Variables --------------------------------------------------------------------------------
+Real (kind=Dbl), Intent(In) :: TimeE, TimeS, TimeInputE, TimeInputS, TimeSolveE, TimeSolveS
+
+! =========================== Local Variables =====================================================
+
+! =========================== Subroutine CODE =====================================================
+
+write(FileInfo,*)
+
+!write(*     ,Fmt_RUNTIME) "TOTAL"   , TimeE - TimeS
+
+write(FileInfo,*)"---------- RUNNING TIME STATISTICS ----------"
+
+write(FileInfo,Fmt_RUNTIME) "Reading Input files           ", TimeInputE  - TimeInputS
+write(FileInfo,Fmt_RUNTIME) "SOLVE                         ", TimeSolveE  - TimeSolveS
+write(FileInfo,Fmt_RUNTIME) "TOTAL                         ", TimeE       - TimeS
+write(FileInfo,*)
+
+write(*     ,*) ' End Subroutine < InfTime >'
+
+Return
+End Subroutine InfTime
+
+End Module Information_mod

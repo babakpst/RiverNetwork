@@ -13,7 +13,7 @@
 ! V0.01: 03/02/2018 - Initiated: Compiled without error for the first time.
 ! V0.10: 03/08/2018 - Initiated: Compiled without error.
 ! V1.00: 03/20/2018 - Compiled without error.
-! V2.00: 04/15/2018 - Modified for the partitioner.
+! V2.00: 04/16/2018 - Modified for the partitioner.
 !
 ! File version $Id $
 !
@@ -21,7 +21,6 @@
 !
 ! ================================ S U B R O U T I N E ============================================
 ! 1D_Domain: Plot the discretized domain.
-! Partitioner_1D_Sub: Creates the input files for various processes.
 !
 ! ================================ F U N C T I O N ================================================
 !
@@ -39,12 +38,8 @@ module Results_mod
 ! User defined modules ============================================================================
 use Parameters_mod
 use Input_mod
-use Discretization_mod
 
 implicit none
-
-!public
-!private
 
 ! This vector will be used in the main type as the solution in each type step
 type vector
@@ -62,22 +57,6 @@ type Plot_domain_1D_tp(NCells)
   contains
     procedure plot => Plot_Domain_1D_sub
 end type Plot_domain_1D_tp
-
-
-
-
-
-type partition_tp
-
-  contains
-   procedure partition => Partitioner_1D_Sub
-
-end type partition_tp
-
-
-
-
-
 
 contains
 
@@ -191,156 +170,5 @@ return
      write(*, Fmt_FL); write(FileInfo, Fmt_FL); write(*, Fmt_End); read(*,*);  stop;
 
 end subroutine Plot_Domain_1D_sub
-
-
-!##################################################################################################
-! Purpose: This subroutine creates the input file for each partition/process.
-!
-! Developed by: Babak Poursartip
-!
-! The Institute for Computational Engineering and Sciences (ICES)
-! The University of Texas at Austin
-!
-! ================================ V E R S I O N ==================================================
-! V0.00: 04/15/2018 - Subroutine initiated.
-! V0.01: 04/16/2018 - Initiated: Compiled without error for the first time.
-!
-! File version $Id $
-!
-! Last update: 04/16/2018
-!
-! ================================ L O C A L   V A R I A B L E S ==================================
-! (Refer to the main code to see the list of imported variables)
-!  . . . . . . . . . . . . . . . . Variables . . . . . . . . . . . . . . . . . . . . . . . . . . .
-!
-!##################################################################################################
-
-subroutine Partitioner_1D_Sub(this, Geometry, Discretization)
-
-! Libraries =======================================================================================
-
-! User defined modules ============================================================================
-
-implicit none
-
-! Global variables ================================================================================
-
-! - integer variables -----------------------------------------------------------------------------
-!#integer(kind=Shrt), intent(in)    ::
-!#integer(kind=Shrt), intent(inout) ::
-!#integer(kind=Shrt), intent(out)   ::
-! - real variables --------------------------------------------------------------------------------
-!#real(kind=Dbl),     intent(in)    ::
-!#real(kind=Dbl),     intent(inout) ::
-!#real(kind=Dbl),     intent(out)   ::
-! - complex variables -----------------------------------------------------------------------------
-!#complex,             intent(in)    ::
-!#complex,             intent(inout) ::
-!#complex,             intent(out)   ::
-! - integer Arrays --------------------------------------------------------------------------------
-!#integer(kind=Shrt), intent(in),    dimension (:  )  ::
-!#integer(kind=Shrt), intent(in),    dimension (:,:)  ::
-!#integer(kind=Shrt), intent(in)    ::
-!#integer(kind=Shrt), intent(inout) ::
-!#integer(kind=Shrt), intent(out)   ::
-! - real Arrays -----------------------------------------------------------------------------------
-!#real(kind=Dbl),     intent(in),    dimension (:  )  ::
-!#real(kind=Dbl),     intent(inout), dimension (:  )  ::
-!#real(kind=Dbl),     intent(out),   dimension (:  )  ::
-! - character variables ---------------------------------------------------------------------------
-!#character(kind = ?, Len = ? ) ::
-! - logical variables -----------------------------------------------------------------------------
-!#logical   ::
-! - types -----------------------------------------------------------------------------------------
-class(partition_tp) :: this
-type(Geometry_tp)   :: Geometry
-type(discretization_tp) :: Discretization
-
-! Local variables =================================================================================
-! - integer variables -----------------------------------------------------------------------------
-integer(kind=Shrt) :: i_partition ! Loop index for the number of processes/ranks
-
-! - real variables --------------------------------------------------------------------------------
-!#real(kind=Dbl)      ::
-! - complex variables -----------------------------------------------------------------------------
-!#complex              ::
-! - integer Arrays --------------------------------------------------------------------------------
-!#integer(kind=Shrt), dimension (:)  ::
-!#integer(kind=Shrt), Allocatable, dimension (:)  ::
-! - real Arrays -----------------------------------------------------------------------------------
-!#real(kind=Dbl), dimension (:)      ::
-!#real(kind=Dbl), allocatable, dimension (:)  ::
-! - character variables ---------------------------------------------------------------------------
-Character(kind = 1, len = 20) :: IndexRank ! Rank no in the Char. fmt to add to the input file Name
-Character(kind = 1, len = 20) :: IndexSize ! Size no in the Char. fmt to add to the input file Name
-
-! - logical variables -----------------------------------------------------------------------------
-!#logical   ::
-! - type ------------------------------------------------------------------------------------------
-
-! code ============================================================================================
-write(*,       *) " subroutine < Partitioner_1D_Sub >: "
-write(FileInfo,*) " subroutine < Partitioner_1D_Sub >: "
-
-! Computing the chunk of each process
-Discretization%NCells
-
-! Check load balancing based on the remainder
-
-
-write(*,       *) " -Data partitioning ... "
-write(FileInfo,*) " -Data partitioning ... "
-
-  On_Partitions: do i_partition = 1, Geometry%size
-    write(*,        fmt="(A,I10)") " Partitioning for process no.: ", i_partition-1_Shrt
-    write(FileInfo, fmt="(A,I10)") " Partitioning for process no.: ", i_partition-1_Shrt
-
-    ! Opening the output files.
-    write(*,       *) " Creating input files ..."
-    write(FileInfo,*) " Creating input files ..."
-
-    ! Directories for the input files <modify>
-
-
-    ! open file for this partition
-    write(part,fmt"('I10')")i_partition
-
-    write (IndexRank, *) i_partition - 1_Shrt ! Converts Rank to Character format for the file Name
-    write (IndexSize, *) Geometry%size          ! Converts Size to Character format for the file Name
-
-
-    UnFile = FilePartition
-    open(unit=UnFile, &
-    file=trim(ModelInfo%ModelName)// &
-              '_s'//Trim(AdjustL(IndexSize))//'_p'//Trim(AdjustL(IndexRank))//'.par', &
-         Err=1001, iostat=IO_File, &
-         access='sequential', action='write', asynchronous='no', blank='NULL', blocksize=0, &
-         defaultfile=trim(ModelInfo%OutputDir), dispose='keep', form='formatted', position='asis',&
-         status='replace')
-
-
-    ! - Closing the input file for this partition -------------------------------------------------
-    write(*,        *) " Closing the input file ... "
-    write(FileInfo, *) " Closing the input file ... "
-
-    UnFile =  FilePartition
-    close(unit=UnFile, status="keep", err=1002, iostat=IO_File)
-
-  end do On_Partitions
-
-write(*,       *) " Partitioning conducted successfully."
-write(FileInfo,*) " Partitioning conducted successfully."
-
-write(*,       *) " end subroutine < Partitioner_1D_Sub >"
-write(FileInfo,*) " end subroutine < Partitioner_1D_Sub >"
-return
-end subroutine Partitioner_1D_Sub
-
-
-
-
-
-
-
 
 end module Results_mod

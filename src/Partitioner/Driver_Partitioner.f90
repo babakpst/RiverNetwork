@@ -43,6 +43,7 @@ use Parameters_mod
 use Information_mod
 use Input_mod
 use Discretization_mod
+use Partitioner_mod
 
 ! Global Variables ================================================================================
 Implicit None
@@ -135,32 +136,8 @@ write(FileInfo, fmt="(A)") " -Discretization ..."
 
 call Discretization%Discretize(Geometry, ModelInfo)
 
-! Writes down the results of partitioning.
-call Results()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+! Partitioning and writing results
+call Partitioner_1D_Sub(Geometry, Discretization, ModelInfo)
 
 ! Deallocating arrays
 DEallocate(Arguments%Length, Arguments%Arg, Arguments%Argstatus,      stat = ERR_DeAlloc )
@@ -169,8 +146,7 @@ DEallocate(Arguments%Length, Arguments%Arg, Arguments%Argstatus,      stat = ERR
     write(*, Fmt_FL); write(FileInfo, Fmt_FL);  write(*, Fmt_End);  read(*,*);   stop;
   end if
 
-
-! RUNNING TIME OF THE CODE ========================================================================
+! Running time of the code ========================================================================
 Call cpu_time(SimulationTime%Time_End)
 !Call Info()
 
