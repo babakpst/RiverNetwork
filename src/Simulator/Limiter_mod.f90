@@ -426,11 +426,10 @@ Results%ModelInfo = this%ModelInfo
               end do ON_Eigenvalues
           end do ON_Interface
 
-      ! Final update the results
-      TempSolution%U(:) = this%U(i_cell)%U(:) - dtdx * F_L%U(:) - dtdx * F_H%U(:) + SourceTerms%Source_1%U(:) - SourceTerms%Source_2%U(:)
+        ! Final update the results
+        TempSolution%U(:) = this%U(i_cell)%U(:) - dtdx * F_L%U(:) - dtdx * F_H%U(:) + SourceTerms%Source_1%U(:) - SourceTerms%Source_2%U(:)
 
-
-      this%U(i_cell)%U(:) = matmul(SourceTerms%BI(:,:), TempSolution%U(:))
+        this%U(i_cell)%U(:) = matmul(SourceTerms%BI(:,:), TempSolution%U(:))
 
       end do ON_Cells
 

@@ -178,9 +178,48 @@ write(FileInfo,*) " -Data partitioning ... "
          defaultfile=trim(ModelInfo%InputDir), dispose='keep', form='formatted', position='asis',&
          status='replace')
 
-    ! Partitioning
+    ! Writing the total number of cells in each partition
     UnFile = FilePartition
-    write(unit=UnFile, fmt="('I23')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) chunk(i_partition)
+    write(unit=UnFile, fmt="('I23')",   advance='yes', asynchronous='no', iostat=IO_write, err=1006) chunk(i_partition)
+    ! Writing the length of each cell in each partition
+    write(unit=UnFile, fmt="('F23.8')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) Discretization%LengthCell(1)
+
+    counter = 0
+    UnFile = FilePartition
+    do i_cells = 1_Lng, chunk(i_partition)
+      counter = counter + 1
+      write(unit=UnFile, fmt="('F23.8')", &
+            advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
+            Discretization%LengthCell(Discretization%NCells),              &
+            Discretization%SlopeCell(Discretization%NCells),               &
+            Discretization%ZCell(Discretization%NCells),                   &
+            Discretization%ManningCell(Discretization%NCells),             &
+            Discretization%WidthCell(Discretization%NCells),               &
+            Discretization%X_Disc(Discretization%NCells),                  &
+
+
+    end do
+
+
+
+
+
+
+
+
+
+
+
+Discretization%SlopeInter(Discretization%NCells+1),            &
+Discretization%ZFull(Discretization%NCells*2_Sgl + 1_Sgl),     &
+Discretization%X_Full(Discretization%NCells*2_Sgl + 1_Sgl),    &
+
+
+
+
+
+
+
 
 
 
