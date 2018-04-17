@@ -20,17 +20,16 @@
 ! V0.11: 03/09/2018  - Adding limiter to the code
 ! V0.12: 03/20/2018  - Debugging the code with limiter
 ! V1.00: 04/10/2018  - Cleaning the code after having the right results
-! V2.00: 04/12/2018  - Developing the partitioner code.
+! V2.00: 04/17/2018  - Developing the partitioner code.
 !
 ! File version $Id $
 !
-! Last update: 04/12/2018
+! Last update: 04/17/2018
 !
 ! ================================ Global   V A R I A B L E S =====================================
 !  . . . . . . . . . . . . . . . . Variables . . . . . . . . . . . . . . . . . . . . . . . . . . .
 !
 !##################################################################################################
-
 
 program Shallow_Water_Equation
 
@@ -165,7 +164,6 @@ Close(Unit=UnFile, status='Keep', Err=1002, IOstat=IO_File)
 !#read(*,*)
 stop
 
-
 ! Errors ==========================================================================================
 ! Opening statement Errors
 1001  if (IO_File > 0) then
@@ -177,7 +175,6 @@ stop
         write(FileInfo, Fmt_Err1_OPEN) UnFile, IO_File; write(*, Fmt_FL); write(FileInfo, Fmt_FL);
         write(*, Fmt_End);  read(*,*);   stop;
       end if
-
 
 ! Close statement Errors
 1002  if (IO_File > 0) then

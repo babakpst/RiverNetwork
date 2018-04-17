@@ -12,11 +12,11 @@
 ! V0.10: 02/22/2018 - Initiation.
 ! V0.10: 03/08/2018 - Initiated: Compiled without error.
 ! V1.00: 04/10/2018 - Major modifications
-! V2.00: 04/12/2018 - Partitioner
+! V2.00: 04/17/2018 - Partitioner
 !
 ! File version $Id $
 !
-! Last update: 04/12/2018
+! Last update: 04/17/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! Input_Address_sub: Reads file name and directories from the address file.
@@ -77,25 +77,6 @@ type Geometry_tp
     procedure Array => Input_Array_sub
 
 end type Geometry_tp
-
-
-! Contains all information about the domain, required
-type AnalysisData_tp
-  integer(kind=Smll) :: AnalysisType ! Analysis Type      -1:1D Lax-Wendroff
-                                     !                    -2:1D Lax-Wendroff with limiter
-  integer(kind=Smll) :: limiter      ! limiter type
-
-  real(kind=DBL):: TotalTime ! Total simulation time (in seconds)
-  real(kind=DBL):: TimeStep  ! Time Step
-  real(kind=DBL):: Q_Up      ! Upstream boundary condition, constant flow (m^3/s)
-  real(kind=DBL):: h_dw      ! Downstream water depth (in meters)
-  real(kind=DBL):: CntrlV    ! Initial control volume
-  real(kind=DBL):: CntrlV_ratio  ! Initial control volume ration, used to initialize data
-
-  contains
-    procedure Analysis => Input_Analysis_sub
-
-end type AnalysisData_tp
 
 
 contains
@@ -241,7 +222,6 @@ Return
        write(*, Fmt_FL); write(FileInfo, Fmt_FL);
        write(*, Fmt_End); read(*,*); stop;
      end if
-
 
 End Subroutine Input_Address_sub
 
@@ -569,205 +549,6 @@ Return
 1006 write(*, Fmt_write1) UnFile, IO_write; write(UnFile, Fmt_write1) UnFile, IO_write;
      write(*, Fmt_FL); write(FileInfo, Fmt_FL); write(*, Fmt_End); read(*,*);  stop;
 
-End Subroutine Input_Array_sub
-
-!##################################################################################################
-! Purpose: This subroutine reads information required for a particular analysis.
-!
-! Developed by: Babak Poursartip
-! Supervised by: Clint Dawson
-!
-! The Institute for Computational Engineering and Sciences (ICES)
-! The University of Texas at Austin
-!
-! ================================ V E R S I O N ==================================================
-! V0.1: 02/13/2018 - Initiation.
-! V1.0: 03/01/2018 - Compiled with no errors/warnings for the first time.
-! V1.0: 04/10/2018 - Minor modifications in the classes/objects.
-!
-! File version $Id $
-!
-! Last update: 04/01/2018
-!
-! ================================ L O C A L   V A R I A B L E S ==================================
-! (Refer to the main code to see the list of imported variables)
-!  . . . . . . . . . . . . . . . . Variables . . . . . . . . . . . . . . . . . . . . . . . . . . .
-!
-!##################################################################################################
-
-Subroutine Input_Analysis_sub(this, i_analyses, ModelInfo)
-
-! Libraries =======================================================================================
-use ifport
-
-! User defined modules ============================================================================
-
-Implicit None
-
-! Global Variables ================================================================================
-
-! - integer Variables -----------------------------------------------------------------------------
-integer(kind=Smll), intent(In) :: i_analyses
-
-! - Types -----------------------------------------------------------------------------------------
-type(Input_Data_tp), intent(inout) :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
-class(AnalysisData_tp), intent(out) :: this      ! Holds analysis information
-
-! Local Variables =================================================================================
-! - integer Variables -----------------------------------------------------------------------------
-integer(kind=Smll) :: UnFile        ! Holds Unit of a file for error message
-integer(kind=Smll) :: IO_File       ! For IOSTAT: Input Output status in OPEN command
-integer(kind=Smll) :: IO_read  ! Holds error of read statements
-integer(kind=Smll) :: IO_write ! Used for IOSTAT - Input Output Status - in the write command.
-
-! - Logical Variables -----------------------------------------------------------------------------
-logical(kind=Shrt)  :: Directory
-
-! code ============================================================================================
-write(*,       *)
-write(*,       *) " Subroutine < Input_Analysis_sub >: "
-write(FileInfo,*)
-write(FileInfo,*) " Subroutine < Input_Analysis_sub >: "
-
-
-! Opening the input file for this specific simulation
-write(*,        fmt="(A)") " -Opening the analysis file ..."
-write(FileInfo, fmt="(A)") " -Opening the analysis file ..."
-
-print*, ModelInfo%AnalysesNames(i_analyses)
-print*, ModelInfo%AnalysisDir
-
-UnFile=UnInptAna
-Open(Unit=UnFile, File=trim(ModelInfo%AnalysesNames(i_analyses))//'.Analysis', Err= 1001, IOStat=IO_File, Access='sequential', &
-      action='read', Asynchronous='no', blank='null', blocksize=0, defaultfile=trim(ModelInfo%AnalysisDir), &
-      dispose='Keep', form='formatted', position='asis', status='old') ;
-
-! Creating the output file directory for this analysis --------------------------------------------
-write(*,        fmt="(A)") " -Creating the output folder for this analysis ..."
-write(FileInfo, fmt="(A)") " -Creating the output folder for this analysis ..."
-
-Directory=MakeDirQQ (trim(AdjustL (ModelInfo%OutputDir))//'/'//trim(AdjustL(ModelInfo%AnalysesNames(i_analyses))))
-  if (Directory) then ;
-     write(*,       fmt="(A)") "The output folder for this analysis created." ;
-     write(FileInfo,fmt="(A)") "The output folder for this analysis created." ;
-  Else ;
-     write(*,        fmt="(A)") "The output folder for this analysis already exists." ;
-     write(FileInfo, fmt="(A)") "The output folder for this analysis already exists." ;
-  end if ;
-
-ModelInfo%AnalysisOutputDir=trim(AdjustL(ModelInfo%OutputDir))//'/'//trim(AdjustL(ModelInfo%AnalysesNames(i_analyses)))
-
-print*,"check 000", ModelInfo%AnalysisOutputDir
-UnFile = UnInptAna
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%AnalysisType
-UnFile = FileInfo
-write(unit=*,      fmt="(' The Analysis type is: ', I10)") this%AnalysisType
-write(unit=UnFile, fmt="(' The Analysis type is: ', I10)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%AnalysisType
-
-UnFile = UnInptAna
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%TotalTime
-UnFile = FileInfo
-write(unit=*,      fmt="(' The total simulation time is: ', F23.10, ' s')") this%TotalTime
-write(unit=UnFile, fmt="(' The total simulation time is: ', F23.10, ' s')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%TotalTime
-
-UnFile = UnInptAna
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%TimeStep
-UnFile = FileInfo
-write(unit=UnFile, fmt="(' The time step is: ', F23.10, ' s')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%TimeStep
-write(unit=*,      fmt="(' The time step is: ', F23.10, ' s')") this%TimeStep
-
-UnFile = UnInptAna
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%Q_Up
-UnFile = FileInfo
-write(unit=UnFile, fmt="(' Flow rate at the upstream is: ', F23.10, ' m/s3')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%Q_Up
-write(unit=*,      fmt="(' Flow rate at the upstream is: ', F23.10, ' m/s3')") this%Q_Up
-
-UnFile = UnInptAna
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%h_dw
-UnFile = FileInfo
-write(unit=UnFile, fmt="(' Downstream water depth is: ', F23.10, ' m')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%h_dw
-write(unit=*,      fmt="(' Downstream water depth is: ', F23.10, ' m')") this%h_dw
-
-UnFile = UnInptAna
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%CntrlV
-UnFile = FileInfo
-write(unit=UnFile, fmt="(' Control Volume is: ', F23.10, ' m^3')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%CntrlV
-write(unit=*,      fmt="(' Control Volume is: ', F23.10, ' m^3')") this%CntrlV
-
-UnFile = UnInptAna
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%CntrlV_ratio
-UnFile = FileInfo
-write(unit=UnFile, fmt="(' The ratio of control volume is: ', F23.10)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%CntrlV_ratio
-write(unit=*,      fmt="(' The ratio of control volume is: ', F23.10)") this%CntrlV_ratio
-
-UnFile = UnInptAna
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%limiter
-UnFile = FileInfo
-write(unit=UnFile, fmt="(' The limiter is: ', I10)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%limiter
-write(unit=*,      fmt="(' The limiter is: ', I10)") this%CntrlV_ratio
-
-
-write(*,       *) " End Subroutine < Input_Analysis_sub >"
-write(*,       *)
-write(FileInfo,*) " End Subroutine < Input_Analysis_sub >"
-write(FileInfo,*)
-
-Return
-
-! Errors ==========================================================================================
-! Opening statement Errors
-1001 if (IO_File > 0) then
-       write(*, Fmt_Err1_OPEN) UnFile, IO_File; write(FileInfo, Fmt_Err1_OPEN) UnFile, IO_File;
-       write(*, Fmt_FL); write(FileInfo, Fmt_FL);
-       write(*, Fmt_End); read(*,*); stop;
-     Else if ( IO_File < 0 ) then
-       write(*, Fmt_Err1_OPEN) UnFile, IO_File
-       write(FileInfo, Fmt_Err1_OPEN) UnFile, IO_File;  write(*, Fmt_FL) ; write(FileInfo, Fmt_FL);
-       write(*, Fmt_End); read(*,*); stop;
-     end if
-
-
-! Close statement Errors
-1002 if (IO_File > 0) then
-       write(*, Fmt_Err1_Close) UnFile, IO_File; write(FileInfo, Fmt_Err1_Close) UnFile, IO_File;
-       write(*, Fmt_FL); write(FileInfo, Fmt_FL);
-       write(*, Fmt_End); read(*,*); stop;
-     end if
-
-! - Error in read statement -----------------------------------------------------------------------
-1003 write(*, Fmt_read1) UnFile, IO_read; write(UnFile, Fmt_read1) UnFile, IO_read;
-     write(*, Fmt_FL);  write(FileInfo, Fmt_FL); write(*, Fmt_End); read(*,*);  stop;
-
-! - End-OF-FILE in read statement -----------------------------------------------------------------
-1004 write(*, Fmt_read2) UnFile, IO_read; write(UnFile, Fmt_read2) UnFile, IO_read;
-     write(*, Fmt_FL);  write(FileInfo, Fmt_FL); write(*, Fmt_End); read(*,*);  stop;
-
-! - End-OF-FILE IN read statement -----------------------------------------------------------------
-1005 write(*, Fmt_read3) UnFile, IO_read; write(UnFile, Fmt_read3) UnFile, IO_read;
-     write(*, Fmt_FL);  write(FileInfo, Fmt_FL); write(*, Fmt_End); read(*,*);  stop;
-
-! - write statement error -------------------------------------------------------------------------
-1006 write(*, Fmt_write1) UnFile, IO_write; write(UnFile, Fmt_write1) UnFile, IO_write;
-     write(*, Fmt_FL); write(FileInfo, Fmt_FL); write(*, Fmt_End); read(*,*);  stop;
-
-End Subroutine Input_Analysis_sub
-
+end Subroutine Input_Array_sub
 
 end module Input_mod
