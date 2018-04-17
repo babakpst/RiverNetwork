@@ -1,6 +1,7 @@
 
 !##################################################################################################
-! Purpose: This code solves the 2D Shallow Water Equation
+! Purpose: This code solves the 1D and 2D Shallow Water Equations, in parallel, using the hybrid
+!          programming (OMP and MPI)
 !
 ! Developed by: Babak Poursartip
 ! Supervised by: Clint Dawson
@@ -20,18 +21,18 @@
 ! V0.11: 03/09/2018  - Adding limiter to the code
 ! V0.12: 03/20/2018  - Debugging the code with limiter
 ! V1.00: 04/10/2018  - Cleaning the code after having the right results
+! V2.00: 04/17/2018  - Parallelization using OMP
 !
 ! File version $Id $
 !
-! Last update: 03/20/2018
+! Last update: 04/17/2018
 !
 ! ================================ Global   V A R I A B L E S =====================================
 !  . . . . . . . . . . . . . . . . Variables . . . . . . . . . . . . . . . . . . . . . . . . . . .
 !
 !##################################################################################################
 
-
-program Shallow_Water_Equation
+program Shallow_Water_Equations
 
 
 ! Libraries =======================================================================================
@@ -41,8 +42,6 @@ use ifport
 use Parameters_mod
 use Information_mod
 use Input_mod
-use Discretization_mod
-use LaxWendroff_mod
 use LaxWendroff_with_limiter_mod
 
 ! Global Variables ================================================================================
@@ -243,4 +242,4 @@ stop
         write(*, Fmt_End); read(*,*);   stop;
       end if
 
-end program Shallow_Water_Equation
+end program Shallow_Water_Equations
