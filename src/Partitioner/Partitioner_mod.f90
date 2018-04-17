@@ -112,6 +112,7 @@ integer(kind=Shrt) :: i           ! Loop index
 integer(kind=Shrt) :: remainder   !
 
 integer(kind=Lng) :: counter      ! Counter for cells
+integer(kind=Lng) :: i_cells      ! Loop index for counting number of cells
 
 ! - real variables --------------------------------------------------------------------------------
 !#real(kind=Dbl)      ::
@@ -127,25 +128,9 @@ integer(kind=Lng), dimension (Geometry%size)  :: chunk       ! share of the doma
 Character(kind = 1, len = 20) :: IndexRank ! Rank no in the Char. fmt to add to the input file Name
 Character(kind = 1, len = 20) :: IndexSize ! Size no in the Char. fmt to add to the input file Name
 
-! - logical variables -----------------------------------------------------------------------------
-!#logical   ::
-! - type ------------------------------------------------------------------------------------------
-type(vector), dimension(-1_Lng:NCells+2_Lng)  :: U ! The solution, required for initialization
-
 ! code ============================================================================================
 write(*,       *) " subroutine < Partitioner_1D_Sub >: "
 write(FileInfo,*) " subroutine < Partitioner_1D_Sub >: "
-
-
-! Initialization of the solution
-U(1:Discretization%NCells)%U(1) = this%AnalysisInfo%CntrlV -    Discretization%ZCell(:)
-U(0 )%U(1) = U(1)%U(1)
-U(-1)%U(1) = U(1)%U(1)
-
-U(Discretization%NCells+1)%U(1) = U(Discretization%NCells)%U(1)
-U(Discretization%NCells+2)%U(1) = U(Discretization%NCells)%U(1)
-
-U(:)%U(2) = 0.0_Dbl   ! Setting the discharge/velocity equal to zero <modify> read this from the input file
 
 ! Computing the chunk of each process
 remainder = mod(Discretization%NCells, Geometry%size)
