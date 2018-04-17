@@ -149,11 +149,11 @@ allocate(this%LengthCell(this%NCells),              &
          this%SlopeCell(this%NCells),               &
          this%SlopeInter(this%NCells+1),            &
          this%ZCell(this%NCells),                   &
-         this%ZFull(this%NCells*2_Sgl + 1_Sgl),     &
+         this%ZFull(this%NCells*2_Lng + 1_Lng),     &
          this%ManningCell(this%NCells),             &
          this%WidthCell(this%NCells),               &
          this%X_Disc(this%NCells),                  &
-         this%X_Full(this%NCells*2_Sgl + 1_Sgl),    &
+         this%X_Full(this%NCells*2_Lng + 1_Lng),    &
          stat=ERR_Alloc)
 
   if (ERR_Alloc /= 0) then

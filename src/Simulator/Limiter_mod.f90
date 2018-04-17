@@ -282,7 +282,7 @@ Results%ModelInfo = this%ModelInfo
         call Results%plot_results(i_steps)
       end if
 
-      ON_Cells: do i_Cell = 2_Lng,this%NCells-1  ! Loop over the cells except the boundary cells.
+      ON_Cells: do i_Cell = 2_Lng, this%NCells-1  ! Loop over the cells except the boundary cells.
 
         !print*, "=============Cell:", i_Cell
 
@@ -295,29 +295,27 @@ Results%ModelInfo = this%ModelInfo
 
         ! Solution at this cell
         height   = this%U(i_Cell)%U(1)
-        velocity = this%U(i_Cell)%U(2) / height
+        velocity = this%U(i_Cell)%U(2)/height
 
         ! Find the B matrix for this cell
-        SourceTerms%S_f = (this%Discretization%ManningCell(i_Cell)**2.0)  * velocity * dabs(velocity) /( height**(4.0_Dbl/3.0_Dbl) )
+        SourceTerms%S_f = (this%Discretization%ManningCell(i_Cell)**2.0) * velocity * dabs(velocity) /( height**(4.0_Dbl/3.0_Dbl) )
 
         SourceTerms%B(1,1) = 0.0_Dbl
         SourceTerms%B(1,2) = 0.0_Dbl
         SourceTerms%B(2,1) = - Gravity * ( this%Discretization%SlopeCell(i_Cell) + (7.0_Dbl/3.0_Dbl) * SourceTerms%S_f  )
         SourceTerms%B(2,2) =   (2.0_Dbl * this%Discretization%ManningCell(i_Cell)**2.0)  * dabs(velocity) /( height**(4.0_Dbl/3.0_Dbl) )
 
-        !print*,"B: ",i_Cell, SourceTerms%B
-
         ! Find the BI
         SourceTerms%BI(:,:) = SourceTerms%Identity - 0.5_Dbl * dt * SourceTerms%B(:,:)
-        !print*,"BI before",SourceTerms%BI
+
         call Inverse(SourceTerms%BI(:,:), SourceTerms%BI(:,:)) ! the inverse
-        !print*,"BI ",SourceTerms%BI
+
         ! Source terms at the current cell/time
         SourceTerms%S%U(1) = 0.0_Dbl
         SourceTerms%S%U(2) = - Gravity * height  * ( this%Discretization%SlopeCell(i_Cell) - SourceTerms%S_f )
 
         ! The first contribution of the source term in the solution
-        SourceTerms%Source_1%U(:) = dt * ( SourceTerms%S%U(:)  - 0.5_Dbl * matmul( SourceTerms%B(:,:), this%U(i_Cell)%U(:) )  )
+        SourceTerms%Source_1%U(:) = dt * ( SourceTerms%S%U(:)  - 0.5_Dbl * matmul(SourceTerms%B(:,:), this%U(i_Cell)%U(:)) )
 
           ON_Interface:  do i_Interface = 1, 2  ! the first one is on i-1/2, and the second one is on i+1/2
 
@@ -346,7 +344,7 @@ Results%ModelInfo = this%ModelInfo
             SourceTerms%S_f_interface = this%Discretization%ManningCell(i_Cell)  * velocity_interface * dabs(velocity_interface) /( height_interface**(4.0_Dbl/3.0_Dbl) )
 
             SourceTerms%S_interface%U(1) = 0.0_Dbl
-            SourceTerms%S_interface%U(2) = - Gravity * height_interface  * ( this%Discretization%SlopeInter(i_Cell + i_Interface-1_Tiny ) - SourceTerms%S_f_interface )
+            SourceTerms%S_interface%U(2) = - Gravity * height_interface * ( this%Discretization%SlopeInter(i_Cell + i_Interface-1_Tiny ) - SourceTerms%S_f_interface )
 
             SourceTerms%Source_2%U(:) = SourceTerms%Source_2%U(:) + 0.5_Dbl * (dt**2) / dx * ( Coefficient * matmul( Jacobian%A, SourceTerms%S_interface%U(:)) )
 
@@ -383,10 +381,10 @@ Results%ModelInfo = this%ModelInfo
                     alpha_neighbor%U(:) = matmul(Jacobian_neighbor%L(:,:), Delta_U%U(:))
                     Wave_neighbor%U(:)  = alpha_neighbor%U(i_eigen) * Jacobian_neighbor%R(:, i_eigen)
 
-                  else if  ( Jacobian%Lambda%U(i_eigen)  < 0.0_Dbl ) then
+                  else if  (Jacobian%Lambda%U(i_eigen) < 0.0_Dbl) then
 
-                   ! Compute the jump (U_i- U_i-1)
-                    Delta_U%U(:) = this%U( i_Cell+i_Interface )%U(:) - this%U( i_Cell+i_Interface-1_Tiny )%U(:)
+                    ! Compute the jump (U_i- U_i-1)
+                    Delta_U%U(:) = this%U(i_Cell+i_Interface )%U(:) - this%U( i_Cell+i_Interface-1_Tiny )%U(:)
 
                     ! Computing the Jacobian and all other items at the upstream
                     Jacobian_neighbor%U_up%U(:) = this%U(i_Cell+i_Interface-1_Tiny )%U(:)

@@ -13,7 +13,7 @@
 !
 ! File version $Id $
 !
-! Last update: 04/16/2018
+! Last update: 04/17/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! Partitioner_1D_Sub: Creates the input files for various processes.
@@ -111,6 +111,8 @@ integer(kind=Shrt) :: i_partition ! Loop index for the number of processes/ranks
 integer(kind=Shrt) :: i           ! Loop index
 integer(kind=Shrt) :: remainder   !
 
+integer(kind=Lng) :: counter      ! Counter for cells
+
 ! - real variables --------------------------------------------------------------------------------
 !#real(kind=Dbl)      ::
 ! - complex variables -----------------------------------------------------------------------------
@@ -184,56 +186,35 @@ write(FileInfo,*) " -Data partitioning ... "
     ! Writing the length of each cell in each partition
     write(unit=UnFile, fmt="('F23.8')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) Discretization%LengthCell(1)
 
-    counter = 0
+    counter = 0_Lng
     UnFile = FilePartition
-    do i_cells = 1_Lng, chunk(i_partition)
-      counter = counter + 1
-      write(unit=UnFile, fmt="('F23.8')", &
-            advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
-            Discretization%LengthCell(Discretization%NCells),              &
-            Discretization%SlopeCell(Discretization%NCells),               &
-            Discretization%ZCell(Discretization%NCells),                   &
-            Discretization%ManningCell(Discretization%NCells),             &
-            Discretization%WidthCell(Discretization%NCells),               &
-            Discretization%X_Disc(Discretization%NCells),                  &
 
+      do i_cells = 1_Lng, chunk(i_partition)
+        counter = counter + 1_Lng
+        write(unit=UnFile, fmt="('7F35.20')", &
+              advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
+              Discretization%LengthCell (counter),                         &
+              Discretization%SlopeCell  (counter),                         &
+              Discretization%ZCell      (counter),                         &
+              Discretization%ManningCell(counter),                         &
+              Discretization%WidthCell  (counter),                         &
+              Discretization%X_Disc     (counter),                         &
+              Discretization%SlopeInter (counter),                         &
+              Discretization%ZFull      (counter*2_Lng-1_Lng),             &
+              Discretization%ZFull      (counter*2_Lng),                   &
+              Discretization%X_Full     (counter*2_Lng-1_Lng),             &
+              Discretization%X_Full     (counter*2_Lng      )
+      end do
+    write(unit=UnFile, fmt="('F35.20')", &
+          advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
+          Discretization%SlopeInter(counter+1_Lng)
 
-    end do
-
-
-
-
-
-
-
-
-
-
-
-Discretization%SlopeInter(Discretization%NCells+1),            &
-Discretization%ZFull(Discretization%NCells*2_Sgl + 1_Sgl),     &
-Discretization%X_Full(Discretization%NCells*2_Sgl + 1_Sgl),    &
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    if (counter/= Discretization%NCells) then
+      write(*,       *) "Fatal error! Mismatch in the number of cells. Check the partitioner subroutine."
+      write(FileInfo,*) "Fatal error! Mismatch in the number of cells. Check the partitioner subroutine."
+      write(*, Fmt_FL); write(FileInfo, Fmt_FL);
+      write(*, Fmt_end); read(*,*); stop;
+    end if
 
     ! - Closing the input file for this partition -------------------------------------------------
     write(*,        *) " Closing the input file ... "
