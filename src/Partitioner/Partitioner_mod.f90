@@ -135,6 +135,7 @@ write(FileInfo,*) " subroutine < Partitioner_1D_Sub >: "
 ! Computing the chunk of each process
 remainder = mod(Discretization%NCells, Geometry%size)
 chunk(:) = (Discretization%NCells - remainder)/Geometry%size
+counter = 0_Lng
 
   do i = 1_Shrt, remainder
     chunk(i) = chunk(i) + 1
@@ -144,6 +145,7 @@ write(*,       *) " -Data partitioning ... "
 write(FileInfo,*) " -Data partitioning ... "
 
   On_Partitions: do i_partition = 1, Geometry%size
+    write(*,*)
     write(*,        fmt="(A,I10)") " Partitioning for process no.: ", i_partition-1_Shrt
     write(FileInfo, fmt="(A,I10)") " Partitioning for process no.: ", i_partition-1_Shrt
 
@@ -167,16 +169,17 @@ write(FileInfo,*) " -Data partitioning ... "
 
     ! Writing the total number of cells in each partition
     UnFile = FilePartition
-    write(unit=UnFile, fmt="('I23')",   advance='yes', asynchronous='no', iostat=IO_write, err=1006) chunk(i_partition)
-    ! Writing the length of each cell in each partition
-    write(unit=UnFile, fmt="('F23.8')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) Discretization%LengthCell(1)
+    write(unit=UnFile, fmt="(I23)",   advance='yes', asynchronous='no', iostat=IO_write, err=1006) chunk(i_partition)
 
-    counter = 0_Lng
+    ! Writing the length of each cell in each partition
+    write(unit=UnFile, fmt="(F23.8)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) Discretization%LengthCell(1)
+
     UnFile = FilePartition
 
       do i_cells = 1_Lng, chunk(i_partition)
+
         counter = counter + 1_Lng
-        write(unit=UnFile, fmt="('7F35.20')", &
+        write(unit=UnFile, fmt="(11F35.20)", &
               advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
               Discretization%LengthCell (counter),                         &
               Discretization%SlopeCell  (counter),                         &
@@ -190,16 +193,9 @@ write(FileInfo,*) " -Data partitioning ... "
               Discretization%X_Full     (counter*2_Lng-1_Lng),             &
               Discretization%X_Full     (counter*2_Lng      )
       end do
-    write(unit=UnFile, fmt="('F35.20')", &
+    write(unit=UnFile, fmt="(F35.20)", &
           advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
           Discretization%SlopeInter(counter+1_Lng)
-
-    if (counter/= Discretization%NCells) then
-      write(*,       *) "Fatal error! Mismatch in the number of cells. Check the partitioner subroutine."
-      write(FileInfo,*) "Fatal error! Mismatch in the number of cells. Check the partitioner subroutine."
-      write(*, Fmt_FL); write(FileInfo, Fmt_FL);
-      write(*, Fmt_end); read(*,*); stop;
-    end if
 
     ! - Closing the input file for this partition -------------------------------------------------
     write(*,        *) " Closing the input file ... "
@@ -209,6 +205,13 @@ write(FileInfo,*) " -Data partitioning ... "
     close(unit=UnFile, status="keep", err=1002, iostat=IO_File)
 
   end do On_Partitions
+
+  if (counter/= Discretization%NCells) then
+    write(*,       *) "Fatal error! Mismatch in the number of cells. Check the partitioner subroutine.", counter, Discretization%NCells
+    write(FileInfo,*) "Fatal error! Mismatch in the number of cells. Check the partitioner subroutine.", counter, Discretization%NCells
+    write(*, Fmt_FL); write(FileInfo, Fmt_FL);
+    write(*, Fmt_end); read(*,*); stop;
+  end if
 
 write(*,       *) " Partitioning conducted successfully."
 write(FileInfo,*) " Partitioning conducted successfully."
