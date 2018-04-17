@@ -48,7 +48,7 @@ use LaxWendroff_with_limiter_mod
 Implicit None
 
 Include 'Global_Variables_Inc.f90'   ! All Global Variables are defined/described in this File
-ModelInfo%Version = 1.0_SGL          ! Reports the version of the code
+ModelInfo%Version = 2.0_SGL          ! Reports the version of the code
 
 ! Time and Date signature =========================================================================
 Call cpu_time(SimulationTime%Time_Start)
@@ -120,8 +120,7 @@ allocate(Geometry%ReachLength(Geometry%NoReaches), Geometry%ReachDisc(Geometry%N
 write(*,        fmt="(A)") " -Reading arrays form data file ..."
 write(FileInfo, fmt="(A)") " -Reading arrays form data file ..."
 
-! Geometry
-call Geometry%Array(ModelInfo)
+
 
 Call cpu_time(SimulationTime%Input_Ends)
 
@@ -129,10 +128,8 @@ Call cpu_time(SimulationTime%Input_Ends)
 !UnFile= Un_CHK
 !Close(Unit=UnFile, status='Keep', Err=1002, IOstat=IO_File)
 
-! Discretization ----------------------------------------------------------------------------------
-write(*,        fmt="(A)") " -Discretization ..."
-write(FileInfo, fmt="(A)") " -Discretization ..."
-call Discretization%Discretize(Geometry, ModelInfo)
+
+
 ! Simulations =====================================================================================
 
   do i_analyses = 1, ModelInfo%NumberOfAnalyses
@@ -152,19 +149,6 @@ call Discretization%Discretize(Geometry, ModelInfo)
 
     ! Analysis ====================================================================================
       select case(AnalysisInfo%AnalysisType)
-
-        case(AnalysisType_1D)    ! # 1: Richtmyer
-
-          allocate(Richtmyer(NCells=Discretization%NCells) :: Experiment_TypeI,     stat=ERR_Alloc)
-            if (ERR_Alloc /= 0) then
-              write (*, Fmt_ALLCT) ERR_Alloc;  write (FileInfo, Fmt_ALLCT) ERR_Alloc;
-              write(*, Fmt_FL);  write(FileInfo, Fmt_FL); read(*, Fmt_End);  stop;
-            end if
-
-          Experiment_TypeI%ModelInfo = ModelInfo
-          Experiment_TypeI%AnalysisInfo = AnalysisInfo
-          Experiment_TypeI%Discretization = Discretization
-          call Experiment_TypeI%Solve()
 
         case(AnalysisType_1D_Limiter)    ! # 2: Lax-Wendroff with limiter in combination with upwind method
 
