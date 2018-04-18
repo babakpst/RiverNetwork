@@ -67,6 +67,7 @@ integer(kind=Smll), Parameter, Public :: FileAdr=500 ! Address file that holds t
 ! Input files
 integer(kind=Smll), Parameter, Public :: FileDataModel=501 ! Input file (.dataModel)
 integer(kind=Smll), Parameter, Public :: FileDataGeo=502 ! Input file for node coordinates (.XYZ)
+integer(kind=Smll), Parameter, Public :: FilePartition=503 ! partitioned data (.par)
 integer(kind=Smll), PARAMETER, PUBLIC :: UnInptAna=510 ! input file for analysis (.data)
 integer(kind=Smll), PARAMETER, PUBLIC :: UnInptMat=511 ! input file for material property (.Mat)
 

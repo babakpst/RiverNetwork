@@ -7,6 +7,9 @@ Input directory:
 Output directory:
 "/h1/babak/Documents/SVE_2D/output"
 
+Number of partitions
+1
+
 Number of Analysis:
 1
 

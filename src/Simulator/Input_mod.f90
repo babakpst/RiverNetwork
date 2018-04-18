@@ -15,11 +15,10 @@
 !
 ! File version $Id $
 !
-! Last update: 04/10/2018
+! Last update: 04/20/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! Input_Address_sub: Reads file name and directories from the address file.
-! Input_Basic_sub
 ! Input_Array_sub
 ! Input_Analysis_sub
 !
@@ -49,13 +48,32 @@ type Input_Data_tp
                                                                         ! the analysis input files
   !integer(kind=Smll):: OutputType        ! Output Type: 1: ordinary-2: HDF5
   integer(kind=Smll) :: NumberOfAnalyses  ! Number of analysis
+  integer(kind=Smll) :: size              ! Number of partitions
 
   real(kind=SGL) :: Version               ! Holds the version of the code.
 
   contains
     procedure Input => Input_Address_sub
-
 end type Input_Data_tp
+
+! Contains all information after discretization
+type discretization_tp
+  integer (kind=Lng)  :: NCells ! Total number of cells in the domain
+
+  real(kind=DBL), allocatable, dimension(:) :: LengthCell ! the length of each cell
+  real(kind=DBL), allocatable, dimension(:) :: SlopeCell  ! the slope of each cell at the center
+  real(kind=DBL), allocatable, dimension(:) :: SlopeInter ! the slope of each cell at the center
+  real(kind=DBL), allocatable, dimension(:) :: ZCell      ! bottom elev. at the center of each cell
+  real(kind=DBL), allocatable, dimension(:) :: ZFull      ! bottom elevation at all points
+  real(kind=DBL), allocatable, dimension(:) :: ManningCell! the Manning's number of each cell
+  real(kind=DBL), allocatable, dimension(:) :: WidthCell  ! the Manning's number of each cell
+  real(kind=DBL), allocatable, dimension(:) :: X_Disc     ! the coordinates of the cell center
+  real(kind=DBL), allocatable, dimension(:) :: X_Full     ! the coordinates all points
+
+  contains
+    procedure Intput => Input_sub
+
+end type discretization_tp
 
 
 ! Contains all information about the domain, required
@@ -135,7 +153,6 @@ write(*,       *) " Subroutine < Input_Address_sub >: "
 !write(FileInfo,*)
 !write(FileInfo,*) " Subroutine < Input_Address_sub >: "
 
-
 UnFile=FileAdr
 Open(Unit=UnFile, File='Address.txt', Err=1001, IOStat=IO_File, Access='SEQUENTIAL', &
      action='READ', Asynchronous='NO', blank='NULL', blocksize=0, DisPOSE='Keep', &
@@ -150,6 +167,9 @@ read(FileAdr,*) this%InputDir; !write(*,*) this%InputDir
 read(FileAdr,*)
 read(FileAdr,*)
 read(FileAdr,*) this%OutputDir; !write(*,*) this%OutputDir
+read(FileAdr,*)
+read(FileAdr,*)
+read(FileAdr,*) this%size;      !write(*,*) this%size
 read(FileAdr,*)
 read(FileAdr,*)
 read(FileAdr,*) this%NumberOfAnalyses; !write(*,*) this%NumberOfAnalyses
@@ -213,7 +233,6 @@ Return
        write(*, Fmt_End); read(*,*); stop;
      end if
 
-
 ! Close statement Errors
 1002 if (IO_File > 0) then
        write(*, Fmt_Err1_Close) UnFile, IO_File; write(FileInfo, Fmt_Err1_Close) UnFile, IO_File;
@@ -221,15 +240,10 @@ Return
        write(*, Fmt_End); read(*,*); stop;
      end if
 
-
 End Subroutine Input_Address_sub
 
-
-
-
-
 !##################################################################################################
-! Purpose: This subroutine reads the arrays.
+! Purpose: This subroutine reads the partitioned data created by the partitioner.
 !
 ! Developed by: Babak Poursartip
 ! Supervised by: Clint Dawson
@@ -241,10 +255,11 @@ End Subroutine Input_Address_sub
 ! V0.1: 02/23/2018 - Initiation.
 ! V1.0: 03/01/2018 - Compiled with no errors/warnings.
 ! V1.0: 04/10/2018 - Minor modifications in the class.
+! V2.0: 04/20/2018 - Parallel.
 !
 ! File version $Id $
 !
-! Last update: 04/10/2018
+! Last update: 04/20/2018
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
 ! (Refer to the main code to see the list of imported variables)
@@ -252,7 +267,7 @@ End Subroutine Input_Address_sub
 !
 !##################################################################################################
 
-Subroutine Input_Array_sub(this, ModelInfo)
+Subroutine Input_sub(this, ModelInfo)
 
 ! Libraries =======================================================================================
 
@@ -264,7 +279,7 @@ Implicit None
 
 ! - types -----------------------------------------------------------------------------------------
 type(Input_Data_tp), intent(In)    :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
-class(Geometry_tp),  intent(inout) :: this     ! Holds information about the geometry of the domain
+class(discretization_tp),  intent(inout) :: this ! Holds the model
 
 ! Local Variables =================================================================================
 ! - integer Variables -----------------------------------------------------------------------------
@@ -276,105 +291,41 @@ integer(kind=Smll) :: i_reach  ! loop index on the number of reaches
 
 ! code ============================================================================================
 write(*,       *)
-write(*,       *) " Subroutine < Input_Array_sub >: "
+write(*,       *) " Subroutine < Input_sub >: "
 write(FileInfo,*)
-write(FileInfo,*) " Subroutine < Input_Array_sub >: "
+write(FileInfo,*) " Subroutine < Input_sub >: "
 
 ! Open required Files -----------------------------------------------------------------------------
-write(*,        fmt="(A)") " -Opening the input files for arrays ..."
-write(FileInfo, fmt="(A)") " -Opening the input files for arrays ..."
+write(*,        fmt="(A)") " -Opening the input file ..."
+write(FileInfo, fmt="(A)") " -Opening the input file ..."
+
+
+write(IndexSize, *) this%size        ! Converts Size to Character format for the file Name
 
 ! Open the input file for arrays
-UnFile = FileDataGeo
-open(Unit=UnFile, file=trim(ModelInfo%ModelName)//'.Geo', &
+UnFile = FilePartition
+open(Unit=UnFile, file=trim(ModelInfo%ModelName)//"_s"//trim(adjustL(IndexSize))//'.par', &
      err=1001, iostat=IO_File, access='sequential', action='read', asynchronous='no', &
-     blank='null', blocksize=0, defaultfile=trim(ModelInfo%InputDir), DisPOSE='keep', form='formatted', &
-     position='asis', status='old')
+     blank='null', blocksize=0, defaultfile=trim(ModelInfo%InputDir), DisPOSE='keep', &
+     form='formatted', position='asis', status='old')
 
-UnFile = FileDataGeo
+UnFile = FilePartition
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 
-! Reading the length of each reach
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-  do i_reach= 1, this%NoReaches
-    UnFile = FileDataGeo
-    read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%ReachLength(i_reach); !write(*,*)this%ReachLength(i_reach)
-    UnFile = FileInfo
-    write(unit=*,      fmt="(' The length of reach ', I5, ' is:', F23.10,' m')") i_reach, this%ReachLength(i_reach)
-    write(unit=UnFile, fmt="(' The length of reach ', I5, ' is:', F23.10,' m')") i_reach, this%ReachLength(i_reach)
-  end do
 
-! Reading total number of control volumes in each reach/ For now we have a constant discretization in each reach.
-UnFile = FileDataGeo
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-  do i_reach= 1, this%NoReaches
-    UnFile = FileDataGeo
-    read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%ReachDisc(i_reach)
-    UnFile = FileInfo
-    write(unit=*,      fmt="(' No. of discretization of reach ', I5, ' is:', I10)") i_reach, this%ReachDisc(i_reach)
-    write(unit=UnFile, fmt="(' No. of discretization of reach ', I5, ' is:', I10)") i_reach, this%ReachDisc(i_reach)
-  end do
 
-! Reading reach type
-UnFile = FileDataGeo
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-  do i_reach= 1, this%NoReaches
-    UnFile = FileDataGeo
-    read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%ReachType(i_reach)
-    UnFile = FileInfo
-    write(unit=*,      fmt="(' Rreach ', I10,' is of type: ', I5)") i_reach, this%ReachType(i_reach)
-    write(unit=UnFile, fmt="(' Rreach ', I10,' is of type: ', I5)") i_reach, this%ReachType(i_reach)
-  end do
 
-! Reading slopes of reach
-UnFile = FileDataGeo
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-  do i_reach= 1, this%NoReaches
-    UnFile = FileDataGeo
-    read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%ReachSlope(i_reach)
-    UnFile = FileInfo
-    write(unit=*,      fmt="(' The slope of reach ', I10,' is: ', F23.10)") i_reach, this%ReachSlope(i_reach)
-    write(unit=UnFile, fmt="(' The slope of reach ', I10,' is: ', F23.10)") i_reach, this%ReachSlope(i_reach)
-  end do
+! - Closing the input file ---------------------------------------------------------------------
+write(*,        fmt="(A)") " -Closing the input file"
+write(FileInfo, fmt="(A)") " -Closing the input file"
 
-! Reading Manning number of each reach
-UnFile = FileDataGeo
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-  do i_reach= 1, this%NoReaches
-    UnFile = FileDataGeo
-    read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%ReachManning(i_reach)
-    UnFile = FileInfo
-    write(unit=*,      fmt="(' The Mannings no. for reach ', I10,' is: ', F23.10)") i_reach, this%ReachManning(i_reach)
-    write(unit=UnFile, fmt="(' The Mannings no. for reach ', I10,' is: ', F23.10)") i_reach, this%ReachManning(i_reach)
-  end do
-
-! Reading the width of each reach
-UnFile = FileDataGeo
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-  do i_reach= 1, this%NoReaches
-    UnFile = FileDataGeo
-    read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%ReachWidth(i_reach)
-    UnFile = FileInfo
-    write(unit=*,      fmt="(' The width of reach ', I10,'is: ', F23.10)") i_reach, this%ReachWidth(i_reach)
-    write(unit=UnFile, fmt="(' The width of reach ', I10,'is: ', F23.10)") i_reach, this%ReachWidth(i_reach)
-  end do
-
-! - Closing the geometry file ---------------------------------------------------------------------
-write(*,        fmt="(A)") " -Closing the geometry file"
-write(FileInfo, fmt="(A)") " -Closing the geometry file"
-
-UnFile = FileDataGeo
+UnFile = FilePartition
 Close(Unit = UnFile, status = 'KEEP', ERR =  1002, IOSTAT = IO_File)
 
-write(*,       *) " End Subroutine < Input_Array_sub >"
+write(*,       *) " End Subroutine < Input_sub >"
 write(*,       *)
-write(FileInfo,*) " End Subroutine < Input_Array_sub >"
+write(FileInfo,*) " End Subroutine < Input_sub >"
 write(FileInfo,*)
 Return
 
@@ -414,7 +365,7 @@ Return
 1006 write(*, Fmt_write1) UnFile, IO_write; write(UnFile, Fmt_write1) UnFile, IO_write;
      write(*, Fmt_FL); write(FileInfo, Fmt_FL); write(*, Fmt_End); read(*,*);  stop;
 
-End Subroutine Input_Array_sub
+end Subroutine Input_sub
 
 !##################################################################################################
 ! Purpose: This subroutine reads information required for a particular analysis.

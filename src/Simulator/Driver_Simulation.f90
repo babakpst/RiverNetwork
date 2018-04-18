@@ -21,11 +21,11 @@
 ! V0.11: 03/09/2018  - Adding limiter to the code
 ! V0.12: 03/20/2018  - Debugging the code with limiter
 ! V1.00: 04/10/2018  - Cleaning the code after having the right results
-! V2.00: 04/17/2018  - Parallelization using OMP
+! V2.00: 04/18/2018  - Parallelization using OMP
 !
 ! File version $Id $
 !
-! Last update: 04/17/2018
+! Last update: 04/18/2018
 !
 ! ================================ Global   V A R I A B L E S =====================================
 !  . . . . . . . . . . . . . . . . Variables . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -96,9 +96,21 @@ Call Info(TimeDate, ModelInfo)
 
 Call cpu_time(SimulationTime%Input_Starts)
 
-! Reading model data ==============================================================================
-write(*,        fmt="(A)") " -Reading the initial data file ..."
-write(FileInfo, fmt="(A)") " -Reading the initial data file ..."
+! Reading model data from the partitioned file ====================================================
+write(*,        fmt="(A)") " -Reading the input file ..."
+write(FileInfo, fmt="(A)") " -Reading the input file ..."
+
+
+
+
+
+
+
+
+
+
+
+
 
 ! Reading basic data: -----------------------------------------------------------------------------
 call Geometry%Basic(ModelInfo)
@@ -119,8 +131,6 @@ allocate(Geometry%ReachLength(Geometry%NoReaches), Geometry%ReachDisc(Geometry%N
 ! Reading input arrays ----------------------------------------------------------------------------
 write(*,        fmt="(A)") " -Reading arrays form data file ..."
 write(FileInfo, fmt="(A)") " -Reading arrays form data file ..."
-
-
 
 Call cpu_time(SimulationTime%Input_Ends)
 
