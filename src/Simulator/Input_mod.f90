@@ -292,6 +292,8 @@ integer(kind=Smll) :: IO_read  ! Holds error of read statements
 integer(kind=Smll) :: IO_write ! Used for IOSTAT - Input Output Status - in the write command
 integer(kind=Smll) :: i_reach  ! loop index on the number of reaches
 
+integer(kind=Lng)  :: i_cells  ! loop index on the number of reaches
+
 ! - character variables ---------------------------------------------------------------------------
 Character(kind = 1, len = 20) :: IndexSize ! Size no in the Char. fmt to add to the input file Name
 
@@ -316,8 +318,8 @@ open(Unit=UnFile, file=trim(ModelInfo%ModelName)//"_s"//trim(adjustL(IndexSize))
      form='formatted', position='asis', status='old')
 
 UnFile = FilePartition
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%NCells
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%dx
+read(unit=UnFile, fmt="(I23)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%NCells
+read(unit=UnFile, fmt="(F23.8)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%dx
 
 write(*,        fmt="(A)") " -Allocating discretization ..."
 write(FileInfo, fmt="(A)") " -Allocating discretization ..."
@@ -338,10 +340,25 @@ allocate(this%LengthCell(this%NCells),              &
     write(*, Fmt_FL);  write(FileInfo, Fmt_FL); read(*, Fmt_End);  stop;
   end if
 
+UnFile = FilePartition
+  do i_cells = 1_Lng, this%NCells
+    read(unit=UnFile, fmt="(11F35.20)", advance='yes', asynchronous='no', iostat=IO_read, &
+    err=1003, end=1004) &
+    this%LengthCell (i_cells),                         &
+    this%SlopeCell  (i_cells),                         &
+    this%ZCell      (i_cells),                         &
+    this%ManningCell(i_cells),                         &
+    this%WidthCell  (i_cells),                         &
+    this%X_Disc     (i_cells),                         &
+    this%SlopeInter (i_cells),                         &
+    this%ZFull      (i_cells*2_Lng-1_Lng),             &
+    this%ZFull      (i_cells*2_Lng),                   &
+    this%X_Full     (i_cells*2_Lng-1_Lng),             &
+    this%X_Full     (i_cells*2_Lng      )
+  end do
 
-
-
-
+read(unit=UnFile, fmt="(F35.20)", advance='yes', asynchronous='no', iostat=IO_read, &
+    err=1003, end=1004) this%SlopeInter(i_cells+1_Lng)
 
 ! - Closing the input file ---------------------------------------------------------------------
 write(*,        fmt="(A)") " -Closing the input file"
