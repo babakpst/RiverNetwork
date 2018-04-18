@@ -100,44 +100,13 @@ Call cpu_time(SimulationTime%Input_Starts)
 write(*,        fmt="(A)") " -Reading the input file ..."
 write(FileInfo, fmt="(A)") " -Reading the input file ..."
 
-
-
-
-
-
-
-
-
-
-
-
-
-! Reading basic data: -----------------------------------------------------------------------------
-call Geometry%Basic(ModelInfo)
-
-! Allocating required arrays
-write(*,        fmt="(A)") " -Allocating the required arrays ..."
-write(FileInfo, fmt="(A)") " -Allocating the required arrays ..."
-
-allocate(Geometry%ReachLength(Geometry%NoReaches), Geometry%ReachDisc(Geometry%NoReaches), &
-         Geometry%ReachType(Geometry%NoReaches), Geometry%ReachSlope(Geometry%NoReaches),  &
-         Geometry%ReachManning(Geometry%NoReaches), Geometry%ReachWidth(Geometry%NoReaches),&
-         stat=Err_Alloc)
-  if (Err_Alloc /= 0) then
-    write(*, Fmt_ALLCT) Err_Alloc; write(FileInfo, Fmt_ALLCT) Err_Alloc;
-    write(*, Fmt_FL); write(FileInfo, Fmt_FL); write(*, Fmt_End); read(*,*); stop;
-  end if
-
-! Reading input arrays ----------------------------------------------------------------------------
-write(*,        fmt="(A)") " -Reading arrays form data file ..."
-write(FileInfo, fmt="(A)") " -Reading arrays form data file ..."
+call Discretization%Input (ModelInfo)
 
 Call cpu_time(SimulationTime%Input_Ends)
 
 ! close check File
 !UnFile= Un_CHK
 !Close(Unit=UnFile, status='Keep', Err=1002, IOstat=IO_File)
-
 
 
 ! Simulations =====================================================================================

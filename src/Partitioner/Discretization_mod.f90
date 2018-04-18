@@ -92,7 +92,6 @@ subroutine Discretize_1D_sub(this, Geometry, ModelInfo)
 
 ! Libraries =======================================================================================
 
-
 ! User defined modules ============================================================================
 
 implicit none

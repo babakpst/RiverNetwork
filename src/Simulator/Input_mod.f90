@@ -60,6 +60,8 @@ end type Input_Data_tp
 type discretization_tp
   integer (kind=Lng)  :: NCells ! Total number of cells in the domain
 
+  real(kind=DBL)      :: dx     ! fixed cell size
+
   real(kind=DBL), allocatable, dimension(:) :: LengthCell ! the length of each cell
   real(kind=DBL), allocatable, dimension(:) :: SlopeCell  ! the slope of each cell at the center
   real(kind=DBL), allocatable, dimension(:) :: SlopeInter ! the slope of each cell at the center
@@ -71,7 +73,7 @@ type discretization_tp
   real(kind=DBL), allocatable, dimension(:) :: X_Full     ! the coordinates all points
 
   contains
-    procedure Intput => Input_sub
+    procedure Input => Input_sub
 
 end type discretization_tp
 
@@ -283,11 +285,15 @@ class(discretization_tp),  intent(inout) :: this ! Holds the model
 
 ! Local Variables =================================================================================
 ! - integer Variables -----------------------------------------------------------------------------
+integer(kind=Smll) :: ERR_Alloc, ERR_DeAlloc ! Allocating and DeAllocating errors
 integer(kind=Smll) :: UnFile   ! Holds Unit of a file for error message
 integer(kind=Smll) :: IO_File  ! For IOSTAT: Input Output status in OPEN command
 integer(kind=Smll) :: IO_read  ! Holds error of read statements
 integer(kind=Smll) :: IO_write ! Used for IOSTAT - Input Output Status - in the write command
 integer(kind=Smll) :: i_reach  ! loop index on the number of reaches
+
+! - character variables ---------------------------------------------------------------------------
+Character(kind = 1, len = 20) :: IndexSize ! Size no in the Char. fmt to add to the input file Name
 
 ! code ============================================================================================
 write(*,       *)
@@ -300,7 +306,7 @@ write(*,        fmt="(A)") " -Opening the input file ..."
 write(FileInfo, fmt="(A)") " -Opening the input file ..."
 
 
-write(IndexSize, *) this%size        ! Converts Size to Character format for the file Name
+write(IndexSize, *) ModelInfo%size        ! Converts Size to Character format for the file Name
 
 ! Open the input file for arrays
 UnFile = FilePartition
@@ -310,8 +316,29 @@ open(Unit=UnFile, file=trim(ModelInfo%ModelName)//"_s"//trim(adjustL(IndexSize))
      form='formatted', position='asis', status='old')
 
 UnFile = FilePartition
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%NCells
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%dx
+
+write(*,        fmt="(A)") " -Allocating discretization ..."
+write(FileInfo, fmt="(A)") " -Allocating discretization ..."
+
+allocate(this%LengthCell(this%NCells),              &
+         this%SlopeCell(this%NCells),               &
+         this%SlopeInter(this%NCells+1),            &
+         this%ZCell(this%NCells),                   &
+         this%ZFull(this%NCells*2_Lng + 1_Lng),     &
+         this%ManningCell(this%NCells),             &
+         this%WidthCell(this%NCells),               &
+         this%X_Disc(this%NCells),                  &
+         this%X_Full(this%NCells*2_Lng + 1_Lng),    &
+         stat=ERR_Alloc)
+
+  if (ERR_Alloc /= 0) then
+    write (*, Fmt_ALLCT) ERR_Alloc;  write (FileInfo, Fmt_ALLCT) ERR_Alloc;
+    write(*, Fmt_FL);  write(FileInfo, Fmt_FL); read(*, Fmt_End);  stop;
+  end if
+
+
 
 
 

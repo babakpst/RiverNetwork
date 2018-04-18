@@ -41,7 +41,7 @@ module LaxWendroff_with_limiter_mod
 ! User defined modules ============================================================================
 use Parameters_mod
 use Results_mod
-use Discretization_mod
+use Input_mod
 
 implicit none
 
