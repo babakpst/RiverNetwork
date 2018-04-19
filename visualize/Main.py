@@ -79,9 +79,9 @@ def main(arg):
   plt.close(fig)  
   
 
-  for ii in range(600):
+  for ii in range(FileName):
 
-    FileName ="EX3_Case1/EX3_Limiter_" + str(ii*100 + 1) + ".Res"
+    2000 ="EX3_Case1/EX3_Limiter_" + str(ii*100 + 1) + ".Res"
     #FileName ="EX1_Case1/EX1_" + str(ii*100 + 1) + ".Res"
     File_Input = open(FileName,"r")
     #Temp = File_Input.readline().rstrip("\n")

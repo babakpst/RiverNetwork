@@ -13,10 +13,12 @@
 ! ================================ V E R S I O N ==================================================
 ! V0.00: 03/15/2018 - File initiated.
 ! V0.01: 03/24/2018 - Initiated: Compiled without error for the first time.
+! V1.00: 03/27/2018 - Compiled without error for the first time.
+! V2.00: 04/19/2018 - Parallel, OMP
 !
 ! File version $Id $
 !
-! Last update: 03/27/2018
+! Last update: 04/19/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! - Solver_1D_with_Limiter_sub: Solves the 1D shallow water equation, with limiter.
@@ -112,9 +114,9 @@ type, public :: SolverWithLimiter(NCells)
 
   type(vector), dimension(NCells) :: S     ! Source term
 
-  type(vector), dimension(NCells*2) :: phi   ! Holds the value of the limiter function <delete> <modify>
-  type(vector), dimension(NCells*2) :: theta ! Holds the value of the limiter function <delete> <modify>
-  type(vector), dimension(-1_Lng:NCells+2_Lng)  :: U ! This vector holds the solution at the current step,
+  type(vector), dimension(NCells*2) :: phi   ! Holds the value of the limiter function <delete>
+  type(vector), dimension(NCells*2) :: theta ! Holds the value of the limiter function <delete>
+  type(vector), dimension(-1_Lng:NCells+2_Lng) :: U,UN ! This vector holds the solution at the current step,
                                             ! the first term holds "h" and the second holds "uh"
   type(discretization_tp) :: Discretization ! Contains the discretization of the domain
   type(AnalysisData_tp)   :: AnalysisInfo   ! Holds information for the analysis
@@ -243,9 +245,6 @@ this%phi(:)%U(2)   = 0.0_Dbl
 this%theta(:)%U(1) = 0.0_Dbl
 this%theta(:)%U(2) = 0.0_Dbl
 
-
-
-
 NSteps = this%AnalysisInfo%TotalTime/this%AnalysisInfo%TimeStep
 dt     = this%AnalysisInfo%TimeStep
 dx     = this%Discretization%LengthCell(1)
@@ -281,6 +280,8 @@ Results%ModelInfo = this%ModelInfo
 
         call Results%plot_results(i_steps)
       end if
+
+
 
       ON_Cells: do i_Cell = 2_Lng, this%NCells-1  ! Loop over the cells except the boundary cells.
 
@@ -402,7 +403,6 @@ Results%ModelInfo = this%ModelInfo
 
                   if ( dot_product(Wave%U(:), Wave%U(:) ) /= 0.0_Dbl ) then
                     LimiterFunc%theta = ( dot_product( Wave_neighbor%U(:), Wave%U(:) ) ) / ( dot_product(Wave%U(:), Wave%U(:) )  )
-
                   else
                     LimiterFunc%theta = 0.0_Dbl
                   end if
@@ -427,10 +427,11 @@ Results%ModelInfo = this%ModelInfo
         ! Final update the results
         TempSolution%U(:) = this%U(i_cell)%U(:) - dtdx * F_L%U(:) - dtdx * F_H%U(:) + SourceTerms%Source_1%U(:) - SourceTerms%Source_2%U(:)
 
-        this%U(i_cell)%U(:) = matmul(SourceTerms%BI(:,:), TempSolution%U(:))
+        this%UN(i_cell)%U(:) = matmul(SourceTerms%BI(:,:), TempSolution%U(:))
 
       end do ON_Cells
 
+    this%U(:) = this%UN(:)
     ! apply boundary condition
     call this%BC()
 
@@ -447,8 +448,8 @@ end subroutine Solver_1D_with_Limiter_sub
 ! Purpose: This subroutine imposes the boundary conditions on a 1D domain.
 !
 ! Developed by: Babak Poursartip
-! Supervised by: Clint Dawson
 !
+! Supervised by: Clint Dawson
 ! The Institute for Computational Engineering and Sciences (ICES)
 ! The University of Texas at Austin
 !
