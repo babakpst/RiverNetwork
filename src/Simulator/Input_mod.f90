@@ -356,9 +356,8 @@ UnFile = FilePartition
     this%X_Full     (i_cells*2_Lng-1_Lng),             &
     this%X_Full     (i_cells*2_Lng      )
   end do
-
 read(unit=UnFile, fmt="(F35.20)", advance='yes', asynchronous='no', iostat=IO_read, &
-    err=1003, end=1004) this%SlopeInter(i_cells+1_Lng)
+    err=1003, end=1004) this%SlopeInter(i_cells)
 
 ! - Closing the input file ---------------------------------------------------------------------
 write(*,        fmt="(A)") " -Closing the input file"
@@ -561,7 +560,7 @@ read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, e
 read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%limiter
 UnFile = FileInfo
 write(unit=UnFile, fmt="(' The limiter is: ', I10)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%limiter
-write(unit=*,      fmt="(' The limiter is: ', I10)") this%CntrlV_ratio
+write(unit=*,      fmt="(' The limiter is: ', I10)") this%limiter
 
 
 write(*,       *) " End Subroutine < Input_Analysis_sub >"

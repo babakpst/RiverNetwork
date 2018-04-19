@@ -156,6 +156,7 @@ contains
 subroutine Solver_1D_with_Limiter_sub(this)
 
 ! Libraries =======================================================================================
+!$ use omp_lib
 
 ! User defined modules ============================================================================
 
@@ -168,6 +169,8 @@ class(SolverWithLimiter(*)) :: this
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
+integer :: ITS
+
 integer(kind=Lng)  :: i_Cell    ! loop index over the Cells
 integer(kind=Lng)  :: i_steps   ! loop index over the number steps
 integer(kind=Lng)  :: NSteps    ! Total number of steps for time marching
@@ -214,6 +217,7 @@ type(vector) :: F_L ! Contribution of low-resolution method (Upwind) in the solu
 type(vector) :: F_H ! Contribution of high-resolution method (Lax-Wendroff) in the solution.
 
 type(vector) :: Delta_U           ! holds (U_i- U_i-1)
+type(vector), dimension(-1_Lng:this%NCells+2_Lng) ::UU, UN ! This vector holds the solution at the current step,
 
 ! code ============================================================================================
 write(*,       *) " subroutine < Solver_1D_with_Limiter_sub >: "
@@ -269,10 +273,9 @@ Results%ModelInfo = this%ModelInfo
   ! Time marching
   Time_Marching: do i_steps = 1_Lng, NSteps
 
-    print*, "----------------Step:", i_steps
-
     ! write down data for visualization
       if (mod(i_steps,this%Plot_Inc)==1 .or. PrintResults) then
+        print*, "----------------Step:", i_steps
         Results%U(:)    = this%U(1:this%NCells)
         Results%s(:)    = this%S(:)
         Results%phi(:)  = this%phi(:)
@@ -280,12 +283,29 @@ Results%ModelInfo = this%ModelInfo
 
         call Results%plot_results(i_steps)
       end if
+      !print*," checkpoint 000"
+      UU(:) = this%U(:)
+      UN(:) = UU(:)
+      !print*,UU(:)%U(1)
 
+      !print*," checkpoint 001" ! DEFAULT(private) SHARED(UN,UU)
 
+      !!$OMP PARALLEL
+      !!$ write(*,*) " *** This is inside the parallel region.*** "
+      !!$OMP critical
+      !!$ ITS = OMP_GET_THREAD_NUM()
+      !!$ write(*,*) " *** I am the thread :", ITS
+      !!$OMP barrier
+      !!$OMP end critical
+      !!$OMP END PARALLEL
 
-      ON_Cells: do i_Cell = 2_Lng, this%NCells-1  ! Loop over the cells except the boundary cells.
+      !!$OMP PARALLEL
+      !!$OMP PARALLEL DO schedule(dynamic, 10) DEFault(private) !SHARED(UN,UU)
+      !$OMP PARALLEL DO !default(private) SHARED(UN,UU)
+      do i_Cell = 2_Lng, this%NCells-1  ! Loop over the cells except the boundary cells.
 
-        !print*, "=============Cell:", i_Cell
+        !$ ITS = OMP_GET_THREAD_NUM()
+        !print*, "=============Cell:", i_Cell, ITS
 
         ! Initialize fluxes
         F_L%U(:) = 0.0_Dbl ! upwind flux (not exactly, see notes)
@@ -295,8 +315,8 @@ Results%ModelInfo = this%ModelInfo
         SourceTerms%Source_2%U(:)  = 0.0_Dbl
 
         ! Solution at this cell
-        height   = this%U(i_Cell)%U(1)
-        velocity = this%U(i_Cell)%U(2)/height
+        height   = UU(i_Cell)%U(1)
+        velocity = UU(i_Cell)%U(2)/height
 
         ! Find the B matrix for this cell
         SourceTerms%S_f = (this%Discretization%ManningCell(i_Cell)**2.0) * velocity * dabs(velocity) /( height**(4.0_Dbl/3.0_Dbl) )
@@ -316,16 +336,16 @@ Results%ModelInfo = this%ModelInfo
         SourceTerms%S%U(2) = - Gravity * height  * ( this%Discretization%SlopeCell(i_Cell) - SourceTerms%S_f )
 
         ! The first contribution of the source term in the solution
-        SourceTerms%Source_1%U(:) = dt * ( SourceTerms%S%U(:)  - 0.5_Dbl * matmul(SourceTerms%B(:,:), this%U(i_Cell)%U(:)) )
+        SourceTerms%Source_1%U(:) = dt * ( SourceTerms%S%U(:)  - 0.5_Dbl * matmul(SourceTerms%B(:,:), UU(i_Cell)%U(:)) )
 
           ON_Interface:  do i_Interface = 1, 2  ! the first one is on i-1/2, and the second one is on i+1/2
 
             ! Compute the jump (U_i- U_i-1)
-            Delta_U%U(:) = this%U(i_Cell+(i_Interface-1_Lng))%U(:) - this%U(i_Cell+(i_Interface-2_Lng))%U(:)
+            Delta_U%U(:) = UU(i_Cell+(i_Interface-1_Lng))%U(:) - UU(i_Cell+(i_Interface-2_Lng))%U(:)
 
             ! Computing the Jacobian and all other items at the upstream
-            Jacobian%U_up%U(:) = this%U(i_Cell+(i_Interface-2_Lng))%U(:)
-            Jacobian%U_dw%U(:) = this%U(i_Cell+(i_Interface-1_Lng))%U(:)
+            Jacobian%U_up%U(:) = UU(i_Cell+(i_Interface-2_Lng))%U(:)
+            Jacobian%U_dw%U(:) = UU(i_Cell+(i_Interface-1_Lng))%U(:)
 
             call Jacobian%Jacobian( i_eigen,i_Interface,i_Cell )   ! <modify>
 
@@ -370,11 +390,11 @@ Results%ModelInfo = this%ModelInfo
                   if  (Jacobian%Lambda%U(i_eigen)  > 0.0_Dbl ) then
 
                     ! Compute the jump (U_i- U_i-1)
-                    Delta_U%U(:) = this%U(i_Cell+i_Interface-2_Tiny)%U(:) - this%U( i_Cell+i_Interface-3_Tiny )%U(:)
+                    Delta_U%U(:) = UU(i_Cell+i_Interface-2_Tiny)%U(:) - UU( i_Cell+i_Interface-3_Tiny )%U(:)
 
                     ! Computing the Jacobian and all other items at the upstream
-                    Jacobian_neighbor%U_up%U(:) = this%U( i_Cell+i_Interface-3_Tiny  )%U(:)
-                    Jacobian_neighbor%U_dw%U(:) = this%U( i_Cell+i_Interface-2_Tiny  )%U(:)
+                    Jacobian_neighbor%U_up%U(:) = UU( i_Cell+i_Interface-3_Tiny  )%U(:)
+                    Jacobian_neighbor%U_dw%U(:) = UU( i_Cell+i_Interface-2_Tiny  )%U(:)
 
                     call Jacobian_neighbor%Jacobian(i_eigen,i_Interface,i_Cell)   ! <modify>
 
@@ -385,11 +405,11 @@ Results%ModelInfo = this%ModelInfo
                   else if  (Jacobian%Lambda%U(i_eigen) < 0.0_Dbl) then
 
                     ! Compute the jump (U_i- U_i-1)
-                    Delta_U%U(:) = this%U(i_Cell+i_Interface )%U(:) - this%U( i_Cell+i_Interface-1_Tiny )%U(:)
+                    Delta_U%U(:) = UU(i_Cell+i_Interface )%U(:) - UU( i_Cell+i_Interface-1_Tiny )%U(:)
 
                     ! Computing the Jacobian and all other items at the upstream
-                    Jacobian_neighbor%U_up%U(:) = this%U(i_Cell+i_Interface-1_Tiny )%U(:)
-                    Jacobian_neighbor%U_dw%U(:) = this%U(i_Cell+i_Interface        )%U(:)
+                    Jacobian_neighbor%U_up%U(:) = UU(i_Cell+i_Interface-1_Tiny )%U(:)
+                    Jacobian_neighbor%U_dw%U(:) = UU(i_Cell+i_Interface        )%U(:)
 
                     call Jacobian_neighbor%Jacobian(i_eigen,i_Interface,i_Cell)   ! <modify>
 
@@ -425,13 +445,15 @@ Results%ModelInfo = this%ModelInfo
           end do ON_Interface
 
         ! Final update the results
-        TempSolution%U(:) = this%U(i_cell)%U(:) - dtdx * F_L%U(:) - dtdx * F_H%U(:) + SourceTerms%Source_1%U(:) - SourceTerms%Source_2%U(:)
+        TempSolution%U(:) = UU(i_cell)%U(:) - dtdx * F_L%U(:) - dtdx * F_H%U(:) + SourceTerms%Source_1%U(:) - SourceTerms%Source_2%U(:)
 
-        this%UN(i_cell)%U(:) = matmul(SourceTerms%BI(:,:), TempSolution%U(:))
+        UN(i_cell)%U(:) = matmul(SourceTerms%BI(:,:), TempSolution%U(:))
 
-      end do ON_Cells
+      end do
+      !!$OMP END DO
+      !$OMP END PARALLEL DO
 
-    this%U(:) = this%UN(:)
+    this%U(:) = UN(:)
     ! apply boundary condition
     call this%BC()
 
@@ -943,3 +965,8 @@ end subroutine Inverse
 
 
 end module LaxWendroff_with_limiter_mod
+
+
+
+
+

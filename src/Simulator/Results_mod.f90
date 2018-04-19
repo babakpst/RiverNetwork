@@ -392,14 +392,14 @@ integer(kind=Lng)  :: i_points       ! Loop index on the points
 character (kind = 1, Len = 30) :: extfile
 
 ! code ============================================================================================
-write(*,       *) " subroutine < Plot_Results_1D_limiter_sub >: "
-write(FileInfo,*) " subroutine < Plot_Results_1D_limiter_sub >: "
+!write(*,       *) " subroutine < Plot_Results_1D_limiter_sub >: "
+!write(FileInfo,*) " subroutine < Plot_Results_1D_limiter_sub >: "
 
 ! - Opening the domain file -----------------------------------------------------------------------
 UnFile = FileResults
 
-write(*,       *) " -Writing down the results in the .Res file ... "
-write(FileInfo,*) " -Writing down the results in the .Res file ... "
+!write(*,       *) " -Writing down the results in the .Res file ... "
+!write(FileInfo,*) " -Writing down the results in the .Res file ... "
 
 write (extfile,*) i_step
 
@@ -417,15 +417,15 @@ UnFile = FileResults
     write(unit=UnFile, fmt="(I6, 10F23.6)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) i_points, this%U(i_points)%U(1), this%U(i_points)%U(2), this%theta( 2*(i_points-1) +1  )%U(1), this%theta(2*(i_points-1) +1)%U(2),  this%theta( 2*(i_points-1) +2  )%U(1), this%theta(2*(i_points-1) +2)%U(2), this%phi(2*(i_points-1) +1)%U(1), this%phi(2*(i_points-1) +1)%U(2), this%phi(2*(i_points-1) +2)%U(1), this%phi(2*(i_points-1) +2)%U(2)
   end do
 
-write(*,        fmt = "(A,I10)") " Results was written successfully in the file for time step: ", i_step
-write(FileInfo, fmt = "(A,I10)") " Results was written successfully in the file for time step: ", i_step
+!write(*,        fmt = "(A,I10)") " Results was written successfully in the file for time step: ", i_step
+!write(FileInfo, fmt = "(A,I10)") " Results was written successfully in the file for time step: ", i_step
 
 ! - Closing the domain file -----------------------------------------------------------------------
 UnFile =  FileResults
 close(unit=UnFile, status="keep", err=1002, iostat=IO_File)
 
-write(*,       *) " end subroutine < Plot_Results_1D_limiter_sub >"
-write(FileInfo,*) " end subroutine < Plot_Results_1D_limiter_sub >"
+!write(*,       *) " end subroutine < Plot_Results_1D_limiter_sub >"
+!write(FileInfo,*) " end subroutine < Plot_Results_1D_limiter_sub >"
 return
 
 ! Errors ==========================================================================================
