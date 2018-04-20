@@ -116,7 +116,7 @@ type, public :: SolverWithLimiter(NCells)
 
   type(vector), dimension(NCells*2) :: phi   ! Holds the value of the limiter function <delete>
   type(vector), dimension(NCells*2) :: theta ! Holds the value of the limiter function <delete>
-  type(vector), dimension(-1_Lng:NCells+2_Lng) :: U,UN ! This vector holds the solution at the current step,
+  type(vector), dimension(-1_Lng:NCells+2_Lng) :: U ! This vector holds the solution at the current step,
                                             ! the first term holds "h" and the second holds "uh"
   type(discretization_tp) :: Discretization ! Contains the discretization of the domain
   type(AnalysisData_tp)   :: AnalysisInfo   ! Holds information for the analysis
@@ -301,11 +301,11 @@ Results%ModelInfo = this%ModelInfo
 
       !!$OMP PARALLEL
       !!$OMP PARALLEL DO schedule(dynamic, 10) DEFault(private) !SHARED(UN,UU)
-      !$OMP PARALLEL DO !default(private) SHARED(UN,UU)
+      !$OMP PARALLEL DO default(private) SHARED(UN,UU)
       do i_Cell = 2_Lng, this%NCells-1  ! Loop over the cells except the boundary cells.
 
         !$ ITS = OMP_GET_THREAD_NUM()
-        !print*, "=============Cell:", i_Cell, ITS
+        print*, "=============Cell:", i_Cell, ITS
 
         ! Initialize fluxes
         F_L%U(:) = 0.0_Dbl ! upwind flux (not exactly, see notes)

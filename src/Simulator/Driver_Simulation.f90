@@ -42,7 +42,7 @@ use ifport
 use Parameters_mod
 use Information_mod
 use Input_mod
-use LaxWendroff_with_limiter_mod
+use LaxWendroff_with_limiter_mod, only: Solver_1D_with_Limiter_sub
 
 ! Global Variables ================================================================================
 Implicit None
