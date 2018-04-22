@@ -42,7 +42,7 @@ use ifport
 use Parameters_mod
 use Information_mod
 use Input_mod
-use LaxWendroff_with_limiter_mod, only: Solver_1D_with_Limiter_sub
+use LaxWendroff_with_limiter_mod
 
 ! Global Variables ================================================================================
 Implicit None
@@ -130,12 +130,6 @@ Call cpu_time(SimulationTime%Input_Ends)
       select case(AnalysisInfo%AnalysisType)
 
         case(AnalysisType_1D_Limiter)    ! # 2: Lax-Wendroff with limiter in combination with upwind method
-
-          allocate(SolverWithLimiter(NCells=Discretization%NCells) :: Experiment_TypeII,     stat=ERR_Alloc)
-            if (ERR_Alloc /= 0) then
-              write (*, Fmt_ALLCT) ERR_Alloc;  write (FileInfo, Fmt_ALLCT) ERR_Alloc;
-              write(*, Fmt_FL);  write(FileInfo, Fmt_FL); read(*, Fmt_End);  stop;
-            end if
 
           Experiment_TypeII%ModelInfo = ModelInfo
           Experiment_TypeII%AnalysisInfo = AnalysisInfo

@@ -39,6 +39,7 @@ module LaxWendroff_with_limiter_mod
 
 ! Libraries =======================================================================================
 
+!$ use omp_lib
 
 ! User defined modules ============================================================================
 use Parameters_mod
@@ -108,24 +109,39 @@ end type SoureceTerms_tp
 
 
 ! Contains the parameters for the solution
-type, public :: SolverWithLimiter(NCells)
-  integer(kind=Lng), len :: NCells
+!type, public :: SolverWithLimiter(NCells)
+!  integer(kind=Lng), len :: NCells
+!  integer(kind=Lng)      :: Plot_Inc = 100!
+
+!  type(vector), dimension(NCells) :: S     ! Source term
+
+!  type(vector), dimension(NCells*2) :: phi   ! Holds the value of the limiter function <delete>
+!  type(vector), dimension(NCells*2) :: theta ! Holds the value of the limiter function <delete>
+!  type(vector), dimension(-1_Lng:NCells+2_Lng) :: U ! This vector holds the solution at the current step,
+                                            ! the first term holds "h" and the second holds "uh"
+!  type(discretization_tp) :: Discretization ! Contains the discretization of the domain
+!  type(AnalysisData_tp)   :: AnalysisInfo   ! Holds information for the analysis
+!  type(Input_Data_tp)     :: ModelInfo      ! Holds information for the model
+
+!  contains
+!    procedure Solve => Solver_1D_with_Limiter_sub
+!    procedure BC => Impose_Boundary_Condition_1D_sub
+!end type SolverWithLimiter
+
+
+! Contains the parameters for the solution
+type, public :: SolverWithLimiter
   integer(kind=Lng)      :: Plot_Inc = 100
 
-  type(vector), dimension(NCells) :: S     ! Source term
-
-  type(vector), dimension(NCells*2) :: phi   ! Holds the value of the limiter function <delete>
-  type(vector), dimension(NCells*2) :: theta ! Holds the value of the limiter function <delete>
-  type(vector), dimension(-1_Lng:NCells+2_Lng) :: U ! This vector holds the solution at the current step,
-                                            ! the first term holds "h" and the second holds "uh"
   type(discretization_tp) :: Discretization ! Contains the discretization of the domain
   type(AnalysisData_tp)   :: AnalysisInfo   ! Holds information for the analysis
   type(Input_Data_tp)     :: ModelInfo      ! Holds information for the model
 
   contains
     procedure Solve => Solver_1D_with_Limiter_sub
-    procedure BC => Impose_Boundary_Condition_1D_sub
+    !procedure BC => Impose_Boundary_Condition_1D_sub
 end type SolverWithLimiter
+
 
 contains
 
@@ -165,7 +181,7 @@ implicit none
 ! Global variables ================================================================================
 
 ! - types -----------------------------------------------------------------------------------------
-class(SolverWithLimiter(*)) :: this
+class(SolverWithLimiter) :: this
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
@@ -193,12 +209,12 @@ real(kind=Dbl)      :: height_interface   ! height of water at the current inter
 real(kind=Dbl)      :: velocity_interface ! velocity of water at the current interface/time
 
 ! - real Arrays -----------------------------------------------------------------------------------
-type(vector) :: TempSolution
 
 ! - logical variables -----------------------------------------------------------------------------
 logical   :: PrintResults
 
 ! - type ------------------------------------------------------------------------------------------
+type(vector) :: TempSolution
 type(Jacobian_tp)      :: Jacobian ! Contains the Jacobian and all related items.
 type(Jacobian_tp)      :: Jacobian_neighbor ! Contains the Jacobian and all related items.
 type(LimiterFunc_tp)   :: LimiterFunc ! Contains the values of the limiter
@@ -217,7 +233,17 @@ type(vector) :: F_L ! Contribution of low-resolution method (Upwind) in the solu
 type(vector) :: F_H ! Contribution of high-resolution method (Lax-Wendroff) in the solution.
 
 type(vector) :: Delta_U           ! holds (U_i- U_i-1)
-type(vector), dimension(-1_Lng:this%NCells+2_Lng) ::UU, UN ! This vector holds the solution at the current step,
+type(vector), dimension(-1_Lng:this%Discretization%NCells+2_Lng) ::UU, UN ! This vector holds the solution at the current step,
+
+type(vector), dimension(this%Discretization%NCells) :: S     ! Source term
+                                            ! the first term holds "h" and the second holds "uh"
+
+type(vector), dimension(this%Discretization%NCells*2) :: phi   ! Holds the value of the limiter function <delete>
+type(vector), dimension(this%Discretization%NCells*2) :: theta ! Holds the value of the limiter function <delete>
+
+
+
+
 
 ! code ============================================================================================
 write(*,       *) " subroutine < Solver_1D_with_Limiter_sub >: "
@@ -230,24 +256,24 @@ write(FileInfo,*) " -Solving the shallow water equation with a limiter ..."
 write(*,       *) " -Applying initial conditions ..."
 write(FileInfo,*) " -Applying initial conditions ..."
 
-allocate(Plot_Results_1D_limiter_tp(NCells = this%NCells) :: Results)
+allocate(Plot_Results_1D_limiter_tp(NCells = this%Discretization%NCells) :: Results)
 
-this%U(1:this%NCells)%U(1) = this%AnalysisInfo%CntrlV -    this%Discretization%ZCell(:)
-this%U(0)%U(1)  = this%U(1)%U(1)
-this%U(-1)%U(1) = this%U(1)%U(1)
+UU(1:this%Discretization%NCells)%U(1) = this%AnalysisInfo%CntrlV -    this%Discretization%ZCell(:)
+UU(0)%U(1)  = UU(1)%U(1)
+UU(-1)%U(1) = UU(1)%U(1)
 
-this%U(this%NCells+1)%U(1) = this%U(this%NCells)%U(1)
-this%U(this%NCells+2)%U(1) = this%U(this%NCells)%U(1)
+UU(this%Discretization%NCells+1)%U(1) = UU(this%Discretization%NCells)%U(1)
+UU(this%Discretization%NCells+2)%U(1) = UU(this%Discretization%NCells)%U(1)
 
-this%U(:)%U(2) = 0.0_Dbl
+UU(:)%U(2) = 0.0_Dbl
 
 
-this%S(:)%U(1)     = 0.0_Dbl
-this%S(:)%U(2)     = 0.0_Dbl
-this%phi(:)%U(1)   = 0.0_Dbl
-this%phi(:)%U(2)   = 0.0_Dbl
-this%theta(:)%U(1) = 0.0_Dbl
-this%theta(:)%U(2) = 0.0_Dbl
+S(:)%U(1)     = 0.0_Dbl
+S(:)%U(2)     = 0.0_Dbl
+phi(:)%U(1)   = 0.0_Dbl
+phi(:)%U(2)   = 0.0_Dbl
+theta(:)%U(1) = 0.0_Dbl
+theta(:)%U(2) = 0.0_Dbl
 
 NSteps = this%AnalysisInfo%TotalTime/this%AnalysisInfo%TimeStep
 dt     = this%AnalysisInfo%TimeStep
@@ -267,7 +293,7 @@ SourceTerms%Identity(:,:) = 0.0_Dbl
 SourceTerms%Identity(1,1) = 1.0_Dbl
 SourceTerms%Identity(2,2) = 1.0_Dbl
 
-call this%BC()
+call Impose_Boundary_Condition_1D_sub(UU, this%Discretization%NCells,this%AnalysisInfo%h_dw,this%AnalysisInfo%Q_Up,this%Discretization%WidthCell(1))
 Results%ModelInfo = this%ModelInfo
 
   ! Time marching
@@ -276,16 +302,16 @@ Results%ModelInfo = this%ModelInfo
     ! write down data for visualization
       if (mod(i_steps,this%Plot_Inc)==1 .or. PrintResults) then
         print*, "----------------Step:", i_steps
-        Results%U(:)    = this%U(1:this%NCells)
-        Results%s(:)    = this%S(:)
-        Results%phi(:)  = this%phi(:)
-        Results%theta(:)= this%theta(:)
+        Results%U(:)    = UU(1:this%Discretization%NCells)
+        Results%s(:)    = S(:)
+        Results%phi(:)  = phi(:)
+        Results%theta(:)= theta(:)
 
         call Results%plot_results(i_steps)
       end if
       !print*," checkpoint 000"
-      UU(:) = this%U(:)
-      UN(:) = UU(:)
+      !UU(:) = this%U(:)
+      !UN(:) = UU(:)
       !print*,UU(:)%U(1)
 
       !print*," checkpoint 001" ! DEFAULT(private) SHARED(UN,UU)
@@ -301,11 +327,11 @@ Results%ModelInfo = this%ModelInfo
 
       !!$OMP PARALLEL
       !!$OMP PARALLEL DO schedule(dynamic, 10) DEFault(private) !SHARED(UN,UU)
-      !$OMP PARALLEL DO default(private) SHARED(UN,UU)
-      do i_Cell = 2_Lng, this%NCells-1  ! Loop over the cells except the boundary cells.
+      !$OMP PARALLEL DO default(none) SHARED(UN,UU,S, phi, theta,dt, dx, dtdx) private(i_Cell, its, height, velocity,Coefficient, height_interface, velocity_interface, speed) firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution)
+      do i_Cell = 2_Lng, this%Discretization%NCells-1  ! Loop over the cells except the boundary cells.
 
         !$ ITS = OMP_GET_THREAD_NUM()
-        print*, "=============Cell:", i_Cell, ITS
+        !print*, "=============Cell:", i_Cell, ITS
 
         ! Initialize fluxes
         F_L%U(:) = 0.0_Dbl ! upwind flux (not exactly, see notes)
@@ -338,6 +364,7 @@ Results%ModelInfo = this%ModelInfo
         ! The first contribution of the source term in the solution
         SourceTerms%Source_1%U(:) = dt * ( SourceTerms%S%U(:)  - 0.5_Dbl * matmul(SourceTerms%B(:,:), UU(i_Cell)%U(:)) )
 
+
           ON_Interface:  do i_Interface = 1, 2  ! the first one is on i-1/2, and the second one is on i+1/2
 
             ! Compute the jump (U_i- U_i-1)
@@ -368,6 +395,8 @@ Results%ModelInfo = this%ModelInfo
             SourceTerms%S_interface%U(2) = - Gravity * height_interface * ( this%Discretization%SlopeInter(i_Cell + i_Interface-1_Tiny ) - SourceTerms%S_f_interface )
 
             SourceTerms%Source_2%U(:) = SourceTerms%Source_2%U(:) + 0.5_Dbl * (dt**2) / dx * ( Coefficient * matmul( Jacobian%A, SourceTerms%S_interface%U(:)) )
+
+
 
             if ( alpha%U(1) ==0.0_Dbl .and. alpha%U(2) ==0.0_Dbl) cycle
 
@@ -433,8 +462,8 @@ Results%ModelInfo = this%ModelInfo
                 !LimiterFunc%phi =0.0
                 alpha_tilda%U(:) =  LimiterFunc%phi * alpha%U(:)
 
-                this%theta (2*(i_Cell-1)+i_Interface)%U(i_eigen) = LimiterFunc%theta
-                this%phi   (2*(i_Cell-1)+i_Interface)%U(i_eigen) = LimiterFunc%phi
+                theta (2*(i_Cell-1)+i_Interface)%U(i_eigen) = LimiterFunc%theta
+                phi   (2*(i_Cell-1)+i_Interface)%U(i_eigen) = LimiterFunc%phi
 
                 Wave_tilda%U(:) = alpha_tilda%U(i_eigen) * Jacobian%R(:,i_eigen)
 
@@ -443,6 +472,7 @@ Results%ModelInfo = this%ModelInfo
 
               end do ON_Eigenvalues
           end do ON_Interface
+
 
         ! Final update the results
         TempSolution%U(:) = UU(i_cell)%U(:) - dtdx * F_L%U(:) - dtdx * F_H%U(:) + SourceTerms%Source_1%U(:) - SourceTerms%Source_2%U(:)
@@ -453,9 +483,9 @@ Results%ModelInfo = this%ModelInfo
       !!$OMP END DO
       !$OMP END PARALLEL DO
 
-    this%U(:) = UN(:)
+    UU(:) = UN(:)
     ! apply boundary condition
-    call this%BC()
+    call Impose_Boundary_Condition_1D_sub(UU, this%Discretization%NCells,this%AnalysisInfo%h_dw,this%AnalysisInfo%Q_Up,this%Discretization%WidthCell(1))
 
   end do Time_Marching
 
@@ -489,7 +519,7 @@ end subroutine Solver_1D_with_Limiter_sub
 !
 !##################################################################################################
 
-subroutine Impose_Boundary_Condition_1D_sub(this)
+subroutine Impose_Boundary_Condition_1D_sub(UU, NCells,h_dw, Q_Up, Width)
 
 ! Libraries =======================================================================================
 
@@ -499,9 +529,10 @@ subroutine Impose_Boundary_Condition_1D_sub(this)
 implicit none
 
 ! Global variables ================================================================================
-
+integer(kind=Lng) :: NCells
+real(kind=DBL) :: h_dw, Q_Up, Width
 ! - types -----------------------------------------------------------------------------------------
-class(SolverWithLimiter(*)) :: this
+type(vector), dimension(-1_Lng:NCells+2_Lng) ::UU
 
 
 ! Local variables =================================================================================
@@ -511,22 +542,22 @@ class(SolverWithLimiter(*)) :: this
 !write(FileInfo,*) " subroutine < Impose_Boundary_Condition_1D_sub >: "
 
 ! Boundary conditions on the height
-this%U(-1_Lng)%U(1) = this%U(2)%U(1) ! h at the upstream
-this%U( 0_Lng)%U(1) = this%U(2)%U(1) ! h at the upstream
-this%U( 1_Lng)%U(1) = this%U(2)%U(1) ! h at the upstream
+UU(-1_Lng)%U(1) = UU(2)%U(1) ! h at the upstream
+UU( 0_Lng)%U(1) = UU(2)%U(1) ! h at the upstream
+UU( 1_Lng)%U(1) = UU(2)%U(1) ! h at the upstream
 
-this%U(this%NCells      )%U(1) = this%AnalysisInfo%h_dw ! h at the downstream
-this%U(this%NCells+1_Lng)%U(1) = this%AnalysisInfo%h_dw ! h at the downstream
-this%U(this%NCells+2_Lng)%U(1) = this%AnalysisInfo%h_dw ! h at the downstream
+UU(NCells      )%U(1) = h_dw ! h at the downstream
+UU(NCells+1_Lng)%U(1) = h_dw ! h at the downstream
+UU(NCells+2_Lng)%U(1) = h_dw ! h at the downstream
 
 ! Boundary conditions on the discharge
-this%U(-1_Lng)%U(2) = this%AnalysisInfo%Q_Up / this%Discretization%WidthCell(1)  ! h at the upstream
-this%U( 0_Lng)%U(2) = this%AnalysisInfo%Q_Up / this%Discretization%WidthCell(1)  ! h at the upstream
-this%U( 1_Lng)%U(2) = this%AnalysisInfo%Q_Up / this%Discretization%WidthCell(1)  ! h at the upstream
+UU(-1_Lng)%U(2) = Q_Up / Width  ! h at the upstream
+UU( 0_Lng)%U(2) = Q_Up / Width  ! h at the upstream
+UU( 1_Lng)%U(2) = Q_Up / Width  ! h at the upstream
 
-this%U(this%NCells      )%U(2) = this%U(this%NCells-1)%U(2) ! h at the downstream
-this%U(this%NCells+1_Lng)%U(2) = this%U(this%NCells-1)%U(2) ! h at the downstream
-this%U(this%NCells+2_Lng)%U(2) = this%U(this%NCells-1)%U(2) ! h at the downstream
+UU(NCells      )%U(2) = UU(NCells-1)%U(2) ! h at the downstream
+UU(NCells+1_Lng)%U(2) = UU(NCells-1)%U(2) ! h at the downstream
+UU(NCells+2_Lng)%U(2) = UU(NCells-1)%U(2) ! h at the downstream
 
 !write(*,       *) " end subroutine < Impose_Boundary_Condition_1D_sub >"
 !write(FileInfo,*) " end subroutine < Impose_Boundary_Condition_1D_sub >"
