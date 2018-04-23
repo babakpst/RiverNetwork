@@ -188,7 +188,7 @@ class(SolverWithLimiter) :: this
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
-integer :: ITS
+integer :: ITS, MTS  ! thread number of number of threads
 
 integer(kind=Lng)  :: i_Cell    ! loop index over the Cells
 integer(kind=Lng)  :: i_steps   ! loop index over the number steps
@@ -312,13 +312,26 @@ Results%ModelInfo = this%ModelInfo
         call Results%plot_results(i_steps)
       end if
 
+
+      !$OMP PARALLEL
+
+      !$ ITS = OMP_GET_THREAD_NUM()
+      !$ MTS = OMP_GET_NUM_THREADS()
+
+      write(*,       fmt="(' I am thread ',I4,' out of ',I4,' threads.')") ITS,MTS
+      write(FileInfo,fmt="(' I am thread ',I4,' out of ',I4,' threads.')") ITS,MTS
+
+      !$OMP END PARALLEL
+
+
       !$OMP PARALLEL DO default(none) SHARED(UN,UU,S, phi, theta,dt, dx, dtdx) &
-      private(i_Cell,its,height,velocity,Coefficient,height_interface, velocity_interface, speed) &
+      private(i_Cell,its,mts,height,velocity,Coefficient,height_interface, &
+      velocity_interface, speed) &
       firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, &
       alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution)
       do i_Cell = 2_Lng, this%Discretization%NCells-1  ! Loop over cells except the boundary cells
 
-        !$ ITS = OMP_GET_THREAD_NUM()
+
         !print*, "=============Cell:", i_Cell, ITS
 
         ! Initialize fluxes
@@ -481,6 +494,7 @@ Results%ModelInfo = this%ModelInfo
 
       end do
       !!$OMP END DO
+      !!$OMP END PARALLEL
       !$OMP END PARALLEL DO
 
     UU(:) = UN(:)
