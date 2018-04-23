@@ -9,8 +9,11 @@
 ! The University of Texas at Austin
 !
 ! ================================ V E R S I O N ==================================================
-! V0.1: 08/02/2018 - Initiation.
+! V0.10: 08/02/2018 - Initiation.
 ! V0.10: 03/08/2018 - Initiated: Compiled without error.
+! V1.00: 03/23/2018 - First version compiled
+! V2.00: 04/20/2018 - Parallel
+! V2.10: 04/23/2018 - Timer module
 !
 ! File version $Id
 !
@@ -61,8 +64,8 @@ character(143), Parameter, Public :: Fmt_Element1="('Error in the element type. 
 character(144), Parameter, Public :: Fmt_Element2="('Error in the element type. This element number',I3,'is not available in the list of this code. Check the input file for element number',I19)"
 
 ! Unit NUMBERS OF EXTERNAL FILES ==================================================================
-! Address file
-integer(kind=Smll), Parameter, Public :: FileAdr=500 ! Address file that holds the model name & directories (.txt)
+! Address file that holds the model name & directories (.txt)
+integer(kind=Smll), Parameter, Public :: FileAdr=500
 
 ! Input files
 integer(kind=Smll), Parameter, Public :: FileDataModel=501 ! Input file (.dataModel)
@@ -75,28 +78,16 @@ integer(kind=Smll), PARAMETER, PUBLIC :: UnInptMat=511 ! input file for material
 integer(kind=Smll), Parameter, Public  :: Un_CHK=599 ! Scratch file for debugging (.Chk)
 
 !Output files
-integer(kind=Smll), Parameter, Public  :: FileInfo=600    ! Model information file (.Inf)
-integer(kind=Smll), Parameter, Public  :: FileDomain=601  ! output file containing the domain (.domain)
-integer(kind=Smll), Parameter, Public  :: FileResults=602 ! output file containing results (.res)
+integer(kind=Smll), Parameter, Public :: FileInfo=600  ! Model information file (.Inf)
+integer(kind=Smll), Parameter, Public :: FileDomain=601 ! output file containing the domain(.domain)
+integer(kind=Smll), Parameter, Public :: FileResults=602 ! output file containing results (.res)
 
 
 ! Analysis case number ============================================================================
-integer(kind=Smll), Parameter, Public :: AnalysisType_1D=1 ! 1D Shallow water simulation Lax-wendroff
-integer(kind=Smll), Parameter, Public :: AnalysisType_1D_Limiter=2 ! 1D Shallow water simulation Lax-wendroff
+integer(kind=Smll), Parameter, Public :: AnalysisType_1D=1 !1D Shallow water simulation Lax-Wendrof
+integer(kind=Smll), Parameter, Public :: AnalysisType_1D_Limiter=2 ! 1D Shallow water simulation Lw
 
 ! User defined types ==============================================================================
-! Time signature of the model
-type TimeDate_tp
-  integer(kind=Smll)  :: Year, Month, Day                ! Date variables
-  integer(kind=Smll)  :: Hour, Minute, Seconds, S100th   ! Time variables
-end type TimeDate_tp
-
-! Holds data about the run time
-type timing
-  real(kind=DBL):: Time_Start, Time_End !TIME Variables for total run time
-  real(kind=DBL):: Input_Starts, Input_Ends ! required time to read the input file
-end type timing
-
 ! Holds the command argument
 type ArgCommands
   integer(kind=Smll) :: ArgCount      ! Counts number of argument

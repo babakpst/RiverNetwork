@@ -33,8 +33,10 @@
 
 Module Information_mod
 
+use Timer_mod
 use Parameters_mod
 use Input_mod
+
 
 Implicit None
 

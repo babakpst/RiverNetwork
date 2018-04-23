@@ -18,9 +18,7 @@ integer(kind=Smll) :: ii, jj        ! Loop index
 !integer(kind=Lng )  ::                         !
 
 ! - Real Variables --------------------------------------------------------------------------------
-Real (kind=DBL)      :: TimeS, TimeE            ! TIME Variables for total run time
-Real (kind=DBL)      :: TimeInputS, TimeInputE  ! TIME Variables for reading input files
-Real (kind=DBL)      :: TimeSolveS, TimeSolveE  ! TIME Variables for Effective Stiffness
+
 
 ! - Logical Variable ------------------------------------------------------------------------------
 !Logical (kind=Shrt)  ::
@@ -49,13 +47,14 @@ Real (kind=DBL)      :: TimeSolveS, TimeSolveE  ! TIME Variables for Effective S
 !Real (kind=DBL)   , allocatable, Dimension(:,:)  ::            !
 
 ! - Type ------------------------------------------------------------------------------------------
-type(TimeDate_tp)     :: TimeDate   ! Indicates the time and date of simulation
+type(TimeDate_tp) :: TimeDate       ! Indicates the time and date of simulation
+type(Timer_tp)    :: InputTime, SimulationTime, TotalTime ! Holds the running time
+
 type(ArgCommands)     :: Arguments  ! Holds the entered arguments from the command line
-type(timing)          :: SimulationTime ! Holds the run time
 type(Input_Data_tp)   :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
 type(AnalysisData_tp) :: AnalysisInfo ! Holds initial data required for array allocation
 type(discretization_tp) :: Discretization ! Holds all information required for discretization
-type(SolverWithLimiter):: Experiment_TypeII ! Contains all info to solve shallow water equation using Richtmyer method
+type(SolverWithLimiter):: Experiment_TypeII !  info to solve shallow water equation with limiter
 
 
 ! - Character Variables ---------------------------------------------------------------------------

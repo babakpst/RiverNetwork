@@ -20,7 +20,8 @@
 ! ================================ S U B R O U T I N E ============================================
 ! 1D_Domain: Plot the discretized domain.
 ! Plot_Results_1D_sub : Plots the results of the 1D SWE solved by the Lax-Wendroff method.
-! Plot_Results_1D_limiter_sub : Plots the results of the 1D SWE solved by the Lax-Wendroff method with limiter.
+! Plot_Results_1D_limiter_sub : Plots the results of the 1D SWE solved by the Lax-Wendroff
+!                               method with limiter.
 !
 ! ================================ F U N C T I O N ================================================
 !
@@ -93,7 +94,7 @@ type Plot_Results_1D_limiter_tp(NCells)
   type(vector),  dimension(NCells*2) :: theta ! Holds the value of the limiter function <delete>
 
   type(vector), dimension(NCells)  :: U     ! This vector holds the solution at previous step,
-                                                    ! the first term holds "h" and the second holds "uh"
+                                            ! the first term holds "h" and the second holds "uh"
   type(Input_Data_tp) :: ModelInfo
 
   contains
@@ -171,7 +172,8 @@ write(*,       *) " -Writing down the domain in the .Domain file ... "
 write(FileInfo,*) " -Writing down the domain in the .Domain file ... "
 
 open(unit=UnFile, file=trim(ModelInfo%ModelName)//'.Domain', Err=1001, iostat=IO_File, &
-access='sequential', action='write', asynchronous='no', blank='NULL', blocksize=0, defaultfile=trim(ModelInfo%OutputDir), &
+access='sequential', action='write', asynchronous='no', blank='NULL', &
+blocksize=0, defaultfile=trim(ModelInfo%OutputDir), &
 dispose='keep', form='formatted', position='asis', status='replace')
 
 UnFile = FileDomain
@@ -222,7 +224,8 @@ end subroutine Plot_Domain_1D_sub
 
 
 !##################################################################################################
-! Purpose: This subroutine plots the results of 1D shallow water equation using the Lax-Wendroff method.
+! Purpose: This subroutine plots the results of 1D shallow water equation using the Lax-Wendroff
+!          method.
 !
 ! Developed by: Babak Poursartip
 ! Supervised by: Clint Dawson

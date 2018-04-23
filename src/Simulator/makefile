@@ -17,6 +17,7 @@ FFLAGS=-O0 -qopenmp -g -debug all -debug-parameters all -traceback -check all -f
 #FFLAGS=-O2
 
 SOURCESF=	Parameters_mod.f90 \
+					Timer_mod.f90 \
 					Input_mod.f90 \
 					Inf_mod.f90 \
 					Results_mod.f90 \

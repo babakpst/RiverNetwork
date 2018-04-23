@@ -22,10 +22,11 @@
 ! V0.12: 03/20/2018  - Debugging the code with limiter
 ! V1.00: 04/10/2018  - Cleaning the code after having the right results
 ! V2.00: 04/18/2018  - Parallelization using OMP
+! V2.10: 04/23/2018  - Time module
 !
 ! File version $Id $
 !
-! Last update: 04/18/2018
+! Last update: 04/23/2018
 !
 ! ================================ Global   V A R I A B L E S =====================================
 !  . . . . . . . . . . . . . . . . Variables . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -40,6 +41,7 @@ use ifport
 
 ! Defined Modules =================================================================================
 use Parameters_mod
+use Timer_mod
 use Information_mod
 use Input_mod
 use LaxWendroff_with_limiter_mod
@@ -51,9 +53,9 @@ Include 'Global_Variables_Inc.f90'   ! All Global Variables are defined/describe
 ModelInfo%Version = 2.0_SGL          ! Reports the version of the code
 
 ! Time and Date signature =========================================================================
-Call cpu_time(SimulationTime%Time_Start)
-Call GETDAT(TimeDate%Year, TimeDate%Month, TimeDate%Day)
-Call GETTIM(TimeDate%Hour, TimeDate%Minute, TimeDate%Seconds, TimeDate%S100th)
+call TotalTime%start()
+call GETDAT(TimeDate%Year, TimeDate%Month, TimeDate%Day)
+call GETTIM(TimeDate%Hour, TimeDate%Minute, TimeDate%Seconds, TimeDate%S100th)
 
 call Header(ModelInfo%Version) ! Writes info on screen.
 
@@ -61,7 +63,8 @@ call Header(ModelInfo%Version) ! Writes info on screen.
 Arguments%ArgCount = command_argument_count()
 
 ! Allocating arg arrays
-allocate(Arguments%Length(Arguments%ArgCount), Arguments%Arg(Arguments%ArgCount), Arguments%Argstatus(Arguments%ArgCount), stat = ERR_Alloc)
+allocate(Arguments%Length(Arguments%ArgCount), Arguments%Arg(Arguments%ArgCount), &
+         Arguments%Argstatus(Arguments%ArgCount), stat = ERR_Alloc)
   if (ERR_Alloc /= 0) then
     write(*, Fmt_ALLCT) ERR_Alloc; write(FileInfo, Fmt_ALLCT) ERR_Alloc;
     write(*, Fmt_FL); write(FileInfo, Fmt_FL); read(*, Fmt_End); stop;
@@ -88,13 +91,13 @@ write(*,        fmt="(A)") " -Creating the info.txt file in the output folder ..
 UnFile=FileInfo
 Open(Unit=UnFile, File=trim(ModelInfo%ModelName)//'.infM',     &
      Err=1001, IOstat=IO_File, Access='SEQUENTIAL', Action='write', Asynchronous='NO', &
-     Blank='NULL', blocksize=0, defaultfile=trim(ModelInfo%OutputDir), DisPOSE='Keep', Form='formatted', &
-     position='ASIS', status='REPLACE')
+     Blank='NULL', blocksize=0, defaultfile=trim(ModelInfo%OutputDir), DisPOSE='Keep',  &
+     Form='formatted', position='ASIS', status='REPLACE')
 
 ! Writing down the simulation time
 Call Info(TimeDate, ModelInfo)
 
-Call cpu_time(SimulationTime%Input_Starts)
+call InputTime%start()
 
 ! Reading model data from the partitioned file ====================================================
 write(*,        fmt="(A)") " -Reading the input file ..."
@@ -102,11 +105,12 @@ write(FileInfo, fmt="(A)") " -Reading the input file ..."
 
 call Discretization%Input (ModelInfo)
 
-Call cpu_time(SimulationTime%Input_Ends)
+call InputTime%stop()
 
 ! close check File
 !UnFile= Un_CHK
 !Close(Unit=UnFile, status='Keep', Err=1002, IOstat=IO_File)
+
 
 
 ! Simulations =====================================================================================
@@ -121,25 +125,31 @@ Call cpu_time(SimulationTime%Input_Ends)
 
     ! Test File -----------------------------------------------------------------------------------
     !UnFile=UN_CHK
-    !Open( Unit=UnFile, File=trim(AnaName)//'_'//trim(AdjustL(IndexSize))//'_'//trim(AdjustL(IndexRank))//'.Chk', &
-    !     Err= 1001, IOstat=IO_File, Access='SEQUENTIAL', Action='write', Asynchronous='NO', &
-    !     Blank='NULL', blocksize=0, defaultfile=trim(InlDirAna), DisPOSE='Keep', Form='formatted', &
-    !     position='ASIS', status='REPLACE')
+    !open( Unit=UnFile,  &
+    !   File=trim(AnaName)//'_'//trim(AdjustL(IndexSize))//'_'//trim(AdjustL(IndexRank))//'.Chk', &
+    !   Err= 1001, IOstat=IO_File, Access='SEQUENTIAL', Action='write', Asynchronous='NO', &
+    !   Blank='NULL', blocksize=0, defaultfile=trim(InlDirAna), DisPOSE='Keep', Form='formatted', &
+    !   position='ASIS', status='REPLACE')
 
     ! Analysis ====================================================================================
       select case(AnalysisInfo%AnalysisType)
 
-        case(AnalysisType_1D_Limiter)    ! # 2: Lax-Wendroff with limiter in combination with upwind method
+        case(AnalysisType_1D_Limiter) !#2: Lax-Wendroff with limiter in combination with upwind
 
           Experiment_TypeII%ModelInfo = ModelInfo
           Experiment_TypeII%AnalysisInfo = AnalysisInfo
           Experiment_TypeII%Discretization = Discretization
+
+          call SimulationTime%start()
           call Experiment_TypeII%Solve()
+          call SimulationTime%stop()
 
         ! Error in analysis numbering
         case default
-          write(*,*)" The analysis type  is not available in this code. Modify the analysis type."
-          write(FileInfo,*)" The analysis type  is not available in this code. Modify the analysis type."
+          write(*,*)       " The analysis type  is not available in this code. Modify the &
+                            analysis type."
+          write(FileInfo,*)" The analysis type  is not available in this code. Modify the &
+                            analysis type."
           write(*,*)
           write(FileInfo,*)
           write(*,*)" Simulation terminated with error."
@@ -148,7 +158,8 @@ Call cpu_time(SimulationTime%Input_Ends)
       end select
 
     write(*,*)" Simulation was conducted successfully for:"
-    write(*,"(' Model Name: ',A30,'Analysis Name: ', A30)")ModelInfo%ModelName, ModelInfo%AnalysesNames(i_analyses)
+    write(*,"(' Model Name: ',A30,'Analysis Name: ', A30)") &
+              ModelInfo%ModelName, ModelInfo%AnalysesNames(i_analyses)
     write(*,*)
 
   end do
@@ -161,8 +172,21 @@ DEallocate(Arguments%Length, Arguments%Arg, Arguments%Argstatus,      stat = ERR
   end if
 
 ! RUNNING TIME OF THE CODE ========================================================================
-Call cpu_time(SimulationTime%Time_End)
-!Call Info()
+call TotalTime%stop()
+
+write(*,        fmt="(' Input time: ',F23.10 , ' seconds.' )")  InputTime%elapsedTime()
+write(FileInfo, fmt="(' Input time: ',F23.10 , ' seconds.' )")  InputTime%elapsedTime()
+
+write(*,        fmt="(' Simulation time: ',F23.10 , ' seconds.' )") &
+                                                                      SimulationTime%elapsedTime()
+write(FileInfo, fmt="(' Simulation time: ',F23.10 , ' seconds.' )") &
+                                                                      SimulationTime%elapsedTime()
+
+write(*,        fmt="(' Total simulation time: ',F23.10 , ' seconds.' )")  TotalTime%elapsedTime()
+write(FileInfo, fmt="(' Total simulation time: ',F23.10 , ' seconds.' )")  TotalTime%elapsedTime()
+
+
+
 
 ! End the code ====================================================================================
 write(*, Fmt_SUC); write(FileInfo, Fmt_SUC);
