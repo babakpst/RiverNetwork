@@ -298,6 +298,18 @@ call Impose_Boundary_Condition_1D_sub(UU, this%Discretization%NCells,this%Analys
 
 Results%ModelInfo = this%ModelInfo
 
+
+!$OMP PARALLEL
+
+!$ ITS = OMP_GET_THREAD_NUM()
+!$ MTS = OMP_GET_NUM_THREADS()
+
+write(*,       fmt="(' I am thread ',I4,' out of ',I4,' threads.')") ITS,MTS
+write(FileInfo,fmt="(' I am thread ',I4,' out of ',I4,' threads.')") ITS,MTS
+
+!$OMP END PARALLEL
+
+
   ! Time marching
   Time_Marching: do i_steps = 1_Lng, NSteps
 
@@ -311,18 +323,6 @@ Results%ModelInfo = this%ModelInfo
 
         call Results%plot_results(i_steps)
       end if
-
-
-      !$OMP PARALLEL
-
-      !$ ITS = OMP_GET_THREAD_NUM()
-      !$ MTS = OMP_GET_NUM_THREADS()
-
-      write(*,       fmt="(' I am thread ',I4,' out of ',I4,' threads.')") ITS,MTS
-      write(FileInfo,fmt="(' I am thread ',I4,' out of ',I4,' threads.')") ITS,MTS
-
-      !$OMP END PARALLEL
-
 
       !$OMP PARALLEL DO default(none) SHARED(UN,UU,S, phi, theta,dt, dx, dtdx) &
       private(i_Cell,its,mts,height,velocity,Coefficient,height_interface, &
