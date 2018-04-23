@@ -66,20 +66,23 @@ end type LimiterFunc_tp
 !  real(kind=Dbl), dimension(2) :: U
 !end type vector
 
-! This type consists of all variables/arrays regarding the Jacobian, used to apply the limiter. The input variables is U_up and U_dw
+! This type consists of all variables/arrays regarding the Jacobian, used to apply the limiter.
 type Jacobian_tp
-  integer(kind=Tiny) :: option   ! indicates how to interpolate the Jacobian at the interface: 1: for average on the solution-2: direct average on the Jacobian itself
+  integer(kind=Tiny) :: option   ! indicates how to interpolate the Jacobian at the interface:
+                                 ! 1: for average on the solution
+                                 ! 2: direct average on the Jacobian itself
 
-  real(kind=Dbl),dimension(2,2) :: A        ! Contains the Jacobian matrix at each time step at the cell interface i-1/2
-  real(kind=Dbl),dimension(2,2) :: R        ! Contains the eigenvectors at each time step at the cell interface i-1/2
-  real(kind=Dbl),dimension(2,2) :: L        ! Contains the eigenvectors inverse (R^(-1))at each time step at the cell interface i-1/2
+  real(kind=Dbl),dimension(2,2) :: A ! Jacobian matrix at each time step at interface i-1/2
+  real(kind=Dbl),dimension(2,2) :: R ! eigenvectors at each time step at interface i-1/2
+  real(kind=Dbl),dimension(2,2) :: L ! eigenvctrs inverse(R^-1) at each timestep at interface i-1/2
 
-  real(kind=Dbl),dimension(2,2) :: A_plus   ! Contains the Jacobian matrix with + eigenvalues at each time step at the cell interface i-1/2
-  real(kind=Dbl),dimension(2,2) :: A_minus  ! Contains the Jacobian matrix with - eigenvalues at each time step at the cell interface i-1/2
-  real(kind=Dbl),dimension(2,2) :: A_abs    ! Contains the Jacobian matrix with abs eigenvalues at each time step at the cell interface i-1/2
-  real(kind=Dbl),dimension(2,2) :: Gam      ! Contains the Jacobian matrix with - eigenvalues at each time step at the cell interface i-1/2
-  real(kind=Dbl),dimension(2,2) :: Gam_plus ! Contains the Jacobian matrix with - eigenvalues at each time step at the cell interface i-1/2
-  real(kind=Dbl),dimension(2,2) :: Gam_minus! Contains the Jacobian matrix with - eigenvalues at each time step at the cell interface i-1/2
+  ! Jacobian mtx with
+  real(kind=Dbl),dimension(2,2) :: A_plus   ! + eigenvalues at each time step at interface i-1/2
+  real(kind=Dbl),dimension(2,2) :: A_minus  ! - eigenvalues at each time step at interface i-1/2
+  real(kind=Dbl),dimension(2,2) :: A_abs    ! abs eigenvalues at each time step at interface i-1/2
+  real(kind=Dbl),dimension(2,2) :: Gam      ! - eigenvalues at each time step at interface i-1/2
+  real(kind=Dbl),dimension(2,2) :: Gam_plus ! - eigenvalues at each time step at interface i-1/2
+  real(kind=Dbl),dimension(2,2) :: Gam_minus! - eigenvalues at each time step at interface i-1/2
 
   type(vector) :: U_up, U_dw ! Holds the solution at the upstream and downstream of each cell
 
@@ -117,7 +120,7 @@ end type SoureceTerms_tp
 
 !  type(vector), dimension(NCells*2) :: phi   ! Holds the value of the limiter function <delete>
 !  type(vector), dimension(NCells*2) :: theta ! Holds the value of the limiter function <delete>
-!  type(vector), dimension(-1_Lng:NCells+2_Lng) :: U ! This vector holds the solution at the current step,
+!  type(vector), dimension(-1_Lng:NCells+2_Lng) :: U !  the solution at the current step,
                                             ! the first term holds "h" and the second holds "uh"
 !  type(discretization_tp) :: Discretization ! Contains the discretization of the domain
 !  type(AnalysisData_tp)   :: AnalysisInfo   ! Holds information for the analysis
@@ -198,9 +201,9 @@ integer(kind=Tiny)  :: i_Interface ! loop index over the interfaces (only two in
 ! - real variables --------------------------------------------------------------------------------
 real(kind=Dbl)      :: dt      ! time step, should be structured/constant in each reach
 real(kind=Dbl)      :: dx      ! cell length, should be structured/constant in each reach
-real(kind=Dbl)      :: speed   ! characteristic speed, equal to positive or negative eiqenvalues in each interface
+real(kind=Dbl)      :: speed   ! characteristic speed, equal to pos./neg. eiqenv. in each interface
 real(kind=Dbl)      :: dtdx    ! The ratio dt/dx, used in the final equation
-real(kind=Dbl)      :: Coefficient ! This will take care of the sign of the flux for the high-resolution part
+real(kind=Dbl)      :: Coefficient ! take care of the sign of the flux for the high-resolution part
 
 real(kind=Dbl)      :: height   ! height of water at the current cell/time
 real(kind=Dbl)      :: velocity ! velocity of water at the current cell/time
@@ -218,7 +221,7 @@ type(vector) :: TempSolution
 type(Jacobian_tp)      :: Jacobian ! Contains the Jacobian and all related items.
 type(Jacobian_tp)      :: Jacobian_neighbor ! Contains the Jacobian and all related items.
 type(LimiterFunc_tp)   :: LimiterFunc ! Contains the values of the limiter
-type(Plot_Results_1D_limiter_tp(NCells = :)), allocatable :: Results ! Holds the results in each time step in all cells.
+type(Plot_Results_1D_limiter_tp(NCells = :)), allocatable :: Results ! in each time step/ all cells
 type(SoureceTerms_tp) :: SourceTerms
 
 type(vector) :: alpha                 ! alpha = R^-1 (U_i- U_i-1) See notes for detail.
@@ -233,16 +236,13 @@ type(vector) :: F_L ! Contribution of low-resolution method (Upwind) in the solu
 type(vector) :: F_H ! Contribution of high-resolution method (Lax-Wendroff) in the solution.
 
 type(vector) :: Delta_U           ! holds (U_i- U_i-1)
-type(vector), dimension(-1_Lng:this%Discretization%NCells+2_Lng) ::UU, UN ! This vector holds the solution at the current step,
+type(vector), dimension(-1_Lng:this%Discretization%NCells+2_Lng) ::UU, UN ! solution at n and n+1
 
 type(vector), dimension(this%Discretization%NCells) :: S     ! Source term
                                             ! the first term holds "h" and the second holds "uh"
 
-type(vector), dimension(this%Discretization%NCells*2) :: phi   ! Holds the value of the limiter function <delete>
-type(vector), dimension(this%Discretization%NCells*2) :: theta ! Holds the value of the limiter function <delete>
-
-
-
+type(vector), dimension(this%Discretization%NCells*2) :: phi   ! value of the limiter function <delete>
+type(vector), dimension(this%Discretization%NCells*2) :: theta ! value of the limiter function <delete>
 
 
 ! code ============================================================================================
@@ -293,7 +293,9 @@ SourceTerms%Identity(:,:) = 0.0_Dbl
 SourceTerms%Identity(1,1) = 1.0_Dbl
 SourceTerms%Identity(2,2) = 1.0_Dbl
 
-call Impose_Boundary_Condition_1D_sub(UU, this%Discretization%NCells,this%AnalysisInfo%h_dw,this%AnalysisInfo%Q_Up,this%Discretization%WidthCell(1))
+call Impose_Boundary_Condition_1D_sub(UU, this%Discretization%NCells,this%AnalysisInfo%h_dw, &
+                                      this%AnalysisInfo%Q_Up,this%Discretization%WidthCell(1))
+
 Results%ModelInfo = this%ModelInfo
 
   ! Time marching
@@ -309,26 +311,12 @@ Results%ModelInfo = this%ModelInfo
 
         call Results%plot_results(i_steps)
       end if
-      !print*," checkpoint 000"
-      !UU(:) = this%U(:)
-      !UN(:) = UU(:)
-      !print*,UU(:)%U(1)
 
-      !print*," checkpoint 001" ! DEFAULT(private) SHARED(UN,UU)
-
-      !!$OMP PARALLEL
-      !!$ write(*,*) " *** This is inside the parallel region.*** "
-      !!$OMP critical
-      !!$ ITS = OMP_GET_THREAD_NUM()
-      !!$ write(*,*) " *** I am the thread :", ITS
-      !!$OMP barrier
-      !!$OMP end critical
-      !!$OMP END PARALLEL
-
-      !!$OMP PARALLEL
-      !!$OMP PARALLEL DO schedule(dynamic, 10) DEFault(private) !SHARED(UN,UU)
-      !$OMP PARALLEL DO default(none) SHARED(UN,UU,S, phi, theta,dt, dx, dtdx) private(i_Cell, its, height, velocity,Coefficient, height_interface, velocity_interface, speed) firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution)
-      do i_Cell = 2_Lng, this%Discretization%NCells-1  ! Loop over the cells except the boundary cells.
+      !$OMP PARALLEL DO default(none) SHARED(UN,UU,S, phi, theta,dt, dx, dtdx) &
+      private(i_Cell,its,height,velocity,Coefficient,height_interface, velocity_interface, speed) &
+      firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, &
+      alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution)
+      do i_Cell = 2_Lng, this%Discretization%NCells-1  ! Loop over cells except the boundary cells
 
         !$ ITS = OMP_GET_THREAD_NUM()
         !print*, "=============Cell:", i_Cell, ITS
@@ -345,12 +333,15 @@ Results%ModelInfo = this%ModelInfo
         velocity = UU(i_Cell)%U(2)/height
 
         ! Find the B matrix for this cell
-        SourceTerms%S_f = (this%Discretization%ManningCell(i_Cell)**2.0) * velocity * dabs(velocity) /( height**(4.0_Dbl/3.0_Dbl) )
+        SourceTerms%S_f = (this%Discretization%ManningCell(i_Cell)**2.0) * velocity &
+                          * dabs(velocity) /( height**(4.0_Dbl/3.0_Dbl) )
 
         SourceTerms%B(1,1) = 0.0_Dbl
         SourceTerms%B(1,2) = 0.0_Dbl
-        SourceTerms%B(2,1) = - Gravity * ( this%Discretization%SlopeCell(i_Cell) + (7.0_Dbl/3.0_Dbl) * SourceTerms%S_f  )
-        SourceTerms%B(2,2) =   (2.0_Dbl * this%Discretization%ManningCell(i_Cell)**2.0)  * dabs(velocity) /( height**(4.0_Dbl/3.0_Dbl) )
+        SourceTerms%B(2,1) =  &
+        - Gravity * (this%Discretization%SlopeCell(i_Cell) + (7.0_Dbl/3.0_Dbl) * SourceTerms%S_f)
+        SourceTerms%B(2,2) =  (2.0_Dbl*this%Discretization%ManningCell(i_Cell)**2.0) &
+                              *dabs(velocity)/(height**(4.0_Dbl/3.0_Dbl))
 
         ! Find the BI
         SourceTerms%BI(:,:) = SourceTerms%Identity - 0.5_Dbl * dt * SourceTerms%B(:,:)
@@ -359,16 +350,17 @@ Results%ModelInfo = this%ModelInfo
 
         ! Source terms at the current cell/time
         SourceTerms%S%U(1) = 0.0_Dbl
-        SourceTerms%S%U(2) = - Gravity * height  * ( this%Discretization%SlopeCell(i_Cell) - SourceTerms%S_f )
+        SourceTerms%S%U(2) =-Gravity*height*(this%Discretization%SlopeCell(i_Cell)-SourceTerms%S_f)
 
         ! The first contribution of the source term in the solution
-        SourceTerms%Source_1%U(:) = dt * ( SourceTerms%S%U(:)  - 0.5_Dbl * matmul(SourceTerms%B(:,:), UU(i_Cell)%U(:)) )
+        SourceTerms%Source_1%U(:) = &
+             dt * (SourceTerms%S%U(:) - 0.5_Dbl * matmul(SourceTerms%B(:,:), UU(i_Cell)%U(:)))
 
 
-          ON_Interface:  do i_Interface = 1, 2  ! the first one is on i-1/2, and the second one is on i+1/2
+          ON_Interface:  do i_Interface = 1, 2  ! first one is on i-1/2, the second one is on i+1/2
 
             ! Compute the jump (U_i- U_i-1)
-            Delta_U%U(:) = UU(i_Cell+(i_Interface-1_Lng))%U(:) - UU(i_Cell+(i_Interface-2_Lng))%U(:)
+            Delta_U%U(:) = UU(i_Cell+(i_Interface-1_Lng))%U(:)-UU(i_Cell+(i_Interface-2_Lng))%U(:)
 
             ! Computing the Jacobian and all other items at the upstream
             Jacobian%U_up%U(:) = UU(i_Cell+(i_Interface-2_Lng))%U(:)
@@ -381,22 +373,24 @@ Results%ModelInfo = this%ModelInfo
 
             ! Source terms
             if (i_Interface == 1_Tiny) then
-              Coefficient = -1.0_Dbl               ! This will take care of the sign of the flux for the high-resolution part
+              Coefficient = -1.0_Dbl !take care of the sign of flux for the high-resolution part
             else if (i_Interface == 2_Tiny) then
-              Coefficient = +1.0_Dbl                ! This will take care of the sign of the flux for the high-resolution part
+              Coefficient = +1.0_Dbl !take care of the sign of flux for the high-resolution part
             end if
 
             height_interface = 0.5_Dbl * (Jacobian%U_up%U(1) +Jacobian%U_dw%U(1) )
-            velocity_interface = 0.5_Dbl * (Jacobian%U_up%U(2)/Jacobian%U_up%U(1) + Jacobian%U_dw%U(2)/Jacobian%U_dw%U(1) )
+            velocity_interface = &
+            0.5_Dbl*(Jacobian%U_up%U(2)/Jacobian%U_up%U(1)+Jacobian%U_dw%U(2)/Jacobian%U_dw%U(1))
 
-            SourceTerms%S_f_interface = this%Discretization%ManningCell(i_Cell)  * velocity_interface * dabs(velocity_interface) /( height_interface**(4.0_Dbl/3.0_Dbl) )
+            SourceTerms%S_f_interface =this%Discretization%ManningCell(i_Cell)*velocity_interface &
+             *dabs(velocity_interface) /( height_interface**(4.0_Dbl/3.0_Dbl))
 
             SourceTerms%S_interface%U(1) = 0.0_Dbl
-            SourceTerms%S_interface%U(2) = - Gravity * height_interface * ( this%Discretization%SlopeInter(i_Cell + i_Interface-1_Tiny ) - SourceTerms%S_f_interface )
+            SourceTerms%S_interface%U(2) =-Gravity*height_interface* &
+            (this%Discretization%SlopeInter(i_Cell+i_Interface-1_Tiny)-SourceTerms%S_f_interface)
 
-            SourceTerms%Source_2%U(:) = SourceTerms%Source_2%U(:) + 0.5_Dbl * (dt**2) / dx * ( Coefficient * matmul( Jacobian%A, SourceTerms%S_interface%U(:)) )
-
-
+            SourceTerms%Source_2%U(:) = SourceTerms%Source_2%U(:) + 0.5_Dbl * (dt**2) / dx &
+                             * ( Coefficient * matmul( Jacobian%A, SourceTerms%S_interface%U(:)))
 
             if ( alpha%U(1) ==0.0_Dbl .and. alpha%U(2) ==0.0_Dbl) cycle
 
@@ -404,12 +398,14 @@ Results%ModelInfo = this%ModelInfo
 
                 Wave%U(:) = alpha%U(i_eigen) * Jacobian%R(:,i_eigen)
 
-                  if (i_Interface == 1_Tiny) then ! we use the positive eigenvalues on the upstream interface
+                  ! We use positive eigenvalues on the upstream interface
+                  if (i_Interface == 1_Tiny) then
                     speed = Jacobian%Lambda_plus%U(i_eigen)
-                    Coefficient = -1.0_Dbl               ! This will take care of the sign of the flux for the high-resolution part
-                  else if (i_Interface == 2_Tiny) then ! we use the negative eigenvalues on the downstream interface
+                    Coefficient = -1.0_Dbl !take care of the sign of flux for the high-resolution part
+                  ! We use negative eigenvalues on the downstream interface
+                  else if (i_Interface == 2_Tiny) then
                     speed = Jacobian%Lambda_minus%U(i_eigen)
-                    Coefficient = +1.0_Dbl                ! This will take care of the sign of the flux for the high-resolution part
+                    Coefficient = +1.0_Dbl !take care of the sign of flux for the high-resolution part
                   end if
 
                 ! The upwind part
@@ -419,7 +415,8 @@ Results%ModelInfo = this%ModelInfo
                   if  (Jacobian%Lambda%U(i_eigen)  > 0.0_Dbl ) then
 
                     ! Compute the jump (U_i- U_i-1)
-                    Delta_U%U(:) = UU(i_Cell+i_Interface-2_Tiny)%U(:) - UU( i_Cell+i_Interface-3_Tiny )%U(:)
+                    Delta_U%U(:) = UU(i_Cell+i_Interface-2_Tiny)%U(:) &
+                                  -UU(i_Cell+i_Interface-3_Tiny )%U(:)
 
                     ! Computing the Jacobian and all other items at the upstream
                     Jacobian_neighbor%U_up%U(:) = UU( i_Cell+i_Interface-3_Tiny  )%U(:)
@@ -429,12 +426,12 @@ Results%ModelInfo = this%ModelInfo
 
                     ! Compute alpha(= RI*(U_i - U_(i-1))
                     alpha_neighbor%U(:) = matmul(Jacobian_neighbor%L(:,:), Delta_U%U(:))
-                    Wave_neighbor%U(:)  = alpha_neighbor%U(i_eigen) * Jacobian_neighbor%R(:, i_eigen)
+                    Wave_neighbor%U(:) = alpha_neighbor%U(i_eigen)*Jacobian_neighbor%R(:, i_eigen)
 
                   else if  (Jacobian%Lambda%U(i_eigen) < 0.0_Dbl) then
 
                     ! Compute the jump (U_i- U_i-1)
-                    Delta_U%U(:) = UU(i_Cell+i_Interface )%U(:) - UU( i_Cell+i_Interface-1_Tiny )%U(:)
+                    Delta_U%U(:) = UU(i_Cell+i_Interface)%U(:)-UU(i_Cell+i_Interface-1_Tiny)%U(:)
 
                     ! Computing the Jacobian and all other items at the upstream
                     Jacobian_neighbor%U_up%U(:) = UU(i_Cell+i_Interface-1_Tiny )%U(:)
@@ -444,14 +441,15 @@ Results%ModelInfo = this%ModelInfo
 
                     ! Compute alpha(= RI*(U_i - U_(i-1))
                     alpha_neighbor%U(:) = matmul(Jacobian_neighbor%L(:,:), Delta_U%U(:))
-                    Wave_neighbor%U(:)  = alpha_neighbor%U(i_eigen) * Jacobian_neighbor%R(:,i_eigen)
+                    Wave_neighbor%U(:) = alpha_neighbor%U(i_eigen) * Jacobian_neighbor%R(:,i_eigen)
                   else
                     write(*,*) " Something is wrong. Check the limiter subroutine."
                     stop
                   end if
 
                   if ( dot_product(Wave%U(:), Wave%U(:) ) /= 0.0_Dbl ) then
-                    LimiterFunc%theta = ( dot_product( Wave_neighbor%U(:), Wave%U(:) ) ) / ( dot_product(Wave%U(:), Wave%U(:) )  )
+                    LimiterFunc%theta = (dot_product(Wave_neighbor%U(:),Wave%U(:))) &
+                                        /(dot_product(Wave%U(:), Wave%U(:) )  )
                   else
                     LimiterFunc%theta = 0.0_Dbl
                   end if
@@ -468,14 +466,16 @@ Results%ModelInfo = this%ModelInfo
                 Wave_tilda%U(:) = alpha_tilda%U(i_eigen) * Jacobian%R(:,i_eigen)
 
                 ! The high-resolution (Lax-Wendroff) part
-                F_H%U(:) = F_H%U(:) + Coefficient * 0.5_Dbl * dabs(Jacobian%Lambda%U(i_eigen) ) * ( 1.0_Dbl - dtdx * dabs( Jacobian%Lambda%U(i_eigen) ) ) * Wave_tilda%U(:)
+                F_H%U(:) = F_H%U(:) + Coefficient * 0.5_Dbl * dabs(Jacobian%Lambda%U(i_eigen) ) &
+                           * (1.0_Dbl-dtdx*dabs(Jacobian%Lambda%U(i_eigen)))*Wave_tilda%U(:)
 
               end do ON_Eigenvalues
           end do ON_Interface
 
 
         ! Final update the results
-        TempSolution%U(:) = UU(i_cell)%U(:) - dtdx * F_L%U(:) - dtdx * F_H%U(:) + SourceTerms%Source_1%U(:) - SourceTerms%Source_2%U(:)
+        TempSolution%U(:) = UU(i_cell)%U(:) - dtdx * F_L%U(:) - dtdx * F_H%U(:) &
+                            + SourceTerms%Source_1%U(:) - SourceTerms%Source_2%U(:)
 
         UN(i_cell)%U(:) = matmul(SourceTerms%BI(:,:), TempSolution%U(:))
 
@@ -485,7 +485,8 @@ Results%ModelInfo = this%ModelInfo
 
     UU(:) = UN(:)
     ! apply boundary condition
-    call Impose_Boundary_Condition_1D_sub(UU, this%Discretization%NCells,this%AnalysisInfo%h_dw,this%AnalysisInfo%Q_Up,this%Discretization%WidthCell(1))
+    call Impose_Boundary_Condition_1D_sub(UU, this%Discretization%NCells,this%AnalysisInfo%h_dw, &
+                                          this%AnalysisInfo%Q_Up,this%Discretization%WidthCell(1))
 
   end do Time_Marching
 
@@ -614,12 +615,14 @@ class(LimiterFunc_tp) :: this
     case(2)  !superbee
       this%phi = dmax1( 0.0_Dbl, dmin1( 1.0_Dbl, 2.0_Dbl*this%theta ), dmin1( 2.0_Dbl, this%theta))
     case(3)  ! MC (Woodward)
-      this%phi = dmax1( 0.0_Dbl, dmin1( (1.0_Dbl + this%theta)/2.0_Dbl, 2.0_Dbl, 2.0_Dbl*this%theta ) )
+      this%phi = dmax1( 0.0_Dbl,dmin1( (1.0_Dbl + this%theta)/2.0_Dbl,2.0_Dbl,2.0_Dbl*this%theta))
     case(4)  ! van Leer
       this%phi = ( this%theta +  dabs(this%theta) ) / ( 1.0_Dbl + dabs(this%theta) )
     case default
-      write(*,*)" The limiter type does exist, please select a limiter from the list and modify the input file."
-      write(FileInfo,*)" The limiter type does exist, please select a limiter from the list and modify the input file."
+      write(*,*)" The limiter type does exist, please select a limiter from the list &
+                  and modify the input file."
+      write(FileInfo,*)" The limiter type does exist, please select a limiter from the list &
+                         and modify the input file."
       write(*,*)
       write(FileInfo,*)
       write(*,*)" Simulation terminated with error."
@@ -635,7 +638,8 @@ end subroutine Limiters_sub
 
 
 !##################################################################################################
-! Purpose: This subroutine computes the Jacobian matrix, Jacobian plus, and Jacobian minus at each cell.
+! Purpose: This subroutine computes the Jacobian matrix, Jacobian plus, and
+!          Jacobian minus at each cell.
 !
 ! Developed by: Babak Poursartip
 ! Supervised by: Clint Dawson
@@ -694,7 +698,8 @@ real(kind=Dbl), dimension(2,2) :: A_dw  ! the average discharge at the interface
 !write(*,       *) " subroutine < Jacobian_sub >: "
 !write(FileInfo,*) " subroutine < Jacobian_sub >: "
 
-  if (this%option == 1 ) then  ! find the average solution at the interface and then compute the Jacobian
+  ! Find the average solution at the interface and then compute the Jacobian
+  if (this%option == 1 ) then
 
     h_dw = this%U_dw%U(1)
     u_dw = this%U_dw%U(2) / this%U_dw%U(1)
@@ -769,8 +774,8 @@ real(kind=Dbl), dimension(2,2) :: A_dw  ! the average discharge at the interface
     ! Compute A abs
     this%A_abs = this%A_plus - this%A_minus
 
-
-  else if (this%option == 2 ) then  ! find the Jacobian at each grid and average the Jacobian to find the Jacobian at the interface
+  ! Find the Jacobian at each grid and average the Jacobian to find the Jacobian at the interface
+  else if (this%option == 2 ) then
 
     ! Computing the Jacobian at the upstream - A
     h_up = this%U_up%U(1)
