@@ -4,8 +4,8 @@
 *.layout
 *.o
 *.mod
-src/Simulator/.nsf*
-src/Partitioner/.nsf*
+#src/Simulator/.nsf*
+#src/Partitioner/.nsf*
 
 # ignoring the following folders:
 output/
