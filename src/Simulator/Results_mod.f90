@@ -85,15 +85,28 @@ type vector
   real(kind=Dbl), dimension(2) :: U
 end type vector
 
-type Plot_Results_1D_limiter_tp(NCells)
-  integer(kind=Lng), len :: NCells
+!type Plot_Results_1D_limiter_tp(NCells)
+!  integer(kind=Lng), len :: NCells
 
-  type(vector),  dimension(NCells) :: s   ! temp to hold bathymetry
+!  type(vector),  dimension(NCells) :: s   ! temp to hold bathymetry
 
-  type(vector),  dimension(NCells*2) :: phi   ! Holds the value of the limiter function <delete>
-  type(vector),  dimension(NCells*2) :: theta ! Holds the value of the limiter function <delete>
+!  type(vector),  dimension(NCells*2) :: phi   ! Holds the value of the limiter function <delete>
+!  type(vector),  dimension(NCells*2) :: theta ! Holds the value of the limiter function <delete>
 
-  type(vector), dimension(NCells)  :: U     ! This vector holds the solution at previous step,
+!  type(vector), dimension(NCells)  :: U     ! This vector holds the solution at previous step,
+                                            ! the first term holds "h" and the second holds "uh"
+!  type(Input_Data_tp) :: ModelInfo
+
+!  contains
+!    procedure plot_results => Plot_Results_1D_limiter_sub
+!end type Plot_Results_1D_limiter_tp
+
+
+type Plot_Results_1D_limiter_tp
+  integer(kind=Lng) :: NCells
+  type(vector),  dimension(:), allocatable:: s   ! temp to hold bathymetry
+
+  type(vector), dimension(:), allocatable :: U     ! This vector holds the solution at previous step,
                                             ! the first term holds "h" and the second holds "uh"
   type(Input_Data_tp) :: ModelInfo
 
@@ -381,7 +394,7 @@ implicit none
 integer(kind=Lng), intent(in) :: i_step
 
 ! - types -----------------------------------------------------------------------------------------
-class(Plot_Results_1D_limiter_tp(*)) :: this
+class(Plot_Results_1D_limiter_tp) :: this
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
@@ -417,7 +430,8 @@ UnFile = FileResults
 !write(unit=UnFile, fmt="(' h      --      uh ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
 
   do i_points = 1_Lng, this%NCells
-    write(unit=UnFile, fmt="(I6, 10F23.6)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) i_points, this%U(i_points)%U(1), this%U(i_points)%U(2), this%theta( 2*(i_points-1) +1  )%U(1), this%theta(2*(i_points-1) +1)%U(2),  this%theta( 2*(i_points-1) +2  )%U(1), this%theta(2*(i_points-1) +2)%U(2), this%phi(2*(i_points-1) +1)%U(1), this%phi(2*(i_points-1) +1)%U(2), this%phi(2*(i_points-1) +2)%U(1), this%phi(2*(i_points-1) +2)%U(2)
+    !write(unit=UnFile, fmt="(I6, 10F23.6)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) i_points, this%U(i_points)%U(1), this%U(i_points)%U(2), this%theta( 2*(i_points-1) +1  )%U(1), this%theta(2*(i_points-1) +1)%U(2),  this%theta( 2*(i_points-1) +2  )%U(1), this%theta(2*(i_points-1) +2)%U(2), this%phi(2*(i_points-1) +1)%U(1), this%phi(2*(i_points-1) +1)%U(2), this%phi(2*(i_points-1) +2)%U(1), this%phi(2*(i_points-1) +2)%U(2)
+    write(unit=UnFile, fmt="(I6, 2F23.6)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) i_points, this%U(i_points)%U(1), this%U(i_points)%U(2)
   end do
 
 !write(*,        fmt = "(A,I10)") " Results was written successfully in the file for time step: ", i_step

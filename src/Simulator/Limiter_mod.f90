@@ -15,10 +15,11 @@
 ! V0.01: 03/24/2018 - Initiated: Compiled without error for the first time.
 ! V1.00: 03/27/2018 - Compiled without error for the first time.
 ! V2.00: 04/19/2018 - Parallel, OMP
+! V2.10: 04/24/2018 - Parallel, performance
 !
 ! File version $Id $
 !
-! Last update: 04/19/2018
+! Last update: 04/23/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! - Solver_1D_with_Limiter_sub: Solves the 1D shallow water equation, with limiter.
@@ -221,7 +222,7 @@ type(vector) :: TempSolution
 type(Jacobian_tp)      :: Jacobian ! Contains the Jacobian and all related items.
 type(Jacobian_tp)      :: Jacobian_neighbor ! Contains the Jacobian and all related items.
 type(LimiterFunc_tp)   :: LimiterFunc ! Contains the values of the limiter
-type(Plot_Results_1D_limiter_tp(NCells = :)), allocatable :: Results ! in each time step/ all cells
+type(Plot_Results_1D_limiter_tp) :: Results ! in each time step/ all cells
 type(SoureceTerms_tp) :: SourceTerms
 
 type(vector) :: alpha                 ! alpha = R^-1 (U_i- U_i-1) See notes for detail.
@@ -241,8 +242,8 @@ type(vector), dimension(-1_Lng:this%Discretization%NCells+2_Lng) ::UU, UN ! solu
 type(vector), dimension(this%Discretization%NCells) :: S     ! Source term
                                             ! the first term holds "h" and the second holds "uh"
 
-type(vector), dimension(this%Discretization%NCells*2) :: phi   ! value of the limiter function <delete>
-type(vector), dimension(this%Discretization%NCells*2) :: theta ! value of the limiter function <delete>
+!type(vector), dimension(this%Discretization%NCells*2) :: phi   ! value of the limiter function <delete>
+!type(vector), dimension(this%Discretization%NCells*2) :: theta ! value of the limiter function <delete>
 
 
 ! code ============================================================================================
@@ -256,7 +257,9 @@ write(FileInfo,*) " -Solving the shallow water equation with a limiter ..."
 write(*,       *) " -Applying initial conditions ..."
 write(FileInfo,*) " -Applying initial conditions ..."
 
-allocate(Plot_Results_1D_limiter_tp(NCells = this%Discretization%NCells) :: Results)
+!allocate(Plot_Results_1D_limiter_tp(NCells = this%Discretization%NCells) :: Results)
+allocate( Results%s(this%Discretization%NCells),Results%U(this%Discretization%NCells) )
+Results%NCells = this%Discretization%NCells
 
 UU(1:this%Discretization%NCells)%U(1) = this%AnalysisInfo%CntrlV -    this%Discretization%ZCell(:)
 UU(0)%U(1)  = UU(1)%U(1)
@@ -270,10 +273,11 @@ UU(:)%U(2) = 0.0_Dbl
 
 S(:)%U(1)     = 0.0_Dbl
 S(:)%U(2)     = 0.0_Dbl
-phi(:)%U(1)   = 0.0_Dbl
-phi(:)%U(2)   = 0.0_Dbl
-theta(:)%U(1) = 0.0_Dbl
-theta(:)%U(2) = 0.0_Dbl
+
+!phi(:)%U(1)   = 0.0_Dbl
+!phi(:)%U(2)   = 0.0_Dbl
+!theta(:)%U(1) = 0.0_Dbl
+!theta(:)%U(2) = 0.0_Dbl
 
 NSteps = this%AnalysisInfo%TotalTime/this%AnalysisInfo%TimeStep
 dt     = this%AnalysisInfo%TimeStep
@@ -299,36 +303,39 @@ call Impose_Boundary_Condition_1D_sub(UU, this%Discretization%NCells,this%Analys
 Results%ModelInfo = this%ModelInfo
 
 
-!$OMP PARALLEL
+!!$OMP PARALLEL default(private) SHARED(UN,UU,S, dt, dx, dtdx)                                                                                                 firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution,i_steps, NSteps)
+!$OMP PARALLEL default(none)  SHARED(UN,UU,S, dt, dx, dtdx) private(i_Cell,its,mts,height,velocity,Coefficient,height_interface, velocity_interface, speed) firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution,i_steps, NSteps, Results)
 
 !$ ITS = OMP_GET_THREAD_NUM()
 !$ MTS = OMP_GET_NUM_THREADS()
 
-write(*,       fmt="(' I am thread ',I4,' out of ',I4,' threads.')") ITS,MTS
-write(FileInfo,fmt="(' I am thread ',I4,' out of ',I4,' threads.')") ITS,MTS
+!$ write(*,       fmt="(' I am thread ',I4,' out of ',I4,' threads.')") ITS,MTS
+!$ write(FileInfo,fmt="(' I am thread ',I4,' out of ',I4,' threads.')") ITS,MTS
 
-!$OMP END PARALLEL
+!!$OMP END PARALLEL
 
 
   ! Time marching
   Time_Marching: do i_steps = 1_Lng, NSteps
 
+
+        !print*, "----------------Step:", i_steps
     ! write down data for visualization
-      if (mod(i_steps,this%Plot_Inc)==1 .or. PrintResults) then
+      !if (mod(i_steps,this%Plot_Inc)==1 .or. PrintResults) then
+      if (mod(i_steps,this%Plot_Inc)==1 .and. ITS==0) then
         print*, "----------------Step:", i_steps
         Results%U(:)    = UU(1:this%Discretization%NCells)
         Results%s(:)    = S(:)
-        Results%phi(:)  = phi(:)
-        Results%theta(:)= theta(:)
+        !Results%phi(:)  = 0.0 !phi(:)
+        !Results%theta(:)= 0.0 !theta(:)
 
-        call Results%plot_results(i_steps)
+        !call Results%plot_results(i_steps)
       end if
 
-      !$OMP PARALLEL DO default(none) SHARED(UN,UU,S, phi, theta,dt, dx, dtdx) &
-      private(i_Cell,its,mts,height,velocity,Coefficient,height_interface, &
-      velocity_interface, speed) &
-      firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, &
-      alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution)
+      !!$OMP PARALLEL DO default(none) SHARED(UN,UU,S, phi, theta,dt, dx, dtdx) private(i_Cell,its,mts,height,velocity,Coefficient,height_interface, velocity_interface, speed) firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution)
+      !!$OMP PARALLEL DO default(private) SHARED(UN,UU,S, dt, dx, dtdx) firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution)
+      !!$OMP DO default(none) SHARED(UN,UU,S, phi, theta,dt, dx, dtdx) private(i_Cell,its,mts,height,velocity,Coefficient,height_interface, velocity_interface, speed) firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution)
+      !$OMP DO
       do i_Cell = 2_Lng, this%Discretization%NCells-1  ! Loop over cells except the boundary cells
 
 
@@ -473,8 +480,8 @@ write(FileInfo,fmt="(' I am thread ',I4,' out of ',I4,' threads.')") ITS,MTS
                 !LimiterFunc%phi =0.0
                 alpha_tilda%U(:) =  LimiterFunc%phi * alpha%U(:)
 
-                theta (2*(i_Cell-1)+i_Interface)%U(i_eigen) = LimiterFunc%theta
-                phi   (2*(i_Cell-1)+i_Interface)%U(i_eigen) = LimiterFunc%phi
+                !theta (2*(i_Cell-1)+i_Interface)%U(i_eigen) = LimiterFunc%theta
+                !phi   (2*(i_Cell-1)+i_Interface)%U(i_eigen) = LimiterFunc%phi
 
                 Wave_tilda%U(:) = alpha_tilda%U(i_eigen) * Jacobian%R(:,i_eigen)
 
@@ -493,16 +500,22 @@ write(FileInfo,fmt="(' I am thread ',I4,' out of ',I4,' threads.')") ITS,MTS
         UN(i_cell)%U(:) = matmul(SourceTerms%BI(:,:), TempSolution%U(:))
 
       end do
-      !!$OMP END DO
-      !!$OMP END PARALLEL
-      !$OMP END PARALLEL DO
+      !$OMP END DO
 
+      !!$OMP END PARALLEL DO
+
+    !$OMP single
     UU(:) = UN(:)
     ! apply boundary condition
     call Impose_Boundary_Condition_1D_sub(UU, this%Discretization%NCells,this%AnalysisInfo%h_dw, &
                                           this%AnalysisInfo%Q_Up,this%Discretization%WidthCell(1))
 
+    !$OMP end single
   end do Time_Marching
+
+  !$OMP END PARALLEL
+
+
 
 write(*,       *) " end subroutine < Solver_1D_with_Limiter_sub >"
 write(FileInfo,*) " end subroutine < Solver_1D_with_Limiter_sub >"
