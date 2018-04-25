@@ -239,7 +239,7 @@ type(vector) :: F_H ! Contribution of high-resolution method (Lax-Wendroff) in t
 type(vector) :: Delta_U           ! holds (U_i- U_i-1)
 type(vector), dimension(-1_Lng:this%Discretization%NCells+2_Lng) ::UU, UN ! solution at n and n+1
 
-type(vector), dimension(this%Discretization%NCells) :: S     ! Source term
+!type(vector), dimension(this%Discretization%NCells) :: S     ! Source term
                                             ! the first term holds "h" and the second holds "uh"
 
 !type(vector), dimension(this%Discretization%NCells*2) :: phi   ! value of the limiter function <delete>
@@ -258,7 +258,7 @@ write(*,       *) " -Applying initial conditions ..."
 write(FileInfo,*) " -Applying initial conditions ..."
 
 !allocate(Plot_Results_1D_limiter_tp(NCells = this%Discretization%NCells) :: Results)
-allocate( Results%s(this%Discretization%NCells),Results%U(this%Discretization%NCells) )
+allocate( Results%U(this%Discretization%NCells) )
 Results%NCells = this%Discretization%NCells
 
 UU(1:this%Discretization%NCells)%U(1) = this%AnalysisInfo%CntrlV -    this%Discretization%ZCell(:)
@@ -271,8 +271,8 @@ UU(this%Discretization%NCells+2)%U(1) = UU(this%Discretization%NCells)%U(1)
 UU(:)%U(2) = 0.0_Dbl
 
 
-S(:)%U(1)     = 0.0_Dbl
-S(:)%U(2)     = 0.0_Dbl
+!S(:)%U(1)     = 0.0_Dbl
+!S(:)%U(2)     = 0.0_Dbl
 
 !phi(:)%U(1)   = 0.0_Dbl
 !phi(:)%U(2)   = 0.0_Dbl
@@ -304,7 +304,7 @@ Results%ModelInfo = this%ModelInfo
 
 
 !!$OMP PARALLEL default(private) SHARED(UN,UU,S, dt, dx, dtdx)                                                                                                 firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution,i_steps, NSteps)
-!$OMP PARALLEL default(none)  SHARED(UN,UU,S, dt, dx, dtdx) private(i_Cell,its,mts,height,velocity,Coefficient,height_interface, velocity_interface, speed) firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution,i_steps, NSteps, Results)
+!$OMP PARALLEL default(none)  SHARED(UN,UU, dt, dx, dtdx) private(i_Cell,its,mts,height,velocity,Coefficient,height_interface, velocity_interface, speed) firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution,i_steps, NSteps, Results)
 
 !$ ITS = OMP_GET_THREAD_NUM()
 !$ MTS = OMP_GET_NUM_THREADS()
@@ -325,7 +325,7 @@ Results%ModelInfo = this%ModelInfo
       if (mod(i_steps,this%Plot_Inc)==1 .and. ITS==0) then
         print*, "----------------Step:", i_steps
         Results%U(:)    = UU(1:this%Discretization%NCells)
-        Results%s(:)    = S(:)
+        !Results%s(:)    = S(:)
         !Results%phi(:)  = 0.0 !phi(:)
         !Results%theta(:)= 0.0 !theta(:)
 
