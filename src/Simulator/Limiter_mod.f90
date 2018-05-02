@@ -227,11 +227,11 @@ type(SoureceTerms_tp) :: SourceTerms
 
 type(vector) :: alpha                 ! alpha = R^-1 (U_i- U_i-1) See notes for detail.
 type(vector) :: alpha_neighbor        ! alpha = R^-1 (U_i- U_i-1) See notes for detail.
-type(vector) :: alpha_tilda           ! alpha_tilda = alpha * limiter
+type(vector) :: alpha_tilda           ! alpha_tilde = alpha * limiter
 
 type(vector) :: Wave                 ! Wave = alpha * R
 type(vector) :: Wave_neighbor        ! Wave = alpha * R
-type(vector) :: Wave_tilda           ! Wave = alpha_tilda * R
+type(vector) :: Wave_tilda           ! Wave = alpha_tilde * R
 
 type(vector) :: F_L ! Contribution of low-resolution method (Upwind) in the solution.
 type(vector) :: F_H ! Contribution of high-resolution method (Lax-Wendroff) in the solution.
@@ -332,6 +332,11 @@ Results%ModelInfo = this%ModelInfo
         !call Results%plot_results(i_steps)
       end if
 
+
+        !print*,i_steps,uu(2), UU(3) ! <delete>
+        !read(*,*)
+
+
       !!$OMP PARALLEL DO default(none) SHARED(UN,UU,S, phi, theta,dt, dx, dtdx) private(i_Cell,its,mts,height,velocity,Coefficient,height_interface, velocity_interface, speed) firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution)
       !!$OMP PARALLEL DO default(private) SHARED(UN,UU,S, dt, dx, dtdx) firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution)
       !!$OMP DO default(none) SHARED(UN,UU,S, phi, theta,dt, dx, dtdx) private(i_Cell,its,mts,height,velocity,Coefficient,height_interface, velocity_interface, speed) firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution)
@@ -340,6 +345,8 @@ Results%ModelInfo = this%ModelInfo
 
 
         !print*, "=============Cell:", i_Cell, ITS
+        !print*, "=============Cell:", i_Cell
+
 
         ! Initialize fluxes
         F_L%U(:) = 0.0_Dbl ! upwind flux (not exactly, see notes)
@@ -386,7 +393,8 @@ Results%ModelInfo = this%ModelInfo
             Jacobian%U_up%U(:) = UU(i_Cell+(i_Interface-2_Lng))%U(:)
             Jacobian%U_dw%U(:) = UU(i_Cell+(i_Interface-1_Lng))%U(:)
 
-            call Jacobian%Jacobian( i_eigen,i_Interface,i_Cell )   ! <modify>
+            !print*,"velocity before Jacobian sub",i_Cell,i_Interface, Jacobian%U_dw%U(1),Jacobian%U_up%U(1)   ! <delete>
+            call Jacobian%Jacobian(i_Cell)   ! <modify>
 
             ! Compute alpha(= RI*(U_i - U_(i-1))
             alpha%U(:) = matmul(Jacobian%L, Delta_U%U(:))
@@ -442,7 +450,7 @@ Results%ModelInfo = this%ModelInfo
                     Jacobian_neighbor%U_up%U(:) = UU( i_Cell+i_Interface-3_Tiny  )%U(:)
                     Jacobian_neighbor%U_dw%U(:) = UU( i_Cell+i_Interface-2_Tiny  )%U(:)
 
-                    call Jacobian_neighbor%Jacobian(i_eigen,i_Interface,i_Cell)   ! <modify>
+                    call Jacobian_neighbor%Jacobian( i_Cell)   ! <modify>
 
                     ! Compute alpha(= RI*(U_i - U_(i-1))
                     alpha_neighbor%U(:) = matmul(Jacobian_neighbor%L(:,:), Delta_U%U(:))
@@ -457,13 +465,14 @@ Results%ModelInfo = this%ModelInfo
                     Jacobian_neighbor%U_up%U(:) = UU(i_Cell+i_Interface-1_Tiny )%U(:)
                     Jacobian_neighbor%U_dw%U(:) = UU(i_Cell+i_Interface        )%U(:)
 
-                    call Jacobian_neighbor%Jacobian(i_eigen,i_Interface,i_Cell)   ! <modify>
+                    call Jacobian_neighbor%Jacobian(i_Cell)   ! <modify>
 
                     ! Compute alpha(= RI*(U_i - U_(i-1))
                     alpha_neighbor%U(:) = matmul(Jacobian_neighbor%L(:,:), Delta_U%U(:))
-                    Wave_neighbor%U(:) = alpha_neighbor%U(i_eigen) * Jacobian_neighbor%R(:,i_eigen)
+                    Wave_neighbor%U(:)  = alpha_neighbor%U(i_eigen) * Jacobian_neighbor%R(:,i_eigen)
                   else
-                    write(*,*) " Something is wrong. Check the limiter subroutine."
+                    write(*,*)" Something is wrong. Check the limiter subroutine."
+                    write(*,*)" The eigenvalue is wrong (most probably NaN): " , i_eigen, Jacobian%Lambda%U(i_eigen)
                     stop
                   end if
 
@@ -498,6 +507,7 @@ Results%ModelInfo = this%ModelInfo
                             + SourceTerms%Source_1%U(:) - SourceTerms%Source_2%U(:)
 
         UN(i_cell)%U(:) = matmul(SourceTerms%BI(:,:), TempSolution%U(:))
+        !print*,"solution at cell",i_Cell,  UN(i_cell)
 
       end do
       !$OMP END DO
@@ -505,10 +515,13 @@ Results%ModelInfo = this%ModelInfo
       !!$OMP END PARALLEL DO
 
     !$OMP single
+
     UU(:) = UN(:)
+
     ! apply boundary condition
     call Impose_Boundary_Condition_1D_sub(UU, this%Discretization%NCells,this%AnalysisInfo%h_dw, &
                                           this%AnalysisInfo%Q_Up,this%Discretization%WidthCell(1))
+
 
     !$OMP end single
   end do Time_Marching
@@ -688,7 +701,7 @@ end subroutine Limiters_sub
 !
 !##################################################################################################
 
-subroutine Jacobian_sub(this,i_eigen,i_Interface,i_Cell)
+subroutine Jacobian_sub(this,  i_Cell)
 
 
 ! Libraries =======================================================================================
@@ -704,7 +717,6 @@ class(Jacobian_tp) :: this
 
 ! Local variables =================================================================================
 
-integer(kind=tiny) :: i_eigen,i_Interface !<delete>
 integer(kind=Lng):: i_Cell !<delete>
 
 real(kind=Dbl) :: h_dw  ! the height at the downstream grid
@@ -746,10 +758,10 @@ real(kind=Dbl), dimension(2,2) :: A_dw  ! the average discharge at the interface
     this%A(2,2) = 2.0_Dbl * u_ave
 
     ! Computing the eigenvalues
-    this%Lambda%U(1) = u_ave - dsqrt(Gravity *  h_ave)
-    this%Lambda%U(2) = u_ave + dsqrt(Gravity *  h_ave)
-    !print*,"inside ", this%Lambda%U(1),i_eigen,i_Interface,i_Cell ! <delete>
-    !print*,"inside ", this%Lambda%U(2),i_eigen,i_Interface,i_Cell  ! <delete>
+    this%Lambda%U(1) = u_ave - dsqrt(Gravity * h_ave)
+    this%Lambda%U(2) = u_ave + dsqrt(Gravity * h_ave)
+    !print*,"inside ", this%Lambda%U(1),i_Cell, u_ave, h_ave, h_dw, h_up ! <delete>
+    !print*,"inside ", this%Lambda%U(2),i_Cell, u_ave, h_ave, h_dw, h_up  ! <delete>
 
 
     this%Lambda_plus%U(1) =  dmax1(this%Lambda%U(1), 0.0_Dbl)

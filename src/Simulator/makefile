@@ -14,8 +14,8 @@ F90=ifort
 #F90= gfortran -ffree-line-length-none
 
 #FFLAGS=-O2 -qopenmp -g -debug all -debug-parameters all -traceback -check all -fp-stack-check -check bounds -check stack -gen-interfaces -warn interfaces -ftrapuv -fpe0 -CB
-FFLAGS=-O2 -qopenmp
-#FFLAGS=-O2
+#FFLAGS=-O2 -qopenmp
+FFLAGS=-O2
 
 SOURCESF=	Parameters_mod.f90 \
 					Timer_mod.f90 \

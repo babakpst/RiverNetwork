@@ -6,9 +6,9 @@ Total Length (in meter) for each reach:
 13.0
 
 Discretization: number of cells per reach:
-1600
-800
-2600
+16000
+8000
+26000
 
 Geometry of the each reach: Straight or Formulated reach (0: means a straight reach, 1: means a Formulated)
 0
