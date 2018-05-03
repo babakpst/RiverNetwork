@@ -6,6 +6,7 @@
 *.mod
 src/Simulator/.nfs*
 src/Partitioner/.nfs*
+input/EX3_Limiter/Analysis/.nfs*
 
 # ignoring the following folders:
 output/
