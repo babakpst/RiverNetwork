@@ -4,8 +4,9 @@
 *.layout
 *.o
 *.mod
-#src/Simulator/.nsf*
-#src/Partitioner/.nsf*
+src/Simulator/.nfs*
+src/Partitioner/.nfs*
+input/EX3_Limiter/Analysis/.nfs*
 
 # ignoring the following folders:
 output/
