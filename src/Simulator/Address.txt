@@ -2,10 +2,10 @@ Input file name:
 EX3_Limiter
 
 Input directory:
-"/h1/babak/Documents/SVE_2D/input"
+"/h1/babak/Documents/Goofy/input"
 
 Output directory:
-"/h1/babak/Documents/SVE_2D/output"
+"/h1/babak/Documents/Goofy/output"
 
 Number of partitions
 1

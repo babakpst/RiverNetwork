@@ -53,7 +53,7 @@ type Input_Data_tp
   real(kind=SGL) :: Version               ! Holds the version of the code.
 
   contains
-    procedure Input => Input_Address_sub
+    procedure :: Input => Input_Address_sub
 end type Input_Data_tp
 
 ! Contains all information after discretization
@@ -73,7 +73,7 @@ type discretization_tp
   real(kind=DBL), allocatable, dimension(:) :: X_Full     ! the coordinates all points
 
   contains
-    procedure Input => Input_sub
+    procedure:: Input => Input_sub
 
 end type discretization_tp
 
@@ -92,7 +92,7 @@ type AnalysisData_tp
   real(kind=DBL):: CntrlV_ratio  ! Initial control volume ration, used to initialize data
 
   contains
-    procedure Analysis => Input_Analysis_sub
+    procedure:: Analysis => Input_Analysis_sub
 
 end type AnalysisData_tp
 
@@ -129,6 +129,7 @@ Subroutine Input_Address_sub(this)
 
 ! Libraries =======================================================================================
 use ifport
+
 
 ! User defined modules ============================================================================
 

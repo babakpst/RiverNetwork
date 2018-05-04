@@ -1,0 +1,36 @@
+ DATE :  04 - 20 - 2018
+ TIME : 17:38:29:58
+
+ FILE Name : EX2_Limiter         
+
+ Directories :
+INPUT FILE DIRECTORY     : /h1/babak/Documents/SVE_2D/input/EX2_Limiter/Model                                                  
+OUTPUT FILES DIRECTORY   : /h1/babak/Documents/SVE_2D/output/EX2_Limiter                                                       
+  Analysis Type 
+ -Reading the input file ...
+ 
+  Subroutine < Input_sub >: 
+ -Opening the input file ...
+ -Allocating discretization ...
+ -Closing the input file
+  End Subroutine < Input_sub >
+ 
+ -Analyse no.         1
+ 
+  Subroutine < Input_Analysis_sub >: 
+ -Opening the analysis file ...
+ -Creating the output folder for this analysis ...
+The output folder for this analysis already exists.
+ The Analysis type is:          2
+ The total simulation time is:          200.0000000000 s
+ The time step is:            0.0010000000 s
+ Flow rate at the upstream is:            1.5300000000 m/s3
+ Downstream water depth is:            0.6600000000 m
+ Control Volume is:            0.6600000000 m^3
+ The ratio of control volume is:            0.0000000000
+ The limiter is:          1
+  End Subroutine < Input_Analysis_sub >
+ 
+  subroutine < Solver_1D_with_Limiter_sub >: 
+  -Solving the shallow water equation with a limiter ...
+  -Applying initial conditions ...

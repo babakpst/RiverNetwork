@@ -111,7 +111,6 @@ type SoureceTerms_tp
   real(kind=Dbl), dimension(2,2) :: Identity ! Identity matrix
 end type SoureceTerms_tp
 
-
 ! Contains the parameters for the solution
 !type, public :: SolverWithLimiter(NCells)
 !  integer(kind=Lng), len :: NCells
@@ -132,7 +131,6 @@ end type SoureceTerms_tp
 !    procedure BC => Impose_Boundary_Condition_1D_sub
 !end type SolverWithLimiter
 
-
 ! Contains the parameters for the solution
 type, public :: SolverWithLimiter
   integer(kind=Lng)      :: Plot_Inc = 100
@@ -145,7 +143,6 @@ type, public :: SolverWithLimiter
     procedure Solve => Solver_1D_with_Limiter_sub
     !procedure BC => Impose_Boundary_Condition_1D_sub
 end type SolverWithLimiter
-
 
 contains
 
@@ -318,23 +315,17 @@ Results%ModelInfo = this%ModelInfo
   ! Time marching
   Time_Marching: do i_steps = 1_Lng, NSteps
 
-
         !print*, "----------------Step:", i_steps
     ! write down data for visualization
-      !if (mod(i_steps,this%Plot_Inc)==1 .or. PrintResults) then
-      if (mod(i_steps,this%Plot_Inc)==1 .and. ITS==0) then
-        print*, "----------------Step:", i_steps
-        Results%U(:)    = UU(1:this%Discretization%NCells)
-        !Results%s(:)    = S(:)
-        !Results%phi(:)  = 0.0 !phi(:)
-        !Results%theta(:)= 0.0 !theta(:)
-
-        !call Results%plot_results(i_steps)
+      if (mod(i_steps,this%Plot_Inc)==1 .or. PrintResults) then
+        !$ if (ITS==0) then
+          print*, "----------------Step:", i_steps
+          Results%U(:)    = UU(1:this%Discretization%NCells)
+        !$ end if
       end if
 
-
-        !print*,i_steps,uu(2), UU(3) ! <delete>
-        !read(*,*)
+      !print*,i_steps,uu(2), UU(3) ! <delete>
+      !read(*,*)
 
 
       !!$OMP PARALLEL DO default(none) SHARED(UN,UU,S, phi, theta,dt, dx, dtdx) private(i_Cell,its,mts,height,velocity,Coefficient,height_interface, velocity_interface, speed) firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution)
@@ -729,6 +720,7 @@ real(kind=Dbl) :: u_ave   ! the average velocity at the interface
 real(kind=Dbl) :: h_ave  ! the average height at the interface
 
 real(kind=Dbl) :: c  ! wave speed
+real(kind=Dbl) :: temp_rl  ! temp variable
 
 real(kind=Dbl), dimension(2,2) :: A_up  ! the average discharge at the interface
 real(kind=Dbl), dimension(2,2) :: A_dw  ! the average discharge at the interface
@@ -758,8 +750,9 @@ real(kind=Dbl), dimension(2,2) :: A_dw  ! the average discharge at the interface
     this%A(2,2) = 2.0_Dbl * u_ave
 
     ! Computing the eigenvalues
-    this%Lambda%U(1) = u_ave - dsqrt(Gravity * h_ave)
-    this%Lambda%U(2) = u_ave + dsqrt(Gravity * h_ave)
+    temp_rl = dsqrt(Gravity * h_ave)
+    this%Lambda%U(1) = u_ave - temp_rl
+    this%Lambda%U(2) = u_ave + temp_rl
     !print*,"inside ", this%Lambda%U(1),i_Cell, u_ave, h_ave, h_dw, h_up ! <delete>
     !print*,"inside ", this%Lambda%U(2),i_Cell, u_ave, h_ave, h_dw, h_up  ! <delete>
 
@@ -787,31 +780,31 @@ real(kind=Dbl), dimension(2,2) :: A_dw  ! the average discharge at the interface
     this%L(:,:)  =  this%L(:,:)   /(2.0_Dbl * c)
 
     ! Fill eigenvalue matrix
-    this%Gam(1,1) = this%Lambda%U(1)
-    this%Gam(1,2) = 0.0_Dbl
-    this%Gam(2,1) = 0.0_Dbl
-    this%Gam(2,2) = this%Lambda%U(2)
+    !this%Gam(1,1) = this%Lambda%U(1)
+    !this%Gam(1,2) = 0.0_Dbl
+    !this%Gam(2,1) = 0.0_Dbl
+    !this%Gam(2,2) = this%Lambda%U(2)
 
     ! Fill Gamma plus
-    this%Gam_plus(1,1) = dmax1(this%Lambda%U(1), 0.0_Dbl)
-    this%Gam_plus(1,2) = 0.0_Dbl
-    this%Gam_plus(2,1) = 0.0_Dbl
-    this%Gam_plus(2,2) = dmax1(this%Lambda%U(2), 0.0_Dbl)
+    !this%Gam_plus(1,1) = dmax1(this%Lambda%U(1), 0.0_Dbl)
+    !this%Gam_plus(1,2) = 0.0_Dbl
+    !this%Gam_plus(2,1) = 0.0_Dbl
+    !this%Gam_plus(2,2) = dmax1(this%Lambda%U(2), 0.0_Dbl)
 
     ! Fill Gamma minus
-    this%Gam_minus(1,1) = dmin1(this%Lambda%U(1), 0.0_Dbl)
-    this%Gam_minus(1,2) = 0.0_Dbl
-    this%Gam_minus(2,1) = 0.0_Dbl
-    this%Gam_minus(2,2) = dmin1(this%Lambda%U(2), 0.0_Dbl)
+    !this%Gam_minus(1,1) = dmin1(this%Lambda%U(1), 0.0_Dbl)
+    !this%Gam_minus(1,2) = 0.0_Dbl
+    !this%Gam_minus(2,1) = 0.0_Dbl
+    !this%Gam_minus(2,2) = dmin1(this%Lambda%U(2), 0.0_Dbl)
 
     ! Compute A plus
-    this%A_plus  = matmul(matmul(this%R, this%Gam_plus), this%L)
+    !this%A_plus  = matmul(matmul(this%R, this%Gam_plus), this%L)
 
     ! Compute A minus
-    this%A_minus = matmul(matmul(this%R, this%Gam_minus), this%L)
+    !this%A_minus = matmul(matmul(this%R, this%Gam_minus), this%L)
 
     ! Compute A abs
-    this%A_abs = this%A_plus - this%A_minus
+    !this%A_abs = this%A_plus - this%A_minus
 
   ! Find the Jacobian at each grid and average the Jacobian to find the Jacobian at the interface
   else if (this%option == 2 ) then
@@ -857,32 +850,32 @@ real(kind=Dbl), dimension(2,2) :: A_dw  ! the average discharge at the interface
     this%L(:,:)  =  this%L(:,:)   /(2.0_Dbl * c)
 
     ! Fill eigenvalue matrix
-    this%Gam(1,1) = this%Lambda%U(1)
-    this%Gam(1,2) = 0.0_Dbl
-    this%Gam(2,1) = 0.0_Dbl
-    this%Gam(2,2) = this%Lambda%U(2)
+    !this%Gam(1,1) = this%Lambda%U(1)
+    !this%Gam(1,2) = 0.0_Dbl
+    !this%Gam(2,1) = 0.0_Dbl
+    !this%Gam(2,2) = this%Lambda%U(2)
 
     ! Fill Gamma plus
-    this%Gam_plus(1,1) = dmax1(this%Lambda%U(1), 0.0_Dbl)
-    this%Gam_plus(1,2) = 0.0_Dbl
-    this%Gam_plus(2,1) = 0.0_Dbl
-    this%Gam_plus(2,2) = dmax1(this%Lambda%U(2), 0.0_Dbl)
+    !this%Gam_plus(1,1) = dmax1(this%Lambda%U(1), 0.0_Dbl)
+    !this%Gam_plus(1,2) = 0.0_Dbl
+    !this%Gam_plus(2,1) = 0.0_Dbl
+    !this%Gam_plus(2,2) = dmax1(this%Lambda%U(2), 0.0_Dbl)
 
     ! Fill Gamma minus
-    this%Gam_minus(1,1) = dmin1(this%Lambda%U(1), 0.0_Dbl)
-    this%Gam_minus(1,2) = 0.0_Dbl
-    this%Gam_minus(2,1) = 0.0_Dbl
-    this%Gam_minus(2,2) = dmin1(this%Lambda%U(2), 0.0_Dbl)
+    !this%Gam_minus(1,1) = dmin1(this%Lambda%U(1), 0.0_Dbl)
+    !this%Gam_minus(1,2) = 0.0_Dbl
+    !this%Gam_minus(2,1) = 0.0_Dbl
+    !this%Gam_minus(2,2) = dmin1(this%Lambda%U(2), 0.0_Dbl)
 
 
     ! Compute A plus
-    this%A_plus  = matmul(matmul(this%R, this%Gam_plus), this%L)
+    !this%A_plus  = matmul(matmul(this%R, this%Gam_plus), this%L)
 
     ! Compute A minus
-    this%A_minus = matmul(matmul(this%R, this%Gam_minus), this%L)
+    !this%A_minus = matmul(matmul(this%R, this%Gam_minus), this%L)
 
     ! Compute A abs
-    this%A_abs = this%A_plus - this%A_minus
+    !this%A_abs = this%A_plus - this%A_minus
   else
     print*, "Fatal error: the option of the Jacobian interpolation has not been defined."
     stop

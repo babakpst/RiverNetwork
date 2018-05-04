@@ -6,9 +6,9 @@ Total Length (in meter) for each reach:
 13.0
 
 Discretization: number of cells per reach:
-8000
-4000
-13000
+1600
+800
+2600
 
 Geometry of the each reach: Straight or Formulated reach (0: means a straight reach, 1: means a Formulated)
 0
@@ -29,3 +29,10 @@ Cross section widths of each slope (in meter, assumed to be rectangular for now)
 1.0
 1.0
 1.0
+
+
+
+
+8000
+4000
+13000

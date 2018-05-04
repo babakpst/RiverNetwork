@@ -36,7 +36,7 @@ def main(arg):
   print(" ========== Plot the domain ==========")
   print(" Allocating memory ...")
 
-  Input = open("EX3_Limiter.Domain","r")
+  Input = open("EX2_Limiter.Domain","r")
 #  Input = open("EX1.Domain","r")
   Temp = Input.readline().rstrip("\n")  # 1
   Temp = Input.readline().rstrip("\n")  # 1
@@ -79,9 +79,9 @@ def main(arg):
   plt.close(fig)  
   
 
-  for ii in range(FileName):
+  for ii in range(10):
 
-    2000 ="EX3_Case1/EX3_Limiter_" + str(ii*100 + 1) + ".Res"
+    FileName ="EX2_Case1/EX2_Limiter_" + str(ii*100 + 1) + ".Res"
     #FileName ="EX1_Case1/EX1_" + str(ii*100 + 1) + ".Res"
     File_Input = open(FileName,"r")
     #Temp = File_Input.readline().rstrip("\n")
@@ -140,11 +140,6 @@ def main(arg):
     plt.savefig(FileName)
     #savefig(fname, dpi=None, facecolor='w', edgecolor='w', orientation='portrait', papertype=None, format=None, transparent=False, bbox_inches=None, pad_inches=0.1, frameon=None)
     plt.close(fig)  
-
-
-
-
-
 
 
 
