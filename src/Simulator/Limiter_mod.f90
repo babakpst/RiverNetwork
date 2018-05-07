@@ -327,10 +327,10 @@ allocate( UN(chunk), map(chunk), stat=ERR_Alloc)
     write(*, Fmt_FL);  write(FileInfo, Fmt_FL); read(*, Fmt_End);  stop;
   end if
 
-counter = 0_lng
+
 
 !!$OMP PARALLEL default(private) SHARED(UN,UU,S, dt, dx, dtdx)                                                                                                 firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution,i_steps, NSteps)
-!$OMP PARALLEL default(none)  SHARED(UN,UU, dt, dx, dtdx) private(i_Cell,its,mts,height,velocity,Coefficient,height_interface, velocity_interface, speed, counter, map, PrintResults) firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution,i_steps, NSteps, Results)
+!$OMP PARALLEL default(none)  SHARED(UU, dt, dx, dtdx) private(i_Cell,its,mts,height,velocity,Coefficient,height_interface, velocity_interface, speed, counter, map, UN, PrintResults) firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution,i_steps, NSteps, Results)
 !$ ITS = OMP_GET_THREAD_NUM()
 !$ MTS = OMP_GET_NUM_THREADS()
 
@@ -343,8 +343,11 @@ counter = 0_lng
         !$ if (ITS==0) then
           print*, "----------------Step:", i_steps
           Results%U(:)    = UU(1:this%Discretization%NCells)
+          call Results%plot_results(i_steps)
         !$ end if
       end if
+
+      counter = 0_lng
 
       !$OMP DO
       do i_Cell = 2_Lng, this%Discretization%NCells-1  ! Loop over cells except the boundary cells
@@ -514,14 +517,18 @@ counter = 0_lng
                             + SourceTerms%Source_1%U(:) - SourceTerms%Source_2%U(:)
 
         UN(counter)%U(:) = matmul(SourceTerms%BI(:,:), TempSolution%U(:))
+        !print*, "counter: ", counter, ITS
 
       end do
       !$OMP END DO
 
-
-    !!$ OMP CRITICAL
+    !$OMP CRITICAL
+    !print *, "rank: ", ITS, i_steps
+    !do i_Cell = 1, counter
+    !  write(*,fmt="(2i5,2f20.10)") i_Cell, map(i_Cell), UN(i_Cell)
+    !end do
     UU(map(1:counter)) =  UN(1:counter)
-    !!$ OMP END CRITICAL
+    !$OMP END CRITICAL
 
     !$OMP SINGLE
 
