@@ -191,10 +191,13 @@ integer :: ITS, MTS  ! thread number of number of threads
 integer(kind=Lng)  :: i_Cell    ! loop index over the Cells
 integer(kind=Lng)  :: i_steps   ! loop index over the number steps
 integer(kind=Lng)  :: NSteps    ! Total number of steps for time marching
+integer(kind=Lng)  :: chunk     ! the chunk of work dedicated to each rank for omp
+integer(kind=Lng)  :: counter   !
 
 integer(kind=Tiny)  :: i_eigen     ! loop index over the eigenvalues (only two in case of 1D SWE)
 integer(kind=Tiny)  :: i_Interface ! loop index over the interfaces (only two in case of 1D SWE)
 
+integer(kind=Smll) :: ERR_Alloc, ERR_DeAlloc ! Allocating and DeAllocating errors
 
 ! - real variables --------------------------------------------------------------------------------
 real(kind=Dbl)      :: dt      ! time step, should be structured/constant in each reach
@@ -209,7 +212,8 @@ real(kind=Dbl)      :: velocity ! velocity of water at the current cell/time
 real(kind=Dbl)      :: height_interface   ! height of water at the current interface/time
 real(kind=Dbl)      :: velocity_interface ! velocity of water at the current interface/time
 
-! - real Arrays -----------------------------------------------------------------------------------
+! - integer Arrays -----------------------------------------------------------------------------------
+integer(kind=Lng), allocatable, dimension(:)  :: map
 
 ! - logical variables -----------------------------------------------------------------------------
 logical   :: PrintResults
@@ -234,7 +238,8 @@ type(vector) :: F_L ! Contribution of low-resolution method (Upwind) in the solu
 type(vector) :: F_H ! Contribution of high-resolution method (Lax-Wendroff) in the solution.
 
 type(vector) :: Delta_U           ! holds (U_i- U_i-1)
-type(vector), dimension(-1_Lng:this%Discretization%NCells+2_Lng) ::UU, UN ! solution at n and n+1
+type(vector), dimension(-1_Lng:this%Discretization%NCells+2_Lng) ::UU ! solution at n and n+1
+type(vector), allocatable, dimension(:) ::UN ! solution at n and n+1
 
 !type(vector), dimension(this%Discretization%NCells) :: S     ! Source term
                                             ! the first term holds "h" and the second holds "uh"
@@ -300,8 +305,7 @@ call Impose_Boundary_Condition_1D_sub(UU, this%Discretization%NCells,this%Analys
 Results%ModelInfo = this%ModelInfo
 
 
-!!$OMP PARALLEL default(private) SHARED(UN,UU,S, dt, dx, dtdx)                                                                                                 firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution,i_steps, NSteps)
-!$OMP PARALLEL default(none)  SHARED(UN,UU, dt, dx, dtdx) private(i_Cell,its,mts,height,velocity,Coefficient,height_interface, velocity_interface, speed) firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution,i_steps, NSteps, Results)
+!$OMP PARALLEL private(ITS, MTS)
 
 !$ ITS = OMP_GET_THREAD_NUM()
 !$ MTS = OMP_GET_NUM_THREADS()
@@ -309,14 +313,32 @@ Results%ModelInfo = this%ModelInfo
 !$ write(*,       fmt="(' I am thread ',I4,' out of ',I4,' threads.')") ITS,MTS
 !$ write(FileInfo,fmt="(' I am thread ',I4,' out of ',I4,' threads.')") ITS,MTS
 
-!!$OMP END PARALLEL
+chunk = ceiling( this%Discretization%NCells / dble(MTS) )
 
+!$ write(*,*)" the chunk size: ", chunk
+
+!$OMP END PARALLEL
+
+
+allocate( UN(chunk), map(chunk), stat=ERR_Alloc)
+
+  if (ERR_Alloc /= 0) then
+    write (*, Fmt_ALLCT) ERR_Alloc;  write (FileInfo, Fmt_ALLCT) ERR_Alloc;
+    write(*, Fmt_FL);  write(FileInfo, Fmt_FL); read(*, Fmt_End);  stop;
+  end if
+
+counter = 0_lng
+
+!!$OMP PARALLEL default(private) SHARED(UN,UU,S, dt, dx, dtdx)                                                                                                 firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution,i_steps, NSteps)
+!$OMP PARALLEL default(none)  SHARED(UN,UU, dt, dx, dtdx) private(i_Cell,its,mts,height,velocity,Coefficient,height_interface, velocity_interface, speed, counter, map, PrintResults) firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution,i_steps, NSteps, Results)
+!$ ITS = OMP_GET_THREAD_NUM()
+!$ MTS = OMP_GET_NUM_THREADS()
 
   ! Time marching
   Time_Marching: do i_steps = 1_Lng, NSteps
 
         !print*, "----------------Step:", i_steps
-    ! write down data for visualization
+      ! write down data for visualization
       if (mod(i_steps,this%Plot_Inc)==1 .or. PrintResults) then
         !$ if (ITS==0) then
           print*, "----------------Step:", i_steps
@@ -324,20 +346,14 @@ Results%ModelInfo = this%ModelInfo
         !$ end if
       end if
 
-      !print*,i_steps,uu(2), UU(3) ! <delete>
-      !read(*,*)
-
-
-      !!$OMP PARALLEL DO default(none) SHARED(UN,UU,S, phi, theta,dt, dx, dtdx) private(i_Cell,its,mts,height,velocity,Coefficient,height_interface, velocity_interface, speed) firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution)
-      !!$OMP PARALLEL DO default(private) SHARED(UN,UU,S, dt, dx, dtdx) firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution)
-      !!$OMP DO default(none) SHARED(UN,UU,S, phi, theta,dt, dx, dtdx) private(i_Cell,its,mts,height,velocity,Coefficient,height_interface, velocity_interface, speed) firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution)
       !$OMP DO
       do i_Cell = 2_Lng, this%Discretization%NCells-1  ! Loop over cells except the boundary cells
 
-
-        !print*, "=============Cell:", i_Cell, ITS
+        !print*, "=============Cell:", i_Cell, ITS, i_steps
         !print*, "=============Cell:", i_Cell
 
+        counter = counter + 1_Lng
+        map(counter) = i_Cell
 
         ! Initialize fluxes
         F_L%U(:) = 0.0_Dbl ! upwind flux (not exactly, see notes)
@@ -497,28 +513,33 @@ Results%ModelInfo = this%ModelInfo
         TempSolution%U(:) = UU(i_cell)%U(:) - dtdx * F_L%U(:) - dtdx * F_H%U(:) &
                             + SourceTerms%Source_1%U(:) - SourceTerms%Source_2%U(:)
 
-        UN(i_cell)%U(:) = matmul(SourceTerms%BI(:,:), TempSolution%U(:))
-        !print*,"solution at cell",i_Cell,  UN(i_cell)
+        UN(counter)%U(:) = matmul(SourceTerms%BI(:,:), TempSolution%U(:))
 
       end do
       !$OMP END DO
 
-      !!$OMP END PARALLEL DO
 
-    !$OMP single
+    !!$ OMP CRITICAL
+    UU(map(1:counter)) =  UN(1:counter)
+    !!$ OMP END CRITICAL
 
-    UU(:) = UN(:)
+    !$OMP SINGLE
 
     ! apply boundary condition
     call Impose_Boundary_Condition_1D_sub(UU, this%Discretization%NCells,this%AnalysisInfo%h_dw, &
                                           this%AnalysisInfo%Q_Up,this%Discretization%WidthCell(1))
 
+    !$OMP END SINGLE
 
-    !$OMP end single
   end do Time_Marching
 
   !$OMP END PARALLEL
 
+deallocate(UN, map, stat=ERR_DeAlloc)
+  if (ERR_DeAlloc /= 0) then
+    write (*, Fmt_DEALLCT) ERR_DeAlloc;  write (FileInfo, Fmt_DEALLCT) ERR_DeAlloc;
+    write(*, Fmt_FL);  write(FileInfo, Fmt_FL); write(*, Fmt_End); read(*,*);  stop;
+  end if
 
 
 write(*,       *) " end subroutine < Solver_1D_with_Limiter_sub >"
