@@ -133,7 +133,7 @@ end type SoureceTerms_tp
 
 ! Contains the parameters for the solution
 type, public :: SolverWithLimiter
-  integer(kind=Lng)      :: Plot_Inc = 100
+  integer(kind=Lng)      :: Plot_Inc = 1000
 
   type(discretization_tp) :: Discretization ! Contains the discretization of the domain
   type(AnalysisData_tp)   :: AnalysisInfo   ! Holds information for the analysis

@@ -50,6 +50,8 @@ type, public :: Timer_tp
   real(kind=dbl), private:: startTime  = 0.0_dbl
   real(kind=dbl), private:: finishTime = 0.0_dbl
 
+  integer(kind=Lng) :: startSys, endSys, clock_rate
+
   contains
     procedure, pass :: start => startTimer
     procedure, pass :: stop  => stopTimer

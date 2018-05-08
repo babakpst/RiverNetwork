@@ -53,6 +53,8 @@ Include 'Global_Variables_Inc.f90'   ! All Global Variables are defined/describe
 ModelInfo%Version = 2.0_SGL          ! Reports the version of the code
 
 ! Time and Date signature =========================================================================
+
+call system_clock(TotalTime%startSys, TotalTime%clock_rate)
 call TotalTime%start()
 call GETDAT(TimeDate%Year, TimeDate%Month, TimeDate%Day)
 call GETTIM(TimeDate%Hour, TimeDate%Minute, TimeDate%Seconds, TimeDate%S100th)
@@ -173,6 +175,9 @@ DEallocate(Arguments%Length, Arguments%Arg, Arguments%Argstatus,      stat = ERR
 
 ! RUNNING TIME OF THE CODE ========================================================================
 call TotalTime%stop()
+call system_clock(TotalTime%endSys, TotalTime%clock_rate)
+
+
 
 write(*,        fmt="(' Input time: ',F23.10 , ' seconds.' )")  InputTime%elapsedTime()
 write(FileInfo, fmt="(' Input time: ',F23.10 , ' seconds.' )")  InputTime%elapsedTime()
@@ -186,7 +191,7 @@ write(*,        fmt="(' Total simulation time: ',F23.10 , ' seconds.' )")  Total
 write(FileInfo, fmt="(' Total simulation time: ',F23.10 , ' seconds.' )")  TotalTime%elapsedTime()
 
 
-
+write(*,        fmt="(' FINAL SIMULATION TIME: ',F23.10 , ' seconds.' )")  real(TotalTime%endSys-TotalTime%startSys)/real(TotalTime%clock_rate)
 
 ! End the code ====================================================================================
 write(*, Fmt_SUC); write(FileInfo, Fmt_SUC);
