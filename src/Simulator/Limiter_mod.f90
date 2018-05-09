@@ -16,10 +16,11 @@
 ! V1.00: 03/27/2018 - Compiled without error for the first time.
 ! V2.00: 04/19/2018 - Parallel, OMP
 ! V2.10: 04/24/2018 - Parallel, performance
+! V2.20: 05/09/2018 - Parallel, performance
 !
 ! File version $Id $
 !
-! Last update: 04/23/2018
+! Last update: 05/09/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! - Solver_1D_with_Limiter_sub: Solves the 1D shallow water equation, with limiter.
@@ -62,11 +63,6 @@ type LimiterFunc_tp ! contains all variable to compute the limiter value
     procedure LimiterValue => Limiters_sub
 end type LimiterFunc_tp
 
-! This vector will be used in the main type as the solution in each type step
-!type vector
-!  real(kind=Dbl), dimension(2) :: U
-!end type vector
-
 ! This type consists of all variables/arrays regarding the Jacobian, used to apply the limiter.
 type Jacobian_tp
   integer(kind=Tiny) :: option   ! indicates how to interpolate the Jacobian at the interface:
@@ -81,9 +77,9 @@ type Jacobian_tp
   real(kind=Dbl),dimension(2,2) :: A_plus   ! + eigenvalues at each time step at interface i-1/2
   real(kind=Dbl),dimension(2,2) :: A_minus  ! - eigenvalues at each time step at interface i-1/2
   real(kind=Dbl),dimension(2,2) :: A_abs    ! abs eigenvalues at each time step at interface i-1/2
-  real(kind=Dbl),dimension(2,2) :: Gam      ! - eigenvalues at each time step at interface i-1/2
-  real(kind=Dbl),dimension(2,2) :: Gam_plus ! - eigenvalues at each time step at interface i-1/2
-  real(kind=Dbl),dimension(2,2) :: Gam_minus! - eigenvalues at each time step at interface i-1/2
+  !real(kind=Dbl),dimension(2,2) :: Gam      ! - eigenvalues at each time step at interface i-1/2
+  !real(kind=Dbl),dimension(2,2) :: Gam_plus ! - eigenvalues at each time step at interface i-1/2
+  !real(kind=Dbl),dimension(2,2) :: Gam_minus! - eigenvalues at each time step at interface i-1/2
 
   type(vector) :: U_up, U_dw ! Holds the solution at the upstream and downstream of each cell
 
@@ -97,11 +93,11 @@ end type Jacobian_tp
 
 ! Contains the parameters for considering the source term within the solution.
 type SoureceTerms_tp
-  real(kind=Dbl)  :: S_f ! friction slope
+  real(kind=Dbl)  :: S_f           ! friction slope
   real(kind=Dbl)  :: S_f_interface ! friction slope at the interface
 
-  type(vector)  :: S      ! source term
-  type(vector)  :: S_interface      ! source term at the interface
+  type(vector)  :: S            ! source term
+  type(vector)  :: S_interface  ! source term at the interface
 
   type(vector)  :: Source_1 ! contribution of the source term in updating the solution
   type(vector)  :: Source_2 ! contribution of the source term in updating the solution
@@ -111,15 +107,13 @@ type SoureceTerms_tp
   real(kind=Dbl), dimension(2,2) :: Identity ! Identity matrix
 end type SoureceTerms_tp
 
+! Parametrized type is not compatible with OMP
 ! Contains the parameters for the solution
 !type, public :: SolverWithLimiter(NCells)
 !  integer(kind=Lng), len :: NCells
 !  integer(kind=Lng)      :: Plot_Inc = 100!
 
 !  type(vector), dimension(NCells) :: S     ! Source term
-
-!  type(vector), dimension(NCells*2) :: phi   ! Holds the value of the limiter function <delete>
-!  type(vector), dimension(NCells*2) :: theta ! Holds the value of the limiter function <delete>
 !  type(vector), dimension(-1_Lng:NCells+2_Lng) :: U !  the solution at the current step,
                                             ! the first term holds "h" and the second holds "uh"
 !  type(discretization_tp) :: Discretization ! Contains the discretization of the domain
@@ -159,10 +153,12 @@ contains
 ! ================================ V E R S I O N ==================================================
 ! V0.00: 03/15/2018 - File initiated.
 ! V0.01: 03/24/2018 - Initiated: Compiled without error for the first time.
+! V1.01: 04/24/2018 - Parallel
+! V2.00: 05/09/2018 - Performance
 !
 ! File version $Id $
 !
-! Last update: 03/24/2018
+! Last update: 05/09/2018
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
 ! (Refer to the main code to see the list of imported variables)
@@ -236,13 +232,6 @@ type(vector) :: F_H ! Contribution of high-resolution method (Lax-Wendroff) in t
 type(vector) :: Delta_U           ! holds (U_i- U_i-1)
 type(vector), dimension(-1_Lng:this%Discretization%NCells+2_Lng) ::UU, UN ! solution at n and n+1
 
-!type(vector), dimension(this%Discretization%NCells) :: S     ! Source term
-                                            ! the first term holds "h" and the second holds "uh"
-
-!type(vector), dimension(this%Discretization%NCells*2) :: phi   ! value of the limiter function <delete>
-!type(vector), dimension(this%Discretization%NCells*2) :: theta ! value of the limiter function <delete>
-
-
 ! code ============================================================================================
 write(*,       *) " subroutine < Solver_1D_with_Limiter_sub >: "
 write(FileInfo,*) " subroutine < Solver_1D_with_Limiter_sub >: "
@@ -309,13 +298,10 @@ Results%ModelInfo = this%ModelInfo
 !$ write(*,       fmt="(' I am thread ',I4,' out of ',I4,' threads.')") ITS,MTS
 !$ write(FileInfo,fmt="(' I am thread ',I4,' out of ',I4,' threads.')") ITS,MTS
 
-!!$OMP END PARALLEL
-
 
   ! Time marching
   Time_Marching: do i_steps = 1_Lng, NSteps
 
-        !print*, "----------------Step:", i_steps
     ! write down data for visualization
       if (mod(i_steps,this%Plot_Inc)==1 .or. PrintResults) then
         !$ if (ITS==0) then
@@ -324,13 +310,6 @@ Results%ModelInfo = this%ModelInfo
         !$ end if
       end if
 
-      !print*,i_steps,uu(2), UU(3) ! <delete>
-      !read(*,*)
-
-
-      !!$OMP PARALLEL DO default(none) SHARED(UN,UU,S, phi, theta,dt, dx, dtdx) private(i_Cell,its,mts,height,velocity,Coefficient,height_interface, velocity_interface, speed) firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution)
-      !!$OMP PARALLEL DO default(private) SHARED(UN,UU,S, dt, dx, dtdx) firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution)
-      !!$OMP DO default(none) SHARED(UN,UU,S, phi, theta,dt, dx, dtdx) private(i_Cell,its,mts,height,velocity,Coefficient,height_interface, velocity_interface, speed) firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution)
       !$OMP DO
       do i_Cell = 2_Lng, this%Discretization%NCells-1  ! Loop over cells except the boundary cells
 
@@ -384,8 +363,7 @@ Results%ModelInfo = this%ModelInfo
             Jacobian%U_up%U(:) = UU(i_Cell+(i_Interface-2_Lng))%U(:)
             Jacobian%U_dw%U(:) = UU(i_Cell+(i_Interface-1_Lng))%U(:)
 
-            !print*,"velocity before Jacobian sub",i_Cell,i_Interface, Jacobian%U_dw%U(1),Jacobian%U_up%U(1)   ! <delete>
-            call Jacobian%Jacobian(i_Cell)   ! <modify>
+            call Jacobian%Jacobian()
 
             ! Compute alpha(= RI*(U_i - U_(i-1))
             alpha%U(:) = matmul(Jacobian%L, Delta_U%U(:))
@@ -420,11 +398,11 @@ Results%ModelInfo = this%ModelInfo
                   ! We use positive eigenvalues on the upstream interface
                   if (i_Interface == 1_Tiny) then
                     speed = Jacobian%Lambda_plus%U(i_eigen)
-                    Coefficient = -1.0_Dbl !take care of the sign of flux for the high-resolution part
+                    Coefficient = -1.0_Dbl !take care of the sign of flux in high-resolution part
                   ! We use negative eigenvalues on the downstream interface
                   else if (i_Interface == 2_Tiny) then
                     speed = Jacobian%Lambda_minus%U(i_eigen)
-                    Coefficient = +1.0_Dbl !take care of the sign of flux for the high-resolution part
+                    Coefficient = +1.0_Dbl !take care of the sign of flux in high-resolution part
                   end if
 
                 ! The upwind part
@@ -441,7 +419,7 @@ Results%ModelInfo = this%ModelInfo
                     Jacobian_neighbor%U_up%U(:) = UU( i_Cell+i_Interface-3_Tiny  )%U(:)
                     Jacobian_neighbor%U_dw%U(:) = UU( i_Cell+i_Interface-2_Tiny  )%U(:)
 
-                    call Jacobian_neighbor%Jacobian( i_Cell)   ! <modify>
+                    call Jacobian_neighbor%Jacobian()
 
                     ! Compute alpha(= RI*(U_i - U_(i-1))
                     alpha_neighbor%U(:) = matmul(Jacobian_neighbor%L(:,:), Delta_U%U(:))
@@ -456,14 +434,15 @@ Results%ModelInfo = this%ModelInfo
                     Jacobian_neighbor%U_up%U(:) = UU(i_Cell+i_Interface-1_Tiny )%U(:)
                     Jacobian_neighbor%U_dw%U(:) = UU(i_Cell+i_Interface        )%U(:)
 
-                    call Jacobian_neighbor%Jacobian(i_Cell)   ! <modify>
+                    call Jacobian_neighbor%Jacobian()
 
                     ! Compute alpha(= RI*(U_i - U_(i-1))
                     alpha_neighbor%U(:) = matmul(Jacobian_neighbor%L(:,:), Delta_U%U(:))
                     Wave_neighbor%U(:)  = alpha_neighbor%U(i_eigen) * Jacobian_neighbor%R(:,i_eigen)
                   else
                     write(*,*)" Something is wrong. Check the limiter subroutine."
-                    write(*,*)" The eigenvalue is wrong (most probably NaN): " , i_eigen, Jacobian%Lambda%U(i_eigen)
+                    write(*,*)" The eigenvalue is wrong (most probably NaN): " , &
+                                i_eigen, Jacobian%Lambda%U(i_eigen)
                     stop
                   end if
 
@@ -498,7 +477,6 @@ Results%ModelInfo = this%ModelInfo
                             + SourceTerms%Source_1%U(:) - SourceTerms%Source_2%U(:)
 
         UN(i_cell)%U(:) = matmul(SourceTerms%BI(:,:), TempSolution%U(:))
-        !print*,"solution at cell",i_Cell,  UN(i_cell)
 
       end do
       !$OMP END DO
@@ -518,7 +496,6 @@ Results%ModelInfo = this%ModelInfo
   end do Time_Marching
 
   !$OMP END PARALLEL
-
 
 
 write(*,       *) " end subroutine < Solver_1D_with_Limiter_sub >"
@@ -692,7 +669,7 @@ end subroutine Limiters_sub
 !
 !##################################################################################################
 
-subroutine Jacobian_sub(this,  i_Cell)
+subroutine Jacobian_sub(this)
 
 
 ! Libraries =======================================================================================
@@ -707,8 +684,6 @@ implicit none
 class(Jacobian_tp) :: this
 
 ! Local variables =================================================================================
-
-integer(kind=Lng):: i_Cell !<delete>
 
 real(kind=Dbl) :: h_dw  ! the height at the downstream grid
 real(kind=Dbl) :: u_dw  ! the velocity at the downstream grid
@@ -738,7 +713,7 @@ real(kind=Dbl), dimension(2,2) :: A_dw  ! the average discharge at the interface
     h_up = this%U_up%U(1)
     u_up = this%U_up%U(2) / this%U_up%U(1)
 
-    h_ave = 0.5_Dbl*(h_up+h_dw)    ! <modify> for unstructured discretization
+    h_ave = 0.5_Dbl*(h_up+h_dw)   ! <modify> for unstructured discretization
     u_ave = 0.5_Dbl*(u_up+u_dw)   ! <modify> for unstructured discretization
 
     c = dsqrt (Gravity * h_ave) ! wave speed
@@ -753,9 +728,6 @@ real(kind=Dbl), dimension(2,2) :: A_dw  ! the average discharge at the interface
     temp_rl = dsqrt(Gravity * h_ave)
     this%Lambda%U(1) = u_ave - temp_rl
     this%Lambda%U(2) = u_ave + temp_rl
-    !print*,"inside ", this%Lambda%U(1),i_Cell, u_ave, h_ave, h_dw, h_up ! <delete>
-    !print*,"inside ", this%Lambda%U(2),i_Cell, u_ave, h_ave, h_dw, h_up  ! <delete>
-
 
     this%Lambda_plus%U(1) =  dmax1(this%Lambda%U(1), 0.0_Dbl)
     this%Lambda_plus%U(2) =  dmax1(this%Lambda%U(2), 0.0_Dbl)

@@ -4,10 +4,10 @@ Analysis type: 1: 1D lax-wendroff  - 2: Lax-Wendroff with limiter
 2
 
 Total run time (in seconds): 
-200.0
+50.0
 
 Time step (in seconds):
-0.0005
+0.0001
 
 Upstream boundary condition, constant flow (m^3/s):  
 0.18
