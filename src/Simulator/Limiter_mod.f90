@@ -99,8 +99,8 @@ type SoureceTerms_tp
   type(vector)  :: S            ! source term
   type(vector)  :: S_interface  ! source term at the interface
 
-  type(vector)  :: Source_1 ! contribution of the source term in updating the solution
-  type(vector)  :: Source_2 ! contribution of the source term in updating the solution
+  type(vector) :: Source_1 !contribution of the source term in updating the solution (see manual)
+  type(vector) :: Source_2 !contribution of the source term in updating the solution (see manual)
 
   real(kind=Dbl), dimension(2,2) :: B  ! This is in fact dS / dU
   real(kind=Dbl), dimension(2,2) :: BI ! B inverse, see notes
@@ -256,15 +256,6 @@ UU(this%Discretization%NCells+2)%U(1) = UU(this%Discretization%NCells)%U(1)
 
 UU(:)%U(2) = 0.0_Dbl
 
-
-!S(:)%U(1)     = 0.0_Dbl
-!S(:)%U(2)     = 0.0_Dbl
-
-!phi(:)%U(1)   = 0.0_Dbl
-!phi(:)%U(2)   = 0.0_Dbl
-!theta(:)%U(1) = 0.0_Dbl
-!theta(:)%U(2) = 0.0_Dbl
-
 NSteps = this%AnalysisInfo%TotalTime/this%AnalysisInfo%TimeStep
 dt     = this%AnalysisInfo%TimeStep
 dx     = this%Discretization%LengthCell(1)
@@ -334,10 +325,11 @@ Results%ModelInfo = this%ModelInfo
                           * dabs(velocity) /( height**(4.0_Dbl/3.0_Dbl) )
 
         SourceTerms%B(1,1) = 0.0_Dbl
-        SourceTerms%B(1,2) = 0.0_Dbl
         SourceTerms%B(2,1) =  &
         - Gravity * (this%Discretization%SlopeCell(i_Cell) + (7.0_Dbl/3.0_Dbl) * SourceTerms%S_f)
-        SourceTerms%B(2,2) =  (2.0_Dbl*this%Discretization%ManningCell(i_Cell)**2.0) &
+
+        SourceTerms%B(1,2) = 0.0_Dbl
+        SourceTerms%B(2,2) = (2.0_Dbl*this%Discretization%ManningCell(i_Cell)**2.0) &
                               *dabs(velocity)/(height**(4.0_Dbl/3.0_Dbl))
 
         ! Find the BI
@@ -369,11 +361,14 @@ Results%ModelInfo = this%ModelInfo
             alpha%U(:) = matmul(Jacobian%L, Delta_U%U(:))
 
             ! Source terms
-            if (i_Interface == 1_Tiny) then
-              Coefficient = -1.0_Dbl !take care of the sign of flux for the high-resolution part
-            else if (i_Interface == 2_Tiny) then
-              Coefficient = +1.0_Dbl !take care of the sign of flux for the high-resolution part
-            end if
+            !if (i_Interface == 1_Tiny) then
+            !  Coefficient = -1.0_Dbl !take care of the sign of flux for the high-resolution part
+            !else if (i_Interface == 2_Tiny) then
+            !  Coefficient = +1.0_Dbl !take care of the sign of flux for the high-resolution part
+            !end if
+
+            Coefficient = (-1.0_Dbl) ** i_Interface
+
 
             height_interface = 0.5_Dbl * (Jacobian%U_up%U(1) +Jacobian%U_dw%U(1) )
             velocity_interface = &
@@ -438,7 +433,8 @@ Results%ModelInfo = this%ModelInfo
 
                     ! Compute alpha(= RI*(U_i - U_(i-1))
                     alpha_neighbor%U(:) = matmul(Jacobian_neighbor%L(:,:), Delta_U%U(:))
-                    Wave_neighbor%U(:)  = alpha_neighbor%U(i_eigen) * Jacobian_neighbor%R(:,i_eigen)
+                    Wave_neighbor%U(:)  = alpha_neighbor%U(i_eigen)* Jacobian_neighbor%R(:,i_eigen)
+
                   else
                     write(*,*)" Something is wrong. Check the limiter subroutine."
                     write(*,*)" The eigenvalue is wrong (most probably NaN): " , &
@@ -658,10 +654,11 @@ end subroutine Limiters_sub
 ! ================================ V E R S I O N ==================================================
 ! V0.00: 03/15/2018 - Subroutine initiated.
 ! V0.01: 03/15/2018 - Initiated: Compiled without error for the first time.
+! V1.00: 05/09/2018 - Modifying the performance
 !
 ! File version $Id $
 !
-! Last update: 03/20/2018
+! Last update: 05/09/2018
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
 ! (Refer to the main code to see the list of imported variables)
@@ -708,20 +705,20 @@ real(kind=Dbl), dimension(2,2) :: A_dw  ! the average discharge at the interface
   if (this%option == 1 ) then
 
     h_dw = this%U_dw%U(1)
-    u_dw = this%U_dw%U(2) / this%U_dw%U(1)
+    u_dw = this%U_dw%U(2)/ h_dw !this%U_dw%U(1)
 
     h_up = this%U_up%U(1)
-    u_up = this%U_up%U(2) / this%U_up%U(1)
+    u_up = this%U_up%U(2)/h_up !this%U_up%U(1)
 
     h_ave = 0.5_Dbl*(h_up+h_dw)   ! <modify> for unstructured discretization
     u_ave = 0.5_Dbl*(u_up+u_dw)   ! <modify> for unstructured discretization
 
-    c = dsqrt (Gravity * h_ave) ! wave speed
+    c = dsqrt (Gravity * h_ave)   ! wave speed
 
     ! Computing the Jacobian - A
     this%A(1,1) = 0.0_Dbl
     this%A(1,2) = 1.0_Dbl
-    this%A(2,1) = Gravity * h_ave - u_ave**2
+    this%A(2,1) = Gravity * h_ave - u_ave*u_ave
     this%A(2,2) = 2.0_Dbl * u_ave
 
     ! Computing the eigenvalues
@@ -749,7 +746,7 @@ real(kind=Dbl), dimension(2,2) :: A_dw  ! the average discharge at the interface
     this%L(2,1) = -this%Lambda%U(1)
     this%L(2,2) = 1.0_Dbl
 
-    this%L(:,:)  =  this%L(:,:)   /(2.0_Dbl * c)
+    this%L(:,:)  =  this%L(:,:) /(2.0_Dbl * c)
 
     ! Fill eigenvalue matrix
     !this%Gam(1,1) = this%Lambda%U(1)
@@ -919,8 +916,8 @@ real(kind=Dbl)      :: a11, a12, a21, a22
 !write(FileInfo,*) " subroutine < Eigenvalues_sub >: "
 
 a11 = A (1,1)
-a12 = A (1,2)
 a21 = A (2,1)
+a12 = A (1,2)
 a22 = A (2,2)
 
 Lambda1 = ((a11+a22) + dsqrt((a11+a22)**2 - 4.0_Dbl*(a11*a22-a12*a21)))/2.0_Dbl
@@ -991,8 +988,8 @@ determinant = Matrix_in(1,1) * Matrix_in(2,2) - Matrix_in(1,2) * Matrix_in(2,1)
 
 
 Matrix_out(1,1) = +Matrix_in(2,2)
-Matrix_out(1,2) = -Matrix_in(1,2)
 Matrix_out(2,1) = -Matrix_in(2,1)
+Matrix_out(1,2) = -Matrix_in(1,2)
 Matrix_out(2,2) = +Matrix_in(1,1)
 
 Matrix_out(:,:) = Matrix_out(:,:) / determinant
