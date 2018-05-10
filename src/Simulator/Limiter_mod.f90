@@ -479,10 +479,16 @@ Results%ModelInfo = this%ModelInfo
 
       !!$OMP END PARALLEL DO
 
+
+      !$OMP DO
+      do i_Cell = 2_Lng, this%Discretization%NCells-1  ! Loop over cells except the boundary cells
+        UU(i_Cell) = UN(i_Cell)
+      end do
+      !$OMP END DO
+
+
     !$OMP single
-
-    UU(:) = UN(:)
-
+    !UU(:) = UN(:)
     ! apply boundary condition
     call Impose_Boundary_Condition_1D_sub(UU, this%Discretization%NCells,this%AnalysisInfo%h_dw, &
                                           this%AnalysisInfo%Q_Up,this%Discretization%WidthCell(1))
