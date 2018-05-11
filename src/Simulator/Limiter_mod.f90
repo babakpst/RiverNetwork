@@ -42,6 +42,7 @@ module LaxWendroff_with_limiter_mod
 ! Libraries =======================================================================================
 
 !$ use omp_lib
+use MPI
 
 ! User defined modules ============================================================================
 use Parameters_mod
