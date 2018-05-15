@@ -38,6 +38,7 @@ program Shallow_Water_Equations
 
 ! Libraries =======================================================================================
 use ifport
+use MPI
 
 ! Defined Modules =================================================================================
 use Parameters_mod

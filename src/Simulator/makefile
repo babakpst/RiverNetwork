@@ -17,7 +17,7 @@ F90=ifort
 
 
 #FFLAGS=-O2 -qopenmp -g -debug all -debug-parameters all -traceback -check all -fp-stack-check -check bounds -check stack -gen-interfaces -warn interfaces -ftrapuv -fpe0 -CB
-FFLAGS=-O2 -qopenmp
+#FFLAGS=-O2 -qopenmp
 #FFLAGS=-O2
 
 SOURCESF=	Parameters_mod.f90 \
