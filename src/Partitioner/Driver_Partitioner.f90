@@ -41,6 +41,7 @@ use ifport
 use Parameters_mod
 use Information_mod
 use Input_mod
+use Model_mod
 use Discretization_mod
 use Partitioner_mod
 

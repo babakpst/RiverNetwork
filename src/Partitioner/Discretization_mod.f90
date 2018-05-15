@@ -39,6 +39,7 @@ module Discretization_mod
 use Parameters_mod
 use Input_mod
 use Results_mod
+use Model_mod
 
 implicit none
 
