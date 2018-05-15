@@ -70,36 +70,10 @@ implicit none
 
 ! Global variables ================================================================================
 
-! - integer variables -----------------------------------------------------------------------------
-!#integer(kind=Shrt), intent(in)    ::
-!#integer(kind=Shrt), intent(inout) ::
-!#integer(kind=Shrt), intent(out)   ::
-! - real variables --------------------------------------------------------------------------------
-!#real(kind=Dbl),     intent(in)    ::
-!#real(kind=Dbl),     intent(inout) ::
-!#real(kind=Dbl),     intent(out)   ::
-! - complex variables -----------------------------------------------------------------------------
-!#complex,             intent(in)    ::
-!#complex,             intent(inout) ::
-!#complex,             intent(out)   ::
-! - integer Arrays --------------------------------------------------------------------------------
-!#integer(kind=Shrt), intent(in),    dimension (:  )  ::
-!#integer(kind=Shrt), intent(in),    dimension (:,:)  ::
-!#integer(kind=Shrt), intent(in)    ::
-!#integer(kind=Shrt), intent(inout) ::
-!#integer(kind=Shrt), intent(out)   ::
-! - real Arrays -----------------------------------------------------------------------------------
-!#real(kind=Dbl),     intent(in),    dimension (:  )  ::
-!#real(kind=Dbl),     intent(inout), dimension (:  )  ::
-!#real(kind=Dbl),     intent(out),   dimension (:  )  ::
-! - character variables ---------------------------------------------------------------------------
-!#character(kind = ?, Len = ? ) ::
-! - logical variables -----------------------------------------------------------------------------
-!#logical   ::
 ! - types -----------------------------------------------------------------------------------------
 type(Input_Data_tp),     intent(In) :: ModelInfo ! Holds info. (name, dir, output dir) of the model
 type(Geometry_tp),       intent(In) :: Geometry
-type(discretization_tp), intent(In) :: Discretization
+type(model_tp), intent(In) :: Discretization
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
@@ -114,16 +88,9 @@ integer(kind=Shrt) :: remainder   !
 integer(kind=Lng) :: counter      ! Counter for cells
 integer(kind=Lng) :: i_cells      ! Loop index for counting number of cells
 
-! - real variables --------------------------------------------------------------------------------
-!#real(kind=Dbl)      ::
-! - complex variables -----------------------------------------------------------------------------
-!#complex              ::
 ! - integer Arrays --------------------------------------------------------------------------------
 integer(kind=Lng), dimension (Geometry%size)  :: chunk       ! share of the domain for each rank
 
-! - real Arrays -----------------------------------------------------------------------------------
-!#real(kind=Dbl), dimension (:)      ::
-!#real(kind=Dbl), allocatable, dimension (:)  ::
 ! - character variables ---------------------------------------------------------------------------
 Character(kind = 1, len = 20) :: IndexRank ! Rank no in the Char. fmt to add to the input file Name
 Character(kind = 1, len = 20) :: IndexSize ! Size no in the Char. fmt to add to the input file Name

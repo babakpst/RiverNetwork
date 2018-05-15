@@ -50,10 +50,10 @@ integer(kind=Smll) :: ii, jj        ! Loop index
 type(TimeDate_tp) :: TimeDate       ! Indicates the time and date of simulation
 type(Timer_tp)    :: InputTime, SimulationTime, TotalTime ! Holds the running time
 
-type(ArgCommands)     :: Arguments  ! Holds the entered arguments from the command line
-type(Input_Data_tp)   :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
-type(AnalysisData_tp) :: AnalysisInfo ! Holds initial data required for array allocation
-type(discretization_tp) :: Discretization ! Holds all information required for discretization
+type(ArgCommands)      :: Arguments  ! Holds the entered arguments from the command line
+type(Input_Data_tp)    :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
+type(AnalysisData_tp)  :: AnalysisInfo ! Holds initial data required for array allocation
+type(model_tp)         :: Discretization ! Holds all information required for discretization
 type(SolverWithLimiter):: Experiment_TypeII !  info to solve shallow water equation with limiter
 
 

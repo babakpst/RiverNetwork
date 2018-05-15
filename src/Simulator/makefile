@@ -23,6 +23,7 @@ FFLAGS=-O2 -qopenmp
 SOURCESF=	Parameters_mod.f90 \
 					Timer_mod.f90 \
 					Input_mod.f90 \
+					Model_mod.f90 \
 					Inf_mod.f90 \
 					Results_mod.f90 \
 					Limiter_mod.f90 \

@@ -44,6 +44,7 @@ use Parameters_mod
 use Timer_mod
 use Information_mod
 use Input_mod
+use Model_mod
 use LaxWendroff_with_limiter_mod
 
 ! Global Variables ================================================================================

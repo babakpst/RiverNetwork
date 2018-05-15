@@ -43,7 +43,7 @@ use Results_mod
 implicit none
 
 ! Contains all information after discretization
-type discretization_tp
+type model_tp
   integer (kind=Lng)  :: NCells ! Total number of cells in the domain
 
   real(kind=DBL), allocatable, dimension(:) :: LengthCell ! the length of each cell
@@ -59,7 +59,7 @@ type discretization_tp
   contains
     procedure Discretize => Discretize_1D_sub
 
-end type discretization_tp
+end type model_tp
 
 contains
 
@@ -102,7 +102,7 @@ implicit none
 type(Geometry_tp),   intent(in)   :: Geometry   ! Holds the geometry of the domain.
 type(Input_Data_tp), intent(in)   :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
 
-class(discretization_tp), intent(out) :: this ! Discretization
+class(model_tp), intent(out) :: this ! Discretization
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------

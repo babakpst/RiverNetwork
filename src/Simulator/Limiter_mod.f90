@@ -42,12 +42,13 @@ module LaxWendroff_with_limiter_mod
 ! Libraries =======================================================================================
 
 !$ use omp_lib
-use MPI
+
 
 ! User defined modules ============================================================================
 use Parameters_mod
 use Results_mod
 use Input_mod
+use Model_mod
 
 implicit none
 
@@ -117,7 +118,7 @@ end type SoureceTerms_tp
 !  type(vector), dimension(NCells) :: S     ! Source term
 !  type(vector), dimension(-1_Lng:NCells+2_Lng) :: U !  the solution at the current step,
                                             ! the first term holds "h" and the second holds "uh"
-!  type(discretization_tp) :: Discretization ! Contains the discretization of the domain
+!  type(model_tp) :: Discretization ! Contains the discretization of the domain
 !  type(AnalysisData_tp)   :: AnalysisInfo   ! Holds information for the analysis
 !  type(Input_Data_tp)     :: ModelInfo      ! Holds information for the model
 
@@ -130,7 +131,7 @@ end type SoureceTerms_tp
 type, public :: SolverWithLimiter
   integer(kind=Lng)      :: Plot_Inc = 1000
 
-  type(discretization_tp) :: Discretization ! Contains the discretization of the domain
+  type(model_tp) :: Discretization ! Contains the discretization of the domain
   type(AnalysisData_tp)   :: AnalysisInfo   ! Holds information for the analysis
   type(Input_Data_tp)     :: ModelInfo      ! Holds information for the model
 
