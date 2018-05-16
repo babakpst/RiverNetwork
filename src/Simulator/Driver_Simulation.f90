@@ -23,10 +23,11 @@
 ! V1.00: 04/10/2018  - Cleaning the code after having the right results
 ! V2.00: 04/18/2018  - Parallelization using OMP
 ! V2.10: 04/23/2018  - Time module
+! V3.00: 05/16/2018  - MPI parallelization
 !
 ! File version $Id $
 !
-! Last update: 04/23/2018
+! Last update: 05/16/2018
 !
 ! ================================ Global   V A R I A B L E S =====================================
 !  . . . . . . . . . . . . . . . . Variables . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -54,8 +55,17 @@ Implicit None
 Include 'Global_Variables_Inc.f90'   ! All Global Variables are defined/described in this File
 ModelInfo%Version = 2.0_SGL          ! Reports the version of the code
 
-! Time and Date signature =========================================================================
 
+! Initializing the MPI ============================================================================
+write(*,*) " Initializing MPI ..."
+
+call MPI_Init(MPI_err)
+call MPI_Comm_Size(comm, size, MPI_err)
+call MPI_Comm_Rank(comm, rank, MPI_err)
+
+write(*,fmt="Hello from rank: ", I6, "- We are a total of:", I6) rank,size
+
+! Time and Date signature =========================================================================
 call system_clock(TotalTime%startSys, TotalTime%clock_rate)
 call TotalTime%start()
 call GETDAT(TimeDate%Year, TimeDate%Month, TimeDate%Day)
@@ -193,7 +203,8 @@ write(*,        fmt="(' Total simulation time: ',F23.10 , ' seconds.' )")  Total
 write(FileInfo, fmt="(' Total simulation time: ',F23.10 , ' seconds.' )")  TotalTime%elapsedTime()
 
 
-write(*,        fmt="(' FINAL SIMULATION TIME: ',F23.10 , ' seconds.' )")  real(TotalTime%endSys-TotalTime%startSys)/real(TotalTime%clock_rate)
+write(*,        fmt="(' FINAL SIMULATION TIME: ',F23.10 , ' seconds.' )") &
+                               real(TotalTime%endSys-TotalTime%startSys)/real(TotalTime%clock_rate)
 
 ! End the code ====================================================================================
 write(*, Fmt_SUC); write(FileInfo, Fmt_SUC);
@@ -206,6 +217,12 @@ Close(Unit=UnFile, status='Keep', Err=1002, IOstat=IO_File)
 
 UnFile= UnInptAna
 Close(Unit=UnFile, status='Keep', Err=1002, IOstat=IO_File)
+
+
+
+! Concluding the MPI ==============================================================================
+call MPI_Finalize(MPI_err)
+
 
 !#read(*,*)
 stop

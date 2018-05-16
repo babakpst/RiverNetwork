@@ -1,6 +1,6 @@
 
 !##################################################################################################
-! Purpose: This module writes down the input file for each process.
+! Purpose: This module writes down the input file for each process/rank.
 !
 ! Developed by: Babak Poursartip
 ! Supervised by: Clint Dawson
@@ -136,10 +136,12 @@ write(FileInfo,*) " -Data partitioning ... "
 
     ! Writing the total number of cells in each partition
     UnFile = FilePartition
-    write(unit=UnFile, fmt="(I23)",   advance='yes', asynchronous='no', iostat=IO_write, err=1006) chunk(i_partition)
+    write(unit=UnFile, fmt="(I23)", advance='yes', asynchronous='no', &
+          iostat=IO_write, err=1006) chunk(i_partition)
 
     ! Writing the length of each cell in each partition
-    write(unit=UnFile, fmt="(F23.8)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) Discretization%LengthCell(1)
+    write(unit=UnFile, fmt="(F23.8)", advance='yes', asynchronous='no', &
+          iostat=IO_write, err=1006) Discretization%LengthCell(1)
 
     UnFile = FilePartition
 
@@ -174,8 +176,10 @@ write(FileInfo,*) " -Data partitioning ... "
   end do On_Partitions
 
   if (counter/= Discretization%NCells) then
-    write(*,       *) "Fatal error! Mismatch in the number of cells. Check the partitioner subroutine.", counter, Discretization%NCells
-    write(FileInfo,*) "Fatal error! Mismatch in the number of cells. Check the partitioner subroutine.", counter, Discretization%NCells
+    write(*,       *) "Fatal error! Mismatch in the number of cells. &
+                       Check the partitioner subroutine.", counter, Discretization%NCells
+    write(FileInfo,*) "Fatal error! Mismatch in the number of cells. &
+                       Check the partitioner subroutine.", counter, Discretization%NCells
     write(*, Fmt_FL); write(FileInfo, Fmt_FL);
     write(*, Fmt_end); read(*,*); stop;
   end if

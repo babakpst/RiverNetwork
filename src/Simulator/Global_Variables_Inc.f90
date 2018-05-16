@@ -1,50 +1,20 @@
 
 ! Integer Variables -------------------------------------------------------------------------------
 
-! Tiny Integers
-!integer(kind=Tiny)  ::                         ! ---
-
-! Smll Integers
 integer(kind=Smll) :: UnFile        ! Holds Unit of a file for error message
 integer(kind=Smll) :: IO_File       ! For IOSTAT: Input Output status in OPEN command
 integer(kind=Smll) :: ERR_Alloc, ERR_DeAlloc ! Allocating and DeAllocating errors
 integer(kind=Smll) :: i_analyses    ! loop index to read the analyses files
 integer(kind=Smll) :: ii, jj        ! Loop index
 
-! Shrt Integers
-!integer(kind=Shrt)  ::                         !
-
-! Lng Integers
-!integer(kind=Lng )  ::                         !
-
-! - Real Variables --------------------------------------------------------------------------------
-
-
-! - Logical Variable ------------------------------------------------------------------------------
-!Logical (kind=Shrt)  ::
-
-! - Integer Arrays --------------------------------------------------------------------------------
-! - Real Arrays -----------------------------------------------------------------------------------
-
-! - Integer array, allocatable---------------------------------------------------------------------
-! Tiny Integers
-!integer(kind=Tiny),              Dimension(:)   ::           !
-
-! Smll Integers
-!integer(kind=Smll), allocatable, Dimension(:)   ::           !
-
-! Shrt Integers
-!integer(kind=Shrt), allocatable, Dimension(:)   ::           !
+! MPI parameters
+integer :: comm = MPI_COMM_WORLD
+integer :: size, rank, MPI_err
+integer :: request_sent(2), request_recv(2)
+integer :: status(MPI_STATUS_SIZE)
+integer :: tag_sent(2), tag_recv(2)
 
 
-! Lng Integers
-!integer(kind=Lng ), allocatable, Dimension(:)   ::           !
-!integer(kind=Lng ), allocatable, Dimension(:,:) ::           !
-
-
-! - Real array, allocatable -----------------------------------------------------------------------
-!Real (kind=DBL)   , allocatable, Dimension(:)    ::
-!Real (kind=DBL)   , allocatable, Dimension(:,:)  ::            !
 
 ! - Type ------------------------------------------------------------------------------------------
 type(TimeDate_tp) :: TimeDate       ! Indicates the time and date of simulation
@@ -56,6 +26,3 @@ type(AnalysisData_tp)  :: AnalysisInfo ! Holds initial data required for array a
 type(model_tp)         :: Discretization ! Holds all information required for discretization
 type(SolverWithLimiter):: Experiment_TypeII !  info to solve shallow water equation with limiter
 
-
-! - Character Variables ---------------------------------------------------------------------------
-!Character (kind = 1, Len = 50 ) :: arg  ! Holds the entered argument

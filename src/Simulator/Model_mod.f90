@@ -113,6 +113,7 @@ integer(kind=Lng)  :: i_cells  ! loop index on the number of reaches
 
 ! - character variables ---------------------------------------------------------------------------
 Character(kind = 1, len = 20) :: IndexSize ! Size no in the Char. fmt to add to the input file Name
+                                           ! Holds total number of ranks.
 
 ! code ============================================================================================
 write(*,       *)
