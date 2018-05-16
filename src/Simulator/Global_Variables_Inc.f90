@@ -8,13 +8,7 @@ integer(kind=Smll) :: i_analyses    ! loop index to read the analyses files
 integer(kind=Smll) :: ii, jj        ! Loop index
 
 ! MPI parameters
-integer :: comm = MPI_COMM_WORLD
 integer :: size, rank, MPI_err
-integer :: request_sent(2), request_recv(2)
-integer :: status(MPI_STATUS_SIZE)
-integer :: tag_sent(2), tag_recv(2)
-
-
 
 ! - Type ------------------------------------------------------------------------------------------
 type(TimeDate_tp) :: TimeDate       ! Indicates the time and date of simulation

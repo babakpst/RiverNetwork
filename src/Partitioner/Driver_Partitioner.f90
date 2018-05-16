@@ -90,7 +90,7 @@ UnFile=FileInfo
 Open(Unit=UnFile, File=trim(ModelInfo%ModelName)//'.infM',     &
      Err=1001, IOstat=IO_File, Access='SEQUENTIAL', Action='write', Asynchronous='NO', &
      Blank='NULL', blocksize=0, defaultfile=trim(ModelInfo%OutputDir), DisPOSE='Keep', Form='formatted', &
-     position='ASIS', status='REPLACE')
+     position='ASIS', status='replace')
 
 ! Writing down the simulation time
 Call Info(TimeDate, ModelInfo)

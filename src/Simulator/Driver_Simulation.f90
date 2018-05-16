@@ -55,15 +55,15 @@ Implicit None
 Include 'Global_Variables_Inc.f90'   ! All Global Variables are defined/described in this File
 ModelInfo%Version = 2.0_SGL          ! Reports the version of the code
 
-
 ! Initializing the MPI ============================================================================
-write(*,*) " Initializing MPI ..."
+write(*,*) " Initializing MPI ..."   ! <MPI>
 
-call MPI_Init(MPI_err)
-call MPI_Comm_Size(comm, size, MPI_err)
-call MPI_Comm_Rank(comm, rank, MPI_err)
+call MPI_Init(MPI_err) ! <MPI>
+call MPI_Comm_Size(MPI_COMM_WORLD, size, MPI_err) ! <MPI>
+call MPI_Comm_Rank(MPI_COMM_WORLD, rank, MPI_err) ! <MPI>
 
-write(*,fmt="Hello from rank: ", I6, "- We are a total of:", I6) rank,size
+!write(*,fmt="Hello from rank: ", I6, "- We are a total of:", I6) rank,size
+if (rank == 0) write(*,fmt=" ****** Total number of ranks: ", I6) size
 
 write(ModelInfo%IndexRank, *) rank ! Converts Rank to Character format for the file Name
 write(ModelInfo%IndexSize, *) size ! Converts Size to Character format for the file Name
@@ -109,8 +109,8 @@ UnFile=FileInfo
 Open(Unit=UnFile, File=trim(ModelInfo%ModelName)//&
      '_s'//trim(adjustL(ModelInfo%IndexSize))//'_p'//trim(adjustL(ModelInfo%IndexRank))//'.infM', &
      Err=1001, IOstat=IO_File, Access='SEQUENTIAL', Action='write', Asynchronous='NO', &
-     Blank='NULL', blocksize=0, defaultfile=trim(ModelInfo%OutputDir), DisPOSE='Keep',  &
-     Form='formatted', position='ASIS', status='REPLACE')
+     Blank='NULL', blocksize=0, defaultfile=trim(ModelInfo%OutputDir), DisPOSE='keep',  &
+     Form='formatted', position='ASIS', status='replace')
 
 ! Writing down the simulation time
 Call Info(TimeDate, ModelInfo)
@@ -126,7 +126,6 @@ call Discretization%Input(ModelInfo)
 call InputTime%stop()
 
 ! Simulations =====================================================================================
-
   do i_analyses = 1, ModelInfo%NumberOfAnalyses
 
     write(*,        fmt="(A,I10)") " -Analyse no.", i_analyses
@@ -145,7 +144,7 @@ call InputTime%stop()
           Experiment_TypeII%Discretization = Discretization
 
           call SimulationTime%start()
-          call Experiment_TypeII%Solve()
+          call Experiment_TypeII%Solve(rank, size)
           call SimulationTime%stop()
 
         ! Error in analysis numbering
@@ -179,8 +178,6 @@ DEallocate(Arguments%Length, Arguments%Arg, Arguments%Argstatus,      stat = ERR
 call TotalTime%stop()
 call system_clock(TotalTime%endSys, TotalTime%clock_rate)
 
-
-
 write(*,        fmt="(' Input time: ',F23.10 , ' seconds.' )")  InputTime%elapsedTime()
 write(FileInfo, fmt="(' Input time: ',F23.10 , ' seconds.' )")  InputTime%elapsedTime()
 
@@ -203,16 +200,13 @@ write(*, Fmt_End)
 ! Close Files -------------------------------------------------------------------------------------
 ! Close information File
 UnFile= FileInfo
-Close(Unit=UnFile, status='Keep', Err=1002, IOstat=IO_File)
+Close(Unit=UnFile, status='keep', Err=1002, IOstat=IO_File)
 
 UnFile= UnInptAna
-Close(Unit=UnFile, status='Keep', Err=1002, IOstat=IO_File)
-
-
+Close(Unit=UnFile, status='keep', Err=1002, IOstat=IO_File)
 
 ! Concluding the MPI ==============================================================================
-call MPI_Finalize(MPI_err)
-
+call MPI_Finalize(MPI_err) ! <MPI>
 
 !#read(*,*)
 stop

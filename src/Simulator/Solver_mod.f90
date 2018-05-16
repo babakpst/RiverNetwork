@@ -42,8 +42,6 @@ module Solver_mod
 
 ! Libraries =======================================================================================
 
-!$ use omp_lib
-
 ! User defined modules ============================================================================
 use Parameters_mod
 use Results_mod
@@ -64,6 +62,7 @@ type LimiterFunc_tp ! contains all variable to compute the limiter value
   contains
     procedure LimiterValue => Limiters_sub
 end type LimiterFunc_tp
+
 
 ! This type consists of all variables/arrays regarding the Jacobian, used to apply the limiter.
 type Jacobian_tp
@@ -157,10 +156,11 @@ contains
 ! V0.01: 03/24/2018 - Initiated: Compiled without error for the first time.
 ! V1.01: 04/24/2018 - Parallel
 ! V2.00: 05/09/2018 - Performance
+! V3.00: 05/16/2018 - MPI
 !
 ! File version $Id $
 !
-! Last update: 05/09/2018
+! Last update: 05/16/2018
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
 ! (Refer to the main code to see the list of imported variables)
@@ -168,7 +168,7 @@ contains
 !
 !##################################################################################################
 
-subroutine Solver_1D_with_Limiter_sub(this)
+subroutine Solver_1D_with_Limiter_sub(this,rank, size)
 
 ! Libraries =======================================================================================
 !$ use omp_lib
@@ -184,30 +184,32 @@ class(SolverWithLimiter) :: this
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
-integer :: ITS, MTS  ! thread number of number of threads
+!$ integer :: ITS, MTS  ! thread number of number of threads
+
+! MPI parameters
+integer :: size, rank, MPI_err ! <MPI>
 
 integer(kind=Lng)  :: i_Cell    ! loop index over the Cells
 integer(kind=Lng)  :: i_steps   ! loop index over the number steps
 integer(kind=Lng)  :: NSteps    ! Total number of steps for time marching
 
-integer(kind=Tiny)  :: i_eigen     ! loop index over the eigenvalues (only two in case of 1D SWE)
-integer(kind=Tiny)  :: i_Interface ! loop index over the interfaces (only two in case of 1D SWE)
+integer(kind=Smll) :: ERR_Alloc, ERR_DeAlloc ! Allocating and DeAllocating errors
 
+integer(kind=Tiny) :: i_eigen     ! loop index over the eigenvalues (only two in case of 1D SWE)
+integer(kind=Tiny) :: i_Interface ! loop index over the interfaces (only two in case of 1D SWE)
 
 ! - real variables --------------------------------------------------------------------------------
-real(kind=Dbl)      :: dt      ! time step, should be structured/constant in each reach
-real(kind=Dbl)      :: dx      ! cell length, should be structured/constant in each reach
-real(kind=Dbl)      :: speed   ! characteristic speed, equal to pos./neg. eiqenv. in each interface
-real(kind=Dbl)      :: dtdx    ! The ratio dt/dx, used in the final equation
-real(kind=Dbl)      :: Coefficient ! take care of the sign of the flux for the high-resolution part
+real(kind=Dbl)     :: dt      ! time step, should be structured/constant in each reach
+real(kind=Dbl)     :: dx      ! cell length, should be structured/constant in each reach
+real(kind=Dbl)     :: speed   ! characteristic speed, equal to pos./neg. eiqenv. in each interface
+real(kind=Dbl)     :: dtdx    ! The ratio dt/dx, used in the final equation
+real(kind=Dbl)     :: Coefficient ! take care of the sign of the flux for the high-resolution part
 
-real(kind=Dbl)      :: height   ! height of water at the current cell/time
-real(kind=Dbl)      :: velocity ! velocity of water at the current cell/time
+real(kind=Dbl)     :: height   ! height of water at the current cell/time
+real(kind=Dbl)     :: velocity ! velocity of water at the current cell/time
 
-real(kind=Dbl)      :: height_interface   ! height of water at the current interface/time
-real(kind=Dbl)      :: velocity_interface ! velocity of water at the current interface/time
-
-! - real Arrays -----------------------------------------------------------------------------------
+real(kind=Dbl)     :: height_interface   ! height of water at the current interface/time
+real(kind=Dbl)     :: velocity_interface ! velocity of water at the current interface/time
 
 ! - logical variables -----------------------------------------------------------------------------
 logical   :: PrintResults
@@ -246,18 +248,15 @@ write(*,       *) " -Applying initial conditions ..."
 write(FileInfo,*) " -Applying initial conditions ..."
 
 !allocate(Plot_Results_1D_limiter_tp(NCells = this%Discretization%NCells) :: Results)
-allocate( Results%U(this%Discretization%NCells) )
+allocate(Results%U(this%Discretization%NCells),     stat=ERR_Alloc)
+ if (ERR_Alloc /= 0) then
+    write (*, Fmt_ALLCT) ERR_Alloc;  write (FileInfo, Fmt_ALLCT) ERR_Alloc;
+    write(*, Fmt_FL);  write(FileInfo, Fmt_FL); read(*, Fmt_End);  stop;
+  end if
+
 Results%NCells = this%Discretization%NCells
 
-UU(1:this%Discretization%NCells)%U(1) = this%AnalysisInfo%CntrlV -    this%Discretization%ZCell(:)
-UU(0)%U(1)  = UU(1)%U(1)
-UU(-1)%U(1) = UU(1)%U(1)
-
-UU(this%Discretization%NCells+1)%U(1) = UU(this%Discretization%NCells)%U(1)
-UU(this%Discretization%NCells+2)%U(1) = UU(this%Discretization%NCells)%U(1)
-
-UU(:)%U(2) = 0.0_Dbl
-
+! Initialization:
 NSteps = this%AnalysisInfo%TotalTime/this%AnalysisInfo%TimeStep
 dt     = this%AnalysisInfo%TimeStep
 dx     = this%Discretization%LengthCell(1)
@@ -268,7 +267,6 @@ dtdx = dt / dx
 Jacobian%option = 1
 Jacobian_neighbor%option = 1
 
-! Initialization
 LimiterFunc%limiter_Type = this%AnalysisInfo%limiter ! Define what limiter to use in the algorithm
 !PrintResults = .true.
 PrintResults = .false.
@@ -276,8 +274,31 @@ SourceTerms%Identity(:,:) = 0.0_Dbl
 SourceTerms%Identity(1,1) = 1.0_Dbl
 SourceTerms%Identity(2,2) = 1.0_Dbl
 
+! <modify>
+UU(1:this%Discretization%NCells)%U(1) = this%AnalysisInfo%CntrlV -    this%Discretization%ZCell(:)
+UU(0)%U(1)  = UU(1)%U(1)
+UU(-1)%U(1) = UU(1)%U(1)
+
+UU(this%Discretization%NCells+1)%U(1) = UU(this%Discretization%NCells)%U(1)
+UU(this%Discretization%NCells+2)%U(1) = UU(this%Discretization%NCells)%U(1)
+
+UU(:)%U(2) = 0.0_Dbl
+
+
+
+
+
+
+
+
+
+
 call Impose_Boundary_Condition_1D_sub(UU, this%Discretization%NCells,this%AnalysisInfo%h_dw, &
                                       this%AnalysisInfo%Q_Up,this%Discretization%WidthCell(1))
+
+
+
+
 
 Results%ModelInfo = this%ModelInfo
 
@@ -290,7 +311,6 @@ Results%ModelInfo = this%ModelInfo
 
 !$ write(*,       fmt="(' I am thread ',I4,' out of ',I4,' threads.')") ITS,MTS
 !$ write(FileInfo,fmt="(' I am thread ',I4,' out of ',I4,' threads.')") ITS,MTS
-
 
   ! Time marching
   Time_Marching: do i_steps = 1_Lng, NSteps
@@ -501,6 +521,13 @@ Results%ModelInfo = this%ModelInfo
 
   !$OMP END PARALLEL
 
+! Deallocating
+deallocate(Results%U(this%Discretization%NCells), stat=ERR_DeAlloc)
+  if (ERR_DeAlloc /= 0) then
+    write (*, Fmt_DEALLCT) ERR_DeAlloc;  write (FileInfo, Fmt_DEALLCT) ERR_DeAlloc;
+    write(*, Fmt_FL);  write(FileInfo, Fmt_FL); write(*, Fmt_End); read(*,*);  stop;
+  end if
+
 
 write(*,       *) " end subroutine < Solver_1D_with_Limiter_sub >"
 write(FileInfo,*) " end subroutine < Solver_1D_with_Limiter_sub >"
@@ -532,18 +559,18 @@ end subroutine Solver_1D_with_Limiter_sub
 !
 !##################################################################################################
 
-subroutine Impose_Boundary_Condition_1D_sub(UU, NCells,h_dw, Q_Up, Width)
+subroutine Impose_BC_1D_up_sub(UU, NCells, Q_Up, Width)
 
 ! Libraries =======================================================================================
 
 ! User defined modules ============================================================================
 
-
 implicit none
 
 ! Global variables ================================================================================
 integer(kind=Lng) :: NCells
-real(kind=DBL) :: h_dw, Q_Up, Width
+
+real(kind=DBL)    :: Q_Up, Width
 ! - types -----------------------------------------------------------------------------------------
 type(vector), dimension(-1_Lng:NCells+2_Lng) ::UU
 
@@ -559,15 +586,44 @@ UU(-1_Lng)%U(1) = UU(2)%U(1) ! h at the upstream
 UU( 0_Lng)%U(1) = UU(2)%U(1) ! h at the upstream
 UU( 1_Lng)%U(1) = UU(2)%U(1) ! h at the upstream
 
-UU(NCells      )%U(1) = h_dw ! h at the downstream
-UU(NCells+1_Lng)%U(1) = h_dw ! h at the downstream
-UU(NCells+2_Lng)%U(1) = h_dw ! h at the downstream
-
 ! Boundary conditions on the discharge
 UU(-1_Lng)%U(2) = Q_Up / Width  ! h at the upstream
 UU( 0_Lng)%U(2) = Q_Up / Width  ! h at the upstream
 UU( 1_Lng)%U(2) = Q_Up / Width  ! h at the upstream
 
+!write(*,       *) " end subroutine < Impose_Boundary_Condition_1D_sub >"
+!write(FileInfo,*) " end subroutine < Impose_Boundary_Condition_1D_sub >"
+return
+end subroutine Impose_BC_1D_up_sub
+
+
+subroutine Impose_BC_1D_dw_sub(UU, NCells, h_dw)
+
+! Libraries =======================================================================================
+
+! User defined modules ============================================================================
+
+
+implicit none
+
+! Global variables ================================================================================
+integer(kind=Lng) :: NCells
+real(kind=DBL) :: h_dw
+! - types -----------------------------------------------------------------------------------------
+type(vector), dimension(-1_Lng:NCells+2_Lng) ::UU
+
+! Local variables =================================================================================
+
+! code ============================================================================================
+!write(*,       *) " subroutine < Impose_Boundary_Condition_1D_sub >: "
+!write(FileInfo,*) " subroutine < Impose_Boundary_Condition_1D_sub >: "
+
+! Boundary conditions on the height
+UU(NCells      )%U(1) = h_dw ! h at the downstream
+UU(NCells+1_Lng)%U(1) = h_dw ! h at the downstream
+UU(NCells+2_Lng)%U(1) = h_dw ! h at the downstream
+
+! Boundary conditions on the discharge
 UU(NCells      )%U(2) = UU(NCells-1)%U(2) ! h at the downstream
 UU(NCells+1_Lng)%U(2) = UU(NCells-1)%U(2) ! h at the downstream
 UU(NCells+2_Lng)%U(2) = UU(NCells-1)%U(2) ! h at the downstream
@@ -575,7 +631,7 @@ UU(NCells+2_Lng)%U(2) = UU(NCells-1)%U(2) ! h at the downstream
 !write(*,       *) " end subroutine < Impose_Boundary_Condition_1D_sub >"
 !write(FileInfo,*) " end subroutine < Impose_Boundary_Condition_1D_sub >"
 return
-end subroutine Impose_Boundary_Condition_1D_sub
+end subroutine Impose_BC_1D_dw_sub
 
 !##################################################################################################
 ! Purpose: This subroutine contains various limiters functions.
