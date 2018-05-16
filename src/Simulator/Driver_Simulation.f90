@@ -65,6 +65,9 @@ call MPI_Comm_Rank(comm, rank, MPI_err)
 
 write(*,fmt="Hello from rank: ", I6, "- We are a total of:", I6) rank,size
 
+write(ModelInfo%IndexRank, *) rank ! Converts Rank to Character format for the file Name
+write(ModelInfo%IndexSize, *) size ! Converts Size to Character format for the file Name
+
 ! Time and Date signature =========================================================================
 call system_clock(TotalTime%startSys, TotalTime%clock_rate)
 call TotalTime%start()
@@ -103,7 +106,8 @@ write(*,        fmt="(A)") " -Creating the info.txt file in the output folder ..
 !write(FileInfo, fmt="(A)") " -Creating the info.txt file in the output folder ..."
 
 UnFile=FileInfo
-Open(Unit=UnFile, File=trim(ModelInfo%ModelName)//'.infM',     &
+Open(Unit=UnFile, File=trim(ModelInfo%ModelName)//&
+     '_s'//trim(adjustL(ModelInfo%IndexSize))//'_p'//trim(adjustL(ModelInfo%IndexRank))//'.infM', &
      Err=1001, IOstat=IO_File, Access='SEQUENTIAL', Action='write', Asynchronous='NO', &
      Blank='NULL', blocksize=0, defaultfile=trim(ModelInfo%OutputDir), DisPOSE='Keep',  &
      Form='formatted', position='ASIS', status='REPLACE')
@@ -117,15 +121,9 @@ call InputTime%start()
 write(*,        fmt="(A)") " -Reading the input file ..."
 write(FileInfo, fmt="(A)") " -Reading the input file ..."
 
-call Discretization%Input (ModelInfo)
+call Discretization%Input(ModelInfo)
 
 call InputTime%stop()
-
-! close check File
-!UnFile= Un_CHK
-!Close(Unit=UnFile, status='Keep', Err=1002, IOstat=IO_File)
-
-
 
 ! Simulations =====================================================================================
 
@@ -136,14 +134,6 @@ call InputTime%stop()
 
     ! Getting the required data for this specific analysis
     call AnalysisInfo%Analysis(i_analyses, ModelInfo)
-
-    ! Test File -----------------------------------------------------------------------------------
-    !UnFile=UN_CHK
-    !open( Unit=UnFile,  &
-    !   File=trim(AnaName)//'_'//trim(AdjustL(IndexSize))//'_'//trim(AdjustL(IndexRank))//'.Chk', &
-    !   Err= 1001, IOstat=IO_File, Access='SEQUENTIAL', Action='write', Asynchronous='NO', &
-    !   Blank='NULL', blocksize=0, defaultfile=trim(InlDirAna), DisPOSE='Keep', Form='formatted', &
-    !   position='ASIS', status='REPLACE')
 
     ! Analysis ====================================================================================
       select case(AnalysisInfo%AnalysisType)

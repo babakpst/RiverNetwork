@@ -37,7 +37,7 @@
 !
 !##################################################################################################
 
-module LaxWendroff_with_limiter_mod
+module Solver_mod
 
 ! Libraries =======================================================================================
 
@@ -1009,7 +1009,7 @@ return
 end subroutine Inverse
 
 
-end module LaxWendroff_with_limiter_mod
+end module Solver_mod
 
 
 

@@ -128,7 +128,7 @@ write(FileInfo,*) " -Data partitioning ... "
     UnFile = FilePartition
     open(unit=UnFile, &
     file=trim(ModelInfo%ModelName)// &
-              '_s'//trim(adjustL(IndexSize))//'_p'//trim(adjustL(IndexRank))//'.par', &
+                         '_s'//trim(adjustL(IndexSize))//'_p'//trim(adjustL(IndexRank))//'.par', &
          Err=1001, iostat=IO_File, &
          access='sequential', action='write', asynchronous='no', blank='NULL', blocksize=0, &
          defaultfile=trim(ModelInfo%InputDir), dispose='keep', form='formatted', position='asis',&

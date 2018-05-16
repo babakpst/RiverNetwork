@@ -46,9 +46,13 @@ type Input_Data_tp
   character (kind = 1, Len = 150) :: AnalysisOutputDir! Directory of output file for each analysis
   character (kind = 1, Len = 150), dimension(:), allocatable :: AnalysesNames! Holds the names of
                                                                         ! the analysis input files
+
+  ! rank and size of MPI
+  Character(kind = 1, len = 20) :: IndexRank ! Rank no in the Char. fmt to add to the input file Name
+  Character(kind = 1, len = 20) :: IndexSize ! Size no in the Char. fmt to add to the input file Name
+
   !integer(kind=Smll):: OutputType        ! Output Type: 1: ordinary-2: HDF5
   integer(kind=Smll) :: NumberOfAnalyses  ! Number of analysis
-  integer(kind=Smll) :: size              ! Number of partitions
 
   real(kind=SGL) :: Version               ! Holds the version of the code.
 
@@ -144,14 +148,11 @@ read(FileAdr,*)
 read(FileAdr,*) this%ModelName; write(*,*) this%ModelName
 read(FileAdr,*)
 read(FileAdr,*)
-read(FileAdr,*) this%InputDir; !write(*,*) this%InputDir
+read(FileAdr,*) this%InputDir;  !write(*,*) this%InputDir
 read(FileAdr,*)
 read(FileAdr,*)
 read(FileAdr,*) this%OutputDir; !write(*,*) this%OutputDir
-read(FileAdr,*)
-read(FileAdr,*)
-read(FileAdr,*) this%size;      !write(*,*) this%size
-read(FileAdr,*)
+ read(FileAdr,*)
 read(FileAdr,*)
 read(FileAdr,*) this%NumberOfAnalyses; !write(*,*) this%NumberOfAnalyses
 

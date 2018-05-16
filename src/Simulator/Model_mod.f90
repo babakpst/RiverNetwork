@@ -130,7 +130,9 @@ write(IndexSize, *) ModelInfo%size        ! Converts Size to Character format fo
 
 ! Open the input file for arrays
 UnFile = FilePartition
-open(Unit=UnFile, file=trim(ModelInfo%ModelName)//"_s"//trim(adjustL(IndexSize))//'.par', &
+
+open(Unit=UnFile, file=trim(ModelInfo%ModelName)//&
+     '_s'//trim(adjustL(ModelInfo%IndexSize))//'_p'//trim(adjustL(ModelInfo%IndexRank))//'.par', &
      err=1001, iostat=IO_File, access='sequential', action='read', asynchronous='no', &
      blank='null', blocksize=0, defaultfile=trim(ModelInfo%InputDir), DisPOSE='keep', &
      form='formatted', position='asis', status='old')
