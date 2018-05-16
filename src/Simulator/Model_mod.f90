@@ -184,7 +184,7 @@ write(*,        fmt="(A)") " -Closing the input file"
 write(FileInfo, fmt="(A)") " -Closing the input file"
 
 UnFile = FilePartition
-Close(Unit = UnFile, status = 'KEEP', ERR =  1002, IOSTAT = IO_File)
+close(Unit = UnFile, status = 'keep', ERR =  1002, IOSTAT = IO_File)
 
 write(*,       *) " End Subroutine < Input_sub >"
 write(*,       *)

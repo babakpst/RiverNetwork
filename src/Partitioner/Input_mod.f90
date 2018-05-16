@@ -172,7 +172,7 @@ write(*,fmt="(2A)")" The output directory is: ", this%OutputDir
 write(*,        fmt="(A)") " -Closing the address file"
 !write(FileInfo, fmt="(A)") " -Closing the address file"
 UnFile =  FileAdr
-Close(unit = UnFile, status = 'KEEP', ERR =  1002, IOSTAT = IO_File)
+Close(unit = UnFile, status = 'keep', ERR =  1002, IOSTAT = IO_File)
 
 
 write(*,       *) ' End Subroutine < Input_Address_sub >'

@@ -147,7 +147,7 @@ write(*,        fmt="(A)") " -Closing the data model file"
 write(FileInfo, fmt="(A)") " -Closing the data model file"
 
 UnFile =  FileDataModel
-Close(Unit = UnFile, status = 'KEEP', ERR =  1002, IOSTAT = IO_File)
+Close(Unit = UnFile, status = 'keep', ERR =  1002, IOSTAT = IO_File)
 
 write(*,       *) ' End Subroutine < Input_Basic_sub >'
 write(*,       *)
@@ -337,7 +337,7 @@ write(*,        fmt="(A)") " -Closing the geometry file"
 write(FileInfo, fmt="(A)") " -Closing the geometry file"
 
 UnFile = FileDataGeo
-Close(Unit = UnFile, status = 'KEEP', ERR =  1002, IOSTAT = IO_File)
+Close(Unit = UnFile, status = 'keep', ERR =  1002, IOSTAT = IO_File)
 
 write(*,       *) " End Subroutine < Input_Array_sub >"
 write(*,       *)

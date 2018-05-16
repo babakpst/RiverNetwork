@@ -17,10 +17,11 @@
 ! V2.00: 04/19/2018 - Parallel, OMP
 ! V2.10: 04/24/2018 - Parallel, performance
 ! V2.20: 05/09/2018 - Parallel, performance
+! V3.00: 05/16/2018 - MPI Parallel
 !
 ! File version $Id $
 !
-! Last update: 05/09/2018
+! Last update: 05/16/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! - Solver_1D_with_Limiter_sub: Solves the 1D shallow water equation, with limiter.
@@ -42,7 +43,6 @@ module Solver_mod
 ! Libraries =======================================================================================
 
 !$ use omp_lib
-
 
 ! User defined modules ============================================================================
 use Parameters_mod
