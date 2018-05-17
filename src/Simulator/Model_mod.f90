@@ -111,10 +111,6 @@ integer(kind=Smll) :: i_reach  ! loop index on the number of reaches
 
 integer(kind=Lng)  :: i_cells  ! loop index on the number of reaches
 
-! - character variables ---------------------------------------------------------------------------
-Character(kind = 1, len = 20) :: IndexSize ! Size no in the Char. fmt to add to the input file Name
-                                           ! Holds total number of ranks.
-
 ! code ============================================================================================
 write(*,       *)
 write(*,       *) " Subroutine < Input_sub >: "
@@ -125,14 +121,10 @@ write(FileInfo,*) " Subroutine < Input_sub >: "
 write(*,        fmt="(A)") " -Opening the input file ..."
 write(FileInfo, fmt="(A)") " -Opening the input file ..."
 
-
-write(IndexSize, *) ModelInfo%size        ! Converts Size to Character format for the file Name
-
 ! Open the input file for arrays
 UnFile = FilePartition
 
-open(Unit=UnFile, file=trim(ModelInfo%ModelName)//&
-     '_s'//trim(adjustL(ModelInfo%IndexSize))//'_p'//trim(adjustL(ModelInfo%IndexRank))//'.par', &
+open(Unit=UnFile, file=trim(ModelInfo%ModelName)//'.par', &
      err=1001, iostat=IO_File, access='sequential', action='read', asynchronous='no', &
      blank='null', blocksize=0, defaultfile=trim(ModelInfo%InputDir), DisPOSE='keep', &
      form='formatted', position='asis', status='old')

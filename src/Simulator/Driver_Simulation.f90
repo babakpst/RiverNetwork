@@ -59,14 +59,11 @@ ModelInfo%Version = 2.0_SGL          ! Reports the version of the code
 write(*,*) " Initializing MPI ..."   ! <MPI>
 
 call MPI_Init(MPI_err) ! <MPI>
-call MPI_Comm_Size(MPI_COMM_WORLD, size, MPI_err) ! <MPI>
-call MPI_Comm_Rank(MPI_COMM_WORLD, rank, MPI_err) ! <MPI>
+call MPI_Comm_Size(MPI_COMM_WORLD, ModelInfo%size, MPI_err) ! <MPI>
+call MPI_Comm_Rank(MPI_COMM_WORLD, ModelInfo%rank, MPI_err) ! <MPI>
 
 !write(*,fmt="Hello from rank: ", I6, "- We are a total of:", I6) rank,size
 if (rank == 0) write(*,fmt=" ****** Total number of ranks: ", I6) size
-
-write(ModelInfo%IndexRank, *) rank ! Converts Rank to Character format for the file Name
-write(ModelInfo%IndexSize, *) size ! Converts Size to Character format for the file Name
 
 ! Time and Date signature =========================================================================
 call system_clock(TotalTime%startSys, TotalTime%clock_rate)
@@ -106,8 +103,7 @@ write(*,        fmt="(A)") " -Creating the info.txt file in the output folder ..
 !write(FileInfo, fmt="(A)") " -Creating the info.txt file in the output folder ..."
 
 UnFile=FileInfo
-Open(Unit=UnFile, File=trim(ModelInfo%ModelName)//&
-     '_s'//trim(adjustL(ModelInfo%IndexSize))//'_p'//trim(adjustL(ModelInfo%IndexRank))//'.infM', &
+Open(Unit=UnFile, File=trim(ModelInfo%ModelName)//'.infM', &
      Err=1001, IOstat=IO_File, Access='SEQUENTIAL', Action='write', Asynchronous='NO', &
      Blank='NULL', blocksize=0, defaultfile=trim(ModelInfo%OutputDir), DisPOSE='keep',  &
      Form='formatted', position='ASIS', status='replace')

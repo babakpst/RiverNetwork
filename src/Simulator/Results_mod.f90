@@ -104,7 +104,6 @@ end type vector
 
 type Plot_Results_1D_limiter_tp
   integer(kind=Lng) :: NCells
-  !type(vector),  dimension(:), allocatable:: s   ! temp to hold bathymetry
 
   type(vector), dimension(:), allocatable :: U  ! This vector holds the solution at previous step,
                                             ! the first term holds "h" and the second holds "uh"
@@ -116,11 +115,9 @@ end type Plot_Results_1D_limiter_tp
 
 
 
+
 private :: Plot_Domain_1D_sub, Plot_Results_1D_limiter_sub
 
-  interface Results
-    module procedure Plot_Domain_1D_sub
-  end interface
 
 contains
 

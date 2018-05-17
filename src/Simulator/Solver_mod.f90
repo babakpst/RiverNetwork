@@ -25,7 +25,8 @@
 !
 ! ================================ S U B R O U T I N E ============================================
 ! - Solver_1D_with_Limiter_sub: Solves the 1D shallow water equation, with limiter.
-! - Impose_Boundary_Condition_1D_sub: Imposes boundary conditions on the 1D model.
+! - Impose_BC_1D_up_sub: Imposes boundary conditions on the 1D model at the upstream
+! - Impose_BC_1D_dw_sub: Imposes boundary conditions on the 1D model at the downstream
 ! - Limiters_sub: Contains various limiters.
 ! - Jacobian_sub: computes the Jacobian matrix, Jacobian plus, and Jacobian minus at each cell.
 ! - Eigenvalues_sub: computes the eigenvalues of a 2x2 matrix.
@@ -37,7 +38,6 @@
 !  . . . . . . . . . . . . . . . . Variables . . . . . . . . . . . . . . . . . . . . . . . . . . .
 !
 !##################################################################################################
-
 module Solver_mod
 
 ! Libraries =======================================================================================
@@ -78,9 +78,6 @@ type Jacobian_tp
   real(kind=Dbl),dimension(2,2) :: A_plus   ! + eigenvalues at each time step at interface i-1/2
   real(kind=Dbl),dimension(2,2) :: A_minus  ! - eigenvalues at each time step at interface i-1/2
   real(kind=Dbl),dimension(2,2) :: A_abs    ! abs eigenvalues at each time step at interface i-1/2
-  !real(kind=Dbl),dimension(2,2) :: Gam      ! - eigenvalues at each time step at interface i-1/2
-  !real(kind=Dbl),dimension(2,2) :: Gam_plus ! - eigenvalues at each time step at interface i-1/2
-  !real(kind=Dbl),dimension(2,2) :: Gam_minus! - eigenvalues at each time step at interface i-1/2
 
   type(vector) :: U_up, U_dw ! Holds the solution at the upstream and downstream of each cell
 
@@ -276,8 +273,8 @@ SourceTerms%Identity(2,2) = 1.0_Dbl
 
 ! <modify>
 UU(1:this%Discretization%NCells)%U(1) = this%AnalysisInfo%CntrlV -    this%Discretization%ZCell(:)
-UU(0)%U(1)  = UU(1)%U(1)
-UU(-1)%U(1) = UU(1)%U(1)
+UU(0)%                           U(1) = UU(1)%U(1)
+UU(-1)%                          U(1) = UU(1)%U(1)
 
 UU(this%Discretization%NCells+1)%U(1) = UU(this%Discretization%NCells)%U(1)
 UU(this%Discretization%NCells+2)%U(1) = UU(this%Discretization%NCells)%U(1)
@@ -286,26 +283,16 @@ UU(:)%U(2) = 0.0_Dbl
 
 ! imposing boundary condition: at this moment, they are only at rank 0 and size-1
   if (rank == 0) then ! applying boundary conditions at the upstream
-    call Impose_BC_1D_up_sub(UU, NCells, Q_Up, Width)
+    call Impose_BC_1D_up_sub(UU(1)%U(1), this%Discretization%NCells, this%AnalysisInfo%Q_Up, &
+                             this%Discretization%WidthCell(1))
   end if
 
-
-
-
-
-call Impose_Boundary_Condition_1D_sub(UU, this%Discretization%NCells,this%AnalysisInfo%h_dw, &
-                                      this%AnalysisInfo%Q_Up,this%Discretization%WidthCell(1))
-
-
-
-
-
-
-
-
+  if (rank == size-1) then ! applying boundary conditions at the downstream
+    call Impose_BC_1D_dw_sub(UU(NCells)%U(2), this%Discretization%NCells, this%AnalysisInfo%Q_Up, &
+                             this%Discretization%WidthCell(1))
+  end if
 
 Results%ModelInfo = this%ModelInfo
-
 
 !!$OMP PARALLEL default(private) SHARED(UN,UU,S, dt, dx, dtdx)                                                                                                 firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution,i_steps, NSteps)
 !$OMP PARALLEL default(none)  SHARED(UN,UU, dt, dx, dtdx) private(i_Cell,its,mts,height,velocity,Coefficient,height_interface, velocity_interface, speed, PrintResults) firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution,i_steps, NSteps, Results)
@@ -323,17 +310,16 @@ Results%ModelInfo = this%ModelInfo
       if (mod(i_steps,this%Plot_Inc)==1 .or. PrintResults) then
         !$ if (ITS==0) then
           print*, "----------------Step:", i_steps
-          Results%U(:)    = UU(1:this%Discretization%NCells)
+          Results%U(:) = UU(1:this%Discretization%NCells)
+          call Results%plot_results(i_steps)
         !$ end if
       end if
 
       !$OMP DO
-      do i_Cell = 2_Lng, this%Discretization%NCells-1  ! Loop over cells except the boundary cells
-
+      do i_Cell = 1_Lng, this%Discretization%NCells  ! Loop over cells except the boundary cells
 
         !print*, "=============Cell:", i_Cell, ITS
         !print*, "=============Cell:", i_Cell
-
 
         ! Initialize fluxes
         F_L%U(:) = 0.0_Dbl ! upwind flux (not exactly, see notes)
@@ -348,7 +334,7 @@ Results%ModelInfo = this%ModelInfo
 
         ! Find the B matrix for this cell
         SourceTerms%S_f = (this%Discretization%ManningCell(i_Cell)**2.0) * velocity &
-                          * dabs(velocity) /( height**(4.0_Dbl/3.0_Dbl) )
+                          * dabs(velocity) /(height**(4.0_Dbl/3.0_Dbl))
 
         SourceTerms%B(1,1) = 0.0_Dbl
         SourceTerms%B(2,1) =  &
@@ -507,7 +493,7 @@ Results%ModelInfo = this%ModelInfo
 
 
       !$OMP DO
-      do i_Cell = 2_Lng, this%Discretization%NCells-1  ! Loop over cells except the boundary cells
+      do i_Cell = 1_Lng, this%Discretization%NCells  ! Loop over cells except the boundary cells
         UU(i_Cell) = UN(i_Cell)
       end do
       !$OMP END DO
@@ -516,9 +502,22 @@ Results%ModelInfo = this%ModelInfo
     !$OMP single
     !UU(:) = UN(:)
     ! apply boundary condition
-    call Impose_Boundary_Condition_1D_sub(UU, this%Discretization%NCells,this%AnalysisInfo%h_dw, &
-                                          this%AnalysisInfo%Q_Up,this%Discretization%WidthCell(1))
 
+    ! imposing boundary condition: at this moment, they are only at rank 0 and size-1
+    if (rank == 0) then ! applying boundary conditions at the upstream
+      call Impose_BC_1D_up_sub(UU(1)%U(1), this%Discretization%NCells, this%AnalysisInfo%Q_Up, &
+                               this%Discretization%WidthCell(1))
+    end if
+
+
+    ! message communication in MPI
+
+
+
+    if (rank == size-1) then ! applying boundary conditions at the downstream
+      call Impose_BC_1D_dw_sub(UU(NCells)%U(2), this%Discretization%NCells, this%AnalysisInfo%Q_Up, &
+                               this%Discretization%WidthCell(1))
+    end if
 
     !$OMP end single
   end do Time_Marching
@@ -563,7 +562,7 @@ end subroutine Solver_1D_with_Limiter_sub
 !
 !##################################################################################################
 
-subroutine Impose_BC_1D_up_sub(UU, NCells, Q_Up, Width)
+subroutine Impose_BC_1D_up_sub(h_upstream, NCells, Q_Up, Width)
 
 ! Libraries =======================================================================================
 
@@ -574,34 +573,30 @@ implicit none
 ! Global variables ================================================================================
 integer(kind=Lng) :: NCells
 
-real(kind=DBL)    :: Q_Up, Width
-! - types -----------------------------------------------------------------------------------------
-type(vector), dimension(-1_Lng:NCells+2_Lng) ::UU
+real(kind=DBL)    :: h_upstream, Q_Up, Width
 
 
 ! Local variables =================================================================================
 
 ! code ============================================================================================
-!write(*,       *) " subroutine < Impose_Boundary_Condition_1D_sub >: "
-!write(FileInfo,*) " subroutine < Impose_Boundary_Condition_1D_sub >: "
+!write(*,       *) " subroutine < Impose_BC_1D_up_sub >: "
+!write(FileInfo,*) " subroutine < Impose_BC_1D_up_sub >: "
 
 ! Boundary conditions on the height
-UU(-1_Lng)%U(1) = UU(2)%U(1) ! h at the upstream
-UU( 0_Lng)%U(1) = UU(2)%U(1) ! h at the upstream
-UU( 1_Lng)%U(1) = UU(2)%U(1) ! h at the upstream
+UU(-1_Lng)%U(1) = UU(1)%U(1) ! h at the upstream
+UU( 0_Lng)%U(1) = UU(1)%U(1) ! h at the upstream
 
 ! Boundary conditions on the discharge
 UU(-1_Lng)%U(2) = Q_Up / Width  ! h at the upstream
 UU( 0_Lng)%U(2) = Q_Up / Width  ! h at the upstream
-UU( 1_Lng)%U(2) = Q_Up / Width  ! h at the upstream
 
-!write(*,       *) " end subroutine < Impose_Boundary_Condition_1D_sub >"
-!write(FileInfo,*) " end subroutine < Impose_Boundary_Condition_1D_sub >"
+!write(*,       *) " end subroutine < Impose_BC_1D_up_sub >"
+!write(FileInfo,*) " end subroutine < Impose_BC_1D_up_sub >"
 return
 end subroutine Impose_BC_1D_up_sub
 
 
-subroutine Impose_BC_1D_dw_sub(UU, NCells, h_dw)
+subroutine Impose_BC_1D_dw_sub(Q_dw, NCells, h_dw)
 
 ! Libraries =======================================================================================
 
@@ -612,28 +607,25 @@ implicit none
 
 ! Global variables ================================================================================
 integer(kind=Lng) :: NCells
-real(kind=DBL) :: h_dw
-! - types -----------------------------------------------------------------------------------------
-type(vector), dimension(-1_Lng:NCells+2_Lng) ::UU
+real(kind=DBL) :: h_dw, Q_dw
+
 
 ! Local variables =================================================================================
 
 ! code ============================================================================================
-!write(*,       *) " subroutine < Impose_Boundary_Condition_1D_sub >: "
-!write(FileInfo,*) " subroutine < Impose_Boundary_Condition_1D_sub >: "
+!write(*,       *) " subroutine < Impose_BC_1D_dw_sub >: "
+!write(FileInfo,*) " subroutine < Impose_BC_1D_dw_sub >: "
 
 ! Boundary conditions on the height
-UU(NCells      )%U(1) = h_dw ! h at the downstream
 UU(NCells+1_Lng)%U(1) = h_dw ! h at the downstream
 UU(NCells+2_Lng)%U(1) = h_dw ! h at the downstream
 
 ! Boundary conditions on the discharge
-UU(NCells      )%U(2) = UU(NCells-1)%U(2) ! h at the downstream
-UU(NCells+1_Lng)%U(2) = UU(NCells-1)%U(2) ! h at the downstream
-UU(NCells+2_Lng)%U(2) = UU(NCells-1)%U(2) ! h at the downstream
+UU(NCells+1_Lng)%U(2) = Q_dw ! discharge at the upstream at the downstream
+UU(NCells+2_Lng)%U(2) = Q_dw !  at the downstream
 
-!write(*,       *) " end subroutine < Impose_Boundary_Condition_1D_sub >"
-!write(FileInfo,*) " end subroutine < Impose_Boundary_Condition_1D_sub >"
+!write(*,       *) " end subroutine < Impose_BC_1D_dw_sub >"
+!write(FileInfo,*) " end subroutine < Impose_BC_1D_dw_sub >"
 return
 end subroutine Impose_BC_1D_dw_sub
 
