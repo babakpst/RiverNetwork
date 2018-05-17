@@ -53,6 +53,7 @@ type Input_Data_tp
 
   !integer(kind=Smll):: OutputType        ! Output Type: 1: ordinary-2: HDF5
   integer(kind=Smll) :: NumberOfAnalyses  ! Number of analysis
+  integer            :: size, rank        ! Size and rank of Parallel MPI
 
   real(kind=SGL) :: Version               ! Holds the version of the code.
 
@@ -168,10 +169,16 @@ read(FileAdr,*)
     read(FileAdr,*) this%AnalysesNames(i_analyses)
   end do
 
+
+write(ModelInfo%IndexRank, *) this%rank ! Converts Rank to Character format for the file Name
+write(ModelInfo%IndexSize, *) this%size ! Converts Size to Character format for the file Name
+
+
 this%AnalysisDir=trim(AdjustL(this%InputDir))//'/'// &
                       trim(AdjustL(this%ModelName))//'/'//'Analysis'
 this%InputDir   =trim(AdjustL(this%InputDir))//'/'// &
                       trim(AdjustL(this%ModelName))//'/'//'Model'
+
 
 write(*, fmt="(2A)")" The model directory is: ", this%InputDir
 write(*, fmt="(2A)")" The analysis name is: ", this%AnalysisDir
@@ -189,6 +196,11 @@ Directory=MakeDirQQ (trim(AdjustL(this%OutputDir))//'/'//trim(AdjustL(this%Model
 this%OutputDir=trim(AdjustL (this%OutputDir))//'/'//trim(AdjustL (this%ModelName))
 
 write(*,fmt="(2A)")" The output directory is: ", this%OutputDir
+
+! Modifying the model name for parallel simulation
+this%ModelName = &
+ this%ModelName//'_s'//trim(adjustL(ModelInfo%IndexSize))//'_p'//trim(adjustL(ModelInfo%IndexRank))
+
 
 ! - Closing the address file ----------------------------------------------------------------------
 write(*,        fmt="(A)") " -Closing the address file"

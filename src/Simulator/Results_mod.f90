@@ -104,9 +104,8 @@ end type vector
 
 type Plot_Results_1D_limiter_tp
   integer(kind=Lng) :: NCells
-  !type(vector),  dimension(:), allocatable:: s   ! temp to hold bathymetry
 
-  type(vector), dimension(:), allocatable :: U     ! This vector holds the solution at previous step,
+  type(vector), dimension(:), allocatable :: U  ! This vector holds the solution at previous step,
                                             ! the first term holds "h" and the second holds "uh"
   type(Input_Data_tp) :: ModelInfo
 
@@ -116,11 +115,9 @@ end type Plot_Results_1D_limiter_tp
 
 
 
+
 private :: Plot_Domain_1D_sub, Plot_Results_1D_limiter_sub
 
-  interface Results
-    module procedure Plot_Domain_1D_sub
-  end interface
 
 contains
 
@@ -190,13 +187,17 @@ blocksize=0, defaultfile=trim(ModelInfo%OutputDir), &
 dispose='keep', form='formatted', position='asis', status='replace')
 
 UnFile = FileDomain
-write(unit=UnFile, fmt="(' Domain coordinates: ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
-write(unit=UnFile, fmt="(' Number of points: ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
-write(unit=UnFile, fmt="(I20)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%NCells
-write(unit=UnFile, fmt="(' x   --      z ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
+write(unit=UnFile, fmt="(' Domain coordinates: ')", advance='yes', asynchronous='no', &
+                                                                       iostat=IO_write, err=1006)
+write(unit=UnFile, fmt="(' Number of points: ')", advance='yes', asynchronous='no', &
+                                                                       iostat=IO_write, err=1006)
+write(unit=UnFile, fmt="(I20)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
+                                                                                       this%NCells
+write(unit=UnFile, fmt="(' x--z ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
 
   do i_points = 1_Lng, this%NCells
-    write(unit=UnFile, fmt="(i16,3F16.5)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) i_points, this%XCoor(i_points), this%ZCoor(i_points), this%SlopeCell(i_points)
+    write(unit=UnFile, fmt="(i16,3F16.5)", advance='yes', asynchronous='no', iostat=IO_write, &
+           err=1006) i_points, this%XCoor(i_points), this%ZCoor(i_points), this%SlopeCell(i_points)
   end do
 
 write(*,       *) " Domain coordinates was written successfully in the file. "
@@ -302,24 +303,31 @@ write(FileInfo,*) " -Writing down the results in the .Res file ... "
 
 write (extfile,*) i_step
 
-open(unit=UnFile, file=trim(this%ModelInfo%ModelName)//'_'//trim(ADJUSTL(extfile))//'.Res', Err=1001, iostat=IO_File, &
-access='sequential', action='write', asynchronous='no', blank='NULL', blocksize=0, defaultfile=trim(this%ModelInfo%AnalysisOutputDir), &
-dispose='keep', form='formatted', position='asis', status='replace')
+open(unit=UnFile, file=trim(this%ModelInfo%ModelName)//'_'//trim(ADJUSTL(extfile))//'.Res', &
+     err=1001, iostat=IO_File, access='sequential', action='write', asynchronous='no', &
+     blank='NULL', blocksize=0, defaultfile=trim(this%ModelInfo%AnalysisOutputDir), &
+     dispose='keep', form='formatted', position='asis', status='replace')
 
 UnFile = FileResults
-!write(unit=UnFile, fmt="(' Results: ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
-!write(unit=UnFile, fmt="(' Number of points: ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
-!write(unit=UnFile, fmt="(I20)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%NCells
-!write(unit=UnFile, fmt="(' h      --      uh ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
+!write(unit=UnFile,fmt="(' Results: ')", advance='yes',asynchronous='no',iostat=IO_write, err=1006)
+!write(unit=UnFile,fmt="(' Number of points: ')", advance='yes', asynchronous='no', &
+!                                                                       iostat=IO_write, err=1006)
+!write(unit=UnFile,fmt="(I20)", advance='yes', asynchronous='no', &
+!                                                           iostat=IO_write, err=1006) this%NCells
+!write(unit=UnFile,fmt="('h -- uh ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
 
   do i_points = 1_Lng, this%NCells
-    write(unit=UnFile, fmt="(I6, 8F16.5)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) i_points, this%h(i_points), this%uh(i_points), this%s_f(i_points), this%s(i_points), this%hm(i_points), this%uhm(i_points), this%s_f_m(i_points), this%s_m(i_points)
+    write(unit=UnFile, fmt="(I6, 8F16.5)", advance='yes', asynchronous='no', &
+    iostat=IO_write, err=1006)
+    i_points, this%h(i_points), this%uh(i_points), this%s_f(i_points), this%s(i_points), &
+    this%hm(i_points), this%uhm(i_points), this%s_f_m(i_points), this%s_m(i_points)
   end do
-  !write(unit=UnFile, fmt="(I6, 8F16.5)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%h(i_points), this%uh(i_points), this%s_f(i_points), this%s(i_points)
+  !write(unit=UnFile, fmt="(I6, 8F16.5)", advance='yes', asynchronous='no', iostat=IO_write, &
+  !      err=1006) this%h(i_points), this%uh(i_points), this%s_f(i_points), this%s(i_points)
 
 
-write(*,        fmt = "(A,I10)") " Results was written successfully in the file for time step: ", i_step
-write(FileInfo, fmt = "(A,I10)") " Results was written successfully in the file for time step: ", i_step
+write(*, fmt = "(A,I10)") " Results was written successfully in the file for time step: ", i_step
+write(FileInfo,fmt="(A,I10)")" Results was written successfully in the file for time step: ",i_step
 
 ! - Closing the domain file -----------------------------------------------------------------------
 UnFile =  FileResults
@@ -419,23 +427,25 @@ UnFile = FileResults
 
 write (extfile,*) i_step
 
-open(unit=UnFile, file=trim(this%ModelInfo%ModelName)//'_'//trim(ADJUSTL(extfile))//'.Res', Err=1001, iostat=IO_File, &
-access='sequential', action='write', asynchronous='no', blank='NULL', blocksize=0, defaultfile=trim(this%ModelInfo%AnalysisOutputDir), &
-dispose='keep', form='formatted', position='asis', status='replace')
+open(unit=UnFile, file=trim(this%ModelInfo%ModelName)//'_'//trim(ADJUSTL(extfile))//'.Res', &
+err=1001, iostat=IO_File, access='sequential', action='write', asynchronous='no', blank='NULL', &
+blocksize=0, defaultfile=trim(this%ModelInfo%AnalysisOutputDir), dispose='keep', form='formatted',&
+ position='asis', status='replace')
 
 UnFile = FileResults
-!write(unit=UnFile, fmt="(' Results: ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
-!write(unit=UnFile, fmt="(' Number of points: ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
-!write(unit=UnFile, fmt="(I20)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%NCells
-!write(unit=UnFile, fmt="(' h      --      uh ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
+!write(unit=UnFile,fmt="(' Results: ')",advance='yes',asynchronous='no', iostat=IO_write, err=1006)
+!write(unit=UnFile, fmt="(' Number of points: ')", advance='yes', asynchronous='no', &
+!                                                                        iostat=IO_write, err=1006)
+!write(unit=UnFile,fmt="(I20)",advance='yes',asynchronous='no',iostat=IO_write,err=1006)this%NCells
+!write(unit=UnFile,fmt="(' h--uh ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
 
   do i_points = 1_Lng, this%NCells
-    !write(unit=UnFile, fmt="(I6, 10F23.6)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) i_points, this%U(i_points)%U(1), this%U(i_points)%U(2), this%theta( 2*(i_points-1) +1  )%U(1), this%theta(2*(i_points-1) +1)%U(2),  this%theta( 2*(i_points-1) +2  )%U(1), this%theta(2*(i_points-1) +2)%U(2), this%phi(2*(i_points-1) +1)%U(1), this%phi(2*(i_points-1) +1)%U(2), this%phi(2*(i_points-1) +2)%U(1), this%phi(2*(i_points-1) +2)%U(2)
-    write(unit=UnFile, fmt="(I6, 2F23.6)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) i_points, this%U(i_points)%U(1), this%U(i_points)%U(2)
+    write(unit=UnFile, fmt="(I6, 2F23.6)", advance='yes', asynchronous='no', &
+     iostat=IO_write, err=1006) i_points, this%U(i_points)%U(1), this%U(i_points)%U(2)
   end do
 
-!write(*,        fmt = "(A,I10)") " Results was written successfully in the file for time step: ", i_step
-!write(FileInfo, fmt = "(A,I10)") " Results was written successfully in the file for time step: ", i_step
+!write(*,fmt = "(A,I10)") " Results was written successfully in the file for time step: ", i_step
+!write(FileInfo,fmt="(A,I10)")" Results was written successfully in the file for time step:",i_step
 
 ! - Closing the domain file -----------------------------------------------------------------------
 UnFile =  FileResults
