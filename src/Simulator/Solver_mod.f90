@@ -284,10 +284,10 @@ UU(this%Discretization%NCells+2)%U(1) = UU(this%Discretization%NCells)%U(1)
 
 UU(:)%U(2) = 0.0_Dbl
 
-
-
-
-
+! imposing boundary condition: at this moment, they are only at rank 0 and size-1
+  if (rank == 0) then ! applying boundary conditions at the upstream
+    call Impose_BC_1D_up_sub(UU, NCells, Q_Up, Width)
+  end if
 
 
 
@@ -295,6 +295,10 @@ UU(:)%U(2) = 0.0_Dbl
 
 call Impose_Boundary_Condition_1D_sub(UU, this%Discretization%NCells,this%AnalysisInfo%h_dw, &
                                       this%AnalysisInfo%Q_Up,this%Discretization%WidthCell(1))
+
+
+
+
 
 
 

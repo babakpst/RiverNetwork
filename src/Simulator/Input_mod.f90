@@ -48,8 +48,8 @@ type Input_Data_tp
                                                                         ! the analysis input files
 
   ! rank and size of MPI
-  Character(kind = 1, len = 20) :: IndexRank ! Rank no in the Char. fmt to add to the input file Name
-  Character(kind = 1, len = 20) :: IndexSize ! Size no in the Char. fmt to add to the input file Name
+  Character(kind = 1, len = 20) :: IndexRank ! Rank no in the Char. fmt to add to input file Name
+  Character(kind = 1, len = 20) :: IndexSize ! Size no in the Char. fmt to add to input file Name
 
   !integer(kind=Smll):: OutputType        ! Output Type: 1: ordinary-2: HDF5
   integer(kind=Smll) :: NumberOfAnalyses  ! Number of analysis
@@ -292,15 +292,17 @@ print*, ModelInfo%AnalysesNames(i_analyses)
 print*, ModelInfo%AnalysisDir
 
 UnFile=UnInptAna
-Open(Unit=UnFile, File=trim(ModelInfo%AnalysesNames(i_analyses))//'.Analysis', Err= 1001, IOStat=IO_File, Access='sequential', &
-      action='read', Asynchronous='no', blank='null', blocksize=0, defaultfile=trim(ModelInfo%AnalysisDir), &
-      dispose='Keep', form='formatted', position='asis', status='old') ;
+Open(Unit=UnFile, File=trim(ModelInfo%AnalysesNames(i_analyses))//'.Analysis', Err= 1001, &
+      IOStat=IO_File, Access='sequential', action='read', Asynchronous='no', blank='null', &
+      blocksize=0, defaultfile=trim(ModelInfo%AnalysisDir), dispose='Keep', form='formatted', &
+      position='asis', status='old') ;
 
 ! Creating the output file directory for this analysis --------------------------------------------
 write(*,        fmt="(A)") " -Creating the output folder for this analysis ..."
 write(FileInfo, fmt="(A)") " -Creating the output folder for this analysis ..."
 
-Directory=MakeDirQQ (trim(AdjustL (ModelInfo%OutputDir))//'/'//trim(AdjustL(ModelInfo%AnalysesNames(i_analyses))))
+Directory=MakeDirQQ(trim(AdjustL(ModelInfo%OutputDir))//'/'// &
+                    trim(AdjustL(ModelInfo%AnalysesNames(i_analyses))))
   if (Directory) then ;
      write(*,       fmt="(A)") "The output folder for this analysis created." ;
      write(FileInfo,fmt="(A)") "The output folder for this analysis created." ;
@@ -309,72 +311,95 @@ Directory=MakeDirQQ (trim(AdjustL (ModelInfo%OutputDir))//'/'//trim(AdjustL(Mode
      write(FileInfo, fmt="(A)") "The output folder for this analysis already exists." ;
   end if ;
 
-ModelInfo%AnalysisOutputDir=trim(AdjustL(ModelInfo%OutputDir))//'/'//trim(AdjustL(ModelInfo%AnalysesNames(i_analyses)))
+ModelInfo%AnalysisOutputDir=trim(AdjustL(ModelInfo%OutputDir))//'/'//&
+                            trim(AdjustL(ModelInfo%AnalysesNames(i_analyses)))
 
 print*,"check 000", ModelInfo%AnalysisOutputDir
 UnFile = UnInptAna
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%AnalysisType
+read(unit=UnFile,fmt="(I10)",advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)&
+                                                                                  this%AnalysisType
+
 UnFile = FileInfo
 write(unit=*,      fmt="(' The Analysis type is: ', I10)") this%AnalysisType
-write(unit=UnFile, fmt="(' The Analysis type is: ', I10)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%AnalysisType
+write(unit=UnFile, fmt="(' The Analysis type is: ', I10)", advance='yes', asynchronous='no', &
+                   iostat=IO_write, err=1006) this%AnalysisType
 
 UnFile = UnInptAna
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%TotalTime
+read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
+                  end=1004) this%TotalTime
+
 UnFile = FileInfo
 write(unit=*,      fmt="(' The total simulation time is: ', F23.10, ' s')") this%TotalTime
-write(unit=UnFile, fmt="(' The total simulation time is: ', F23.10, ' s')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%TotalTime
+write(unit=UnFile, fmt="(' The total simulation time is: ', F23.10, ' s')", advance='yes', &
+                   asynchronous='no', iostat=IO_write, err=1006) this%TotalTime
 
 UnFile = UnInptAna
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%TimeStep
+read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, &
+                  err=1003, end=1004) this%TimeStep
+
 UnFile = FileInfo
-write(unit=UnFile, fmt="(' The time step is: ', F23.10, ' s')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%TimeStep
+write(unit=UnFile, fmt="(' The time step is: ', F23.10, ' s')", advance='yes', asynchronous='no', &
+                   iostat=IO_write, err=1006) this%TimeStep
 write(unit=*,      fmt="(' The time step is: ', F23.10, ' s')") this%TimeStep
 
 UnFile = UnInptAna
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%Q_Up
+read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
+                  end=1004) this%Q_Up
 UnFile = FileInfo
-write(unit=UnFile, fmt="(' Flow rate at the upstream is: ', F23.10, ' m/s3')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%Q_Up
+write(unit=UnFile, fmt="(' Flow rate at the upstream is: ', F23.10, ' m/s3')", advance='yes', &
+                   asynchronous='no', iostat=IO_write, err=1006) this%Q_Up
 write(unit=*,      fmt="(' Flow rate at the upstream is: ', F23.10, ' m/s3')") this%Q_Up
 
 UnFile = UnInptAna
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%h_dw
+read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, &
+                  err=1003, end=1004) this%h_dw
 UnFile = FileInfo
-write(unit=UnFile, fmt="(' Downstream water depth is: ', F23.10, ' m')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%h_dw
+write(unit=UnFile, fmt="(' Downstream water depth is: ', F23.10, ' m')", advance='yes', &
+                   asynchronous='no', iostat=IO_write, err=1006) this%h_dw
 write(unit=*,      fmt="(' Downstream water depth is: ', F23.10, ' m')") this%h_dw
 
 UnFile = UnInptAna
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%CntrlV
+read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, &
+                  err=1003, end=1004) this%CntrlV
+
 UnFile = FileInfo
-write(unit=UnFile, fmt="(' Control Volume is: ', F23.10, ' m^3')", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%CntrlV
+write(unit=UnFile, fmt="(' Control Volume is: ', F23.10, ' m^3')", advance='yes', &
+                   asynchronous='no', iostat=IO_write, err=1006) this%CntrlV
 write(unit=*,      fmt="(' Control Volume is: ', F23.10, ' m^3')") this%CntrlV
 
 UnFile = UnInptAna
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%CntrlV_ratio
+read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, &
+                  err=1003, end=1004) this%CntrlV_ratio
+
 UnFile = FileInfo
-write(unit=UnFile, fmt="(' The ratio of control volume is: ', F23.10)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%CntrlV_ratio
+write(unit=UnFile, fmt="(' The ratio of control volume is: ', F23.10)", advance='yes', &
+                   asynchronous='no', iostat=IO_write, err=1006) this%CntrlV_ratio
 write(unit=*,      fmt="(' The ratio of control volume is: ', F23.10)") this%CntrlV_ratio
 
 UnFile = UnInptAna
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%limiter
+read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, &
+                  err=1003, end=1004) this%limiter
+
 UnFile = FileInfo
-write(unit=UnFile, fmt="(' The limiter is: ', I10)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%limiter
+write(unit=UnFile, fmt="(' The limiter is: ', I10)", advance='yes', asynchronous='no', &
+                   iostat=IO_write, err=1006) this%limiter
 write(unit=*,      fmt="(' The limiter is: ', I10)") this%limiter
 
 
