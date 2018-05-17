@@ -38,6 +38,7 @@
 !  . . . . . . . . . . . . . . . . Variables . . . . . . . . . . . . . . . . . . . . . . . . . . .
 !
 !##################################################################################################
+
 module Solver_mod
 
 ! Libraries =======================================================================================
@@ -165,7 +166,7 @@ contains
 !
 !##################################################################################################
 
-subroutine Solver_1D_with_Limiter_sub(this,rank, size)
+subroutine Solver_1D_with_Limiter_sub(this)
 
 ! Libraries =======================================================================================
 !$ use omp_lib
@@ -184,7 +185,7 @@ class(SolverWithLimiter) :: this
 !$ integer :: ITS, MTS  ! thread number of number of threads
 
 ! MPI parameters
-integer :: size, rank, MPI_err ! <MPI>
+integer :: MPI_err ! <MPI>
 
 integer(kind=Lng)  :: i_Cell    ! loop index over the Cells
 integer(kind=Lng)  :: i_steps   ! loop index over the number steps
@@ -251,6 +252,9 @@ allocate(Results%U(this%Discretization%NCells),     stat=ERR_Alloc)
     write(*, Fmt_FL);  write(FileInfo, Fmt_FL); read(*, Fmt_End);  stop;
   end if
 
+
+
+
 Results%NCells = this%Discretization%NCells
 
 ! Initialization:
@@ -282,12 +286,12 @@ UU(this%Discretization%NCells+2)%U(1) = UU(this%Discretization%NCells)%U(1)
 UU(:)%U(2) = 0.0_Dbl
 
 ! imposing boundary condition: at this moment, they are only at rank 0 and size-1
-  if (rank == 0) then ! applying boundary conditions at the upstream
+  if (this%%ModelInfo%rank == 0) then ! applying boundary conditions at the upstream
     call Impose_BC_1D_up_sub(UU(1)%U(1), this%Discretization%NCells, this%AnalysisInfo%Q_Up, &
                              this%Discretization%WidthCell(1))
   end if
 
-  if (rank == size-1) then ! applying boundary conditions at the downstream
+  if (this%%ModelInfo%rank == size-1) then ! applying boundary conditions at the downstream
     call Impose_BC_1D_dw_sub(UU(NCells)%U(2), this%Discretization%NCells, this%AnalysisInfo%Q_Up, &
                              this%Discretization%WidthCell(1))
   end if
@@ -504,19 +508,54 @@ Results%ModelInfo = this%ModelInfo
     ! apply boundary condition
 
     ! imposing boundary condition: at this moment, they are only at rank 0 and size-1
-    if (rank == 0) then ! applying boundary conditions at the upstream
+    if (this%%ModelInfo%rank == 0) then ! applying boundary conditions at the upstream
       call Impose_BC_1D_up_sub(UU(1)%U(1), this%Discretization%NCells, this%AnalysisInfo%Q_Up, &
                                this%Discretization%WidthCell(1))
     end if
 
+    if (this%%ModelInfo%rank == size-1) then ! applying boundary conditions at the downstream
+      call Impose_BC_1D_dw_sub(UU(this%Discretization%NCells)%U(2), &
+                               this%Discretization%NCells,this%AnalysisInfo%Q_Up, &
+                               this%Discretization%WidthCell(1))
+    end if
 
     ! message communication in MPI
+    if (.not. this%%ModelInfo%rank==0) then
+      sent(1:2) = UU(1)%U(:)
+      sent(3:4) = UU(2)%U(:)
+      call MPI_ISEND(sent(1:4),4, MPI_DOUBLE_PRECISION, this%%ModelInfo%rank-1, tag_sent(1), &
+                     MPI_COMM_WORLD, request_sent(1), MPI_err)
+      call MPI_IRECV(recv(1:4),4, MPI_DOUBLE_PRECISION, this%%ModelInfo%rank-1, tag_recv(1), &
+                     MPI_COMM_WORLD, request_recv(1), MPI_err)
+    end if
 
+    if (.not. this%%ModelInfo%rank==size-1) then
+      sent(5:6) = UU( this%Discretization%NCells )%U(:)
+      sent(7:8) = UU( this%Discretization%NCells-1_Lng )%U(:)
+      call MPI_ISEND(sent(5:8),4, MPI_DOUBLE_PRECISION, this%%ModelInfo%rank+1, tag_sent(2), &
+                     MPI_COMM_WORLD, request_sent(2), MPI_err)
+      call MPI_IRECV(recv(5:8),4, MPI_DOUBLE_PRECISION, this%%ModelInfo%rank+1, tag_recv(2), &
+                     MPI_COMM_WORLD, request_recv(2), MPI_err)
+    end if
 
+    if (.not. this%%ModelInfo%rank==0) then
+      call MPI_WAIT(request_sent(1), status , MPI_err)
+      call MPI_WAIT(request_recv(1), status , MPI_err)
+    end if
 
-    if (rank == size-1) then ! applying boundary conditions at the downstream
-      call Impose_BC_1D_dw_sub(UU(NCells)%U(2), this%Discretization%NCells, this%AnalysisInfo%Q_Up, &
-                               this%Discretization%WidthCell(1))
+    if (.not. this%%ModelInfo%rank==size-1) then
+      call MPI_WAIT(request_sent(2), status , MPI_err)
+      call MPI_WAIT(request_recv(2), status , MPI_err)
+    end if
+
+    if (.not. this%%ModelInfo%rank==0) then
+      UU(0 )%U(:) = recv(1:2)
+      UU(-1)%U(:) = recv(3:4)
+    end if
+
+    if (.not. this%%ModelInfo%rank==size-1) then
+      UU(this%Discretization%NCells+1_Lng )%U(:) = recv(5:6)
+      UU(this%Discretization%NCells+2_Lng)%U(:)  = recv(7:8)
     end if
 
     !$OMP end single
