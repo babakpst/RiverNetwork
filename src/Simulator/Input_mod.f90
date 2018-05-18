@@ -170,8 +170,8 @@ read(FileAdr,*)
   end do
 
 
-write(ModelInfo%IndexRank, *) this%rank ! Converts Rank to Character format for the file Name
-write(ModelInfo%IndexSize, *) this%size ! Converts Size to Character format for the file Name
+write(this%IndexRank, *) this%rank ! Converts Rank to Character format for the file Name
+write(this%IndexSize, *) this%size ! Converts Size to Character format for the file Name
 
 
 this%AnalysisDir=trim(AdjustL(this%InputDir))//'/'// &
@@ -199,8 +199,10 @@ write(*,fmt="(2A)")" The output directory is: ", this%OutputDir
 
 ! Modifying the model name for parallel simulation
 this%ModelName = &
- this%ModelName//'_s'//trim(adjustL(ModelInfo%IndexSize))//'_p'//trim(adjustL(ModelInfo%IndexRank))
+trim(AdjustL(this%ModelName))//'_s'//trim(adjustL(this%IndexSize))//'_p'//trim(adjustL(this%IndexRank))
 
+
+write(*,fmt='(" The name of the model file is: ",2A)') this%ModelName
 
 ! - Closing the address file ----------------------------------------------------------------------
 write(*,        fmt="(A)") " -Closing the address file"

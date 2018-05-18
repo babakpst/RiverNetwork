@@ -47,7 +47,7 @@ use Timer_mod
 use Information_mod
 use Input_mod
 use Model_mod
-use LaxWendroff_with_limiter_mod
+use Solver_mod
 
 ! Global Variables ================================================================================
 Implicit None
@@ -63,7 +63,7 @@ call MPI_Comm_Size(MPI_COMM_WORLD, ModelInfo%size, MPI_err) ! <MPI>
 call MPI_Comm_Rank(MPI_COMM_WORLD, ModelInfo%rank, MPI_err) ! <MPI>
 
 !write(*,fmt="Hello from rank: ", I6, "- We are a total of:", I6) rank,size
-if (rank == 0) write(*,fmt=" ****** Total number of ranks: ", I6) size
+if ( ModelInfo%rank == 0) write(*,fmt="(' ****** Total number of ranks: ', I6)") ModelInfo%size
 
 ! Time and Date signature =========================================================================
 call system_clock(TotalTime%startSys, TotalTime%clock_rate)
@@ -71,7 +71,7 @@ call TotalTime%start()
 call GETDAT(TimeDate%Year, TimeDate%Month, TimeDate%Day)
 call GETTIM(TimeDate%Hour, TimeDate%Minute, TimeDate%Seconds, TimeDate%S100th)
 
-call Header(ModelInfo%Version) ! Writes info on screen.
+if ( ModelInfo%rank == 1) call Header(ModelInfo%Version) ! Writes info on screen.
 
 ! Getting entered arguments =======================================================================
 Arguments%ArgCount = command_argument_count()
