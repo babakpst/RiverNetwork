@@ -281,7 +281,6 @@ call Impose_Boundary_Condition_1D_sub(UU, this%Discretization%NCells,this%Analys
 
 Results%ModelInfo = this%ModelInfo
 
-
 !!$OMP PARALLEL default(private) SHARED(UN,UU,S, dt, dx, dtdx)                                                                                                 firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution,i_steps, NSteps)
 !$OMP PARALLEL default(none)  SHARED(UN,UU, dt, dx, dtdx) private(i_Cell,its,mts,height,velocity,Coefficient,height_interface, velocity_interface, speed, PrintResults) firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution,i_steps, NSteps, Results)
 
@@ -300,11 +299,12 @@ Results%ModelInfo = this%ModelInfo
         !$ if (ITS==0) then
           print*, "----------------Step:", i_steps
           Results%U(:)    = UU(1:this%Discretization%NCells)
+          call Results%plot_results(i_steps)
         !$ end if
       end if
 
       !$OMP DO
-      do i_Cell = 2_Lng, this%Discretization%NCells-1  ! Loop over cells except the boundary cells
+      do i_Cell = 1_Lng, this%Discretization%NCells  ! Loop over cells except the boundary cells
 
 
         !print*, "=============Cell:", i_Cell, ITS
