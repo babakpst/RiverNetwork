@@ -555,22 +555,19 @@ type(vector), dimension(-1_Lng:NCells+2_Lng) ::UU
 !write(FileInfo,*) " subroutine < Impose_Boundary_Condition_1D_sub >: "
 
 ! Boundary conditions on the height
-UU(-1_Lng)%U(1) = UU(2)%U(1) ! h at the upstream
-UU( 0_Lng)%U(1) = UU(2)%U(1) ! h at the upstream
-UU( 1_Lng)%U(1) = UU(2)%U(1) ! h at the upstream
+UU(-1_Lng)%U(1) = UU(1)%U(1) ! h at the upstream
+UU( 0_Lng)%U(1) = UU(1)%U(1) ! h at the upstream
 
-UU(NCells      )%U(1) = h_dw ! h at the downstream
+
 UU(NCells+1_Lng)%U(1) = h_dw ! h at the downstream
 UU(NCells+2_Lng)%U(1) = h_dw ! h at the downstream
 
 ! Boundary conditions on the discharge
 UU(-1_Lng)%U(2) = Q_Up / Width  ! h at the upstream
 UU( 0_Lng)%U(2) = Q_Up / Width  ! h at the upstream
-UU( 1_Lng)%U(2) = Q_Up / Width  ! h at the upstream
 
-UU(NCells      )%U(2) = UU(NCells-1)%U(2) ! h at the downstream
-UU(NCells+1_Lng)%U(2) = UU(NCells-1)%U(2) ! h at the downstream
-UU(NCells+2_Lng)%U(2) = UU(NCells-1)%U(2) ! h at the downstream
+UU(NCells+1_Lng)%U(2) = UU(NCells)%U(2) ! h at the downstream
+UU(NCells+2_Lng)%U(2) = UU(NCells)%U(2) ! h at the downstream
 
 !write(*,       *) " end subroutine < Impose_Boundary_Condition_1D_sub >"
 !write(FileInfo,*) " end subroutine < Impose_Boundary_Condition_1D_sub >"
