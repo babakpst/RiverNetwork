@@ -170,6 +170,7 @@ subroutine Solver_1D_with_Limiter_sub(this)
 
 ! Libraries =======================================================================================
 !$ use omp_lib
+use MPI
 
 ! User defined modules ============================================================================
 
@@ -186,6 +187,9 @@ class(SolverWithLimiter) :: this
 
 ! MPI parameters
 integer :: MPI_err ! <MPI>
+integer :: status(MPI_STATUS_SIZE)
+integer :: tag_sent(2), tag_recv(2)
+integer :: request_sent(2), request_recv(2)
 
 integer(kind=Lng)  :: i_Cell    ! loop index over the Cells
 integer(kind=Lng)  :: i_steps   ! loop index over the number steps
@@ -233,6 +237,7 @@ type(vector) :: F_H ! Contribution of high-resolution method (Lax-Wendroff) in t
 
 type(vector) :: Delta_U           ! holds (U_i- U_i-1)
 type(vector), dimension(-1_Lng:this%Discretization%NCells+2_Lng) ::UU, UN ! solution at n and n+1
+type(vector), dimension(4) :: sent, recv
 
 ! code ============================================================================================
 write(*,       *) " subroutine < Solver_1D_with_Limiter_sub >: "
@@ -251,8 +256,6 @@ allocate(Results%U(this%Discretization%NCells),     stat=ERR_Alloc)
     write (*, Fmt_ALLCT) ERR_Alloc;  write (FileInfo, Fmt_ALLCT) ERR_Alloc;
     write(*, Fmt_FL);  write(FileInfo, Fmt_FL); read(*, Fmt_End);  stop;
   end if
-
-
 
 
 Results%NCells = this%Discretization%NCells
@@ -286,14 +289,16 @@ UU(this%Discretization%NCells+2)%U(1) = UU(this%Discretization%NCells)%U(1)
 UU(:)%U(2) = 0.0_Dbl
 
 ! imposing boundary condition: at this moment, they are only at rank 0 and size-1
-  if (this%%ModelInfo%rank == 0) then ! applying boundary conditions at the upstream
+  if (this%ModelInfo%rank == 0) then ! applying boundary conditions at the upstream
     call Impose_BC_1D_up_sub(UU(1)%U(1), this%Discretization%NCells, this%AnalysisInfo%Q_Up, &
-                             this%Discretization%WidthCell(1))
+                             this%Discretization%WidthCell(1),UU(-1_Lng), UU( 0_Lng) )
   end if
 
-  if (this%%ModelInfo%rank == size-1) then ! applying boundary conditions at the downstream
-    call Impose_BC_1D_dw_sub(UU(NCells)%U(2), this%Discretization%NCells, this%AnalysisInfo%Q_Up, &
-                             this%Discretization%WidthCell(1))
+  if (this%ModelInfo%rank == this%ModelInfo%size-1) then ! applying bC at the downstream
+    call Impose_BC_1D_dw_sub(UU(this%Discretization%NCells)%U(2), this%Discretization%NCells, &
+                             this%Discretization%WidthCell(1), &
+                             UU(this%Discretization%NCells+1_Lng), &
+                             UU(this%Discretization%NCells+2_Lng))
   end if
 
 Results%ModelInfo = this%ModelInfo
@@ -313,7 +318,7 @@ Results%ModelInfo = this%ModelInfo
     ! write down data for visualization
       if (mod(i_steps,this%Plot_Inc)==1 .or. PrintResults) then
         !$ if (ITS==0) then
-          print*, "----------------Step:", i_steps
+          if ( this%ModelInfo%rank == 0)   print*, "----------------Step:", i_steps
           Results%U(:) = UU(1:this%Discretization%NCells)
           call Results%plot_results(i_steps)
         !$ end if
@@ -508,54 +513,55 @@ Results%ModelInfo = this%ModelInfo
     ! apply boundary condition
 
     ! imposing boundary condition: at this moment, they are only at rank 0 and size-1
-    if (this%%ModelInfo%rank == 0) then ! applying boundary conditions at the upstream
+    if (this%ModelInfo%rank == 0) then ! applying boundary conditions at the upstream
       call Impose_BC_1D_up_sub(UU(1)%U(1), this%Discretization%NCells, this%AnalysisInfo%Q_Up, &
-                               this%Discretization%WidthCell(1))
+                               this%Discretization%WidthCell(1), UU(-1_Lng), UU( 0_Lng))
     end if
 
-    if (this%%ModelInfo%rank == size-1) then ! applying boundary conditions at the downstream
-      call Impose_BC_1D_dw_sub(UU(this%Discretization%NCells)%U(2), &
-                               this%Discretization%NCells,this%AnalysisInfo%Q_Up, &
-                               this%Discretization%WidthCell(1))
+    if (this%ModelInfo%rank == this%ModelInfo%size-1) then ! applying bc at the downstream
+      call Impose_BC_1D_dw_sub(UU(this%Discretization%NCells)%U(2), this%Discretization%NCells, &
+                              this%Discretization%WidthCell(1), &
+                              UU(this%Discretization%NCells+1_Lng), &
+                              UU(this%Discretization%NCells+2_Lng))
     end if
 
     ! message communication in MPI
-    if (.not. this%%ModelInfo%rank==0) then
-      sent(1:2) = UU(1)%U(:)
-      sent(3:4) = UU(2)%U(:)
-      call MPI_ISEND(sent(1:4),4, MPI_DOUBLE_PRECISION, this%%ModelInfo%rank-1, tag_sent(1), &
+    if (.not. this%ModelInfo%rank==0) then
+      sent(1)%U(:) = UU(1)%U(:)
+      sent(2)%U(:) = UU(2)%U(:)
+      call MPI_ISEND(sent(1:2),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank-1, tag_sent(1), &
                      MPI_COMM_WORLD, request_sent(1), MPI_err)
-      call MPI_IRECV(recv(1:4),4, MPI_DOUBLE_PRECISION, this%%ModelInfo%rank-1, tag_recv(1), &
+      call MPI_IRECV(recv(1:2),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank-1, tag_recv(1), &
                      MPI_COMM_WORLD, request_recv(1), MPI_err)
     end if
 
-    if (.not. this%%ModelInfo%rank==size-1) then
-      sent(5:6) = UU( this%Discretization%NCells )%U(:)
-      sent(7:8) = UU( this%Discretization%NCells-1_Lng )%U(:)
-      call MPI_ISEND(sent(5:8),4, MPI_DOUBLE_PRECISION, this%%ModelInfo%rank+1, tag_sent(2), &
+    if (.not. this%ModelInfo%rank== this%ModelInfo%size-1) then
+      sent(3)%U(:) = UU( this%Discretization%NCells )%U(:)
+      sent(4)%U(:) = UU( this%Discretization%NCells-1_Lng )%U(:)
+      call MPI_ISEND(sent(3:4),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank+1, tag_sent(2), &
                      MPI_COMM_WORLD, request_sent(2), MPI_err)
-      call MPI_IRECV(recv(5:8),4, MPI_DOUBLE_PRECISION, this%%ModelInfo%rank+1, tag_recv(2), &
+      call MPI_IRECV(recv(3:4),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank+1, tag_recv(2), &
                      MPI_COMM_WORLD, request_recv(2), MPI_err)
     end if
 
-    if (.not. this%%ModelInfo%rank==0) then
+    if (.not. this%ModelInfo%rank==0) then
       call MPI_WAIT(request_sent(1), status , MPI_err)
       call MPI_WAIT(request_recv(1), status , MPI_err)
     end if
 
-    if (.not. this%%ModelInfo%rank==size-1) then
+    if (.not. this%ModelInfo%rank== this%ModelInfo%size-1) then
       call MPI_WAIT(request_sent(2), status , MPI_err)
       call MPI_WAIT(request_recv(2), status , MPI_err)
     end if
 
-    if (.not. this%%ModelInfo%rank==0) then
-      UU(0 )%U(:) = recv(1:2)
-      UU(-1)%U(:) = recv(3:4)
+    if (.not. this%ModelInfo%rank==0) then
+      UU(0)%U(:) = recv(1)%U(:)
+      UU(-1)%U(:) = recv(2)%U(:)
     end if
 
-    if (.not. this%%ModelInfo%rank==size-1) then
-      UU(this%Discretization%NCells+1_Lng )%U(:) = recv(5:6)
-      UU(this%Discretization%NCells+2_Lng)%U(:)  = recv(7:8)
+    if (.not. this%ModelInfo%rank== this%ModelInfo%size-1) then
+      UU(this%Discretization%NCells+1_Lng )%U(:) = recv(3)%U(:)
+      UU(this%Discretization%NCells+2_Lng)%U(:)  = recv(4)%U(:)
     end if
 
     !$OMP end single
@@ -564,12 +570,11 @@ Results%ModelInfo = this%ModelInfo
   !$OMP END PARALLEL
 
 ! Deallocating
-deallocate(Results%U(this%Discretization%NCells), stat=ERR_DeAlloc)
+deallocate(Results%U, stat=ERR_DeAlloc)
   if (ERR_DeAlloc /= 0) then
     write (*, Fmt_DEALLCT) ERR_DeAlloc;  write (FileInfo, Fmt_DEALLCT) ERR_DeAlloc;
     write(*, Fmt_FL);  write(FileInfo, Fmt_FL); write(*, Fmt_End); read(*,*);  stop;
   end if
-
 
 write(*,       *) " end subroutine < Solver_1D_with_Limiter_sub >"
 write(FileInfo,*) " end subroutine < Solver_1D_with_Limiter_sub >"
@@ -601,7 +606,7 @@ end subroutine Solver_1D_with_Limiter_sub
 !
 !##################################################################################################
 
-subroutine Impose_BC_1D_up_sub(h_upstream, NCells, Q_Up, Width)
+subroutine Impose_BC_1D_up_sub(h_upstream, NCells, Q_Up, Width, UU_N1,UU_0)
 
 ! Libraries =======================================================================================
 
@@ -610,24 +615,24 @@ subroutine Impose_BC_1D_up_sub(h_upstream, NCells, Q_Up, Width)
 implicit none
 
 ! Global variables ================================================================================
-integer(kind=Lng) :: NCells
+integer(kind=Lng), intent(in) :: NCells
 
-real(kind=DBL)    :: h_upstream, Q_Up, Width
-
+real(kind=DBL), intent(in)    :: h_upstream, Q_Up, Width
 
 ! Local variables =================================================================================
+type(vector), intent(out)   :: UU_N1,UU_0
 
 ! code ============================================================================================
 !write(*,       *) " subroutine < Impose_BC_1D_up_sub >: "
 !write(FileInfo,*) " subroutine < Impose_BC_1D_up_sub >: "
 
 ! Boundary conditions on the height
-UU(-1_Lng)%U(1) = UU(1)%U(1) ! h at the upstream
-UU( 0_Lng)%U(1) = UU(1)%U(1) ! h at the upstream
+UU_N1%U(1) = h_upstream ! h at the upstream
+UU_0%U(1)  = h_upstream ! h at the upstream
 
 ! Boundary conditions on the discharge
-UU(-1_Lng)%U(2) = Q_Up / Width  ! h at the upstream
-UU( 0_Lng)%U(2) = Q_Up / Width  ! h at the upstream
+UU_N1%U(2) = Q_Up / Width  ! h at the upstream
+UU_0%U(2) = Q_Up / Width  ! h at the upstream
 
 !write(*,       *) " end subroutine < Impose_BC_1D_up_sub >"
 !write(FileInfo,*) " end subroutine < Impose_BC_1D_up_sub >"
@@ -635,12 +640,11 @@ return
 end subroutine Impose_BC_1D_up_sub
 
 
-subroutine Impose_BC_1D_dw_sub(Q_dw, NCells, h_dw)
+subroutine Impose_BC_1D_dw_sub(Q_dw, NCells, h_dw, UU_NCp1,UU_NCp2)
 
 ! Libraries =======================================================================================
 
 ! User defined modules ============================================================================
-
 
 implicit none
 
@@ -648,20 +652,20 @@ implicit none
 integer(kind=Lng) :: NCells
 real(kind=DBL) :: h_dw, Q_dw
 
-
 ! Local variables =================================================================================
+type(vector), intent(out)   :: UU_NCp1,UU_NCp2
 
 ! code ============================================================================================
 !write(*,       *) " subroutine < Impose_BC_1D_dw_sub >: "
 !write(FileInfo,*) " subroutine < Impose_BC_1D_dw_sub >: "
 
 ! Boundary conditions on the height
-UU(NCells+1_Lng)%U(1) = h_dw ! h at the downstream
-UU(NCells+2_Lng)%U(1) = h_dw ! h at the downstream
+UU_NCp1%U(1) = h_dw ! h at the downstream
+UU_NCp2%U(1) = h_dw ! h at the downstream
 
 ! Boundary conditions on the discharge
-UU(NCells+1_Lng)%U(2) = Q_dw ! discharge at the upstream at the downstream
-UU(NCells+2_Lng)%U(2) = Q_dw !  at the downstream
+UU_NCp1%U(2) = Q_dw ! discharge at the upstream at the downstream
+UU_NCp2%U(2) = Q_dw !  at the downstream
 
 !write(*,       *) " end subroutine < Impose_BC_1D_dw_sub >"
 !write(FileInfo,*) " end subroutine < Impose_BC_1D_dw_sub >"
