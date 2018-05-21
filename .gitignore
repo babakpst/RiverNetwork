@@ -10,5 +10,5 @@ input/EX3_Limiter/Analysis/.nfs*
 
 # ignoring the following folders:
 output/
-visualize/
+visualizer/
 .metadata/

@@ -140,7 +140,7 @@ call InputTime%stop()
           Experiment_TypeII%Discretization = Discretization
 
           call SimulationTime%start()
-          call Experiment_TypeII%Solve()
+          call Experiment_TypeII%Solve(TotalTime)
           call SimulationTime%stop()
 
         ! Error in analysis numbering
