@@ -193,7 +193,7 @@ Directory=MakeDirQQ (trim(AdjustL(this%OutputDir))//'/'//trim(AdjustL(this%Model
      write(*,fmt="(A)") " The result folder already exists."
   end if
 
-this%OutputDir=trim(AdjustL (this%OutputDir))//'/'//trim(AdjustL (this%ModelName))
+this%OutputDir=trim(AdjustL(this%OutputDir))//'/'//trim(AdjustL (this%ModelName))
 
 write(*,fmt="(2A)")" The output directory is: ", this%OutputDir
 
@@ -316,7 +316,8 @@ write(*,        fmt="(A)") " -Creating the output folder for this analysis ..."
 write(FileInfo, fmt="(A)") " -Creating the output folder for this analysis ..."
 
 Directory=MakeDirQQ(trim(AdjustL(ModelInfo%OutputDir))//'/'// &
-                    trim(AdjustL(ModelInfo%AnalysesNames(i_analyses))))
+                    trim(AdjustL(ModelInfo%AnalysesNames(i_analyses)))//'_s'// &
+                    trim(AdjustL(ModelInfo%IndexSize)))
   if (Directory) then ;
      write(*,       fmt="(A)") "The output folder for this analysis created." ;
      write(FileInfo,fmt="(A)") "The output folder for this analysis created." ;
@@ -326,7 +327,8 @@ Directory=MakeDirQQ(trim(AdjustL(ModelInfo%OutputDir))//'/'// &
   end if ;
 
 ModelInfo%AnalysisOutputDir=trim(AdjustL(ModelInfo%OutputDir))//'/'//&
-                            trim(AdjustL(ModelInfo%AnalysesNames(i_analyses)))
+                            trim(AdjustL(ModelInfo%AnalysesNames(i_analyses)))//'_s'// &
+                            trim(AdjustL(ModelInfo%IndexSize))
 
 print*,"check 000", ModelInfo%AnalysisOutputDir
 UnFile = UnInptAna

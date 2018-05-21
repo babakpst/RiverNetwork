@@ -39,7 +39,7 @@ def main(arg):
   print(" Allocating memory ...")
 
   # Input section:
-  size = 2
+  size = 8
   nstep = 1000
   dataFile = 1000
   fileName = "EX3_Limiter"
@@ -47,7 +47,7 @@ def main(arg):
 
   # Directories:
   fileNameDir = os.path.join("..", "output", fileName)
-  fileName_domain = os.path.join(fileNameDir,fileName+".Domain")
+  fileName_domain = os.path.join(fileNameDir,fileName+ "_s"+ str(size)+".Domain")
 
   # Creating the output directory
   OutDir = os.path.join(fileName, analysisName + "_s"+ str(size),"" )
@@ -63,7 +63,7 @@ def main(arg):
   Temp = Input.readline().rstrip("\n")  # 1
   npoints = int(Input.readline().rstrip("\n"))  # 1
 
-  #print("{} {} ".format("Number of points:", npoints ))
+  #print("{} {} ".format(" Number of points:", npoints ))
 
   Temp = Input.readline().rstrip("\n")  # 1
 
@@ -82,13 +82,6 @@ def main(arg):
 
     x[ii] = float(numbers[1])
     z[ii] = float(numbers[2])
-
-  for ii in range(size):
-
-    Temp = Input.readline().rstrip("\n")  # 1
-    numbers = string.split(Temp)
-    NCells[ii] = int(numbers[0])
-
 
   fig, ax = plt.subplots()
   ax.plot( x, z, label ="Domain" , color = "r", linewidth = 2.0)
@@ -110,10 +103,18 @@ def main(arg):
     print("{:} {} {:} {}".format(" printing figure: ", ii, " out of: ", nstep))
     count = -1
     for kk in range (size):
-      Files =  os.path.join(fileNameDir,analysisName,fileName+ "_s"+str(size)+"_p"+ str(kk)+"_" 
-                          + str(ii*dataFile + 1) + ".Res")
+      Files =  os.path.join(fileNameDir,analysisName+ "_s"+str(size),fileName+ "_s"+str(size)+"_p"
+                            + str(kk)+"_" + str(ii*dataFile + 1) + ".Res")
 
       File_Input = open(Files,"r")
+
+      Temp = File_Input.readline().rstrip("\n")    
+      Temp = File_Input.readline().rstrip("\n")    
+      Temp = File_Input.readline().rstrip("\n")    
+      Temp = Temp.split()
+      NCells[kk] = float(Temp[0])
+      Temp = File_Input.readline().rstrip("\n")    
+      #print(" no. cells in rank: ", kk, " is: ", NCells[kk])
 
       for jj in range(NCells[kk]):
         count = count + 1
