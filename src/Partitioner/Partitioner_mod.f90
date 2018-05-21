@@ -93,7 +93,6 @@ integer(kind=Lng), dimension (Geometry%size)  :: chunk       ! share of the doma
 
 ! - character variables ---------------------------------------------------------------------------
 Character(kind = 1, len = 20) :: IndexRank ! Rank no in the Char. fmt to add to the input file Name
-Character(kind = 1, len = 20) :: IndexSize ! Size no in the Char. fmt to add to the input file Name
 
 ! code ============================================================================================
 write(*,       *) " subroutine < Partitioner_1D_Sub >: "
@@ -123,16 +122,14 @@ write(FileInfo,*) " -Data partitioning ... "
     ! Directories for the input files <modify>
     ! open file for this partition
     write(IndexRank, *) i_partition - 1_Shrt ! Converts Rank to Character format for the file Name
-    write(IndexSize, *) Geometry%size        ! Converts Size to Character format for the file Name
 
     UnFile = FilePartition
     open(unit=UnFile, &
-    file=trim(ModelInfo%ModelName)// &
-                         '_s'//trim(adjustL(IndexSize))//'_p'//trim(adjustL(IndexRank))//'.par', &
-         Err=1001, iostat=IO_File, &
-         access='sequential', action='write', asynchronous='no', blank='NULL', blocksize=0, &
-         defaultfile=trim(ModelInfo%InputDir), dispose='keep', form='formatted', position='asis',&
-         status='replace')
+         file=trim(ModelInfo%ModelName)//'_s'//&
+              trim(adjustL(Geometry%IndexSize))//'_p'//trim(adjustL(IndexRank))//'.par', &
+         Err=1001, iostat=IO_File, access='sequential', action='write', asynchronous='no', &
+         blank='NULL', blocksize=0, defaultfile=trim(ModelInfo%InputDir), dispose='keep', &
+         form='formatted', position='asis', status='replace')
 
     ! Writing the total number of cells in each partition
     UnFile = FilePartition

@@ -433,11 +433,11 @@ blocksize=0, defaultfile=trim(this%ModelInfo%AnalysisOutputDir), dispose='keep',
  position='asis', status='replace')
 
 UnFile = FileResults
-!write(unit=UnFile,fmt="(' Results: ')",advance='yes',asynchronous='no', iostat=IO_write, err=1006)
-!write(unit=UnFile, fmt="(' Number of points: ')", advance='yes', asynchronous='no', &
-!                                                                        iostat=IO_write, err=1006)
-!write(unit=UnFile,fmt="(I20)",advance='yes',asynchronous='no',iostat=IO_write,err=1006)this%NCells
-!write(unit=UnFile,fmt="(' h--uh ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
+write(unit=UnFile,fmt="(' Results: ')",advance='yes',asynchronous='no', iostat=IO_write, err=1006)
+write(unit=UnFile, fmt="(' Number of points: ')", advance='yes', asynchronous='no', &
+                                                                        iostat=IO_write, err=1006)
+write(unit=UnFile,fmt="(I20)",advance='yes',asynchronous='no',iostat=IO_write,err=1006)this%NCells
+write(unit=UnFile,fmt="(' h--uh ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
 
   do i_points = 1_Lng, this%NCells
     write(unit=UnFile, fmt="(I6, 2F23.6)", advance='yes', asynchronous='no', &

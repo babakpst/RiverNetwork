@@ -50,6 +50,8 @@ type Geometry_tp
   real(kind=DBL), allocatable, dimension(:) :: ReachManning ! the Manning's number for each reach
   real(kind=DBL), allocatable, dimension(:) :: ReachWidth   ! Stores the width of each reach
 
+  Character(kind = 1, len = 20) :: IndexSize !Size no in the Char. fmt to add to input file Name
+
   contains
     procedure Basic => Input_Basic_sub
     procedure Array => Input_Array_sub
@@ -140,7 +142,12 @@ read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, e
 read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%size
 UnFile = FileInfo
 write(unit=UnFile, fmt="(' Total number of core(s) is(are): ', I10)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%size
-write(unit=*,      fmt="(' Total number of core(s) is(are): ', I10)") this%NoReaches
+write(unit=*,      fmt="(' Total number of core(s) is(are): ', I10)") this%size
+
+
+write(this%IndexSize, *) this%size ! Converts Size to Character format for the file Name
+
+
 
 ! - Closing the data model file -------------------------------------------------------------------
 write(*,        fmt="(A)") " -Closing the data model file"

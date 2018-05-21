@@ -168,8 +168,15 @@ UnFile = FilePartition
     this%X_Full     (i_cells*2_Lng-1_Lng),             &
     this%X_Full     (i_cells*2_Lng      )
   end do
+!read(unit=UnFile, fmt="(F35.20)", advance='yes', asynchronous='no', iostat=IO_read, &
+!    err=1003, end=1004) this%SlopeInter(i_cells)
+
 read(unit=UnFile, fmt="(F35.20)", advance='yes', asynchronous='no', iostat=IO_read, &
-    err=1003, end=1004) this%SlopeInter(i_cells)
+    err=1003, end=1004) this%SlopeInter(this%NCells+1)
+
+
+
+
 
 ! - Closing the input file ---------------------------------------------------------------------
 write(*,        fmt="(A)") " -Closing the input file"

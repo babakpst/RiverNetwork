@@ -306,6 +306,7 @@ allocate(Plot_domain_1D_tp(CellCounter) :: Plot, stat=ERR_Alloc)
 Plot%XCoor(:)      = this%X_Disc(:)
 Plot%ZCoor(:)      = this%ZCell(:)
 Plot%SlopeCell(:)  = this%SlopeCell(:)
+Plot%IndexSize     = Geometry%IndexSize
 
 call Plot%plot(ModelInfo)
 

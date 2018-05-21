@@ -156,7 +156,6 @@ write(*, fmt="(2A)")" The analysis name is: ", this%AnalysisDir
 
 ! Create the results folder
 write(*,fmt="(A)") " -Creating the output folders ..."
-
 Directory=MakeDirQQ (trim(AdjustL(this%OutputDir))//'/'//trim(AdjustL(this%ModelName)))
   if (Directory) then
     write(*,fmt="(A)") " The result folder is created."
