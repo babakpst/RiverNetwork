@@ -48,6 +48,7 @@ use Parameters_mod
 use Results_mod
 use Input_mod
 use Model_mod
+use Timer_mod
 
 implicit none
 
@@ -166,7 +167,7 @@ contains
 !
 !##################################################################################################
 
-subroutine Solver_1D_with_Limiter_sub(this)
+subroutine Solver_1D_with_Limiter_sub(this, TotalTime)
 
 ! Libraries =======================================================================================
 !$ use omp_lib
@@ -180,6 +181,7 @@ implicit none
 
 ! - types -----------------------------------------------------------------------------------------
 class(SolverWithLimiter) :: this
+type(Timer_tp):: TotalTime
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
@@ -296,7 +298,7 @@ UU(:)%U(2) = 0.0_Dbl
 
   if (this%ModelInfo%rank == this%ModelInfo%size-1) then ! applying bC at the downstream
     call Impose_BC_1D_dw_sub(UU(this%Discretization%NCells)%U(2), this%Discretization%NCells, &
-                             this%Discretization%WidthCell(1), &
+                             this%AnalysisInfo%h_dw, &
                              UU(this%Discretization%NCells+1_Lng), &
                              UU(this%Discretization%NCells+2_Lng))
   end if
@@ -318,7 +320,11 @@ Results%ModelInfo = this%ModelInfo
     ! write down data for visualization
       if (mod(i_steps,this%Plot_Inc)==1 .or. PrintResults) then
         !$ if (ITS==0) then
-          if ( this%ModelInfo%rank == 0)   print*, "----------------Step:", i_steps
+          if ( this%ModelInfo%rank == 0) then
+              call system_clock(TotalTime%endSys, TotalTime%clock_rate)
+              print*, "----------------Step:", i_steps, &
+                     real(TotalTime%endSys-TotalTime%startSys)/real(TotalTime%clock_rate)
+          end if
           Results%U(:) = UU(1:this%Discretization%NCells)
           call Results%plot_results(i_steps)
         !$ end if
@@ -520,7 +526,7 @@ Results%ModelInfo = this%ModelInfo
 
     if (this%ModelInfo%rank == this%ModelInfo%size-1) then ! applying bc at the downstream
       call Impose_BC_1D_dw_sub(UU(this%Discretization%NCells)%U(2), this%Discretization%NCells, &
-                              this%Discretization%WidthCell(1), &
+                              this%AnalysisInfo%h_dw, &
                               UU(this%Discretization%NCells+1_Lng), &
                               UU(this%Discretization%NCells+2_Lng))
     end if
