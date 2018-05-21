@@ -7,8 +7,9 @@
 src/Simulator/.nfs*
 src/Partitioner/.nfs*
 input/EX3_Limiter/Analysis/.nfs*
-visualizer/
+
 
 # ignoring the following folders:
 output/
 .metadata/
+visualizer/ !*.py
