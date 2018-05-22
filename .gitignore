@@ -13,4 +13,5 @@ input/EX3_Limiter/Analysis/.nfs*
 output/
 .metadata/
 visualizer/ 
+visualize/
 !visualizer/*.py

@@ -1,4 +1,3 @@
-
 ###################################################################################################
 # Purpose: This code solves the 2D Shallow Water Equation
 #
@@ -13,12 +12,11 @@
 # V0.01: 02/18/2018  - Compiled for the first time.
 # V0.02: 02/23/2018  - Adding input modules
 # V0.02: 02/24/2018  - Adding input modules
-# V1.00: 03/25/2018  - Adding discretize module
-# V2.00: 05/21/2018  - Modifying the code for parallel MPI
+# V0.02: 02/26/2018  - Adding discretize module
 #
 # File version $Id $
 #
-# Last update: 05/21/2018
+# Last update: 02/22/2018
 #
 # ================================ Global   V A R I A B L E S =====================================
 #  . . . . . . . . . . . . . . . . Variables . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -39,7 +37,6 @@ def main(arg):
   print(" Allocating memory ...")
 
   # Input section:
-  size = 8
   nstep = 1000
   dataFile = 1000
   fileName = "EX3_Limiter"
@@ -47,10 +44,10 @@ def main(arg):
 
   # Directories:
   fileNameDir = os.path.join("..", "output", fileName)
-  fileName_domain = os.path.join(fileNameDir,fileName+ "_s"+ str(size)+".Domain")
+  fileName_domain = os.path.join(fileNameDir,fileName+".Domain")
 
   # Creating the output directory
-  OutDir = os.path.join(fileName, analysisName + "_s"+ str(size),"" )
+  OutDir = os.path.join(fileName, analysisName,"" )
   directory = os.path.dirname(OutDir)
   if not os.path.exists(directory):
     print(" Creating the output dirctory ...")
@@ -63,11 +60,9 @@ def main(arg):
   Temp = Input.readline().rstrip("\n")  # 1
   npoints = int(Input.readline().rstrip("\n"))  # 1
 
-  #print("{} {} ".format(" Number of points:", npoints ))
+  #print("{} {} ".format("Number of points:", npoints ))
 
   Temp = Input.readline().rstrip("\n")  # 1
-
-  NCells = np.zeros (size, dtype=np.int32)
 
   x = np.zeros (npoints, dtype=np.float)
   z = np.zeros (npoints, dtype=np.float)
@@ -94,34 +89,23 @@ def main(arg):
   PicName = os.path.join(OutDir,"domain.jpg")
 
   plt.savefig(PicName)
-  #savefig(fname, dpi=None, facecolor='w', edgecolor='w', orientation='portrait', papertype=None, 
-  #                format=None, transparent=False, bbox_inches=None, pad_inches=0.1, frameon=None)
+  #savefig(fname, dpi=None, facecolor='w', edgecolor='w', orientation='portrait', papertype=None, format=None, transparent=False, bbox_inches=None, pad_inches=0.1, frameon=None)
 
   plt.close(fig)  
+  
 
   for ii in range(nstep):
     print("{:} {} {:} {}".format(" printing figure: ", ii, " out of: ", nstep))
-    count = -1
-    for kk in range (size):
-      Files =  os.path.join(fileNameDir,analysisName+ "_s"+str(size),fileName+ "_s"+str(size)+"_p"
-                            + str(kk)+"_" + str(ii*dataFile + 1) + ".Res")
 
-      File_Input = open(Files,"r")
+    Files =  os.path.join(fileNameDir,analysisName,fileName+"_" + str(ii*dataFile + 1) + ".Res")
 
-      Temp = File_Input.readline().rstrip("\n")    
-      Temp = File_Input.readline().rstrip("\n")    
+    File_Input = open(Files,"r")
+
+    for jj in range(npoints):
       Temp = File_Input.readline().rstrip("\n")    
       Temp = Temp.split()
-      NCells[kk] = float(Temp[0])
-      Temp = File_Input.readline().rstrip("\n")    
-      #print(" no. cells in rank: ", kk, " is: ", NCells[kk])
-
-      for jj in range(NCells[kk]):
-        count = count + 1
-        Temp = File_Input.readline().rstrip("\n")    
-        Temp = Temp.split()
-        h[count] = float(Temp[1])
-        uh[count] = float(Temp[2])
+      h[jj] = float(Temp[1])
+      uh[jj] = float(Temp[2])
 
     fig = plt.figure()
 
@@ -157,15 +141,12 @@ def main(arg):
     #mng = plt.get_current_fig_manager()
     #mng.resize(*mng.window.maxsize())
 
-
     #plt.show ( )
     plt.show(block=False) # <modify> See why the execution stops when the the command gets here. 
 
     PicName = os.path.join(OutDir,'Time_' +str(ii)+"_s" +'.jpg')
-
     plt.savefig(PicName)
-    #savefig(fname, dpi=None, facecolor='w', edgecolor='w', orientation='portrait', papertype=None,
-    #  format=None, transparent=False, bbox_inches=None, pad_inches=0.1, frameon=None)
+    #savefig(fname, dpi=None, facecolor='w', edgecolor='w', orientation='portrait', papertype=None, format=None, transparent=False, bbox_inches=None, pad_inches=0.1, frameon=None)
     plt.close(fig)  
 
 if __name__ == '__main__':
