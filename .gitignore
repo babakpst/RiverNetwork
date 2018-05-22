@@ -1,7 +1,7 @@
 # ignore the following file types:
 
-*.cbp
-*.layout
+#*.cbp
+#*.layout
 *.o
 *.mod
 src/Simulator/.nfs*
