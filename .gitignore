@@ -1,7 +1,7 @@
 # ignore the following file types:
 
-*.cbp
-*.layout
+#*.cbp
+#*.layout
 *.o
 *.mod
 src/Simulator/.nfs*
@@ -12,6 +12,6 @@ input/EX3_Limiter/Analysis/.nfs*
 # ignoring the following folders:
 output/
 .metadata/
-visualizer/ 
+visualizer/*
 visualize/
 !visualizer/*.py
