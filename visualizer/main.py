@@ -37,6 +37,7 @@ def main(arg):
   print(" Allocating memory ...")
 
   # Input section:
+  DT = 0.0002
   nstep = 1000
   dataFile = 1000
   fileName = "EX3_Limiter"
@@ -69,6 +70,8 @@ def main(arg):
 
   h = np.zeros (npoints, dtype=np.float)
   uh= np.zeros (npoints, dtype=np.float)
+
+  xTick = np.arange(0, 25, 1.0)
 
   for ii in range(npoints):
 
@@ -117,11 +120,13 @@ def main(arg):
     #ax1.fill_between (x, z[:], h[:])
     #plt.fill_between ( x, z[:], h[:] )
     
-    title_string = ( 'H(T) - Time = %8.2f' % ( ii*0.001 ) )
+    title_string = ( 'H(T) - Time = %8.2f' % ( ii*DT ) )
     plt.title(title_string, fontsize = 16)
 
     plt.xlabel ( 'X',  fontsize=12 )
     plt.ylabel ( 'H(X,T)',  fontsize=12 )
+    #plt.xticks(xTick)
+    plt.xticks(  np.arange(min(x), max(x)+1, 1.0)  )
 
 
     #plt.axis ( [ 0.0, 2000, 0, 10 ] )

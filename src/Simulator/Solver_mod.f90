@@ -127,7 +127,7 @@ end type SoureceTerms_tp
 
 ! Contains the parameters for the solution
 type, public :: SolverWithLimiter
-  integer(kind=Lng)      :: Plot_Inc = 1000
+  integer(kind=Lng)      :: Plot_Inc = 10
 
   type(model_tp) :: Discretization ! Contains the discretization of the domain
   type(AnalysisData_tp)   :: AnalysisInfo   ! Holds information for the analysis
@@ -387,17 +387,10 @@ Results%ModelInfo = this%ModelInfo
             ! Compute alpha(= RI*(U_i - U_(i-1))
             alpha%U(:) = matmul(Jacobian%L, Delta_U%U(:))
 
-            ! Source terms
-            !if (i_Interface == 1_Tiny) then
-            !  Coefficient = -1.0_Dbl !take care of the sign of flux for the high-resolution part
-            !else if (i_Interface == 2_Tiny) then
-            !  Coefficient = +1.0_Dbl !take care of the sign of flux for the high-resolution part
-            !end if
-
             Coefficient = (-1.0_Dbl) ** i_Interface
 
-
             height_interface = 0.5_Dbl * (Jacobian%U_up%U(1) +Jacobian%U_dw%U(1) )
+
             velocity_interface = &
             0.5_Dbl*(Jacobian%U_up%U(2)/Jacobian%U_up%U(1)+Jacobian%U_dw%U(2)/Jacobian%U_dw%U(1))
 
