@@ -279,6 +279,8 @@ SourceTerms%Identity(2,2) = 1.0_Dbl
 call Impose_Boundary_Condition_1D_sub(UU, this%Discretization%NCells,this%AnalysisInfo%h_dw, &
                                       this%AnalysisInfo%Q_Up,this%Discretization%WidthCell(1))
 
+print*,">>>>>>>>>>>>>>>>>> ",this%AnalysisInfo%Q_Up
+
 Results%ModelInfo = this%ModelInfo
 
 !!$OMP PARALLEL default(private) SHARED(UN,UU,S, dt, dx, dtdx)                                                                                                 firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution,i_steps, NSteps)
@@ -483,7 +485,7 @@ Results%ModelInfo = this%ModelInfo
 
 
       !$OMP DO
-      do i_Cell = 2_Lng, this%Discretization%NCells-1  ! Loop over cells except the boundary cells
+      do i_Cell = 1_Lng, this%Discretization%NCells  ! Loop over cells except the boundary cells
         UU(i_Cell) = UN(i_Cell)
       end do
       !$OMP END DO
