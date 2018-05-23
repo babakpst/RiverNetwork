@@ -12,9 +12,10 @@
 
 # required loaded modules: c7 intel/17.0 mpich2/3.1.4
 
-F90=mpif90
+F90=mpif90 -CB
+#F90=mpif90
 #F90=ifort
-#F90=ifort -pg
+#F90=ifort -pg  # profiler
 #F90= gfortran  # not working because of ifort module
 #F90= gfortran -ffree-line-length-none#F90= gfortran -ffree-line-length-none
 

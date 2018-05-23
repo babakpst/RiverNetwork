@@ -253,12 +253,11 @@ write(*,       *) " -Applying initial conditions ..."
 write(FileInfo,*) " -Applying initial conditions ..."
 
 !allocate(Plot_Results_1D_limiter_tp(NCells = this%Discretization%NCells) :: Results)
-allocate(Results%U(this%Discretization%NCells),     stat=ERR_Alloc)
+allocate(Results%U(-1:this%Discretization%NCells+2),     stat=ERR_Alloc)
  if (ERR_Alloc /= 0) then
     write (*, Fmt_ALLCT) ERR_Alloc;  write (FileInfo, Fmt_ALLCT) ERR_Alloc;
     write(*, Fmt_FL);  write(FileInfo, Fmt_FL); read(*, Fmt_End);  stop;
   end if
-
 
 Results%NCells = this%Discretization%NCells
 
@@ -282,13 +281,56 @@ SourceTerms%Identity(2,2) = 1.0_Dbl
 
 ! <modify>
 UU(1:this%Discretization%NCells)%U(1) = this%AnalysisInfo%CntrlV -    this%Discretization%ZCell(:)
-UU(0)%                           U(1) = UU(1)%U(1)
-UU(-1)%                          U(1) = UU(1)%U(1)
-
-UU(this%Discretization%NCells+1)%U(1) = UU(this%Discretization%NCells)%U(1)
-UU(this%Discretization%NCells+2)%U(1) = UU(this%Discretization%NCells)%U(1)
-
 UU(:)%U(2) = 0.0_Dbl
+
+  ! message communication in MPI
+  if (this%ModelInfo%rank==0) then
+    UU(0)% U(1) = UU(1)%U(1)
+    UU(-1)%U(1) = UU(1)%U(1)
+  end if
+
+  if (.not. this%ModelInfo%rank==0) then
+    sent(1)%U(:) = UU(1)%U(:)
+    sent(2)%U(:) = UU(2)%U(:)
+    call MPI_ISEND(sent(1:2),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank-1, tag_sent(1), &
+                   MPI_COMM_WORLD, request_sent(1), MPI_err)
+    call MPI_IRECV(recv(1:2),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank-1, tag_recv(1), &
+                   MPI_COMM_WORLD, request_recv(1), MPI_err)
+  end if
+  if (.not. this%ModelInfo%rank== this%ModelInfo%size-1) then
+    sent(3)%U(:) = UU( this%Discretization%NCells )%U(:)
+    sent(4)%U(:) = UU( this%Discretization%NCells-1_Lng )%U(:)
+    call MPI_ISEND(sent(3:4),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank+1, tag_sent(2), &
+                   MPI_COMM_WORLD, request_sent(2), MPI_err)
+    call MPI_IRECV(recv(3:4),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank+1, tag_recv(2), &
+                   MPI_COMM_WORLD, request_recv(2), MPI_err)
+  end if
+
+  if (this%ModelInfo%rank== this%ModelInfo%size-1) then
+    UU(this%Discretization%NCells+1)%U(1) = UU(this%Discretization%NCells)%U(1)
+    UU(this%Discretization%NCells+2)%U(1) = UU(this%Discretization%NCells)%U(1)
+  end if
+
+  if (.not. this%ModelInfo%rank==0) then
+    call MPI_WAIT(request_sent(1), status , MPI_err)
+    call MPI_WAIT(request_recv(1), status , MPI_err)
+  end if
+
+  if (.not. this%ModelInfo%rank== this%ModelInfo%size-1) then
+    call MPI_WAIT(request_sent(2), status , MPI_err)
+    call MPI_WAIT(request_recv(2), status , MPI_err)
+  end if
+
+  if (.not. this%ModelInfo%rank==0) then
+    UU(0)%U(:) = recv(1)%U(:)
+    UU(-1)%U(:) = recv(2)%U(:)
+  end if
+
+  if (.not. this%ModelInfo%rank== this%ModelInfo%size-1) then
+    UU(this%Discretization%NCells+1_Lng )%U(:) = recv(3)%U(:)
+    UU(this%Discretization%NCells+2_Lng)%U(:)  = recv(4)%U(:)
+  end if
+
 
 ! imposing boundary condition: at this moment, they are only at rank 0 and size-1
   if (this%ModelInfo%rank == 0) then ! applying boundary conditions at the upstream
@@ -325,7 +367,7 @@ Results%ModelInfo = this%ModelInfo
               print*, "----------------Step:", i_steps, &
                      real(TotalTime%endSys-TotalTime%startSys)/real(TotalTime%clock_rate)
           end if
-          Results%U(:) = UU(1:this%Discretization%NCells)
+          Results%U(:) = UU(-1:this%Discretization%NCells+2)
           call Results%plot_results(i_steps)
         !$ end if
       end if
@@ -528,7 +570,7 @@ Results%ModelInfo = this%ModelInfo
     if (.not. this%ModelInfo%rank==0) then
       sent(1)%U(:) = UU(1)%U(:)
       sent(2)%U(:) = UU(2)%U(:)
-      if (this%ModelInfo%rank==2) then
+      if (this%ModelInfo%rank==2) then ! <delete>
         write(*,"(i5,A,2f10.5)")i_steps, " rank 3-sent 1 :", sent(1)
         write(*,"(i5,A,2f10.5)")i_steps, " rank 3-sent 2 :", sent(2)
       end if
@@ -543,7 +585,7 @@ Results%ModelInfo = this%ModelInfo
       sent(3)%U(:) = UU( this%Discretization%NCells )%U(:)
       sent(4)%U(:) = UU( this%Discretization%NCells-1_Lng )%U(:)
 
-      if (this%ModelInfo%rank==2) then
+      if (this%ModelInfo%rank==2) then ! <delete>
         write(*,"(i5,A,2f10.5)")i_steps," rank 3-sent 3 :", sent(3)
         write(*,"(i5,A,2f10.5)")i_steps," rank 3-sent 4 :", sent(4)
       end if
@@ -568,7 +610,7 @@ Results%ModelInfo = this%ModelInfo
       UU(0)%U(:) = recv(1)%U(:)
       UU(-1)%U(:) = recv(2)%U(:)
 
-      if (this%ModelInfo%rank==2) then
+      if (this%ModelInfo%rank==2) then ! <delete>
         write(*,"(i5,A,2f10.5)")i_steps," rank 3-recv 1 :", recv(1)
         write(*,"(i5,A,2f10.5)")i_steps," rank 3-recv 2 :", recv(2)
       end if
@@ -578,7 +620,7 @@ Results%ModelInfo = this%ModelInfo
       UU(this%Discretization%NCells+1_Lng )%U(:) = recv(3)%U(:)
       UU(this%Discretization%NCells+2_Lng)%U(:)  = recv(4)%U(:)
 
-      if (this%ModelInfo%rank==2) then
+      if (this%ModelInfo%rank==2) then ! <delete>
         write(*,"(i5,A,2f10.5)")i_steps," rank 3-recv 3 :", recv(3)
         write(*,"(i5,A,2f10.5)")i_steps," rank 3-recv 4 :", recv(4)
       end if
