@@ -7,7 +7,7 @@ Total run time (in seconds):
 200.0
 
 Time step (in seconds):
-0.0002
+0.001
 
 Upstream boundary condition, constant flow (m^3/s):  
 0.18

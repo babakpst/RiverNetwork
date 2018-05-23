@@ -39,9 +39,9 @@ def main(arg):
 
   # Input section:
   size = 6
-  DT = 0.0002
-  nstep = 1000
-  dataFile = 1000
+  DT = 0.001
+  nstep = 150
+  dataFile = 10
   fileName = "EX3_Limiter"
   analysisName = "EX3_Case1"
 
@@ -155,6 +155,7 @@ def main(arg):
 
     plt.xlabel ( 'X',  fontsize=12)
     plt.ylabel ( 'UH(X,T)',  fontsize=12)
+    plt.xticks(xTick)
 
     #mng = plt.get_current_fig_manager()
     #mng.resize(*mng.window.maxsize())

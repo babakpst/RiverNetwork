@@ -174,8 +174,7 @@ UnFile = FilePartition
 read(unit=UnFile, fmt="(F35.20)", advance='yes', asynchronous='no', iostat=IO_read, &
     err=1003, end=1004) this%SlopeInter(this%NCells+1)
 
-
-
+write(*,fmt="(A,3I5,f10.5)")," slope interface: ", ModelInfo%rank, i_cells, this%NCells+1, this%SlopeInter(this%NCells+1) ! <delete>
 
 
 ! - Closing the input file ---------------------------------------------------------------------
