@@ -38,10 +38,10 @@ def main(arg):
   print(" Allocating memory ...")
 
   # Input section:
-  size = 6
+  size = 4
   DT = 0.001
-  nstep = 150
-  dataFile = 10
+  nstep = 200
+  dataFile = 200
   fileName = "EX3_Limiter"
   analysisName = "EX3_Case1"
 

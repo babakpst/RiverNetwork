@@ -127,7 +127,7 @@ end type SoureceTerms_tp
 
 ! Contains the parameters for the solution
 type, public :: SolverWithLimiter
-  integer(kind=Lng)      :: Plot_Inc = 10
+  integer(kind=Lng)      :: Plot_Inc = 200
 
   type(model_tp) :: Discretization ! Contains the discretization of the domain
   type(AnalysisData_tp)   :: AnalysisInfo   ! Holds information for the analysis
@@ -273,8 +273,8 @@ Jacobian%option = 1
 Jacobian_neighbor%option = 1
 
 LimiterFunc%limiter_Type = this%AnalysisInfo%limiter ! Define what limiter to use in the algorithm
-PrintResults = .true.
-!PrintResults = .false.
+!PrintResults = .true.
+PrintResults = .false.
 SourceTerms%Identity(:,:) = 0.0_Dbl
 SourceTerms%Identity(1,1) = 1.0_Dbl
 SourceTerms%Identity(2,2) = 1.0_Dbl
@@ -356,10 +356,12 @@ Results%ModelInfo = this%ModelInfo
 !$ write(*,       fmt="(' I am thread ',I4,' out of ',I4,' threads.')") ITS,MTS
 !$ write(FileInfo,fmt="(' I am thread ',I4,' out of ',I4,' threads.')") ITS,MTS
 
+if ( this%ModelInfo%rank == 2) print*,this%Discretization%SlopeInter
+
   ! Time marching
   Time_Marching: do i_steps = 1_Lng, NSteps
 
-    ! write down data for visualization
+      ! write down data for visualization
       if (mod(i_steps,this%Plot_Inc)==1 .or. PrintResults) then
         !$ if (ITS==0) then
           if ( this%ModelInfo%rank == 0) then
@@ -367,8 +369,8 @@ Results%ModelInfo = this%ModelInfo
               print*, "----------------Step:", i_steps, &
                      real(TotalTime%endSys-TotalTime%startSys)/real(TotalTime%clock_rate)
           end if
-          Results%U(:) = UU(-1:this%Discretization%NCells+2)
-          call Results%plot_results(i_steps)
+        Results%U(:) = UU(-1:this%Discretization%NCells+2)
+        call Results%plot_results(i_steps)
         !$ end if
       end if
 
@@ -570,11 +572,6 @@ Results%ModelInfo = this%ModelInfo
     if (.not. this%ModelInfo%rank==0) then
       sent(1)%U(:) = UU(1)%U(:)
       sent(2)%U(:) = UU(2)%U(:)
-      if (this%ModelInfo%rank==2) then ! <delete>
-        write(*,"(i5,A,2f10.5)")i_steps, " rank 3-sent 1 :", sent(1)
-        write(*,"(i5,A,2f10.5)")i_steps, " rank 3-sent 2 :", sent(2)
-      end if
-
       call MPI_ISEND(sent(1:2),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank-1, tag_sent(1), &
                      MPI_COMM_WORLD, request_sent(1), MPI_err)
       call MPI_IRECV(recv(1:2),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank-1, tag_recv(1), &
@@ -584,11 +581,6 @@ Results%ModelInfo = this%ModelInfo
     if (.not. this%ModelInfo%rank== this%ModelInfo%size-1) then
       sent(3)%U(:) = UU( this%Discretization%NCells )%U(:)
       sent(4)%U(:) = UU( this%Discretization%NCells-1_Lng )%U(:)
-
-      if (this%ModelInfo%rank==2) then ! <delete>
-        write(*,"(i5,A,2f10.5)")i_steps," rank 3-sent 3 :", sent(3)
-        write(*,"(i5,A,2f10.5)")i_steps," rank 3-sent 4 :", sent(4)
-      end if
 
       call MPI_ISEND(sent(3:4),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank+1, tag_sent(2), &
                      MPI_COMM_WORLD, request_sent(2), MPI_err)
@@ -609,22 +601,11 @@ Results%ModelInfo = this%ModelInfo
     if (.not. this%ModelInfo%rank==0) then
       UU(0)%U(:) = recv(1)%U(:)
       UU(-1)%U(:) = recv(2)%U(:)
-
-      if (this%ModelInfo%rank==2) then ! <delete>
-        write(*,"(i5,A,2f10.5)")i_steps," rank 3-recv 1 :", recv(1)
-        write(*,"(i5,A,2f10.5)")i_steps," rank 3-recv 2 :", recv(2)
-      end if
     end if
 
     if (.not. this%ModelInfo%rank== this%ModelInfo%size-1) then
       UU(this%Discretization%NCells+1_Lng )%U(:) = recv(3)%U(:)
       UU(this%Discretization%NCells+2_Lng)%U(:)  = recv(4)%U(:)
-
-      if (this%ModelInfo%rank==2) then ! <delete>
-        write(*,"(i5,A,2f10.5)")i_steps," rank 3-recv 3 :", recv(3)
-        write(*,"(i5,A,2f10.5)")i_steps," rank 3-recv 4 :", recv(4)
-      end if
-
     end if
 
     !$OMP end single
