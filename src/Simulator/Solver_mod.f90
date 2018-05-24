@@ -129,7 +129,7 @@ end type SoureceTerms_tp
 type, public :: SolverWithLimiter
   integer(kind=Lng)      :: Plot_Inc = 500
 
-  type(model_tp) :: Discretization ! Contains the discretization of the domain
+  type(model_tp) :: Model    ! Contains the model
   type(AnalysisData_tp)   :: AnalysisInfo   ! Holds information for the analysis
   type(Input_Data_tp)     :: ModelInfo      ! Holds information for the model
 
@@ -238,7 +238,7 @@ type(vector) :: F_L ! Contribution of low-resolution method (Upwind) in the solu
 type(vector) :: F_H ! Contribution of high-resolution method (Lax-Wendroff) in the solution.
 
 type(vector) :: Delta_U           ! holds (U_i- U_i-1)
-type(vector), dimension(-1_Lng:this%Discretization%NCells+2_Lng) ::UU, UN ! solution at n and n+1
+type(vector), dimension(-1_Lng:this%Model%NCells+2_Lng) ::UU, UN ! solution at n and n+1
 type(vector), dimension(4) :: sent, recv
 
 ! code ============================================================================================
@@ -252,19 +252,19 @@ write(FileInfo,*) " -Solving the shallow water equation with a limiter ..."
 write(*,       *) " -Applying initial conditions ..."
 write(FileInfo,*) " -Applying initial conditions ..."
 
-!allocate(Plot_Results_1D_limiter_tp(NCells = this%Discretization%NCells) :: Results)
-allocate(Results%U(-1:this%Discretization%NCells+2),     stat=ERR_Alloc)
+!allocate(Plot_Results_1D_limiter_tp(NCells = this%Model%NCells) :: Results)
+allocate(Results%U(-1:this%Model%NCells+2),     stat=ERR_Alloc)
  if (ERR_Alloc /= 0) then
     write (*, Fmt_ALLCT) ERR_Alloc;  write (FileInfo, Fmt_ALLCT) ERR_Alloc;
     write(*, Fmt_FL);  write(FileInfo, Fmt_FL); read(*, Fmt_End);  stop;
   end if
 
-Results%NCells = this%Discretization%NCells
+Results%NCells = this%Model%NCells
 
 ! Initialization:
 NSteps = this%AnalysisInfo%TotalTime/this%AnalysisInfo%TimeStep
 dt     = this%AnalysisInfo%TimeStep
-dx     = this%Discretization%LengthCell(1,2)
+dx     = this%Model%LengthCell(1,2)
 
 dtdx = dt / dx
 
@@ -280,7 +280,7 @@ SourceTerms%Identity(1,1) = 1.0_Dbl
 SourceTerms%Identity(2,2) = 1.0_Dbl
 
 ! <modify>
-UU(1:this%Discretization%NCells)%U(1) = this%AnalysisInfo%CntrlV -    this%Discretization%ZCell(:)
+UU(1:this%Model%NCells)%U(1) = this%AnalysisInfo%CntrlV -    this%Model%ZCell(:)
 UU(:)%U(2) = 0.0_Dbl
 
   ! message communication in MPI
@@ -298,8 +298,8 @@ UU(:)%U(2) = 0.0_Dbl
                    MPI_COMM_WORLD, request_recv(1), MPI_err)
   end if
   if (.not. this%ModelInfo%rank== this%ModelInfo%size-1) then
-    sent(3)%U(:) = UU( this%Discretization%NCells )%U(:)
-    sent(4)%U(:) = UU( this%Discretization%NCells-1_Lng )%U(:)
+    sent(3)%U(:) = UU( this%Model%NCells )%U(:)
+    sent(4)%U(:) = UU( this%Model%NCells-1_Lng )%U(:)
     call MPI_ISEND(sent(3:4),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank+1, tag_sent(2), &
                    MPI_COMM_WORLD, request_sent(2), MPI_err)
     call MPI_IRECV(recv(3:4),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank+1, tag_recv(2), &
@@ -307,8 +307,8 @@ UU(:)%U(2) = 0.0_Dbl
   end if
 
   if (this%ModelInfo%rank== this%ModelInfo%size-1) then
-    UU(this%Discretization%NCells+1)%U(1) = UU(this%Discretization%NCells)%U(1)
-    UU(this%Discretization%NCells+2)%U(1) = UU(this%Discretization%NCells)%U(1)
+    UU(this%Model%NCells+1)%U(1) = UU(this%Model%NCells)%U(1)
+    UU(this%Model%NCells+2)%U(1) = UU(this%Model%NCells)%U(1)
   end if
 
   if (.not. this%ModelInfo%rank==0) then
@@ -327,22 +327,22 @@ UU(:)%U(2) = 0.0_Dbl
   end if
 
   if (.not. this%ModelInfo%rank== this%ModelInfo%size-1) then
-    UU(this%Discretization%NCells+1_Lng )%U(:) = recv(3)%U(:)
-    UU(this%Discretization%NCells+2_Lng)%U(:)  = recv(4)%U(:)
+    UU(this%Model%NCells+1_Lng )%U(:) = recv(3)%U(:)
+    UU(this%Model%NCells+2_Lng)%U(:)  = recv(4)%U(:)
   end if
 
 
 ! imposing boundary condition: at this moment, they are only at rank 0 and size-1
   if (this%ModelInfo%rank == 0) then ! applying boundary conditions at the upstream
-    call Impose_BC_1D_up_sub(UU(1)%U(1), this%Discretization%NCells, this%AnalysisInfo%Q_Up, &
-                             this%Discretization%WidthCell(1),UU(-1_Lng), UU( 0_Lng) )
+    call Impose_BC_1D_up_sub(UU(1)%U(1), this%Model%NCells, this%AnalysisInfo%Q_Up, &
+                             this%Model%WidthCell(1),UU(-1_Lng), UU( 0_Lng) )
   end if
 
   if (this%ModelInfo%rank == this%ModelInfo%size-1) then ! applying bC at the downstream
-    call Impose_BC_1D_dw_sub(UU(this%Discretization%NCells)%U(2), this%Discretization%NCells, &
+    call Impose_BC_1D_dw_sub(UU(this%Model%NCells)%U(2), this%Model%NCells, &
                              this%AnalysisInfo%h_dw, &
-                             UU(this%Discretization%NCells+1_Lng), &
-                             UU(this%Discretization%NCells+2_Lng))
+                             UU(this%Model%NCells+1_Lng), &
+                             UU(this%Model%NCells+2_Lng))
   end if
 
 Results%ModelInfo = this%ModelInfo
@@ -367,13 +367,13 @@ Results%ModelInfo = this%ModelInfo
               print*, "----------------Step:", i_steps, &
                      real(TotalTime%endSys-TotalTime%startSys)/real(TotalTime%clock_rate)
           end if
-        Results%U(:) = UU(-1:this%Discretization%NCells+2)
+        Results%U(:) = UU(-1:this%Model%NCells+2)
         call Results%plot_results(i_steps)
         !$ end if
       end if
 
       !$OMP DO
-      do i_Cell = 1_Lng, this%Discretization%NCells  ! Loop over cells except the boundary cells
+      do i_Cell = 1_Lng, this%Model%NCells  ! Loop over cells except the boundary cells
 
         !print*, "=============Cell:", i_Cell, ITS
         !print*, "=============Cell:", i_Cell
@@ -390,15 +390,15 @@ Results%ModelInfo = this%ModelInfo
         velocity = UU(i_Cell)%U(2)/height
 
         ! Find the B matrix for this cell
-        SourceTerms%S_f = (this%Discretization%ManningCell(i_Cell)**2.0) * velocity &
+        SourceTerms%S_f = (this%Model%ManningCell(i_Cell)**2.0) * velocity &
                           * dabs(velocity) /(height**(4.0_Dbl/3.0_Dbl))
 
         SourceTerms%B(1,1) = 0.0_Dbl
         SourceTerms%B(2,1) =  &
-        - Gravity * (this%Discretization%SlopeCell(i_Cell) + (7.0_Dbl/3.0_Dbl) * SourceTerms%S_f)
+        - Gravity * (this%Model%SlopeCell(i_Cell) + (7.0_Dbl/3.0_Dbl) * SourceTerms%S_f)
 
         SourceTerms%B(1,2) = 0.0_Dbl
-        SourceTerms%B(2,2) = (2.0_Dbl*this%Discretization%ManningCell(i_Cell)**2.0) &
+        SourceTerms%B(2,2) = (2.0_Dbl*this%Model%ManningCell(i_Cell)**2.0) &
                               *dabs(velocity)/(height**(4.0_Dbl/3.0_Dbl))
 
         ! Find the BI
@@ -408,7 +408,7 @@ Results%ModelInfo = this%ModelInfo
 
         ! Source terms at the current cell/time
         SourceTerms%S%U(1) = 0.0_Dbl
-        SourceTerms%S%U(2) =-Gravity*height*(this%Discretization%SlopeCell(i_Cell)-SourceTerms%S_f)
+        SourceTerms%S%U(2) =-Gravity*height*(this%Model%SlopeCell(i_Cell)-SourceTerms%S_f)
 
         ! The first contribution of the source term in the solution
         SourceTerms%Source_1%U(:) = &
@@ -436,12 +436,12 @@ Results%ModelInfo = this%ModelInfo
             velocity_interface = &
             0.5_Dbl*(Jacobian%U_up%U(2)/Jacobian%U_up%U(1)+Jacobian%U_dw%U(2)/Jacobian%U_dw%U(1))
 
-            SourceTerms%S_f_interface =this%Discretization%ManningCell(i_Cell)*velocity_interface &
+            SourceTerms%S_f_interface =this%Model%ManningCell(i_Cell)*velocity_interface &
              *dabs(velocity_interface) /( height_interface**(4.0_Dbl/3.0_Dbl))
 
             SourceTerms%S_interface%U(1) = 0.0_Dbl
             SourceTerms%S_interface%U(2) =-Gravity*height_interface* &
-            (this%Discretization%SlopeInter(i_Cell+i_Interface-1_Tiny)-SourceTerms%S_f_interface)
+            (this%Model%SlopeInter(i_Cell+i_Interface-1_Tiny)-SourceTerms%S_f_interface)
 
             SourceTerms%Source_2%U(:) = SourceTerms%Source_2%U(:) + 0.5_Dbl * (dt**2) / dx &
                              * ( Coefficient * matmul( Jacobian%A, SourceTerms%S_interface%U(:)))
@@ -540,7 +540,7 @@ Results%ModelInfo = this%ModelInfo
 
       !!$OMP END PARALLEL DO
       !$OMP DO
-      do i_Cell = 1_Lng, this%Discretization%NCells  ! Loop over cells except the boundary cells
+      do i_Cell = 1_Lng, this%Model%NCells  ! Loop over cells except the boundary cells
         UU(i_Cell) = UN(i_Cell)
       end do
       !$OMP END DO
@@ -552,15 +552,15 @@ Results%ModelInfo = this%ModelInfo
 
     ! imposing boundary condition: at this moment, they are only at rank 0 and size-1
     if (this%ModelInfo%rank == 0) then ! applying boundary conditions at the upstream
-      call Impose_BC_1D_up_sub(UU(1)%U(1), this%Discretization%NCells, this%AnalysisInfo%Q_Up, &
-                               this%Discretization%WidthCell(1), UU(-1_Lng), UU( 0_Lng))
+      call Impose_BC_1D_up_sub(UU(1)%U(1), this%Model%NCells, this%AnalysisInfo%Q_Up, &
+                               this%Model%WidthCell(1), UU(-1_Lng), UU( 0_Lng))
     end if
 
     if (this%ModelInfo%rank == this%ModelInfo%size-1) then ! applying bc at the downstream
-      call Impose_BC_1D_dw_sub(UU(this%Discretization%NCells)%U(2), this%Discretization%NCells, &
+      call Impose_BC_1D_dw_sub(UU(this%Model%NCells)%U(2), this%Model%NCells, &
                               this%AnalysisInfo%h_dw, &
-                              UU(this%Discretization%NCells+1_Lng), &
-                              UU(this%Discretization%NCells+2_Lng))
+                              UU(this%Model%NCells+1_Lng), &
+                              UU(this%Model%NCells+2_Lng))
     end if
 
     ! message communication in MPI
@@ -574,8 +574,8 @@ Results%ModelInfo = this%ModelInfo
     end if
 
     if (.not. this%ModelInfo%rank== this%ModelInfo%size-1) then
-      sent(3)%U(:) = UU( this%Discretization%NCells )%U(:)
-      sent(4)%U(:) = UU( this%Discretization%NCells-1_Lng )%U(:)
+      sent(3)%U(:) = UU( this%Model%NCells )%U(:)
+      sent(4)%U(:) = UU( this%Model%NCells-1_Lng )%U(:)
 
       call MPI_ISEND(sent(3:4),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank+1, tag_sent(2), &
                      MPI_COMM_WORLD, request_sent(2), MPI_err)
@@ -599,8 +599,8 @@ Results%ModelInfo = this%ModelInfo
     end if
 
     if (.not. this%ModelInfo%rank== this%ModelInfo%size-1) then
-      UU(this%Discretization%NCells+1_Lng )%U(:) = recv(3)%U(:)
-      UU(this%Discretization%NCells+2_Lng)%U(:)  = recv(4)%U(:)
+      UU(this%Model%NCells+1_Lng )%U(:) = recv(3)%U(:)
+      UU(this%Model%NCells+2_Lng)%U(:)  = recv(4)%U(:)
     end if
 
     !$OMP end single

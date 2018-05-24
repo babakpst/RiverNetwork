@@ -116,7 +116,7 @@ call InputTime%start()
 write(*,        fmt="(A)") " -Reading the input file ..."
 write(FileInfo, fmt="(A)") " -Reading the input file ..."
 
-call Discretization%Input(ModelInfo)
+call Model%Input(ModelInfo)
 
 call InputTime%stop()
 
@@ -136,7 +136,7 @@ call InputTime%stop()
 
           Experiment_TypeII%ModelInfo = ModelInfo
           Experiment_TypeII%AnalysisInfo = AnalysisInfo
-          Experiment_TypeII%Discretization = Discretization
+          Experiment_TypeII%Model = Model
 
           call SimulationTime%start()
           call Experiment_TypeII%Solve(TotalTime)

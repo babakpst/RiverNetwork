@@ -150,11 +150,12 @@ write(FileInfo,*) " -Data partitioning ... "
               Discretization%ManningCell(counter),                         &
               Discretization%WidthCell  (counter),                         &
               Discretization%X_Disc     (counter),                         &
-              Discretization%SlopeInter (counter),                         &
-              Discretization%ZFull      (counter*2_Lng-1_Lng),             &
-              Discretization%ZFull      (counter*2_Lng),                   &
-              Discretization%X_Full     (counter*2_Lng-1_Lng),             &
-              Discretization%X_Full     (counter*2_Lng      )
+              Discretization%SlopeInter (counter)
+
+              !Discretization%ZFull      (counter*2_Lng-1_Lng),             &
+              !Discretization%ZFull      (counter*2_Lng),                   &
+              !Discretization%X_Full     (counter*2_Lng-1_Lng),             &
+              !Discretization%X_Full     (counter*2_Lng      )
       end do
     write(unit=UnFile, fmt="(F35.20)", &
           advance='yes', asynchronous='no', iostat=IO_write, err=1006) &

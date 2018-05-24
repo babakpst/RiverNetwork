@@ -45,15 +45,16 @@ type model_tp
   real(kind=DBL), allocatable, dimension(:) :: SlopeCell  ! the slope of each cell at the center
   real(kind=DBL), allocatable, dimension(:) :: SlopeInter ! the slope of each cell at the center
   real(kind=DBL), allocatable, dimension(:) :: ZCell      ! bottom elev. at the center of each cell
-  real(kind=DBL), allocatable, dimension(:) :: ZFull      ! bottom elevation at all points
+
   real(kind=DBL), allocatable, dimension(:) :: ManningCell! the Manning's number of each cell
   real(kind=DBL), allocatable, dimension(:) :: WidthCell  ! the Manning's number of each cell
   real(kind=DBL), allocatable, dimension(:) :: X_Disc     ! the coordinates of the cell center
-  real(kind=DBL), allocatable, dimension(:) :: X_Full     ! the coordinates all points
   real(kind=DBL), allocatable, dimension(:,:) :: LengthCell ! the length of each cell
             ! note: the first col holds the actual cell length (length of the controal volume), and
             !       the second col holds the projection(x)
 
+  !real(kind=DBL), allocatable, dimension(:) :: ZFull      ! bottom elevation at all points
+  !real(kind=DBL), allocatable, dimension(:) :: X_Full     ! the coordinates all points
   contains
     procedure:: Input => Input_sub
 
@@ -140,12 +141,12 @@ allocate(this%LengthCell(this%NCells,2),            &
          this%SlopeCell(this%NCells),               &
          this%SlopeInter(this%NCells+1),            &
          this%ZCell(this%NCells),                   &
-         this%ZFull(this%NCells*2_Lng + 1_Lng),     &
          this%ManningCell(this%NCells),             &
          this%WidthCell(this%NCells),               &
          this%X_Disc(this%NCells),                  &
-         this%X_Full(this%NCells*2_Lng + 1_Lng),    &
          stat=ERR_Alloc)
+         !this%X_Full(this%NCells*2_Lng + 1_Lng),    &
+         !this%ZFull(this%NCells*2_Lng + 1_Lng),     &
 
   if (ERR_Alloc /= 0) then
     write (*, Fmt_ALLCT) ERR_Alloc;  write (FileInfo, Fmt_ALLCT) ERR_Alloc;
@@ -163,11 +164,12 @@ UnFile = FilePartition
     this%ManningCell(i_cells),                         &
     this%WidthCell  (i_cells),                         &
     this%X_Disc     (i_cells),                         &
-    this%SlopeInter (i_cells),                         &
-    this%ZFull      (i_cells*2_Lng-1_Lng),             &
-    this%ZFull      (i_cells*2_Lng),                   &
-    this%X_Full     (i_cells*2_Lng-1_Lng),             &
-    this%X_Full     (i_cells*2_Lng      )
+    this%SlopeInter (i_cells)
+
+    !this%ZFull      (i_cells*2_Lng-1_Lng),             &
+    !this%ZFull      (i_cells*2_Lng),                   &
+    !this%X_Full     (i_cells*2_Lng-1_Lng),             &
+    !this%X_Full     (i_cells*2_Lng      )
   end do
 !read(unit=UnFile, fmt="(F35.20)", advance='yes', asynchronous='no', iostat=IO_read, &
 !    err=1003, end=1004) this%SlopeInter(i_cells)
