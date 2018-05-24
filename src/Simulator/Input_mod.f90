@@ -330,7 +330,6 @@ ModelInfo%AnalysisOutputDir=trim(AdjustL(ModelInfo%OutputDir))//'/'//&
                             trim(AdjustL(ModelInfo%AnalysesNames(i_analyses)))//'_s'// &
                             trim(AdjustL(ModelInfo%IndexSize))
 
-print*,"check 000", ModelInfo%AnalysisOutputDir
 UnFile = UnInptAna
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)

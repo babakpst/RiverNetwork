@@ -127,7 +127,7 @@ end type SoureceTerms_tp
 
 ! Contains the parameters for the solution
 type, public :: SolverWithLimiter
-  integer(kind=Lng)      :: Plot_Inc = 1000
+  integer(kind=Lng)      :: Plot_Inc = 200
 
   type(model_tp) :: Discretization ! Contains the discretization of the domain
   type(AnalysisData_tp)   :: AnalysisInfo   ! Holds information for the analysis
@@ -253,12 +253,11 @@ write(*,       *) " -Applying initial conditions ..."
 write(FileInfo,*) " -Applying initial conditions ..."
 
 !allocate(Plot_Results_1D_limiter_tp(NCells = this%Discretization%NCells) :: Results)
-allocate(Results%U(this%Discretization%NCells),     stat=ERR_Alloc)
+allocate(Results%U(-1:this%Discretization%NCells+2),     stat=ERR_Alloc)
  if (ERR_Alloc /= 0) then
     write (*, Fmt_ALLCT) ERR_Alloc;  write (FileInfo, Fmt_ALLCT) ERR_Alloc;
     write(*, Fmt_FL);  write(FileInfo, Fmt_FL); read(*, Fmt_End);  stop;
   end if
-
 
 Results%NCells = this%Discretization%NCells
 
@@ -282,13 +281,56 @@ SourceTerms%Identity(2,2) = 1.0_Dbl
 
 ! <modify>
 UU(1:this%Discretization%NCells)%U(1) = this%AnalysisInfo%CntrlV -    this%Discretization%ZCell(:)
-UU(0)%                           U(1) = UU(1)%U(1)
-UU(-1)%                          U(1) = UU(1)%U(1)
-
-UU(this%Discretization%NCells+1)%U(1) = UU(this%Discretization%NCells)%U(1)
-UU(this%Discretization%NCells+2)%U(1) = UU(this%Discretization%NCells)%U(1)
-
 UU(:)%U(2) = 0.0_Dbl
+
+  ! message communication in MPI
+  if (this%ModelInfo%rank==0) then
+    UU(0)% U(1) = UU(1)%U(1)
+    UU(-1)%U(1) = UU(1)%U(1)
+  end if
+
+  if (.not. this%ModelInfo%rank==0) then
+    sent(1)%U(:) = UU(1)%U(:)
+    sent(2)%U(:) = UU(2)%U(:)
+    call MPI_ISEND(sent(1:2),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank-1, tag_sent(1), &
+                   MPI_COMM_WORLD, request_sent(1), MPI_err)
+    call MPI_IRECV(recv(1:2),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank-1, tag_recv(1), &
+                   MPI_COMM_WORLD, request_recv(1), MPI_err)
+  end if
+  if (.not. this%ModelInfo%rank== this%ModelInfo%size-1) then
+    sent(3)%U(:) = UU( this%Discretization%NCells )%U(:)
+    sent(4)%U(:) = UU( this%Discretization%NCells-1_Lng )%U(:)
+    call MPI_ISEND(sent(3:4),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank+1, tag_sent(2), &
+                   MPI_COMM_WORLD, request_sent(2), MPI_err)
+    call MPI_IRECV(recv(3:4),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank+1, tag_recv(2), &
+                   MPI_COMM_WORLD, request_recv(2), MPI_err)
+  end if
+
+  if (this%ModelInfo%rank== this%ModelInfo%size-1) then
+    UU(this%Discretization%NCells+1)%U(1) = UU(this%Discretization%NCells)%U(1)
+    UU(this%Discretization%NCells+2)%U(1) = UU(this%Discretization%NCells)%U(1)
+  end if
+
+  if (.not. this%ModelInfo%rank==0) then
+    call MPI_WAIT(request_sent(1), status , MPI_err)
+    call MPI_WAIT(request_recv(1), status , MPI_err)
+  end if
+
+  if (.not. this%ModelInfo%rank== this%ModelInfo%size-1) then
+    call MPI_WAIT(request_sent(2), status , MPI_err)
+    call MPI_WAIT(request_recv(2), status , MPI_err)
+  end if
+
+  if (.not. this%ModelInfo%rank==0) then
+    UU(0)%U(:) = recv(1)%U(:)
+    UU(-1)%U(:) = recv(2)%U(:)
+  end if
+
+  if (.not. this%ModelInfo%rank== this%ModelInfo%size-1) then
+    UU(this%Discretization%NCells+1_Lng )%U(:) = recv(3)%U(:)
+    UU(this%Discretization%NCells+2_Lng)%U(:)  = recv(4)%U(:)
+  end if
+
 
 ! imposing boundary condition: at this moment, they are only at rank 0 and size-1
   if (this%ModelInfo%rank == 0) then ! applying boundary conditions at the upstream
@@ -314,10 +356,12 @@ Results%ModelInfo = this%ModelInfo
 !$ write(*,       fmt="(' I am thread ',I4,' out of ',I4,' threads.')") ITS,MTS
 !$ write(FileInfo,fmt="(' I am thread ',I4,' out of ',I4,' threads.')") ITS,MTS
 
+if ( this%ModelInfo%rank == 2) print*,this%Discretization%SlopeInter
+
   ! Time marching
   Time_Marching: do i_steps = 1_Lng, NSteps
 
-    ! write down data for visualization
+      ! write down data for visualization
       if (mod(i_steps,this%Plot_Inc)==1 .or. PrintResults) then
         !$ if (ITS==0) then
           if ( this%ModelInfo%rank == 0) then
@@ -325,8 +369,8 @@ Results%ModelInfo = this%ModelInfo
               print*, "----------------Step:", i_steps, &
                      real(TotalTime%endSys-TotalTime%startSys)/real(TotalTime%clock_rate)
           end if
-          Results%U(:) = UU(1:this%Discretization%NCells)
-          call Results%plot_results(i_steps)
+        Results%U(:) = UU(-1:this%Discretization%NCells+2)
+        call Results%plot_results(i_steps)
         !$ end if
       end if
 
@@ -387,17 +431,10 @@ Results%ModelInfo = this%ModelInfo
             ! Compute alpha(= RI*(U_i - U_(i-1))
             alpha%U(:) = matmul(Jacobian%L, Delta_U%U(:))
 
-            ! Source terms
-            !if (i_Interface == 1_Tiny) then
-            !  Coefficient = -1.0_Dbl !take care of the sign of flux for the high-resolution part
-            !else if (i_Interface == 2_Tiny) then
-            !  Coefficient = +1.0_Dbl !take care of the sign of flux for the high-resolution part
-            !end if
-
             Coefficient = (-1.0_Dbl) ** i_Interface
 
-
             height_interface = 0.5_Dbl * (Jacobian%U_up%U(1) +Jacobian%U_dw%U(1) )
+
             velocity_interface = &
             0.5_Dbl*(Jacobian%U_up%U(2)/Jacobian%U_up%U(1)+Jacobian%U_dw%U(2)/Jacobian%U_dw%U(1))
 
@@ -544,6 +581,7 @@ Results%ModelInfo = this%ModelInfo
     if (.not. this%ModelInfo%rank== this%ModelInfo%size-1) then
       sent(3)%U(:) = UU( this%Discretization%NCells )%U(:)
       sent(4)%U(:) = UU( this%Discretization%NCells-1_Lng )%U(:)
+
       call MPI_ISEND(sent(3:4),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank+1, tag_sent(2), &
                      MPI_COMM_WORLD, request_sent(2), MPI_err)
       call MPI_IRECV(recv(3:4),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank+1, tag_recv(2), &

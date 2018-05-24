@@ -174,10 +174,6 @@ UnFile = FilePartition
 read(unit=UnFile, fmt="(F35.20)", advance='yes', asynchronous='no', iostat=IO_read, &
     err=1003, end=1004) this%SlopeInter(this%NCells+1)
 
-
-
-
-
 ! - Closing the input file ---------------------------------------------------------------------
 write(*,        fmt="(A)") " -Closing the input file"
 write(FileInfo, fmt="(A)") " -Closing the input file"
