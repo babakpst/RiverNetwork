@@ -273,8 +273,8 @@ Jacobian%option = 1
 Jacobian_neighbor%option = 1
 
 LimiterFunc%limiter_Type = this%AnalysisInfo%limiter ! Define what limiter to use in the algorithm
-!PrintResults = .true.
-PrintResults = .false.
+PrintResults = .true.
+!PrintResults = .false.
 SourceTerms%Identity(:,:) = 0.0_Dbl
 SourceTerms%Identity(1,1) = 1.0_Dbl
 SourceTerms%Identity(2,2) = 1.0_Dbl
@@ -355,8 +355,6 @@ Results%ModelInfo = this%ModelInfo
 
 !$ write(*,       fmt="(' I am thread ',I4,' out of ',I4,' threads.')") ITS,MTS
 !$ write(FileInfo,fmt="(' I am thread ',I4,' out of ',I4,' threads.')") ITS,MTS
-
-if ( this%ModelInfo%rank == 2) print*,this%Discretization%SlopeInter
 
   ! Time marching
   Time_Marching: do i_steps = 1_Lng, NSteps
@@ -466,6 +464,7 @@ if ( this%ModelInfo%rank == 2) print*,this%Discretization%SlopeInter
 
                 ! The upwind part
                 F_L%U(:) = F_L%U(:) + speed * Wave%U(:)
+                !write(FileInfo,"( I3,I5, i2,i2, f30.15,5x ,2f30.15,5x, 2f30.15 ) ") i_steps, i_Cell, i_Interface, i_eigen, speed, Wave%U(:), F_L%U(:)  ! <delete>
 
                   ! This if condition computes the W_(I-1/2)
                   if  (Jacobian%Lambda%U(i_eigen)  > 0.0_Dbl ) then
@@ -527,10 +526,10 @@ if ( this%ModelInfo%rank == 2) print*,this%Discretization%SlopeInter
                 ! The high-resolution (Lax-Wendroff) part
                 F_H%U(:) = F_H%U(:) + Coefficient * 0.5_Dbl * dabs(Jacobian%Lambda%U(i_eigen) ) &
                            * (1.0_Dbl-dtdx*dabs(Jacobian%Lambda%U(i_eigen)))*Wave_tilda%U(:)
+                write(FileInfo,"( I3,I5, i2,i2, 2f30.15,5x ,3f30.15,5x, 2f30.15 ) ") i_steps, i_Cell, i_Interface, i_eigen, F_H%U(:) , dabs(Jacobian%Lambda%U(i_eigen) ), (1.0_Dbl-dtdx*dabs(Jacobian%Lambda%U(i_eigen))), dtdx, Wave_tilda%U(:)! <delete>
 
               end do ON_Eigenvalues
           end do ON_Interface
-
 
         ! Final update the results
         TempSolution%U(:) = UU(i_cell)%U(:) - dtdx * F_L%U(:) - dtdx * F_H%U(:) &
@@ -538,12 +537,13 @@ if ( this%ModelInfo%rank == 2) print*,this%Discretization%SlopeInter
 
         UN(i_cell)%U(:) = matmul(SourceTerms%BI(:,:), TempSolution%U(:))
 
+        ! <delete>
+        write(FileInfo,"( I3,I5, 4(2f30.15,5x) ) ") i_steps, i_Cell, F_L%U(:), F_H%U(:),SourceTerms%Source_1%U(:), SourceTerms%Source_2%U(:) ! <delete>
+
       end do
       !$OMP END DO
 
       !!$OMP END PARALLEL DO
-
-
       !$OMP DO
       do i_Cell = 1_Lng, this%Discretization%NCells  ! Loop over cells except the boundary cells
         UU(i_Cell) = UN(i_Cell)

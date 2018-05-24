@@ -12,8 +12,8 @@
 
 # required loaded modules: c7 intel/17.0 mpich2/3.1.4
 
-F90=mpif90 -CB
-#F90=mpif90
+#F90=mpif90 -CB
+F90=mpif90
 #F90=ifort
 #F90=ifort -pg  # profiler
 #F90= gfortran  # not working because of ifort module
@@ -22,7 +22,8 @@ F90=mpif90 -CB
 
 #FFLAGS=-O2 -qopenmp -g -debug all -debug-parameters all -traceback -check all -fp-stack-check -check bounds -check stack -gen-interfaces -warn interfaces -ftrapuv -fpe0 -CB
 #FFLAGS=-O2 -qopenmp
-FFLAGS=-O2
+#FFLAGS=-O2
+FFLAGS=-O2 -g -debug all -debug-parameters all -traceback -check all -fp-stack-check -check bounds -check stack -gen-interfaces -warn interfaces -ftrapuv -fpe0 -CB
 
 SOURCESF=	Parameters_mod.f90 \
 					Timer_mod.f90 \

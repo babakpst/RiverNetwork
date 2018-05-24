@@ -14,10 +14,11 @@
 ! V0.10: 03/08/2018 - Initiated: Compiled without error.
 ! V1.00: 03/20/2018 - Compiled with no error/warnings.
 ! V1.10: 04/10/2018 - Minor modifications in the objects/classes.
+! V2.10: 05/24/2018 - modifying for MPI
 !
 ! File version $Id $
 !
-! Last update: 04/10/2018
+! Last update: 05/24/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! Discretize_1D: Discretizes the 1D model.
@@ -315,7 +316,6 @@ write(FileInfo,*) " end subroutine < Discretize_1D_sub >"
 
 return
 end subroutine Discretize_1D_sub
-
 
 !##################################################################################################
 ! Purpose: This function determines the shape of the 1D domain.
