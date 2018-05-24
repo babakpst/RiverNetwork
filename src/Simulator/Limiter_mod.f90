@@ -129,7 +129,7 @@ end type SoureceTerms_tp
 
 ! Contains the parameters for the solution
 type, public :: SolverWithLimiter
-  integer(kind=Lng)      :: Plot_Inc = 1000
+  integer(kind=Lng)      :: Plot_Inc = 100
 
   type(model_tp) :: Discretization ! Contains the discretization of the domain
   type(AnalysisData_tp)   :: AnalysisInfo   ! Holds information for the analysis
@@ -270,8 +270,8 @@ Jacobian_neighbor%option = 1
 
 ! Initialization
 LimiterFunc%limiter_Type = this%AnalysisInfo%limiter ! Define what limiter to use in the algorithm
-PrintResults = .true.
-!PrintResults = .false.
+!PrintResults = .true.
+PrintResults = .false.
 SourceTerms%Identity(:,:) = 0.0_Dbl
 SourceTerms%Identity(1,1) = 1.0_Dbl
 SourceTerms%Identity(2,2) = 1.0_Dbl

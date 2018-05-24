@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="SVE_2D" />
+		<Option pch_mode="2" />
+		<Option compiler="gfortran" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/SVE_2D" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gfortran" />
+				<Compiler>
+					<Add option="-g" />
+				</Compiler>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/SVE_2D" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gfortran" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+		</Compiler>
+		<Unit filename="src/Partitioner/Address.txt" />
+		<Unit filename="src/Partitioner/Discretization_mod.f90" />
+		<Unit filename="src/Partitioner/Driver_Partitioner.f90" />
+		<Unit filename="src/Partitioner/Global_Variables_Inc.f90" />
+		<Unit filename="src/Partitioner/Inf_mod.f90" />
+		<Unit filename="src/Partitioner/Input_mod.f90" />
+		<Unit filename="src/Partitioner/Parameters_mod.f90" />
+		<Unit filename="src/Partitioner/Partitioner_mod.f90" />
+		<Unit filename="src/Partitioner/Results_mod.f90" />
+		<Unit filename="src/Partitioner/makefile" />
+		<Unit filename="src/Simulator/Address.txt" />
+		<Unit filename="src/Simulator/Driver_Simulation.f90" />
+		<Unit filename="src/Simulator/Global_Variables_Inc.f90" />
+		<Unit filename="src/Simulator/Inf_mod.f90" />
+		<Unit filename="src/Simulator/Input_mod.f90" />
+		<Unit filename="src/Simulator/Limiter_mod.f90" />
+		<Unit filename="src/Simulator/Model_mod.f90" />
+		<Unit filename="src/Simulator/Parameters_mod.f90" />
+		<Unit filename="src/Simulator/Results_mod.f90" />
+		<Unit filename="src/Simulator/Timer_mod.f90" />
+		<Unit filename="src/Simulator/makefile" />
+		<Extensions>
+			<envvars />
+			<code_completion />
+			<debugger />
+			<lib_finder disable_auto="1" />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
