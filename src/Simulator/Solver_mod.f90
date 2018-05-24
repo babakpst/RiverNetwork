@@ -127,7 +127,7 @@ end type SoureceTerms_tp
 
 ! Contains the parameters for the solution
 type, public :: SolverWithLimiter
-  integer(kind=Lng)      :: Plot_Inc = 200
+  integer(kind=Lng)      :: Plot_Inc = 500
 
   type(model_tp) :: Discretization ! Contains the discretization of the domain
   type(AnalysisData_tp)   :: AnalysisInfo   ! Holds information for the analysis
@@ -264,7 +264,7 @@ Results%NCells = this%Discretization%NCells
 ! Initialization:
 NSteps = this%AnalysisInfo%TotalTime/this%AnalysisInfo%TimeStep
 dt     = this%AnalysisInfo%TimeStep
-dx     = this%Discretization%LengthCell(1)
+dx     = this%Discretization%LengthCell(1,2)
 
 dtdx = dt / dx
 
@@ -273,8 +273,8 @@ Jacobian%option = 1
 Jacobian_neighbor%option = 1
 
 LimiterFunc%limiter_Type = this%AnalysisInfo%limiter ! Define what limiter to use in the algorithm
-PrintResults = .true.
-!PrintResults = .false.
+!PrintResults = .true.
+PrintResults = .false.
 SourceTerms%Identity(:,:) = 0.0_Dbl
 SourceTerms%Identity(1,1) = 1.0_Dbl
 SourceTerms%Identity(2,2) = 1.0_Dbl
@@ -357,7 +357,7 @@ Results%ModelInfo = this%ModelInfo
 !$ write(FileInfo,fmt="(' I am thread ',I4,' out of ',I4,' threads.')") ITS,MTS
 
   ! Time marching
-  Time_Marching: do i_steps = 1_Lng, NSteps
+  Time_Marching: do i_steps = 1_Lng, NSteps +1_Lng
 
       ! write down data for visualization
       if (mod(i_steps,this%Plot_Inc)==1 .or. PrintResults) then
@@ -464,7 +464,6 @@ Results%ModelInfo = this%ModelInfo
 
                 ! The upwind part
                 F_L%U(:) = F_L%U(:) + speed * Wave%U(:)
-                !write(FileInfo,"( I3,I5, i2,i2, f30.15,5x ,2f30.15,5x, 2f30.15 ) ") i_steps, i_Cell, i_Interface, i_eigen, speed, Wave%U(:), F_L%U(:)  ! <delete>
 
                   ! This if condition computes the W_(I-1/2)
                   if  (Jacobian%Lambda%U(i_eigen)  > 0.0_Dbl ) then
@@ -526,7 +525,6 @@ Results%ModelInfo = this%ModelInfo
                 ! The high-resolution (Lax-Wendroff) part
                 F_H%U(:) = F_H%U(:) + Coefficient * 0.5_Dbl * dabs(Jacobian%Lambda%U(i_eigen) ) &
                            * (1.0_Dbl-dtdx*dabs(Jacobian%Lambda%U(i_eigen)))*Wave_tilda%U(:)
-                write(FileInfo,"( I3,I5, i2,i2, 2f30.15,5x ,3f30.15,5x, 2f30.15 ) ") i_steps, i_Cell, i_Interface, i_eigen, F_H%U(:) , dabs(Jacobian%Lambda%U(i_eigen) ), (1.0_Dbl-dtdx*dabs(Jacobian%Lambda%U(i_eigen))), dtdx, Wave_tilda%U(:)! <delete>
 
               end do ON_Eigenvalues
           end do ON_Interface
@@ -536,9 +534,6 @@ Results%ModelInfo = this%ModelInfo
                             + SourceTerms%Source_1%U(:) - SourceTerms%Source_2%U(:)
 
         UN(i_cell)%U(:) = matmul(SourceTerms%BI(:,:), TempSolution%U(:))
-
-        ! <delete>
-        write(FileInfo,"( I3,I5, 4(2f30.15,5x) ) ") i_steps, i_Cell, F_L%U(:), F_H%U(:),SourceTerms%Source_1%U(:), SourceTerms%Source_2%U(:) ! <delete>
 
       end do
       !$OMP END DO

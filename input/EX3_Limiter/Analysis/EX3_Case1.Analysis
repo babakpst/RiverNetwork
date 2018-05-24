@@ -4,7 +4,7 @@ Analysis type: 1: 1D lax-wendroff  - 2: Lax-Wendroff with limiter
 2
 
 Total run time (in seconds):  200.0
-0.005
+100.0
 
 Time step (in seconds):
 0.001

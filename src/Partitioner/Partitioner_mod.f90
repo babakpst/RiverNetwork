@@ -136,10 +136,6 @@ write(FileInfo,*) " -Data partitioning ... "
     write(unit=UnFile, fmt="(I23)", advance='yes', asynchronous='no', &
           iostat=IO_write, err=1006) chunk(i_partition)
 
-    ! Writing the length of each cell in each partition
-    write(unit=UnFile, fmt="(F23.8)", advance='yes', asynchronous='no', &
-          iostat=IO_write, err=1006) Discretization%LengthCell(1)
-
     UnFile = FilePartition
 
       do i_cells = 1_Lng, chunk(i_partition)
@@ -147,7 +143,8 @@ write(FileInfo,*) " -Data partitioning ... "
         counter = counter + 1_Lng
         write(unit=UnFile, fmt="(11F35.20)", &
               advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
-              Discretization%LengthCell (counter),                         &
+              Discretization%LengthCell (counter,1),                       &
+              Discretization%LengthCell (counter,2),                       &
               Discretization%SlopeCell  (counter),                         &
               Discretization%ZCell      (counter),                         &
               Discretization%ManningCell(counter),                         &

@@ -48,7 +48,6 @@ implicit none
 type model_tp
   integer (kind=Lng)  :: NCells ! Total number of cells in the domain
 
-  real(kind=DBL), allocatable, dimension(:) :: LengthCell ! the length of each cell
   real(kind=DBL), allocatable, dimension(:) :: SlopeCell  ! the slope of each cell at the center
   real(kind=DBL), allocatable, dimension(:) :: SlopeInter ! the slope of each cell at the center
   real(kind=DBL), allocatable, dimension(:) :: ZCell      ! bottom elev. at the center of each cell
@@ -57,6 +56,10 @@ type model_tp
   real(kind=DBL), allocatable, dimension(:) :: WidthCell  ! the Manning's number of each cell
   real(kind=DBL), allocatable, dimension(:) :: X_Disc     ! the coordinates of the cell center
   real(kind=DBL), allocatable, dimension(:) :: X_Full     ! the coordinates all points
+
+  real(kind=DBL), allocatable, dimension(:,:) :: LengthCell ! the length of each cell
+            ! note: the first col holds the actual cell length (length of the controal volume), and
+            !       the second col holds the projection(x)
 
   contains
     procedure Discretize => Discretize_1D_sub
@@ -146,7 +149,7 @@ write(FileInfo, fmt="(A)") " Calculating the total number of the cells in the do
 write(*,        fmt="(A,I15)") " Total number of cells: ", this%NCells
 write(FileInfo, fmt="(A,I15)") " Total number of cells: ", this%NCells
 
-allocate(this%LengthCell(this%NCells),              &
+allocate(this%LengthCell(this%NCells,2),            &
          this%SlopeCell(this%NCells),               &
          this%SlopeInter(this%NCells+1),            &
          this%ZCell(this%NCells),                   &
@@ -190,8 +193,9 @@ CellCounter = 0_Lng
 
       if (Geometry%ReachType(i_reach)==0_Shrt) then
 
-        CntrlVolumeLength =  floor(Geometry%ReachLength(i_reach)*1.0E10/Geometry%ReachDisc(i_reach) )/1.0E10     ! Control volume length
-        write(*,fmt="(A,I5,A,F23.10)") " Cell length in the reach ", i_reach," is:", CntrlVolumeLength
+        CntrlVolumeLength = floor(Geometry%ReachLength(i_reach)*1.0E10/ &
+                            Geometry%ReachDisc(i_reach) )/1.0E10 ! Control volume length
+        write(*,fmt="(A,I5,A,F23.10)")" Cell length in the reach ",i_reach," is:",CntrlVolumeLength
         Height = MaxHeight
         Z_loss = floor(1.0E10*CntrlVolumeLength * Geometry%ReachSlope(i_reach))/ 1.0E10
         Height = Height +  floor(1.0E10 * 0.5_Dbl * Z_loss)/1.0E10
@@ -204,7 +208,8 @@ CellCounter = 0_Lng
 
           do jj = 1_Lng, Geometry%ReachDisc(i_reach) - 1_Lng
               CellCounter = CellCounter + 1_Lng
-              this%LengthCell(CellCounter)  = CntrlVolumeLength
+              this%LengthCell(CellCounter,1)= CntrlVolumeLength
+              this%LengthCell(CellCounter,2)= CntrlVolumeLength ! <modify> use horizontal distance
               this%X_Disc(CellCounter)      = XCoordinate
               this%X_Full(CellCounter)      = XCoordinate - 0.5_Dbl * CntrlVolumeLength
               this%X_Full(CellCounter*2_Lng+1_Lng) = XCoordinate
@@ -223,25 +228,28 @@ CellCounter = 0_Lng
           end do
 
         CellCounter = CellCounter + 1_Lng
-        this%LengthCell(CellCounter) = Geometry%ReachLength(i_reach) - TotalLength
+        this%LengthCell(CellCounter,1) = Geometry%ReachLength(i_reach) - TotalLength
 
         this%SlopeCell(CellCounter)  = Geometry%ReachSlope(i_reach)
         this%SlopeInter(CellCounter) = Geometry%ReachSlope(i_reach)
 
-        XCoordinate                            = XCoordinate - 0.5_dbl * CntrlVolumeLength + 0.5_dbl * this%LengthCell(CellCounter)
+        XCoordinate = XCoordinate-0.5_dbl*CntrlVolumeLength+0.5_dbl*this%LengthCell(CellCounter,1)
 
         this%X_Disc(CellCounter)     = XCoordinate
-        this%X_Full(CellCounter*2_Lng)       = XCoordinate - 0.5 * this%LengthCell(CellCounter)
+        this%X_Full(CellCounter*2_Lng)       = XCoordinate - 0.5 * this%LengthCell(CellCounter,1)
         this%X_Full(CellCounter*2_Lng+1_Lng) = XCoordinate
-        this%X_Full(CellCounter*2_Lng+2_Lng) = XCoordinate + 0.5 * this%LengthCell(CellCounter)
+        this%X_Full(CellCounter*2_Lng+2_Lng) = XCoordinate + 0.5 * this%LengthCell(CellCounter,1)
 
-        Height = Height - (0.5_dbl * Z_loss + 0.5_dbl * this%LengthCell(CellCounter) * Geometry%ReachSlope(i_reach))
+        Height = Height - (0.5_dbl * Z_loss + 0.5_dbl * this%LengthCell(CellCounter,1) &
+                                                      * Geometry%ReachSlope(i_reach))
 
         this%ZCell(CellCounter)             = Height
 
-        this%ZFull(CellCounter*2_Lng)       = Height + 0.5_dbl * this%LengthCell(CellCounter) * Geometry%ReachSlope(i_reach)
+        this%ZFull(CellCounter*2_Lng)       = Height + 0.5_dbl * this%LengthCell(CellCounter,1) &
+                                                               * Geometry%ReachSlope(i_reach)
         this%ZFull(CellCounter*2_Lng+1_Lng) = Height
-        this%ZFull(CellCounter*2_Lng)       = Height - 0.5_dbl * this%LengthCell(CellCounter) * Geometry%ReachSlope(i_reach)
+        this%ZFull(CellCounter*2_Lng)       = Height - 0.5_dbl * this%LengthCell(CellCounter,1) &
+                                                               * Geometry%ReachSlope(i_reach)
         this%ManningCell(CellCounter)= Geometry%ReachManning(i_reach)
         this%WidthCell(CellCounter)  = Geometry%ReachWidth(i_reach)
 
@@ -250,7 +258,8 @@ CellCounter = 0_Lng
       else if (Geometry%ReachType(i_reach)==1_Shrt) then
 
         Height = MaxHeight
-        ProjectionLength = floor(1.0E10 * Geometry%ReachLength(i_reach) / Geometry%ReachDisc(i_reach) )/1.0E10
+        ProjectionLength = floor(1.0E10 * Geometry%ReachLength(i_reach)/&
+                           Geometry%ReachDisc(i_reach) )/1.0E10
         XCoordinate = 0.5_Dbl * ProjectionLength
 
           do jj = 1_Lng,i_reach-1_Lng
@@ -261,15 +270,17 @@ CellCounter = 0_Lng
             CellCounter = CellCounter + 1_Lng
             Z_loss = Domain_Func_1D(XCoordinate)
 
-            this%LengthCell(CellCounter) = dsqrt(ProjectionLength**2 + Z_loss**2)
+            this%LengthCell(CellCounter,1) = dsqrt(ProjectionLength**2 + Z_loss**2)
+            this%LengthCell(CellCounter,2) = ProjectionLength
             this%X_Disc(CellCounter) = XCoordinate
             this%X_Full(CellCounter*2_Lng)       = XCoordinate - 0.5_Dbl * ProjectionLength
             this%X_Full(CellCounter*2_Lng+1_Lng) = XCoordinate
 
             this%SlopeCell(CellCounter)  = Domain_Func_1D_D(XCoordinate)
-            this%SlopeInter(CellCounter) = Domain_Func_1D_D(XCoordinate- 0.5_Dbl * ProjectionLength)
+            this%SlopeInter(CellCounter) = Domain_Func_1D_D(XCoordinate-0.5_Dbl * ProjectionLength)
             this%ZCell(CellCounter)      = Height + Z_loss
-            this%ZFull(CellCounter*2)    = Height + Domain_Func_1D(XCoordinate - 0.5_Dbl * ProjectionLength)
+            this%ZFull(CellCounter*2)    = Height &
+                                         + Domain_Func_1D(XCoordinate - 0.5_Dbl * ProjectionLength)
             this%ZFull(CellCounter*2+1)  = Height + Z_loss
             this%ManningCell(CellCounter)= Geometry%ReachManning(i_reach)
             this%WidthCell(CellCounter)  = Geometry%ReachWidth(i_reach)
@@ -284,8 +295,10 @@ CellCounter = 0_Lng
   end do
 
   if (this%NCells /= CellCounter) then
-    write(*,        fmt = "(A,2I10)") "Fatal error: Mismatch between the number of cells. Check the discretization module.", this%NCells, CellCounter
-    write(FileInfo, fmt = "(A,2I10)") "Fatal error: Mismatch between the number of cells. Check the discretization module.", this%NCells, CellCounter
+    write(*,        fmt = "(A,2I10)") "Fatal error: Mismatch between the number of cells. &
+                          Check the discretization module.", this%NCells, CellCounter
+    write(FileInfo, fmt = "(A,2I10)") "Fatal error: Mismatch between the number of cells. &
+                          Check the discretization module.", this%NCells, CellCounter
     write(*, Fmt_End); read(*,*); stop;
   end if
 

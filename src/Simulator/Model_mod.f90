@@ -42,9 +42,6 @@ implicit none
 type model_tp
   integer (kind=Lng)  :: NCells ! Total number of cells in the domain
 
-  real(kind=DBL)      :: dx     ! fixed cell size
-
-  real(kind=DBL), allocatable, dimension(:) :: LengthCell ! the length of each cell
   real(kind=DBL), allocatable, dimension(:) :: SlopeCell  ! the slope of each cell at the center
   real(kind=DBL), allocatable, dimension(:) :: SlopeInter ! the slope of each cell at the center
   real(kind=DBL), allocatable, dimension(:) :: ZCell      ! bottom elev. at the center of each cell
@@ -53,6 +50,9 @@ type model_tp
   real(kind=DBL), allocatable, dimension(:) :: WidthCell  ! the Manning's number of each cell
   real(kind=DBL), allocatable, dimension(:) :: X_Disc     ! the coordinates of the cell center
   real(kind=DBL), allocatable, dimension(:) :: X_Full     ! the coordinates all points
+  real(kind=DBL), allocatable, dimension(:,:) :: LengthCell ! the length of each cell
+            ! note: the first col holds the actual cell length (length of the controal volume), and
+            !       the second col holds the projection(x)
 
   contains
     procedure:: Input => Input_sub
@@ -75,10 +75,11 @@ contains
 ! V1.0: 03/01/2018 - Compiled with no errors/warnings.
 ! V1.0: 04/10/2018 - Minor modifications in the class.
 ! V2.0: 04/20/2018 - Parallel.
+! V2.1: 05/24/2018 - Parallel with MPI
 !
 ! File version $Id $
 !
-! Last update: 05/15/2018
+! Last update: 05/24/2018
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
 ! (Refer to the main code to see the list of imported variables)
@@ -131,12 +132,11 @@ open(Unit=UnFile, file=trim(ModelInfo%ModelName)//'.par', &
 
 UnFile = FilePartition
 read(unit=UnFile, fmt="(I23)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%NCells
-read(unit=UnFile, fmt="(F23.8)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%dx
 
 write(*,        fmt="(A)") " -Allocating discretization ..."
 write(FileInfo, fmt="(A)") " -Allocating discretization ..."
 
-allocate(this%LengthCell(this%NCells),              &
+allocate(this%LengthCell(this%NCells,2),            &
          this%SlopeCell(this%NCells),               &
          this%SlopeInter(this%NCells+1),            &
          this%ZCell(this%NCells),                   &
@@ -156,7 +156,8 @@ UnFile = FilePartition
   do i_cells = 1_Lng, this%NCells
     read(unit=UnFile, fmt="(11F35.20)", advance='yes', asynchronous='no', iostat=IO_read, &
     err=1003, end=1004) &
-    this%LengthCell (i_cells),                         &
+    this%LengthCell (i_cells,1),                       &
+    this%LengthCell (i_cells,2),                       &
     this%SlopeCell  (i_cells),                         &
     this%ZCell      (i_cells),                         &
     this%ManningCell(i_cells),                         &
