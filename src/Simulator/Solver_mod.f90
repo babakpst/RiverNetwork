@@ -440,8 +440,8 @@ Results%ModelInfo = this%ModelInfo
              *dabs(velocity_interface) /( height_interface**(4.0_Dbl/3.0_Dbl))
 
             SourceTerms%S_interface%U(1) = 0.0_Dbl
-            SourceTerms%S_interface%U(2) =-Gravity*height_interface* &
-            (this%Model%SlopeInter(i_Cell+i_Interface-1_Tiny)-SourceTerms%S_f_interface)
+            SourceTerms%S_interface%U(2) =-Gravity*height_interface &
+                      *(this%Model%SlopeInter(i_Cell+i_Interface-1_Tiny)-SourceTerms%S_f_interface)
 
             SourceTerms%Source_2%U(:) = SourceTerms%Source_2%U(:) + 0.5_Dbl * (dt**2) / dx &
                              * ( Coefficient * matmul( Jacobian%A, SourceTerms%S_interface%U(:)))

@@ -143,7 +143,7 @@ write(FileInfo,*) " -Data partitioning ... "
       do i_cells = 1_Lng, chunk(i_partition)
 
         counter = counter + 1_Lng
-        write(unit=UnFile, fmt="(11F35.20)", &
+        write(unit=UnFile, fmt="(8F35.20)", &
               advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
               Discretization%LengthCell (counter,1),                       &
               Discretization%LengthCell (counter,2),                       &

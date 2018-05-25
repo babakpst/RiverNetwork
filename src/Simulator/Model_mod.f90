@@ -159,7 +159,7 @@ allocate(this%LengthCell(this%NCells,2),            &
 
 UnFile = FilePartition
   do i_cells = 1_Lng, this%NCells
-    read(unit=UnFile, fmt="(11F35.20)", advance='yes', asynchronous='no', iostat=IO_read, &
+    read(unit=UnFile, fmt="(8F35.20)", advance='yes', asynchronous='no', iostat=IO_read, &
     err=1003, end=1004) &
     this%LengthCell (i_cells,1),                       &
     this%LengthCell (i_cells,2),                       &

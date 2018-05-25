@@ -38,7 +38,7 @@ def main(arg):
   print(" Allocating memory ...")
 
   # Input section:
-  size = 6
+  size = 4
   DT = 0.001
   nstep = 100
   dataFile = 500
