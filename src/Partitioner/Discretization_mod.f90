@@ -38,11 +38,13 @@ module Discretization_mod
 
 ! User defined modules ============================================================================
 use Parameters_mod
-use Input_mod
-use Results_mod
-use Model_mod
+use Input_mod, only: Input_Data_tp
+use Model_mod, only: Geometry_tp
+use Results_mod, only: Plot_domain_1D_tp
+
 
 implicit none
+private
 
 ! Contains all information after discretization
 type model_tp
@@ -65,6 +67,8 @@ type model_tp
     procedure Discretize => Discretize_1D_sub
 
 end type model_tp
+
+public:: model_tp
 
 contains
 
@@ -370,9 +374,7 @@ Bathymetry = 0.2_Dbl - 0.05_Dbl * (x-10.0_Dbl)**2
 
 end function Domain_Func_1D
 
-
-
-
+!##################################################################################################
 function Domain_Func_1D_D(x) result(DBathymetry)
 
 implicit none
@@ -380,12 +382,9 @@ implicit none
 real(kind=Dbl) :: x
 real(kind=Dbl) :: DBathymetry
 
-
 ! code ============================================================================================
-
 DBathymetry = - 0.05_Dbl * 2.0_Dbl * (x-10.0_Dbl)
 
 end function Domain_Func_1D_D
-
 
 end module Discretization_mod

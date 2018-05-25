@@ -18,10 +18,11 @@
 ! V2.10: 04/24/2018 - Parallel, performance
 ! V2.20: 05/09/2018 - Parallel, performance
 ! V3.00: 05/16/2018 - MPI Parallel
+! V3.10: 05/25/2018 - Modifications
 !
 ! File version $Id $
 !
-! Last update: 05/16/2018
+! Last update: 05/25/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! - Solver_1D_with_Limiter_sub: Solves the 1D shallow water equation, with limiter.
@@ -45,15 +46,13 @@ module Solver_mod
 
 ! User defined modules ============================================================================
 use Parameters_mod
-use Results_mod
+use Results_mod, only: Plot_Results_1D_limiter_tp
 use Input_mod
-use Model_mod
+use Model_mod,  only: model_tp
 use Timer_mod
 
 implicit none
-
-!public
-!private
+private
 
 type LimiterFunc_tp ! contains all variable to compute the limiter value
   integer(kind=Smll) :: limiter_Type ! Indicates the type of limiter function
@@ -126,7 +125,7 @@ end type SoureceTerms_tp
 !end type SolverWithLimiter
 
 ! Contains the parameters for the solution
-type, public :: SolverWithLimiter
+type:: SolverWithLimiter_tp
   integer(kind=Lng)      :: Plot_Inc = 500
 
   type(model_tp) :: Model    ! Contains the model
@@ -135,8 +134,9 @@ type, public :: SolverWithLimiter
 
   contains
     procedure Solve => Solver_1D_with_Limiter_sub
-    !procedure BC => Impose_Boundary_Condition_1D_sub
-end type SolverWithLimiter
+end type SolverWithLimiter_tp
+
+public:: SolverWithLimiter_tp
 
 contains
 
@@ -180,7 +180,7 @@ implicit none
 ! Global variables ================================================================================
 
 ! - types -----------------------------------------------------------------------------------------
-class(SolverWithLimiter) :: this
+class(SolverWithLimiter_tp) :: this
 type(Timer_tp):: TotalTime
 
 ! Local variables =================================================================================

@@ -36,6 +36,7 @@ module Input_mod
 use Parameters_mod
 
 implicit none
+private
 
 ! Holds info. (name, dir. output dir.) of the model, initialized by subroutine Input_Address_sub.
 type Input_Data_tp
@@ -56,6 +57,7 @@ type Input_Data_tp
 
 end type Input_Data_tp
 
+public:: Input_Data_tp
 
 contains
 
@@ -64,8 +66,8 @@ contains
 ! Purpose: This subroutine/function reads the general information about the name of the simulation
 !           model, directories, etc.
 !
-! Developed by: Babak Poursartip
-! Supervised by:
+! Developed by:  Babak Poursartip
+! Supervised by: Clint Dawson
 !
 ! The Institute for Computational Engineering and Sciences (ICES)
 ! The University of Texas at Austin

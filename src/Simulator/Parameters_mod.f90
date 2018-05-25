@@ -78,15 +78,6 @@ character(144),Parameter, Public:: Fmt_Element2="('Error in the element type. Th
    ,I3,'is not available in the list of this code. Check the input file for element number',I19)"
 
 ! Unit NUMBERS OF EXTERNAL FILES ==================================================================
-! Address file that holds the model name & directories (.txt)
-!integer(kind=Smll), Parameter, Public :: FileAdr=500
-
-! Input files  <delete>
-!integer(kind=Smll), Parameter, Public :: FileDataModel=501 ! Input file (.dataModel)
-!integer(kind=Smll), Parameter, Public :: FileDataGeo=502 ! Input file for node coordinates (.XYZ)
-!integer(kind=Smll), Parameter, Public :: FilePartition=503 ! partitioned data (.par)
-!integer(kind=Smll), PARAMETER, PUBLIC :: UnInptAna=510 ! input file for analysis (.data)
-!integer(kind=Smll), PARAMETER, PUBLIC :: UnInptMat=511 ! input file for material property (.Mat)
 
 enum, bind(C)
   enumerator:: FileAdr=500   ! Address file that holds the model name & directories (.txt)
@@ -99,11 +90,6 @@ end enum
 
 ! Debugging files
 integer(kind=Smll), Parameter, Public  :: Un_CHK=599 ! Scratch file for debugging (.Chk)
-
-! Output files
-!integer(kind=Smll), Parameter, Public :: FileInfo=600  ! Model information file (.Inf)
-!integer(kind=Smll), Parameter, Public :: FileDomain=601 !output file containing the domain(.domain)
-!integer(kind=Smll), Parameter, Public :: FileResults=602 ! output file containing results (.res)
 
 enum, bind(C)
   enumerator:: FileInfo=600  ! Model information file (.Inf)
@@ -123,6 +109,11 @@ type ArgCommands
   integer(kind=Shrt), allocatable, dimension(:) :: Length          ! Holds the length of each arg
   character (kind = 1, Len = 50), allocatable, dimension(:) :: Arg  ! Holds the entered argument
 end type
+
+! This vector will be used in the main type as the solution in each type step
+type vector
+  real(kind=Dbl), dimension(2) :: U
+end type vector
 
 End Module Parameters_mod
 

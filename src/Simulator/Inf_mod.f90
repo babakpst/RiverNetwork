@@ -76,7 +76,6 @@ implicit none
 
 real(kind=SGL):: version
 
-
 ! write some inFormation on screen
 write(*,*)
 write(*,*)

@@ -37,14 +37,10 @@ module Results_mod
 
 ! User defined modules ============================================================================
 use Parameters_mod
-use Input_mod
+use Input_mod, only: Input_Data_tp
 
 implicit none
-
-! This vector will be used in the main type as the solution in each type step
-type vector
-  real(kind=Dbl), dimension(2) :: U
-end type vector
+private
 
 ! Plot domain
 type Plot_domain_1D_tp(NCells)
@@ -59,6 +55,8 @@ type Plot_domain_1D_tp(NCells)
   contains
     procedure plot => Plot_Domain_1D_sub
 end type Plot_domain_1D_tp
+
+public:: Plot_domain_1D_tp
 
 contains
 

@@ -18,5 +18,5 @@ type(ArgCommands)      :: Arguments  ! Holds the entered arguments from the comm
 type(Input_Data_tp)    :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
 type(AnalysisData_tp)  :: AnalysisInfo ! Holds initial data required for array allocation
 type(model_tp)         :: Model        ! Holds all information required of the Model
-type(SolverWithLimiter):: Experiment_TypeII !  info to solve shallow water equation with limiter
+type(SolverWithLimiter_tp):: Experiment_TypeII !  info to solve shallow water equation with limiter
 

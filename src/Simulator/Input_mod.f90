@@ -35,7 +35,7 @@ module Input_mod
 use Parameters_mod
 
 implicit none
-
+private
 
 ! Holds info. (name, dir. output dir.) of the model, initialized by subroutine Input_Address_sub.
 type Input_Data_tp
@@ -46,7 +46,6 @@ type Input_Data_tp
   character (kind = 1, Len = 150) :: AnalysisOutputDir! Directory of output file for each analysis
   character (kind = 1, Len = 150), dimension(:), allocatable :: AnalysesNames! Holds the names of
                                                                         ! the analysis input files
-
   ! rank and size of MPI
   Character(kind = 1, len = 20) :: IndexRank ! Rank no in the Char. fmt to add to input file Name
   Character(kind = 1, len = 20) :: IndexSize ! Size no in the Char. fmt to add to input file Name
@@ -79,9 +78,10 @@ type AnalysisData_tp
 
 end type AnalysisData_tp
 
+public:: AnalysisData_tp, Input_Data_tp
+
 
 contains
-
 
 !##################################################################################################
 ! Purpose: This subroutine/function reads the general information about the name of the simulation
@@ -198,8 +198,8 @@ this%OutputDir=trim(AdjustL(this%OutputDir))//'/'//trim(AdjustL (this%ModelName)
 write(*,fmt="(2A)")" The output directory is: ", this%OutputDir
 
 ! Modifying the model name for parallel simulation
-this%ModelName = &
-trim(AdjustL(this%ModelName))//'_s'//trim(adjustL(this%IndexSize))//'_p'//trim(adjustL(this%IndexRank))
+this%ModelName = trim(AdjustL(this%ModelName))//'_s'// &
+                 trim(adjustL(this%IndexSize))//'_p'//trim(adjustL(this%IndexRank))
 
 
 write(*,fmt='(" The name of the model file is: ",2A)') this%ModelName

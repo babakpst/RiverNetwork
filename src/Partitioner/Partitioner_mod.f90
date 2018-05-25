@@ -32,7 +32,9 @@ module Partitioner_mod
 
 ! User defined modules ============================================================================
 use Parameters_mod
-use Discretization_mod
+use Discretization_mod, only: model_tp
+use Input_mod, only: Input_Data_tp
+use Model_mod, only: Geometry_tp
 
 implicit none
 

@@ -2,7 +2,7 @@
 !##################################################################################################
 ! Purpose: This module reads all data for simulation.
 !
-! Developed by: Babak Poursartip
+! Developed by:  Babak Poursartip
 ! Supervised by: Clint Dawson
 !
 ! The Institute for Computational Engineering and Sciences (ICES)
@@ -33,9 +33,10 @@
 module Model_mod
 
 use Parameters_mod
-use Input_mod
+use Input_mod, only: Input_Data_tp
 
 implicit none
+private
 
 ! Contains all information about the geometry of the domain. (input)
 type Geometry_tp
@@ -58,6 +59,7 @@ type Geometry_tp
 
 end type Geometry_tp
 
+public:: Geometry_tp
 
 contains
 
@@ -124,24 +126,30 @@ print*, ModelInfo%InputDir
 UnFile=FileDataModel
 open(Unit=UnFile, file=trim(ModelInfo%ModelName)//'.dataModel', &
      err=1001, iostat=IO_File, access='sequential', action='read', asynchronous='no', &
-     blank='null', blocksize=0, defaultfile=trim(ModelInfo%InputDir), DisPOSE='keep', form='formatted', &
-     position='asis', status='old')
+     blank='null', blocksize=0, defaultfile=trim(ModelInfo%InputDir), DisPOSE='keep', &
+     form='formatted', position='asis', status='old')
 
 UnFile = FileDataModel  ! Total number of reaches in the domain
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%NoReaches
+read(unit=UnFile,fmt="(I10)",advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)&
+                                                                                     this%NoReaches
+
 UnFile = FileInfo
-write(unit=UnFile, fmt="(' Total number of reach(es) is(are): ', I10)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%NoReaches
+write(unit=UnFile, fmt="(' Total number of reach(es) is(are): ', I10)", advance='yes', &
+                   asynchronous='no', iostat=IO_write, err=1006) this%NoReaches
 write(unit=*,      fmt="(' Total number of reach(es) is(are): ', I10)") this%NoReaches
 
 UnFile = FileDataModel  ! Number of cores - required for mesh partitioning.
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%size
+read(unit=UnFile,fmt="(I10)",advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)&
+                                                                                          this%size
+
 UnFile = FileInfo
-write(unit=UnFile, fmt="(' Total number of core(s) is(are): ', I10)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) this%size
+write(unit=UnFile, fmt="(' Total number of core(s) is(are): ', I10)", advance='yes', &
+      asynchronous='no', iostat=IO_write, err=1006) this%size
 write(unit=*,      fmt="(' Total number of core(s) is(are): ', I10)") this%size
 
 
@@ -262,8 +270,8 @@ write(FileInfo, fmt="(A)") " -Opening the input files for arrays ..."
 UnFile = FileDataGeo
 open(Unit=UnFile, file=trim(ModelInfo%ModelName)//'.Geo', &
      err=1001, iostat=IO_File, access='sequential', action='read', asynchronous='no', &
-     blank='null', blocksize=0, defaultfile=trim(ModelInfo%InputDir), DisPOSE='keep', form='formatted', &
-     position='asis', status='old')
+     blank='null', blocksize=0, defaultfile=trim(ModelInfo%InputDir), DisPOSE='keep', &
+     form='formatted', position='asis', status='old')
 
 UnFile = FileDataGeo
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
@@ -273,22 +281,29 @@ read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, e
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
   do i_reach= 1, this%NoReaches
     UnFile = FileDataGeo
-    read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%ReachLength(i_reach); !write(*,*)this%ReachLength(i_reach)
+    read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
+         end=1004) this%ReachLength(i_reach); !write(*,*)this%ReachLength(i_reach)
+
     UnFile = FileInfo
-    write(unit=*,      fmt="(' The length of reach ', I5, ' is:', F23.10,' m')") i_reach, this%ReachLength(i_reach)
-    write(unit=UnFile, fmt="(' The length of reach ', I5, ' is:', F23.10,' m')") i_reach, this%ReachLength(i_reach)
+    write(unit=*,      fmt="(' The length of reach ', I5, ' is:', F23.10,' m')") &
+                                                                i_reach, this%ReachLength(i_reach)
+    write(unit=UnFile, fmt="(' The length of reach ', I5, ' is:', F23.10,' m')") &
+                                                                i_reach, this%ReachLength(i_reach)
   end do
 
-! Reading total number of control volumes in each reach/ For now we have a constant discretization in each reach.
+! Reading total number of control volumes in each reach/For now we have a constant discretization
 UnFile = FileDataGeo
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
   do i_reach= 1, this%NoReaches
     UnFile = FileDataGeo
-    read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%ReachDisc(i_reach)
+    read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
+         end=1004) this%ReachDisc(i_reach)
     UnFile = FileInfo
-    write(unit=*,      fmt="(' No. of discretization of reach ', I5, ' is:', I10)") i_reach, this%ReachDisc(i_reach)
-    write(unit=UnFile, fmt="(' No. of discretization of reach ', I5, ' is:', I10)") i_reach, this%ReachDisc(i_reach)
+    write(unit=*,      fmt="(' No. of discretization of reach ', I5, ' is:', I10)") &
+                                                                  i_reach, this%ReachDisc(i_reach)
+    write(unit=UnFile, fmt="(' No. of discretization of reach ', I5, ' is:', I10)") &
+                                                                  i_reach, this%ReachDisc(i_reach)
   end do
 
 ! Reading reach type
@@ -297,10 +312,12 @@ read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, e
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
   do i_reach= 1, this%NoReaches
     UnFile = FileDataGeo
-    read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%ReachType(i_reach)
+    read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
+         end=1004) this%ReachType(i_reach)
+
     UnFile = FileInfo
-    write(unit=*,      fmt="(' Rreach ', I10,' is of type: ', I5)") i_reach, this%ReachType(i_reach)
-    write(unit=UnFile, fmt="(' Rreach ', I10,' is of type: ', I5)") i_reach, this%ReachType(i_reach)
+    write(unit=*,     fmt="(' Rreach ', I10,' is of type: ', I5)") i_reach, this%ReachType(i_reach)
+    write(unit=UnFile,fmt="(' Rreach ', I10,' is of type: ', I5)") i_reach, this%ReachType(i_reach)
   end do
 
 ! Reading slopes of reach
@@ -309,10 +326,14 @@ read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, e
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
   do i_reach= 1, this%NoReaches
     UnFile = FileDataGeo
-    read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%ReachSlope(i_reach)
+    read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
+         end=1004) this%ReachSlope(i_reach)
+
     UnFile = FileInfo
-    write(unit=*,      fmt="(' The slope of reach ', I10,' is: ', F23.10)") i_reach, this%ReachSlope(i_reach)
-    write(unit=UnFile, fmt="(' The slope of reach ', I10,' is: ', F23.10)") i_reach, this%ReachSlope(i_reach)
+    write(unit=*,      fmt="(' The slope of reach ', I10,' is: ', F23.10)") &
+                                                                  i_reach, this%ReachSlope(i_reach)
+    write(unit=UnFile, fmt="(' The slope of reach ', I10,' is: ', F23.10)") &
+                                                                  i_reach, this%ReachSlope(i_reach)
   end do
 
 ! Reading Manning number of each reach
@@ -321,10 +342,14 @@ read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, e
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
   do i_reach= 1, this%NoReaches
     UnFile = FileDataGeo
-    read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%ReachManning(i_reach)
+    read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
+         end=1004) this%ReachManning(i_reach)
+
     UnFile = FileInfo
-    write(unit=*,      fmt="(' The Mannings no. for reach ', I10,' is: ', F23.10)") i_reach, this%ReachManning(i_reach)
-    write(unit=UnFile, fmt="(' The Mannings no. for reach ', I10,' is: ', F23.10)") i_reach, this%ReachManning(i_reach)
+    write(unit=*,      fmt="(' The Mannings no. for reach ', I10,' is: ', F23.10)") &
+                                                                i_reach, this%ReachManning(i_reach)
+    write(unit=UnFile, fmt="(' The Mannings no. for reach ', I10,' is: ', F23.10)") &
+                                                                i_reach, this%ReachManning(i_reach)
   end do
 
 ! Reading the width of each reach
@@ -332,11 +357,16 @@ UnFile = FileDataGeo
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
   do i_reach= 1, this%NoReaches
+
     UnFile = FileDataGeo
-    read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%ReachWidth(i_reach)
+    read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
+         end=1004) this%ReachWidth(i_reach)
+
     UnFile = FileInfo
-    write(unit=*,      fmt="(' The width of reach ', I10,'is: ', F23.10)") i_reach, this%ReachWidth(i_reach)
-    write(unit=UnFile, fmt="(' The width of reach ', I10,'is: ', F23.10)") i_reach, this%ReachWidth(i_reach)
+    write(unit=*,      fmt="(' The width of reach ', I10,'is: ', F23.10)") &
+                                                                  i_reach, this%ReachWidth(i_reach)
+    write(unit=UnFile, fmt="(' The width of reach ', I10,'is: ', F23.10)") &
+                                                                  i_reach, this%ReachWidth(i_reach)
   end do
 
 ! - Closing the geometry file ---------------------------------------------------------------------

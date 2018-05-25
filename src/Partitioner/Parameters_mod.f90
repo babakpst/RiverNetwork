@@ -44,42 +44,60 @@ real(kind=DBL), Parameter, Public :: PI=3.141592653589793238_Dbl
 real(kind=Dbl), Parameter, Public :: Gravity=9.81_Dbl  ! the ground acceleration
 
 ! FORMATS =========================================================================================
-character(87),  Parameter, Public :: Fmt_DATE="(' DATE :  ',I2.2,' - ',I2.2,' - ',I4,/,' TIME : ',I2.2,':',I2.2,':',I2.2,':',I2.2,/ )"
-character(27),  Parameter, Public :: Fmt_End="('PRESS ENTER TO End ...')"
-character(80),  Parameter, Public :: Fmt_ERR1_OPEN="( 'ERROR IN OPEN STATEMENT. Unit NUMBER=', I3, '   ERROR NUMBER IS=', I4  )"
-character(91),  Parameter, Public :: Fmt_ERR2_OPEN="('End-OF-FILE ERROR IN OPEN STATEMENT. Unit NUMBER=', I3, '   ERROR NUMBER IS=', I4  )"
-character(81),  Parameter, Public :: Fmt_ERR1_Close="( 'ERROR IN Close STATEMENT. Unit NUMBER=', I3, '   ERROR NUMBER IS=', I4  )"
-character(163), Parameter, Public :: Fmt_NM="(' FILE Name : ', A20,//,' Directories :',/, 'INPUT FILE DIRECTORY     : ', A100,/, 'OUTPUT FILES DIRECTORY   : ', A100 )"
-character(41),  Parameter, Public :: Fmt_SUC="('CONGRATULATIONS! DONE SUCCESSFULLY. ')"
-character(39),  Parameter, Public :: Fmt_FL="('OOPS!!!  FAIL TO OPERATE PROPERLY.')"
-character(78),  Parameter, Public :: Fmt_ALLCT="('ERROR IN ALLOCATING Arrays. ERROR NUMBER IS :', I4, '   LOCATION: ??????.')"
-character(80),  Parameter, Public :: Fmt_DEALLCT="('ERROR IN DEALLOCATING Arrays. ERROR NUMBER IS :', I4, '   LOCATION: ??????.')"
-character(23),  Parameter, Public :: Fmt_RUNTIME="(A,F50.2,'   SECONDS')"
-character(70),  Parameter, Public :: Fmt_READ1="('ERROR IN READ STATEMENT. Unit IS : ',I5,' ERROR NUMBER IS : ', I5 )"
-character(76),  Parameter, Public :: Fmt_READ2="('End OF FILE IN READ STATEMENT. Unit IS : ',I5,' ERROR NUMBER IS : ', I5 )"
-character(78),  Parameter, Public :: Fmt_READ3="('End OF RECORD IN READ STATEMENT. Unit IS : ',I5,' ERROR NUMBER IS : ', I5 )"
-character(71),  Parameter, Public :: Fmt_write1="('ERROR IN write STATEMENT. Unit IS : ',I5,' ERROR NUMBER IS : ', I5 )"
-character(143), Parameter, Public :: Fmt_Element1="('Error in the element type. Either there is a mistake in the input file for element type or element type in not available in the code yet.')"
-character(144), Parameter, Public :: Fmt_Element2="('Error in the element type. This element number',I3,'is not available in the list of this code. Check the input file for element number',I19)"
+character(87), Parameter, Public:: Fmt_DATE="(' DATE :  ',I2.2,' - ',I2.2,' - ',I4,/,' TIME : ',&
+                                              I2.2,':',I2.2,':',I2.2,':',I2.2,/)"
+character(27), Parameter, Public:: Fmt_End="(' PRESS ENTER TO END ...')"
+character(80), Parameter, Public:: Fmt_ERR1_OPEN="( 'ERROR IN OPEN STATEMENT. Unit NUMBER=', I3, &
+                                                    '   ERROR NUMBER IS=', I4  )"
+character(91), Parameter, Public:: Fmt_ERR2_OPEN="('End-OF-FILE ERROR IN OPEN STATEMENT. &
+                                                    Unit NUMBER=',I3, ' ERROR NUMBER IS=',I4)"
+character(81), Parameter, Public:: Fmt_ERR1_Close="( 'ERROR IN Close STATEMENT. Unit NUMBER=', I3,&
+                                                     '   ERROR NUMBER IS=', I4  )"
+character(163),Parameter, Public:: Fmt_NM="(' FILE Name : ',A20,//,' Directories :',/,&
+                            'INPUT FILE DIRECTORY   : ',A100,/,'OUTPUT FILES DIRECTORY  : ',A100)"
+character(41), Parameter, Public:: Fmt_SUC="('CONGRATULATIONS! DONE SUCCESSFULLY. ')"
+character(39), Parameter, Public:: Fmt_FL="('OOPS!!!  FAIL TO OPERATE PROPERLY.')"
+character(78), Parameter, Public:: Fmt_ALLCT="('ERROR IN ALLOCATING Arrays. ERROR NUMBER IS :',&
+                                               I4, '   LOCATION: ??????.')"
+character(80), Parameter, Public:: Fmt_DEALLCT="('ERROR IN DEALLOCATING Arrays. ERROR NUMBER IS :'&
+                                                , I4, '   LOCATION: ??????.')"
+character(23), Parameter, Public:: Fmt_RUNTIME="(A,F50.2,'   SECONDS')"
+character(70), Parameter, Public:: Fmt_READ1="('ERROR IN READ STATEMENT. Unit IS : ',I5,&
+                                               ' ERROR NUMBER IS : ', I5 )"
+character(76), Parameter, Public:: Fmt_READ2="('End OF FILE IN READ STATEMENT. Unit IS : ',I5,&
+                                               ' ERROR NUMBER IS : ', I5 )"
+character(78), Parameter, Public:: Fmt_READ3="('End OF RECORD IN READ STATEMENT. Unit IS : '&
+                                               ,I5,' ERROR NUMBER IS : ', I5 )"
+character(71), Parameter, Public:: Fmt_write1="('ERROR IN write STATEMENT. Unit IS : ',I5,&
+                                                ' ERROR NUMBER IS : ', I5 )"
+character(143),Parameter, Public:: Fmt_Element1="('Error in the element type. Either there is a &
+   mistake in the input file for element type or element type in not available in the code yet.')"
+character(144),Parameter, Public:: Fmt_Element2="('Error in the element type. This element number'&
+   ,I3,'is not available in the list of this code. Check the input file for element number',I19)"
 
 ! Unit NUMBERS OF EXTERNAL FILES ==================================================================
-! Address file
-integer(kind=Smll), Parameter, Public :: FileAdr=500 ! Address file that holds the model name & directories (.txt)
 
-! Input files
-integer(kind=Smll), Parameter, Public :: FileDataModel=501 ! Input file (.dataModel)
-integer(kind=Smll), Parameter, Public :: FileDataGeo=502 ! Input file for node coordinates (.XYZ)
-integer(kind=Smll), PARAMETER, PUBLIC :: UnInptAna=510 ! input file for analysis (.data)
-integer(kind=Smll), PARAMETER, PUBLIC :: UnInptMat=511 ! input file for material property (.Mat)
+
+
+
+enum, bind(C)
+  enumerator:: FileAdr=500   ! Address file that holds the model name & directories (.txt)
+  enumerator:: FileDataModel !=501 Input file (.dataModel)
+  enumerator:: FileDataGeo   !=502 Input file for node coordinates (.XYZ)
+  !enumerator:: FilePartition !=503 partitioned data (.par)
+  enumerator:: UnInptAna     !=504 input file for analysis (.data)
+  enumerator:: UnInptMat     !=505 input file for material property (.Mat)
+end enum
 
 ! Debugging files
 integer(kind=Smll), Parameter, Public  :: Un_CHK=599 ! Scratch file for debugging (.Chk)
 
-!Output files
-integer(kind=Smll), Parameter, Public  :: FileInfo=600    ! Model information file (.Inf)
-integer(kind=Smll), Parameter, Public  :: FileDomain=601  ! output file containing the domain (.domain)
-integer(kind=Smll), Parameter, Public  :: FileResults=602 ! output file containing results (.res)
-integer(kind=Smll), Parameter, Public  :: FilePartition=603 ! partitioned data (.par)
+enum, bind(C)
+  enumerator:: FileInfo=600  ! Model information file (.Inf)
+  enumerator:: FileDomain    !=601 output file containing the domain(.domain)
+  enumerator:: FileResults   !=602 output file containing results (.res)
+  enumerator:: FilePartition ! partitioned data (.par)
+end enum
 
 ! Analysis case number ============================================================================
 integer(kind=Smll), Parameter, Public :: AnalysisType_1D=1 ! 1D Shallow water simulation Lax-wendroff
@@ -97,6 +115,11 @@ type timing
   real(kind=DBL):: Time_Start, Time_End !TIME Variables for total run time
   real(kind=DBL):: Input_Starts, Input_Ends ! required time to read the input file
 end type timing
+
+! This vector will be used in the main type as the solution in each type step
+type vector
+  real(kind=Dbl), dimension(2) :: U
+end type vector
 
 ! Holds the command argument
 type ArgCommands

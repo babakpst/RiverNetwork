@@ -40,9 +40,9 @@ use ifport
 ! Defined Modules =================================================================================
 use Parameters_mod
 use Information_mod
-use Input_mod
-use Model_mod
-use Discretization_mod
+use Input_mod, only: Input_Data_tp
+use Model_mod, only: Geometry_tp
+use Discretization_mod, only: model_tp
 use Partitioner_mod
 
 ! Global Variables ================================================================================
@@ -62,7 +62,9 @@ call Header(ModelInfo%Version) ! Writes info on screen.
 Arguments%ArgCount = command_argument_count()
 
 ! Allocating arg arrays
-allocate(Arguments%Length(Arguments%ArgCount), Arguments%Arg(Arguments%ArgCount), Arguments%Argstatus(Arguments%ArgCount), stat = ERR_Alloc)
+allocate(Arguments%Length(Arguments%ArgCount), &
+         Arguments%Arg(Arguments%ArgCount),    &
+         Arguments%Argstatus(Arguments%ArgCount), stat = ERR_Alloc)
   if (ERR_Alloc /= 0) then
     write(*, Fmt_ALLCT) ERR_Alloc; write(FileInfo, Fmt_ALLCT) ERR_Alloc;
     write(*, Fmt_FL); write(FileInfo, Fmt_FL); read(*, Fmt_End); stop;
@@ -89,8 +91,8 @@ write(*,        fmt="(A)") " -Creating the info.txt file in the output folder ..
 UnFile=FileInfo
 Open(Unit=UnFile, File=trim(ModelInfo%ModelName)//'.infM',     &
      Err=1001, IOstat=IO_File, Access='SEQUENTIAL', Action='write', Asynchronous='NO', &
-     Blank='NULL', blocksize=0, defaultfile=trim(ModelInfo%OutputDir), DisPOSE='Keep', Form='formatted', &
-     position='ASIS', status='replace')
+     Blank='NULL', blocksize=0, defaultfile=trim(ModelInfo%OutputDir), DisPOSE='Keep', &
+     Form='formatted', position='ASIS', status='replace')
 
 ! Writing down the simulation time
 Call Info(TimeDate, ModelInfo)
@@ -108,8 +110,8 @@ call Geometry%Basic(ModelInfo)
 write(*,        fmt="(A)") " -Allocating the required arrays ..."
 write(FileInfo, fmt="(A)") " -Allocating the required arrays ..."
 
-allocate(Geometry%ReachLength(Geometry%NoReaches), Geometry%ReachDisc(Geometry%NoReaches), &
-         Geometry%ReachType(Geometry%NoReaches), Geometry%ReachSlope(Geometry%NoReaches),  &
+allocate(Geometry%ReachLength(Geometry%NoReaches), Geometry%ReachDisc(Geometry%NoReaches),  &
+         Geometry%ReachType(Geometry%NoReaches), Geometry%ReachSlope(Geometry%NoReaches),   &
          Geometry%ReachManning(Geometry%NoReaches), Geometry%ReachWidth(Geometry%NoReaches),&
          stat=Err_Alloc)
   if (Err_Alloc /= 0) then

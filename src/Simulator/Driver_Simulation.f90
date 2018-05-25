@@ -3,7 +3,7 @@
 ! Purpose: This code solves the 1D and 2D Shallow Water Equations, in parallel, using the hybrid
 !          programming (OMP and MPI)
 !
-! Developed by: Babak Poursartip
+! Developed by:  Babak Poursartip
 ! Supervised by: Clint Dawson
 !
 ! The Institute for Computational Engineering and Sciences (ICES)
@@ -45,14 +45,14 @@ use Parameters_mod
 use Timer_mod
 use Information_mod
 use Input_mod
-use Model_mod
-use Solver_mod
+use Model_mod,  only: model_tp
+use Solver_mod, only: SolverWithLimiter_tp
 
 ! Global Variables ================================================================================
 Implicit None
 
 Include 'Global_Variables_Inc.f90'   ! All Global Variables are defined/described in this File
-ModelInfo%Version = 2.0_SGL          ! Reports the version of the code
+ModelInfo%Version = 3.0_SGL          ! Reports the version of the code
 
 ! Initializing the MPI ============================================================================
 write(*,*) " Initializing MPI ..."   ! <MPI>

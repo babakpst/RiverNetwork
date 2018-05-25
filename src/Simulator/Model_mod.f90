@@ -37,6 +37,7 @@ use Parameters_mod
 use Input_mod
 
 implicit none
+private
 
 ! Contains all information after discretization
 type model_tp
@@ -50,7 +51,7 @@ type model_tp
   real(kind=DBL), allocatable, dimension(:) :: WidthCell  ! the Manning's number of each cell
   real(kind=DBL), allocatable, dimension(:) :: X_Disc     ! the coordinates of the cell center
   real(kind=DBL), allocatable, dimension(:,:) :: LengthCell ! the length of each cell
-            ! note: the first col holds the actual cell length (length of the controal volume), and
+            ! note: the first col holds the actual cell length (length of the control volume), and
             !       the second col holds the projection(x)
 
   !real(kind=DBL), allocatable, dimension(:) :: ZFull      ! bottom elevation at all points
@@ -59,6 +60,8 @@ type model_tp
     procedure:: Input => Input_sub
 
 end type model_tp
+
+public:: model_tp
 
 contains
 
@@ -132,7 +135,8 @@ open(Unit=UnFile, file=trim(ModelInfo%ModelName)//'.par', &
      form='formatted', position='asis', status='old')
 
 UnFile = FilePartition
-read(unit=UnFile, fmt="(I23)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004) this%NCells
+read(unit=UnFile, fmt="(I23)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
+     end=1004) this%NCells
 
 write(*,        fmt="(A)") " -Allocating discretization ..."
 write(FileInfo, fmt="(A)") " -Allocating discretization ..."
@@ -177,7 +181,7 @@ UnFile = FilePartition
 read(unit=UnFile, fmt="(F35.20)", advance='yes', asynchronous='no', iostat=IO_read, &
     err=1003, end=1004) this%SlopeInter(this%NCells+1)
 
-! - Closing the input file ---------------------------------------------------------------------
+! - Closing the input file ------------------------------------------------------------------------
 write(*,        fmt="(A)") " -Closing the input file"
 write(FileInfo, fmt="(A)") " -Closing the input file"
 
@@ -227,6 +231,5 @@ Return
      write(*, Fmt_FL); write(FileInfo, Fmt_FL); write(*, Fmt_End); read(*,*);  stop;
 
 end Subroutine Input_sub
-
 
 end module Model_mod
