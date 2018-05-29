@@ -124,8 +124,8 @@ write(FileInfo,*) " Subroutine < Input_sub >: "
 
 ! Open required Files -----------------------------------------------------------------------------
 write(*,        fmt="(A)") " -Opening the input file ..."
-write(FileInfo, fmt="(A)") " -Opening the input file ..."
 
+write(FileInfo, fmt="(A)") " -Opening the input file ..."
 ! Open the input file for arrays
 UnFile = FilePartition
 

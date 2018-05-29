@@ -126,8 +126,6 @@ end type SoureceTerms_tp
 
 ! Contains the parameters for the solution
 type:: SolverWithLimiter_tp
-  integer(kind=Lng)      :: Plot_Inc = 500
-
   type(model_tp) :: Model    ! Contains the model
   type(AnalysisData_tp)   :: AnalysisInfo   ! Holds information for the analysis
   type(Input_Data_tp)     :: ModelInfo      ! Holds information for the model
@@ -360,7 +358,7 @@ Results%ModelInfo = this%ModelInfo
   Time_Marching: do i_steps = 1_Lng, NSteps +1_Lng
 
       ! write down data for visualization
-      if (mod(i_steps,this%Plot_Inc)==1 .or. PrintResults) then
+      if (mod(i_steps,this%AnalysisInfo%Plot_Inc)==1 .or. PrintResults) then
         !$ if (ITS==0) then
           if ( this%ModelInfo%rank == 0) then
               call system_clock(TotalTime%endSys, TotalTime%clock_rate)

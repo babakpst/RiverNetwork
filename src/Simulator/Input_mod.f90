@@ -66,6 +66,8 @@ type AnalysisData_tp
                                      !                    -2:1D Lax-Wendroff with limiter
   integer(kind=Smll) :: limiter      ! limiter type
 
+  integer(kind=Lng)   :: Plot_Inc ! Increment to record the results for visualization
+
   real(kind=DBL):: TotalTime ! Total simulation time (in seconds)
   real(kind=DBL):: TimeStep  ! Time Step
   real(kind=DBL):: Q_Up      ! Upstream boundary condition, constant flow (m^3/s)
@@ -417,6 +419,17 @@ write(unit=UnFile, fmt="(' The limiter is: ', I10)", advance='yes', asynchronous
                    iostat=IO_write, err=1006) this%limiter
 write(unit=*,      fmt="(' The limiter is: ', I10)") this%limiter
 
+
+UnFile = UnInptAna
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, &
+                  err=1003, end=1004) this%Plot_Inc
+
+UnFile = FileInfo
+write(unit=UnFile, fmt="(' The limiter is: ', I10)", advance='yes', asynchronous='no', &
+                   iostat=IO_write, err=1006) this%Plot_Inc
+write(unit=*,      fmt="(' The limiter is: ', I10)") this%Plot_Inc
 
 write(*,       *) " End Subroutine < Input_Analysis_sub >"
 write(*,       *)

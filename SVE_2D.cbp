@@ -37,6 +37,7 @@
 		<Unit filename="src/Partitioner/Global_Variables_Inc.f90" />
 		<Unit filename="src/Partitioner/Inf_mod.f90" />
 		<Unit filename="src/Partitioner/Input_mod.f90" />
+		<Unit filename="src/Partitioner/Model_mod.f90" />
 		<Unit filename="src/Partitioner/Parameters_mod.f90" />
 		<Unit filename="src/Partitioner/Partitioner_mod.f90" />
 		<Unit filename="src/Partitioner/Results_mod.f90" />
