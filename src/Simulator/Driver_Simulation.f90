@@ -95,6 +95,9 @@ allocate(Arguments%Length(Arguments%ArgCount), Arguments%Arg(Arguments%ArgCount)
 write(*,         fmt="(A)") " -Reading Address.txt file ..."
 !write(FileInfo, fmt="(A)") " -Reading Address.txt file ..."
 
+!print*," ======================================================= ", ModelInfo%Size
+!print*," ======================================================= ", ModelInfo%Rank
+
 call ModelInfo%Input()
 
 ! Opening the information File --------------------------------------------------------------------

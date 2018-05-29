@@ -169,11 +169,6 @@ UnFile = FilePartition
     this%WidthCell  (i_cells),                         &
     this%X_Disc     (i_cells),                         &
     this%SlopeInter (i_cells)
-
-    !this%ZFull      (i_cells*2_Lng-1_Lng),             &
-    !this%ZFull      (i_cells*2_Lng),                   &
-    !this%X_Full     (i_cells*2_Lng-1_Lng),             &
-    !this%X_Full     (i_cells*2_Lng      )
   end do
 !read(unit=UnFile, fmt="(F35.20)", advance='yes', asynchronous='no', iostat=IO_read, &
 !    err=1003, end=1004) this%SlopeInter(i_cells)

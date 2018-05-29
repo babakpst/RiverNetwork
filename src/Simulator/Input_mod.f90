@@ -39,20 +39,20 @@ private
 
 ! Holds info. (name, dir. output dir.) of the model, initialized by subroutine Input_Address_sub.
 type Input_Data_tp
-  character (kind = 1, Len = 30 ) :: ModelName     ! Name of the model input file
+  character (kind = 1, Len = 150 ) :: ModelName     ! Name of the model input file
   character (kind = 1, Len = 150) :: InputDir      ! Directory of the input file.
   character (kind = 1, Len = 150) :: AnalysisDir   ! Directory of Analysis input file.
   character (kind = 1, Len = 150) :: OutputDir     ! Directory of output files (Results)
-  character (kind = 1, Len = 150) :: AnalysisOutputDir! Directory of output file for each analysis
+  character (kind = 1, Len = 150) :: AnalysisOutputDir ! Dir of output file for each analysis
   character (kind = 1, Len = 150), dimension(:), allocatable :: AnalysesNames! Holds the names of
                                                                         ! the analysis input files
   ! rank and size of MPI
-  Character(kind = 1, len = 20) :: IndexRank ! Rank no in the Char. fmt to add to input file Name
-  Character(kind = 1, len = 20) :: IndexSize ! Size no in the Char. fmt to add to input file Name
+  Character(kind = 1, len = 20) :: IndexRank !Rank no in the Char. fmt to add to input file Name
+  Character(kind = 1, len = 20) :: IndexSize !Size no in the Char. fmt to add to input file Name
 
-  !integer(kind=Smll):: OutputType        ! Output Type: 1: ordinary-2: HDF5
+  !integer(kind=Smll):: OutputType                ! Output Type: 1: ordinary-2: HDF5
   integer(kind=Smll) :: NumberOfAnalyses  ! Number of analysis
-  integer            :: size, rank        ! Size and rank of Parallel MPI
+  integer            :: size, rank                ! Size and rank of Parallel MPI
 
   real(kind=SGL) :: Version               ! Holds the version of the code.
 
@@ -60,20 +60,24 @@ type Input_Data_tp
     procedure :: Input => Input_Address_sub
 end type Input_Data_tp
 
+
+
+
+
 ! Contains all information about the domain, required
 type AnalysisData_tp
-  integer(kind=Smll) :: AnalysisType ! Analysis Type      -1:1D Lax-Wendroff
-                                     !                    -2:1D Lax-Wendroff with limiter
-  integer(kind=Smll) :: limiter      ! limiter type
+  integer(kind=Smll) :: AnalysisType=2_smll ! Analysis Type      -1:1D Lax-Wendroff
+                                            !                    -2:1D Lax-Wendroff with limiter
+  integer(kind=Smll) :: limiter=1_smll      ! limiter type
 
-  integer(kind=Lng)   :: Plot_Inc ! Increment to record the results for visualization
+  integer(kind=Lng)   :: Plot_Inc=500_Lng   ! Increment to record the results for visualization
 
-  real(kind=DBL):: TotalTime ! Total simulation time (in seconds)
-  real(kind=DBL):: TimeStep  ! Time Step
-  real(kind=DBL):: Q_Up      ! Upstream boundary condition, constant flow (m^3/s)
-  real(kind=DBL):: h_dw      ! Downstream water depth (in meters)
-  real(kind=DBL):: CntrlV    ! Initial control volume
-  real(kind=DBL):: CntrlV_ratio  ! Initial control volume ration, used to initialize data
+  real(kind=DBL):: TotalTime=0.0_dbl    ! Total simulation time (in seconds)
+  real(kind=DBL):: TimeStep=0.0_dbl     ! Time Step
+  real(kind=DBL):: Q_Up=0.0_dbl         ! Upstream boundary condition, constant flow (m^3/s)
+  real(kind=DBL):: h_dw=0.0_dbl         ! Downstream water depth (in meters)
+  real(kind=DBL):: CntrlV=0.0_dbl       ! Initial control volume
+  real(kind=DBL):: CntrlV_ratio=0.0_dbl ! Initial control volume ration, used to initialize data
 
   contains
     procedure:: Analysis => Input_Analysis_sub
@@ -81,7 +85,6 @@ type AnalysisData_tp
 end type AnalysisData_tp
 
 public:: AnalysisData_tp, Input_Data_tp
-
 
 contains
 
@@ -135,6 +138,13 @@ integer(kind=Smll) :: ERR_Alloc, ERR_DeAlloc ! Allocating and DeAllocating error
 Logical (kind=Shrt)  :: Directory
 
 ! code ============================================================================================
+
+
+print*," ======================================================= ", this%Size
+print*," ======================================================= ", this%Rank
+print*," ======================================================= ", this%IndexSize
+print*," ======================================================= ", this%IndexRank
+
 
 write(*,       *)
 write(*,       *) " Subroutine < Input_Address_sub >: "

@@ -1,11 +1,12 @@
 
 ! Integer Variables -------------------------------------------------------------------------------
 
-integer(kind=Smll) :: UnFile        ! Holds Unit of a file for error message
-integer(kind=Smll) :: IO_File       ! For IOSTAT: Input Output status in OPEN command
-integer(kind=Smll) :: ERR_Alloc, ERR_DeAlloc ! Allocating and DeAllocating errors
-integer(kind=Smll) :: i_analyses    ! loop index to read the analyses files
-integer(kind=Smll) :: ii, jj        ! Loop index
+integer(kind=Smll) :: UnFile=0_smll      ! Holds Unit of a file for error message
+integer(kind=Smll) :: IO_File=0_smll     ! For IOSTAT: Input Output status in OPEN command
+integer(kind=Smll) :: ERR_Alloc=0_smll   ! Allocating and DeAllocating errors
+integer(kind=Smll) :: ERR_DeAlloc=0_smll ! Allocating and DeAllocating errors
+integer(kind=Smll) :: i_analyses=0_smll  ! loop index to read the analyses files
+integer(kind=Smll) :: ii, jj             ! Loop index
 
 ! MPI parameters
 integer :: MPI_err

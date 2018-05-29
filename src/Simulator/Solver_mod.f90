@@ -19,10 +19,11 @@
 ! V2.20: 05/09/2018 - Parallel, performance
 ! V3.00: 05/16/2018 - MPI Parallel
 ! V3.10: 05/25/2018 - Modifications
+! V3.20: 05/29/2018 - Modifications
 !
 ! File version $Id $
 !
-! Last update: 05/25/2018
+! Last update: 05/29/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! - Solver_1D_with_Limiter_sub: Solves the 1D shallow water equation, with limiter.
@@ -55,10 +56,10 @@ implicit none
 private
 
 type LimiterFunc_tp ! contains all variable to compute the limiter value
-  integer(kind=Smll) :: limiter_Type ! Indicates the type of limiter function
+  integer(kind=Smll) :: limiter_Type=1_smll ! Indicates the type of limiter function
 
-  real(kind=Dbl)     :: phi          ! the value of limiter
-  real(kind=Dbl)     :: theta        ! the argument of the limiter
+  real(kind=Dbl)     :: phi = 0.0_dbl    ! the value of limiter
+  real(kind=Dbl)     :: theta  = 0.0_dbl ! the argument of the limiter
 
   contains
     procedure LimiterValue => Limiters_sub
@@ -67,24 +68,26 @@ end type LimiterFunc_tp
 
 ! This type consists of all variables/arrays regarding the Jacobian, used to apply the limiter.
 type Jacobian_tp
-  integer(kind=Tiny) :: option   ! indicates how to interpolate the Jacobian at the interface:
+  integer(kind=Tiny) :: option=1_Tiny ! indicates how to interpolate the Jacobian at the interface:
                                  ! 1: for average on the solution
                                  ! 2: direct average on the Jacobian itself
 
-  real(kind=Dbl),dimension(2,2) :: A ! Jacobian matrix at each time step at interface i-1/2
-  real(kind=Dbl),dimension(2,2) :: R ! eigenvectors at each time step at interface i-1/2
-  real(kind=Dbl),dimension(2,2) :: L ! eigenvctrs inverse(R^-1) at each timestep at interface i-1/2
+  real(kind=Dbl),dimension(2,2) :: A=0.0_dbl ! Jacobian matrix at each time step at interface i-1/2
+  real(kind=Dbl),dimension(2,2) :: R=0.0_dbl ! eigenvectors at each time step at interface i-1/2
+  real(kind=Dbl),dimension(2,2) :: L=0.0_dbl ! eigenvctrs inverse(R^-1) at each timestep
+                                             !  at interface i-1/2
 
-  ! Jacobian mtx with
-  real(kind=Dbl),dimension(2,2) :: A_plus   ! + eigenvalues at each time step at interface i-1/2
-  real(kind=Dbl),dimension(2,2) :: A_minus  ! - eigenvalues at each time step at interface i-1/2
-  real(kind=Dbl),dimension(2,2) :: A_abs    ! abs eigenvalues at each time step at interface i-1/2
+  ! Jacobian mtx at each time step and the interface
+  real(kind=Dbl),dimension(2,2) :: A_plus=0.0_dbl  ! + eigenvalues at each time step at interface
+  real(kind=Dbl),dimension(2,2) :: A_minus=0.0_dbl ! - eigenvalues at each time step at interface
+  real(kind=Dbl),dimension(2,2) :: A_abs=0.0_dbl   ! abs eigenvalues at each time step at interface
 
-  type(vector) :: U_up, U_dw ! Holds the solution at the upstream and downstream of each cell
+  type(vector) :: U_up=vector(U=0.0_dbl) ! Holds the solution at the upstream of each cell
+  type(vector) :: U_dw=vector(U=0.0_dbl) ! Holds the solution at the downstream of each cell
 
-  type(vector) :: Lambda       ! Contains the eigenvalues
-  type(vector) :: Lambda_plus  ! Contains the positive eigenvalues
-  type(vector) :: Lambda_minus ! Contains the negative eigenvalues
+  type(vector) :: Lambda=vector(U=0.0_dbl)       ! Contains the eigenvalues
+  type(vector) :: Lambda_plus=vector(U=0.0_dbl)  ! Contains the positive eigenvalues
+  type(vector) :: Lambda_minus=vector(U=0.0_dbl) ! Contains the negative eigenvalues
 
   contains
     procedure Jacobian => Jacobian_sub
@@ -92,18 +95,18 @@ end type Jacobian_tp
 
 ! Contains the parameters for considering the source term within the solution.
 type SoureceTerms_tp
-  real(kind=Dbl)  :: S_f           ! friction slope
-  real(kind=Dbl)  :: S_f_interface ! friction slope at the interface
+  real(kind=Dbl)  :: S_f=0.0_dbl           ! friction slope
+  real(kind=Dbl)  :: S_f_interface=0.0_dbl ! friction slope at the interface
 
-  type(vector)  :: S            ! source term
-  type(vector)  :: S_interface  ! source term at the interface
+  type(vector)  :: S=vector(U=0.0_dbl)            ! source term
+  type(vector)  :: S_interface=vector(U=0.0_dbl)  ! source term at the interface
 
-  type(vector) :: Source_1 !contribution of the source term in updating the solution (see manual)
-  type(vector) :: Source_2 !contribution of the source term in updating the solution (see manual)
+  type(vector) :: Source_1=vector(U=0.0_dbl) !contribution of the source term in updating the solution (see manual)
+  type(vector) :: Source_2=vector(U=0.0_dbl) !contribution of the source term in updating the solution (see manual)
 
-  real(kind=Dbl), dimension(2,2) :: B  ! This is in fact dS / dU
-  real(kind=Dbl), dimension(2,2) :: BI ! B inverse, see notes
-  real(kind=Dbl), dimension(2,2) :: Identity ! Identity matrix
+  real(kind=Dbl), dimension(2,2) :: B=0.0_dbl        ! This is in fact dS / dU
+  real(kind=Dbl), dimension(2,2) :: BI=0.0_dbl       ! B inverse, see notes
+  real(kind=Dbl), dimension(2,2) :: Identity=0.0_dbl ! Identity matrix
 end type SoureceTerms_tp
 
 ! Parametrized type is not compatible with OMP
@@ -126,9 +129,9 @@ end type SoureceTerms_tp
 
 ! Contains the parameters for the solution
 type:: SolverWithLimiter_tp
-  type(model_tp) :: Model    ! Contains the model
-  type(AnalysisData_tp)   :: AnalysisInfo   ! Holds information for the analysis
-  type(Input_Data_tp)     :: ModelInfo      ! Holds information for the model
+  type(model_tp)        :: Model         ! Contains the model
+  type(AnalysisData_tp) :: AnalysisInfo  ! Holds information for the analysis
+  type(Input_Data_tp)   :: ModelInfo     ! Holds information for the model
 
   contains
     procedure Solve => Solver_1D_with_Limiter_sub
