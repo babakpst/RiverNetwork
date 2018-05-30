@@ -199,8 +199,9 @@ CellCounter = 0_Lng
       if (Geometry%ReachType(i_reach)==0_Shrt) then
 
         CntrlVolumeLength = floor(Geometry%ReachLength(i_reach)*1.0E10/ &
-                            Geometry%ReachDisc(i_reach) )/1.0E10 ! Control volume length
+                            Geometry%ReachDisc(i_reach), kind=Lng)/1.0E10 ! Control volume length
         write(*,fmt="(A,I5,A,F23.10)")" Cell length in the reach ",i_reach," is:",CntrlVolumeLength
+
         Height = MaxHeight
         Z_loss = floor(1.0E10*CntrlVolumeLength * Geometry%ReachSlope(i_reach))/ 1.0E10
         Height = Height +  floor(1.0E10 * 0.5_Dbl * Z_loss)/1.0E10

@@ -38,12 +38,12 @@ def main(arg):
   print(" Allocating memory ...")
 
   # Input section:
-  size = 6
-  DT = 0.001
-  nstep = 500
+  size = 2
+  DT = 0.01
+  nstep = 200
   dataFile = 100
-  fileName = "EX3_Limiter"
-  analysisName = "EX3_Case1"
+  fileName = "EX4"
+  analysisName = "EX4_case1"
 
   # Directories:
   fileNameDir = os.path.join("..", "output", fileName)
@@ -75,8 +75,6 @@ def main(arg):
   h = np.zeros (npoints, dtype=np.float)
   uh= np.zeros (npoints, dtype=np.float)
 
-  xTick = np.arange(0, 25, 1.0)
-
   for ii in range(npoints):
 
     Temp = Input.readline().rstrip("\n")  # 1
@@ -84,6 +82,11 @@ def main(arg):
 
     x[ii] = float(numbers[1])
     z[ii] = float(numbers[2])
+    
+  MaxX = np.amax(x)
+  Range = MaxX/10.0
+
+  xTick = np.arange(0, MaxX, Range)
 
   fig, ax = plt.subplots()
   ax.plot( x, z, label ="Domain" , color = "r", linewidth = 2.0)
@@ -135,7 +138,7 @@ def main(arg):
     #ax1.fill_between (x, z[:], h[:])
     #plt.fill_between ( x, z[:], h[:] )
     
-    title_string = ( 'H(T) - Time = %8.f' % ( ii*DT*dataFile ) )
+    title_string = ( 'H(T) - Time = %8.3f' % ( ii*DT ) )
     plt.title(title_string, fontsize = 16)
 
     plt.xlabel ( 'X',  fontsize=12 )
@@ -150,7 +153,7 @@ def main(arg):
     #ax1.plot(X_Arr, Q_Arr, label ="Water flow" , color = "c", linewidth = 2.0)
     ax2.plot (x, uh[:], label ="Water flow" , color = "c", linewidth = 2.0)
     
-    title_string = ( 'UH(T) - Time = %8.2f' % ( ii ) )
+    title_string = ( 'UH(T) - Time = %8.3f' % ( ii*DT ) )
     plt.title(title_string, fontsize = 16)
 
     plt.xlabel ( 'X',  fontsize=12)

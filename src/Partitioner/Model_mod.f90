@@ -121,9 +121,6 @@ write(FileInfo,*) " Subroutine < Input_Basic_sub >: "
 write(*,        fmt="(A)") " -Opening the data model file ..."
 write(FileInfo, fmt="(A)") " -Opening the data model file ..."
 
-print*, ModelInfo%ModelName
-print*, ModelInfo%InputDir
-
 UnFile=FileDataModel
 open(Unit=UnFile, file=trim(ModelInfo%ModelName)//'.dataModel', &
      err=1001, iostat=IO_File, access='sequential', action='read', asynchronous='no', &
@@ -364,9 +361,9 @@ read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, e
          end=1004) this%ReachWidth(i_reach)
 
     UnFile = FileInfo
-    write(unit=*,      fmt="(' The width of reach ', I10,'is: ', F23.10)") &
+    write(unit=*,      fmt="(' The width of reach ', I10,' is: ', F23.10)") &
                                                                   i_reach, this%ReachWidth(i_reach)
-    write(unit=UnFile, fmt="(' The width of reach ', I10,'is: ', F23.10)") &
+    write(unit=UnFile, fmt="(' The width of reach ', I10,' is: ', F23.10)") &
                                                                   i_reach, this%ReachWidth(i_reach)
   end do
 

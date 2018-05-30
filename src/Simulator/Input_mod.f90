@@ -151,7 +151,7 @@ Open(Unit=UnFile, File='Address.txt', Err=1001, IOStat=IO_File, Access='SEQUENTI
 
 ! Read the input fine name and directories Form "ADDRESS_File.txt" in the current directory -------
 read(FileAdr,*)
-read(FileAdr,*) this%ModelName; write(*,*) this%ModelName
+read(FileAdr,*) this%ModelName; !write(*,*) this%ModelName
 read(FileAdr,*)
 read(FileAdr,*)
 read(FileAdr,*) this%InputDir;  !write(*,*) this%InputDir
@@ -187,6 +187,7 @@ this%InputDir   =trim(AdjustL(this%InputDir))//'/'// &
 
 write(*, fmt="(2A)")" The model directory is: ", this%InputDir
 write(*, fmt="(2A)")" The analysis name is: ", this%AnalysisDir
+write(*, fmt="(2A)")" The input file name is: ", this%ModelName
 
 ! Create the results folder
 write(*,fmt="(A)") " -Creating the output folders ..."
