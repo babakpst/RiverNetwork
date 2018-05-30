@@ -39,7 +39,7 @@ private
 
 ! Holds info. (name, dir. output dir.) of the model, initialized by subroutine Input_Address_sub.
 type Input_Data_tp
-  character (kind = 1, Len = 150 ) :: ModelName     ! Name of the model input file
+  character (kind = 1, Len = 150) :: ModelName     ! Name of the model input file
   character (kind = 1, Len = 150) :: InputDir      ! Directory of the input file.
   character (kind = 1, Len = 150) :: AnalysisDir   ! Directory of Analysis input file.
   character (kind = 1, Len = 150) :: OutputDir     ! Directory of output files (Results)
@@ -51,7 +51,7 @@ type Input_Data_tp
   Character(kind = 1, len = 20) :: IndexSize !Size no in the Char. fmt to add to input file Name
 
   !integer(kind=Smll):: OutputType                ! Output Type: 1: ordinary-2: HDF5
-  integer(kind=Smll) :: NumberOfAnalyses  ! Number of analysis
+  integer(kind=Smll) :: NumberOfAnalyses          ! Number of analysis
   integer            :: size, rank                ! Size and rank of Parallel MPI
 
   real(kind=SGL) :: Version               ! Holds the version of the code.
@@ -138,13 +138,6 @@ integer(kind=Smll) :: ERR_Alloc, ERR_DeAlloc ! Allocating and DeAllocating error
 Logical (kind=Shrt)  :: Directory
 
 ! code ============================================================================================
-
-
-print*," ======================================================= ", this%Size
-print*," ======================================================= ", this%Rank
-print*," ======================================================= ", this%IndexSize
-print*," ======================================================= ", this%IndexRank
-
 
 write(*,       *)
 write(*,       *) " Subroutine < Input_Address_sub >: "

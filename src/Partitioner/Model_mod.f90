@@ -14,10 +14,11 @@
 ! V1.00: 04/10/2018 - Major modifications
 ! V2.00: 04/17/2018 - Partitioner
 ! V2.10: 05/15/2018 - Separating the input model from the input address
+! V2.20: 05/30/2018 - Initializing types
 !
 ! File version $Id $
 !
-! Last update: 05/15/2018
+! Last update: 05/30/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! Input_Basic_sub
@@ -40,8 +41,8 @@ private
 
 ! Contains all information about the geometry of the domain. (input)
 type Geometry_tp
-  integer(kind=Lng) :: NoReaches ! Number of reaches
-  integer(kind=Shrt):: size ! Number of reaches
+  integer(kind=Lng) :: NoReaches=0_Lng ! Number of reaches
+  integer(kind=Shrt):: size=0          ! Number of partitions/ranks
 
   integer(kind=Lng),  allocatable, dimension(:) :: ReachDisc ! no. of control volume in each reach
   integer(kind=Shrt), allocatable, dimension(:) :: ReachType ! reach type
@@ -51,7 +52,7 @@ type Geometry_tp
   real(kind=DBL), allocatable, dimension(:) :: ReachManning ! the Manning's number for each reach
   real(kind=DBL), allocatable, dimension(:) :: ReachWidth   ! Stores the width of each reach
 
-  Character(kind = 1, len = 20) :: IndexSize !Size no in the Char. fmt to add to input file Name
+  Character(kind = 1,len = 20):: IndexSize="   "!Size no in the Char. fmt to add to input file Name
 
   contains
     procedure Basic => Input_Basic_sub
@@ -421,3 +422,4 @@ Return
 end Subroutine Input_Array_sub
 
 end module Model_mod
+

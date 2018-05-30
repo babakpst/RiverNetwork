@@ -14,10 +14,11 @@
 ! V0.10: 03/08/2018 - Initiated: Compiled without error.
 ! V1.00: 03/20/2018 - Compiled without error.
 ! V2.00: 04/16/2018 - Modified for the partitioner.
+! V2.20: 05/30/2018 - Initializing types.
 !
 ! File version $Id $
 !
-! Last update: 04/16/2018
+! Last update: 05/30/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! 1D_Domain: Plot the discretized domain.
@@ -44,11 +45,12 @@ private
 
 ! Plot domain
 type Plot_domain_1D_tp(NCells)
-  integer(kind=Lng), len :: NCells
+  integer(kind=Lng), len :: NCells =0_lng
 
-  real(kind=DBL), dimension(NCells) :: XCoor  ! Horizontal points
-  real(kind=DBL), dimension(NCells) :: ZCoor  ! Horizontal points
-  real(kind=DBL), dimension(NCells) :: SlopeCell  ! Horizontal points
+  real(kind=DBL), dimension(NCells) :: XCoor      ! Location of cell centers
+  real(kind=DBL), dimension(NCells) :: ZCoor      ! Bathymetry
+  real(kind=DBL), dimension(NCells) :: SlopeCell  ! Slope of the domain at the locaiton of
+                                                  ! cell center
 
   Character(kind = 1, len = 20) :: IndexSize !Size no in the Char. fmt to add to input file Name
 

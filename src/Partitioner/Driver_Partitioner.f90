@@ -21,10 +21,11 @@
 ! V0.12: 03/20/2018  - Debugging the code with limiter
 ! V1.00: 04/10/2018  - Cleaning the code after having the right results
 ! V2.00: 04/17/2018  - Developing the partitioner code.
+! V2.20: 05/30/2018  - Initializing objects/types
 !
 ! File version $Id $
 !
-! Last update: 04/17/2018
+! Last update: 05/30/2018
 !
 ! ================================ Global   V A R I A B L E S =====================================
 !  . . . . . . . . . . . . . . . . Variables . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -103,6 +104,10 @@ Call cpu_time(SimulationTime%Input_Starts)
 write(*,        fmt="(A)") " -Reading the initial data file ..."
 write(FileInfo, fmt="(A)") " -Reading the initial data file ..."
 
+! Initializing the geometry -----------------------------------------------------------------------
+Geometry = Geometry_tp(ReachDisc=null(), ReachType=null(), ReachLength=null(), ReachSlope=null(), &
+                       ReachManning=null(), ReachWidth=null() )
+
 ! Reading basic data: -----------------------------------------------------------------------------
 call Geometry%Basic(ModelInfo)
 
@@ -132,13 +137,19 @@ Call cpu_time(SimulationTime%Input_Ends)
 !UnFile= Un_CHK
 !Close(Unit=UnFile, status='Keep', Err=1002, IOstat=IO_File)
 
-! Discretization ----------------------------------------------------------------------------------
+! Discretization ==================================================================================
 write(*,        fmt="(A)") " -Discretization ..."
 write(FileInfo, fmt="(A)") " -Discretization ..."
 
+! Initialization ----------------------------------------------------------------------------------
+Discretization = model_tp(SlopeCell=null(), SlopeInter=null(), ZCell=null(), ZFull=null(), &
+                          ManningCell=null(), WidthCell=null(), X_Disc=null(), X_Full=null(), &
+                          LengthCell=null() )
+
+! Discretize the domain ---------------------------------------------------------------------------
 call Discretization%Discretize(Geometry, ModelInfo)
 
-! Partitioning and writing results
+! Partitioning and writing results ================================================================
 call Partitioner_1D_Sub(Geometry, Discretization, ModelInfo)
 
 ! Deallocating arrays

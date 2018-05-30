@@ -15,10 +15,11 @@
 ! V1.00: 03/20/2018 - Compiled with no error/warnings.
 ! V1.10: 04/10/2018 - Minor modifications in the objects/classes.
 ! V2.10: 05/24/2018 - modifying for MPI
+! V2.20: 05/30/2018 - Initializing types
 !
 ! File version $Id $
 !
-! Last update: 05/24/2018
+! Last update: 05/30/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! Discretize_1D: Discretizes the 1D model.
@@ -48,7 +49,7 @@ private
 
 ! Contains all information after discretization
 type model_tp
-  integer (kind=Lng)  :: NCells ! Total number of cells in the domain
+  integer (kind=Lng)  :: NCells=0_Lng ! Total number of cells in the domain
 
   real(kind=DBL), allocatable, dimension(:) :: SlopeCell  ! the slope of each cell at the center
   real(kind=DBL), allocatable, dimension(:) :: SlopeInter ! the slope of each cell at the center

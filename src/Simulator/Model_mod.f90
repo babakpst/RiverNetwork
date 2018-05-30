@@ -41,7 +41,7 @@ private
 
 ! Contains all information after discretization
 type model_tp
-  integer (kind=Lng)  :: NCells ! Total number of cells in the domain
+  integer (kind=Lng)  :: NCells=0_lng ! Total number of cells in the domain
 
   real(kind=DBL), allocatable, dimension(:) :: SlopeCell  ! the slope of each cell at the center
   real(kind=DBL), allocatable, dimension(:) :: SlopeInter ! the slope of each cell at the center
@@ -54,8 +54,6 @@ type model_tp
             ! note: the first col holds the actual cell length (length of the control volume), and
             !       the second col holds the projection(x)
 
-  !real(kind=DBL), allocatable, dimension(:) :: ZFull      ! bottom elevation at all points
-  !real(kind=DBL), allocatable, dimension(:) :: X_Full     ! the coordinates all points
   contains
     procedure:: Input => Input_sub
 

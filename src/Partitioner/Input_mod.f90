@@ -14,10 +14,11 @@
 ! V1.00: 04/10/2018 - Major modifications
 ! V2.00: 04/17/2018 - Partitioner
 ! V2.10: 05/15/2018 - Separating the input from model
+! V2.20: 05/30/2018 - Initializing types
 !
 ! File version $Id $
 !
-! Last update: 05/15/2018
+! Last update: 05/30/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! Input_Address_sub: Reads file name and directories from the address file.
@@ -40,17 +41,17 @@ private
 
 ! Holds info. (name, dir. output dir.) of the model, initialized by subroutine Input_Address_sub.
 type Input_Data_tp
-  character (kind = 1, Len = 30 ) :: ModelName     ! Name of the model input file
-  character (kind = 1, Len = 150) :: InputDir      ! Directory of the input file.
-  character (kind = 1, Len = 150) :: AnalysisDir   ! Directory of Analysis input file.
-  character (kind = 1, Len = 150) :: OutputDir     ! Directory of output files (Results)
-  character (kind = 1, Len = 150) :: AnalysisOutputDir! Directory of output file for each analysis
+  character (kind = 1, Len = 30 ) :: ModelName=" "     ! Name of the model input file
+  character (kind = 1, Len = 150) :: InputDir=" "      ! Directory of the input file.
+  character (kind = 1, Len = 150) :: AnalysisDir=" "   ! Directory of Analysis input file.
+  character (kind = 1, Len = 150) :: OutputDir=" "     ! Directory of output files (Results)
+  character (kind = 1, Len = 150) :: AnalysisOutputDir=" "! Dir. of output file for each analysis
   character (kind = 1, Len = 150), dimension(:), allocatable :: AnalysesNames! Holds the names of
                                                                         ! the analysis input files
   !integer(kind=Smll):: OutputType        ! Output Type: 1: ordinary-2: HDF5
-  integer(kind=Smll) :: NumberOfAnalyses  ! Number of analysis
+  integer(kind=Smll) :: NumberOfAnalyses=0_smll  ! Number of analysis
 
-  real(kind=SGL) :: Version               ! Holds the version of the code.
+  real(kind=SGL) :: Version=0.0               ! Holds the version of the code.
 
   contains
     procedure Input => Input_Address_sub
