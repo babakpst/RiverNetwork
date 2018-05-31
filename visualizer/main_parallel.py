@@ -38,12 +38,42 @@ def main(arg):
   print(" Allocating memory ...")
 
   # Input section:
-  size = 2
-  DT = 0.01
-  nstep = 200
-  dataFile = 100
-  fileName = "EX4"
-  analysisName = "EX4_case1"
+  InputName = "EX4_EX4_case1_s8.VisPy"
+  Infofile = open(InputName,"r")
+
+  Temp = Infofile.readline().rstrip("\n")  # 1
+  Temp = Infofile.readline().rstrip("\n")  # 2
+  Temp = Infofile.readline().rstrip("\n")  # 3
+
+  Temp = Infofile.readline().rstrip("\n")  # 4
+  fileName = Temp
+  fileName = fileName.strip()
+
+  Temp = Infofile.readline().rstrip("\n")  # 1
+  Temp = Infofile.readline().rstrip("\n")  # 2
+  Temp = Infofile.readline().rstrip("\n")  # 3
+  analysisName = Temp
+  analysisName = analysisName.strip()
+
+  Temp = Infofile.readline().rstrip("\n")  # 1
+  Temp = Infofile.readline().rstrip("\n")  # 2
+  Temp = Infofile.readline().rstrip("\n")  # 3
+  size = int(Temp)
+
+  Temp = Infofile.readline().rstrip("\n")  # 1
+  Temp = Infofile.readline().rstrip("\n")  # 2
+  Temp = Infofile.readline().rstrip("\n")  # 3
+  DT = float(Temp)
+
+  Temp = Infofile.readline().rstrip("\n")  # 1
+  Temp = Infofile.readline().rstrip("\n")  # 2
+  Temp = Infofile.readline().rstrip("\n")  # 3
+  nstep = int(Temp)
+
+  Temp = Infofile.readline().rstrip("\n")  # 1
+  Temp = Infofile.readline().rstrip("\n")  # 2
+  Temp = Infofile.readline().rstrip("\n")  # 3
+  dataFile = int(Temp)
 
   # Directories:
   fileNameDir = os.path.join("..", "output", fileName)
@@ -104,12 +134,12 @@ def main(arg):
 
   plt.close(fig)  
 
-  for ii in range(nstep):
+  for ii in range(1,nstep,dataFile):
     print("{:} {} {:} {}".format(" printing figure: ", ii, " out of: ", nstep))
     count = -1
     for kk in range (size):
       Files =  os.path.join(fileNameDir,analysisName+ "_s"+str(size),fileName+ "_s"+str(size)+"_p"
-                            + str(kk)+"_" + str(ii*dataFile + 1) + ".Res")
+                            + str(kk)+"_" + str(ii) + ".Res")
 
       File_Input = open(Files,"r")
 

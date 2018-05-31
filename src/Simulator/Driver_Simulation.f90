@@ -102,7 +102,7 @@ write(*,        fmt="(A)") " -Creating the info.txt file in the output folder ..
 !write(FileInfo, fmt="(A)") " -Creating the info.txt file in the output folder ..."
 
 UnFile=FileInfo
-Open(Unit=UnFile, File=trim(ModelInfo%ModelName)//'.infM', &
+Open(Unit=UnFile, File=trim(ModelInfo%ModelNameParallel)//'.infM', &
      Err=1001, IOstat=IO_File, Access='SEQUENTIAL', Action='write', Asynchronous='NO', &
      Blank='NULL', blocksize=0, defaultfile=trim(ModelInfo%OutputDir), DisPOSE='keep',  &
      Form='formatted', position='ASIS', status='replace')
@@ -133,6 +133,9 @@ call InputTime%stop()
 
     ! Getting the required data for this specific analysis
     call AnalysisInfo%Analysis(i_analyses, ModelInfo)
+
+    ! Writing the address file for Python script visualizer
+    call ModelInfo%visualizer(AnalysisInfo,i_analyses)
 
     ! Analysis ====================================================================================
       select case(AnalysisInfo%AnalysisType)

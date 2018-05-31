@@ -94,10 +94,12 @@ contains
 ! ================================ V E R S I O N ==================================================
 ! V0.00: 03/15/2018 - File initiated.
 ! V0.01: 03/15/2018 - Initiated: Compiled without error for the first time.
+! V2.01: 03/15/2018 - For parallel MPI
+! V2.10: 05/31/2018 - Python input file
 !
 ! File version $Id $
 !
-! Last update: 03/15/2018
+! Last update: 05/31/2018
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
 ! (Refer to the main code to see the list of imported variables)
@@ -145,7 +147,7 @@ UnFile = FileResults
 
 write (extfile,*) i_step
 
-open(unit=UnFile, file=trim(this%ModelInfo%ModelName)//'_'//trim(ADJUSTL(extfile))//'.Res', &
+open(unit=UnFile, file=trim(this%ModelInfo%ModelNameParallel)//'_'//trim(ADJUSTL(extfile))//'.Res', &
 err=1001, iostat=IO_File, access='sequential', action='write', asynchronous='no', blank='NULL', &
 blocksize=0, defaultfile=trim(this%ModelInfo%AnalysisOutputDir), dispose='keep', form='formatted',&
  position='asis', status='replace')
@@ -198,5 +200,6 @@ return
      write(*, Fmt_FL); write(FileInfo, Fmt_FL); write(*, Fmt_End); read(*,*);  stop;
 
 end subroutine Plot_Results_1D_limiter_sub
+
 
 end module Results_mod

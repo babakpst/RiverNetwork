@@ -79,6 +79,7 @@ character(144),Parameter, Public:: Fmt_Element2="('Error in the element type. Th
 
 ! Unit NUMBERS OF EXTERNAL FILES ==================================================================
 
+! input files
 enum, bind(C)
   enumerator:: FileAdr=500   ! Address file that holds the model name & directories (.txt)
   enumerator:: FileDataModel !=501 Input file (.dataModel)
@@ -91,10 +92,13 @@ end enum
 ! Debugging files
 integer(kind=Smll), Parameter, Public  :: Un_CHK=599 ! Scratch file for debugging (.Chk)
 
+! output files
 enum, bind(C)
   enumerator:: FileInfo=600  ! Model information file (.Inf)
   enumerator:: FileDomain    !=601 output file containing the domain(.domain)
   enumerator:: FileResults   !=602 output file containing results (.res)
+  enumerator:: FilePythonAddress !=603 output file for visualizer script in python (.VisPy)
+
 end enum
 
 ! Analysis case number ============================================================================

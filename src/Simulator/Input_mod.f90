@@ -40,10 +40,13 @@ private
 ! Holds info. (name, dir. output dir.) of the model, initialized by subroutine Input_Address_sub.
 type Input_Data_tp
   character (kind = 1, Len = 150) :: ModelName     ! Name of the model input file
+  character (kind = 1, Len = 150) :: ModelNameParallel ! Name of the model input file with info
+                                                      ! about Parallel simulation
   character (kind = 1, Len = 150) :: InputDir      ! Directory of the input file.
   character (kind = 1, Len = 150) :: AnalysisDir   ! Directory of Analysis input file.
   character (kind = 1, Len = 150) :: OutputDir     ! Directory of output files (Results)
   character (kind = 1, Len = 150) :: AnalysisOutputDir ! Dir of output file for each analysis
+  character (kind = 1, Len = 150) :: VisualizerDir ! Dir of output file for visualizer(python)
   character (kind = 1, Len = 150), dimension(:), allocatable :: AnalysesNames! Holds the names of
                                                                         ! the analysis input files
   ! rank and size of MPI
@@ -58,6 +61,7 @@ type Input_Data_tp
 
   contains
     procedure :: Input => Input_Address_sub
+    procedure:: visualizer => Python_Visualizer_sub
 end type Input_Data_tp
 
 
@@ -81,7 +85,6 @@ type AnalysisData_tp
 
   contains
     procedure:: Analysis => Input_Analysis_sub
-
 end type AnalysisData_tp
 
 public:: AnalysisData_tp, Input_Data_tp
@@ -204,11 +207,14 @@ this%OutputDir=trim(AdjustL(this%OutputDir))//'/'//trim(AdjustL (this%ModelName)
 write(*,fmt="(2A)")" The output directory is: ", this%OutputDir
 
 ! Modifying the model name for parallel simulation
-this%ModelName = trim(AdjustL(this%ModelName))//'_s'// &
-                 trim(adjustL(this%IndexSize))//'_p'//trim(adjustL(this%IndexRank))
+this%ModelNameParallel = trim(AdjustL(this%ModelName))//'_s'// &
+                         trim(adjustL(this%IndexSize))//'_p'//trim(adjustL(this%IndexRank))
 
 
-write(*,fmt='(" The name of the model file is: ",2A)') this%ModelName
+write(*,fmt='(" The name of the model file is: ",2A)') this%ModelNameParallel
+
+
+this%VisualizerDir = "../../visualizer"
 
 ! - Closing the address file ----------------------------------------------------------------------
 write(*,        fmt="(A)") " -Closing the address file"
@@ -307,9 +313,6 @@ write(FileInfo,*) " Subroutine < Input_Analysis_sub >: "
 ! Opening the input file for this specific simulation
 write(*,        fmt="(A)") " -Opening the analysis file ..."
 write(FileInfo, fmt="(A)") " -Opening the analysis file ..."
-
-print*, ModelInfo%AnalysesNames(i_analyses)
-print*, ModelInfo%AnalysisDir
 
 UnFile=UnInptAna
 Open(Unit=UnFile, File=trim(ModelInfo%AnalysesNames(i_analyses))//'.Analysis', Err= 1001, &
@@ -480,5 +483,163 @@ Return
 
 End Subroutine Input_Analysis_sub
 
+!##################################################################################################
+! Purpose: This subroutine provides the necessary information for the python script to visualize
+!          the output of the parallel code.
+!
+! Developed by: Babak Poursartip
+! Supervised by: Clint Dawson
+!
+! The Institute for Computational Engineering and Sciences (ICES)
+! The University of Texas at Austin
+!
+! ================================ V E R S I O N ==================================================
+! V0.00: 05/31/2018 - File initiated.
+!
+! File version $Id $
+!
+! Last update: 05/31/2018
+!
+! ================================ L O C A L   V A R I A B L E S ==================================
+! (Refer to the main code to see the list of imported variables)
+!  . . . . . . . . . . . . . . . . Variables . . . . . . . . . . . . . . . . . . . . . . . . . . .
+!
+!##################################################################################################
+
+
+subroutine Python_Visualizer_sub(this, AnalysisInfo, i_analyses)
+
+! Libraries =======================================================================================
+
+
+! User defined modules ============================================================================
+
+implicit none
+
+! Global variables ================================================================================
+
+! - integer variables -----------------------------------------------------------------------------
+
+
+! - types -----------------------------------------------------------------------------------------
+class(Input_Data_tp) :: this
+!class(AnalysisData_tp) :: self
+type(AnalysisData_tp) :: AnalysisInfo
+
+
+! Local variables =================================================================================
+! - integer variables -----------------------------------------------------------------------------
+integer(kind=Smll) :: UnFile         ! Holds Unit of a file for error message
+integer(kind=Smll) :: IO_File        ! For IOSTAT: Input Output Status in OPEN command
+integer(kind=Smll) :: IO_write       ! Used for IOSTAT: Input/Output Status in the write command
+
+integer(kind=Smll) :: i_analyses     ! loop index to read the analyses files
+
+! - character variables ---------------------------------------------------------------------------
+character (kind = 1, Len = 30) :: extfile
+
+! code ============================================================================================
+write(*,       *) " subroutine < Python_Visualizer_sub >: "
+write(FileInfo,*) " subroutine < Python_Visualizer_sub >: "
+
+! - Opening the domain file -----------------------------------------------------------------------
+
+
+write(*,       *) " -Writing down the address file for Python visualizer script(Address.VisPy)... "
+write(FileInfo,*) " -Writing down the address file for Python visualizer script(Address.VisPy)... "
+
+UnFile = FilePythonAddress
+open(unit=UnFile, file=trim(this%ModelName)//'_'// &
+                       trim(this%AnalysesNames(i_analyses))//'_s'// &
+                       trim(adjustL(this%IndexSize))//'.VisPy', &
+err=1001, iostat=IO_File, access='sequential', action='write', asynchronous='no', blank='NULL', &
+blocksize=0, defaultfile=trim(this%VisualizerDir), dispose='keep', form='formatted',&
+position='asis', status='replace')
+
+UnFile = FilePythonAddress
+write(unit=UnFile,fmt="(' This is the address file for python visulaizer script: ')", &
+      advance='yes',asynchronous='no', iostat=IO_write, err=1006)
+write(unit=UnFile,fmt="(' ')", advance='yes',asynchronous='no', iostat=IO_write, err=1006)
+
+
+write(unit=UnFile, fmt="(' file name is: ')", advance='yes', asynchronous='no', &
+      iostat=IO_write, err=1006)
+write(unit=UnFile,fmt="(A)",advance='yes',asynchronous='no', &
+      iostat=IO_write,err=1006) this%ModelName
+write(unit=UnFile,fmt="(' ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
+
+
+write(unit=UnFile, fmt="(' Analysis file name is: ')", advance='yes', asynchronous='no', &
+      iostat=IO_write, err=1006)
+write(unit=UnFile,fmt="(A)",advance='yes',asynchronous='no', &
+      iostat=IO_write,err=1006) this%AnalysesNames(i_analyses)
+write(unit=UnFile,fmt="(' ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
+
+
+write(unit=UnFile, fmt="(' No. of ranks: ')", advance='yes', asynchronous='no', &
+      iostat=IO_write, err=1006)
+write(unit=UnFile,fmt="(I20)",advance='yes',asynchronous='no', &
+      iostat=IO_write,err=1006) this%size
+write(unit=UnFile,fmt="(' ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
+
+
+
+write(unit=UnFile, fmt="(' Time step: ')", advance='yes', asynchronous='no', &
+      iostat=IO_write, err=1006)
+write(unit=UnFile,fmt="(F30.15)",advance='yes',asynchronous='no', &
+      iostat=IO_write,err=1006) AnalysisInfo%TimeStep
+write(unit=UnFile,fmt="(' ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
+
+
+
+
+write(unit=UnFile, fmt="(' Number of steps: ')", advance='yes', asynchronous='no', &
+      iostat=IO_write, err=1006)
+write(unit=UnFile,fmt="(I20)",advance='yes',asynchronous='no', &
+      iostat=IO_write,err=1006) int(AnalysisInfo%TotalTime / AnalysisInfo%TimeStep, kind=Lng)
+write(unit=UnFile,fmt="(' ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
+
+
+
+
+write(unit=UnFile, fmt="(' Plot increment is: ')", advance='yes', asynchronous='no', &
+      iostat=IO_write, err=1006)
+write(unit=UnFile,fmt="(I20)",advance='yes',asynchronous='no', &
+      iostat=IO_write,err=1006) AnalysisInfo%Plot_Inc
+write(unit=UnFile,fmt="(' ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
+
+
+! - Closing the domain file -----------------------------------------------------------------------
+UnFile = FilePythonAddress
+close(unit=UnFile, status="keep", err=1002, iostat=IO_File)
+
+write(*,       *) " end subroutine < Python_Visualizer_sub >"
+write(FileInfo,*) " end subroutine < Python_Visualizer_sub >"
+return
+
+! Errors ==========================================================================================
+! Opening statement Errors
+1001 if (IO_File > 0) then
+       write(*, Fmt_Err1_OPEN) UnFile, IO_File; write(FileInfo, Fmt_Err1_OPEN) UnFile, IO_File;
+       write(*, Fmt_FL); write(FileInfo, Fmt_FL);
+       write(*, Fmt_end); read(*,*); stop;
+     else if ( IO_File < 0 ) then
+       write(*, Fmt_Err1_OPEN) UnFile, IO_File
+       write(FileInfo, Fmt_Err1_OPEN) UnFile, IO_File;  write(*, Fmt_FL) ; write(FileInfo, Fmt_FL);
+       write(*, Fmt_end); read(*,*); stop;
+     end if
+
+! Close statement Errors
+1002 if (IO_File > 0) then
+       write(*, Fmt_Err1_Close) UnFile, IO_File; write(FileInfo, Fmt_Err1_Close) UnFile, IO_File;
+       write(*, Fmt_FL); write(FileInfo, Fmt_FL);
+       write(*, Fmt_End); read(*,*); stop;
+     end if
+
+! write statement errors
+1006 write(*, Fmt_write1) UnFile, IO_write; write(UnFile, Fmt_write1) UnFile, IO_write;
+     write(*, Fmt_FL); write(FileInfo, Fmt_FL); write(*, Fmt_End); read(*,*);  stop;
+
+end subroutine Python_Visualizer_sub
 
 end module Input_mod

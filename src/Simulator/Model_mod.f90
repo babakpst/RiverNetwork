@@ -100,7 +100,7 @@ Implicit None
 ! Global Variables ================================================================================
 
 ! - types -----------------------------------------------------------------------------------------
-type(Input_Data_tp), intent(In)    :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
+type(Input_Data_tp), intent(In) :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
 class(model_tp),  intent(inout) :: this ! Holds the model
 
 ! Local Variables =================================================================================
@@ -127,7 +127,7 @@ write(FileInfo, fmt="(A)") " -Opening the input file ..."
 ! Open the input file for arrays
 UnFile = FilePartition
 
-open(Unit=UnFile, file=trim(ModelInfo%ModelName)//'.par', &
+open(Unit=UnFile, file=trim(ModelInfo%ModelNameParallel)//'.par', &
      err=1001, iostat=IO_File, access='sequential', action='read', asynchronous='no', &
      blank='null', blocksize=0, defaultfile=trim(ModelInfo%InputDir), DisPOSE='keep', &
      form='formatted', position='asis', status='old')

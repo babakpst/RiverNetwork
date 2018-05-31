@@ -281,7 +281,8 @@ SourceTerms%Identity(1,1) = 1.0_Dbl
 SourceTerms%Identity(2,2) = 1.0_Dbl
 
 ! <modify>
-UU(1:this%Model%NCells)%U(1) = this%AnalysisInfo%CntrlV -    this%Model%ZCell(:)
+!UU(1:this%Model%NCells)%U(1) = this%AnalysisInfo%CntrlV -    this%Model%ZCell(:)
+UU(1:this%Model%NCells)%U(1) = this%AnalysisInfo%CntrlV
 UU(:)%U(2) = 0.0_Dbl
 
   ! message communication in MPI
@@ -671,8 +672,8 @@ UU_N1%U(1) = h_upstream ! h at the upstream
 UU_0%U(1)  = h_upstream ! h at the upstream
 
 ! Boundary conditions on the discharge
-UU_N1%U(2) = Q_Up / Width  ! h at the upstream
-UU_0%U(2) = Q_Up / Width  ! h at the upstream
+UU_N1%U(2) = Q_Up / Width ! uh at the upstream
+UU_0%U(2) = Q_Up / Width  ! uh at the upstream
 
 !write(*,       *) " end subroutine < Impose_BC_1D_up_sub >"
 !write(FileInfo,*) " end subroutine < Impose_BC_1D_up_sub >"
