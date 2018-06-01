@@ -282,9 +282,16 @@ SourceTerms%Identity(2,2) = 1.0_Dbl
 
 ! <modify>
 !UU(1:this%Model%NCells)%U(1) = this%AnalysisInfo%CntrlV -    this%Model%ZCell(:)
+if ( this%ModelInfo%rank == 0 .or. this%ModelInfo%rank == 1) then
 UU(1:this%Model%NCells)%U(1) = this%AnalysisInfo%CntrlV
-UU(:)%U(2) = 0.0_Dbl
+else if ( this%ModelInfo%rank == 2 .or. this%ModelInfo%rank == 3) then
+UU(1:this%Model%NCells)%U(1) = this%AnalysisInfo%h_dw
+end if
 
+
+
+
+UU(:)%U(2) = 0.0_Dbl
   ! message communication in MPI
   if (this%ModelInfo%rank==0) then
     UU(0)% U(1) = UU(1)%U(1)

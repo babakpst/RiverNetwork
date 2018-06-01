@@ -264,8 +264,8 @@ CellCounter = 0_Lng
       else if (Geometry%ReachType(i_reach)==1_Shrt) then
 
         Height = MaxHeight
-        ProjectionLength = floor(1.0E10 * Geometry%ReachLength(i_reach)/&
-                           Geometry%ReachDisc(i_reach) )/1.0E10
+        ProjectionLength = floor(1.0E9 * Geometry%ReachLength(i_reach)/&
+                           Geometry%ReachDisc(i_reach) )/1.0E9
         XCoordinate = 0.5_Dbl * ProjectionLength
 
           do jj = 1_Lng,i_reach-1_Lng
@@ -274,7 +274,8 @@ CellCounter = 0_Lng
 
           do jj = 1_Lng, Geometry%ReachDisc(i_reach)
             CellCounter = CellCounter + 1_Lng
-            Z_loss = Domain_Func_1D(XCoordinate)
+            !Z_loss = Domain_Func_1D(XCoordinate)
+            Z_loss = Domain_Func_1D_MacDonald(XCoordinate)
 
             this%LengthCell(CellCounter,1) = dsqrt(ProjectionLength**2 + Z_loss**2)
             this%LengthCell(CellCounter,2) = ProjectionLength
@@ -282,11 +283,18 @@ CellCounter = 0_Lng
             this%X_Full(CellCounter*2_Lng)       = XCoordinate - 0.5_Dbl * ProjectionLength
             this%X_Full(CellCounter*2_Lng+1_Lng) = XCoordinate
 
-            this%SlopeCell(CellCounter)  = Domain_Func_1D_D(XCoordinate)
-            this%SlopeInter(CellCounter) = Domain_Func_1D_D(XCoordinate-0.5_Dbl * ProjectionLength)
+
+            !this%SlopeCell(CellCounter)  = Domain_Func_1D_D(XCoordinate)
+            !this%SlopeInter(CellCounter) = Domain_Func_1D_D(XCoordinate-0.5_Dbl * ProjectionLength)
+            this%SlopeCell(CellCounter)  = Domain_Func_1D_MacDonald_D(XCoordinate)
+            this%SlopeInter(CellCounter) = Domain_Func_1D_MacDonald_D(XCoordinate-0.5_Dbl * ProjectionLength)
             this%ZCell(CellCounter)      = Height + Z_loss
+            !this%ZFull(CellCounter*2)    = Height &
+            !                             + Domain_Func_1D(XCoordinate - 0.5_Dbl * ProjectionLength)
+
             this%ZFull(CellCounter*2)    = Height &
-                                         + Domain_Func_1D(XCoordinate - 0.5_Dbl * ProjectionLength)
+                                         + Domain_Func_1D_MacDonald(XCoordinate - 0.5_Dbl * ProjectionLength)
+
             this%ZFull(CellCounter*2+1)  = Height + Z_loss
             this%ManningCell(CellCounter)= Geometry%ReachManning(i_reach)
             this%WidthCell(CellCounter)  = Geometry%ReachWidth(i_reach)
@@ -388,5 +396,72 @@ real(kind=Dbl) :: DBathymetry
 DBathymetry = - 0.05_Dbl * 2.0_Dbl * (x-10.0_Dbl)
 
 end function Domain_Func_1D_D
+
+
+!#####################################
+function Domain_Func_1D_MacDonald(x) result(Bathymetry)
+
+implicit none
+
+real(kind=Dbl)  :: x
+real(kind=Dbl)  :: Bathymetry
+
+real(kind=Dbl)  :: a1 = 0.674202
+real(kind=Dbl)  :: a2 = 21.7112
+real(kind=Dbl)  :: a3 = 14.492
+real(kind=Dbl)  :: a4 = 1.4305
+
+! code ============================================================================================
+
+  if (0.0<= x .and. x <= 200.0_dbl/3.0_dbl) then
+    Bathymetry = ((4.0_dbl/Gravity)**(1.0_dbl/3.0_dbl)) * ( 4.0_dbl/3.0_dbl - x/100.0_dbl ) &
+               - (9*x/1000.0_dbl) * ( x/100.0_dbl - 2.0_dbl/3.0_dbl)
+  else if (200.0_dbl/3.0_dbl <= x .and. x <= 100.0_dbl) then
+    Bathymetry = ((4.0_dbl/Gravity)**(1.0_dbl/3.0_dbl))*( &
+                 +a1 * (x/100.0_dbl - 2.0_dbl/3.0_dbl)**4 &
+                 +a1 * (x/100.0_dbl - 2.0_dbl/3.0_dbl)**3 &
+                 -a2 * (x/100.0_dbl - 2.0_dbl/3.0_dbl)**2 &
+                 +a3 * (x/100.0_dbl - 2.0_dbl/3.0_dbl) &
+                 + a4 &
+                 )
+  else
+    write(*,*)" The defined bathymetry in the discretization_mod is wrong.",x
+    stop
+  end if
+
+end function Domain_Func_1D_MacDonald
+
+!##################################################################################################
+function Domain_Func_1D_MacDonald_D(x) result(DBathymetry)
+
+implicit none
+
+real(kind=Dbl) :: x
+real(kind=Dbl) :: DBathymetry
+
+real(kind=Dbl)  :: a1 = 0.674202
+real(kind=Dbl)  :: a2 = 21.7112
+real(kind=Dbl)  :: a3 = 14.492
+real(kind=Dbl)  :: a4 = 1.4305
+
+! code ============================================================================================
+
+  if (0.0<= x .and. x <= 200.0_dbl/3.0_dbl) then
+    DBathymetry = ((4.0_dbl/Gravity)**(1.0_dbl/3.0_dbl)) * ( - 1.0_dbl/100.0_dbl ) &
+               - (9/1000.0_dbl) * ( x/100.0_dbl - 2.0_dbl/3.0_dbl) &
+               - (9*x/1000.0_dbl) * ( 1.0_dbl/100.0_dbl)
+  else if (200.0_dbl/3.0_dbl <= x .and. x <= 100.0_dbl) then
+    DBathymetry = ((4.0_dbl/Gravity)**(1.0_dbl/3.0_dbl))*( &
+                 +4.0_dbl * a1 * (1.0_dbl/100.0_dbl) * (x/100.0_dbl - 2.0_dbl/3.0_dbl)**3 &
+                 +3.0_dbl * a1 * (1.0_dbl/100.0_dbl) * (x/100.0_dbl - 2.0_dbl/3.0_dbl)**2 &
+                 -2.0_dbl * a2 * (1.0_dbl/100.0_dbl) * (x/100.0_dbl                  )**1 &
+                 +a3 * (1.0_dbl/100.0_dbl) &
+                 )
+  else
+    write(*,*)" The defined bathymetry in the discretization_mod is wrong.",x
+    stop
+  end if
+
+end function Domain_Func_1D_MacDonald_D
 
 end module Discretization_mod
