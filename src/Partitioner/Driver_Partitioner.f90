@@ -32,7 +32,7 @@
 !
 !##################################################################################################
 
-program Shallow_Water_Equation
+program Partitioner_program_for_Solving_Shallow_Water_Equation
 
 
 ! Libraries =======================================================================================
@@ -45,6 +45,7 @@ use Input_mod, only: Input_Data_tp
 use Model_mod, only: Geometry_tp
 use Discretization_mod, only: model_tp
 use Partitioner_mod
+use messages_and_errors_mod
 
 ! Global Variables ================================================================================
 Implicit None
@@ -66,10 +67,7 @@ Arguments%ArgCount = command_argument_count()
 allocate(Arguments%Length(Arguments%ArgCount), &
          Arguments%Arg(Arguments%ArgCount),    &
          Arguments%Argstatus(Arguments%ArgCount), stat = ERR_Alloc)
-  if (ERR_Alloc /= 0) then
-    write(*, Fmt_ALLCT) ERR_Alloc; write(FileInfo, Fmt_ALLCT) ERR_Alloc;
-    write(*, Fmt_FL); write(FileInfo, Fmt_FL); read(*, Fmt_End); stop;
-  end if
+  if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
   do ii=1,Arguments%ArgCount
     call get_command_argument(ii, Arguments%Arg(ii), Arguments%Length(ii), Arguments%Argstatus(ii))
@@ -119,10 +117,7 @@ allocate(Geometry%ReachLength(Geometry%NoReaches), Geometry%ReachDisc(Geometry%N
          Geometry%ReachType(Geometry%NoReaches), Geometry%ReachSlope(Geometry%NoReaches),   &
          Geometry%ReachManning(Geometry%NoReaches), Geometry%ReachWidth(Geometry%NoReaches),&
          stat=Err_Alloc)
-  if (Err_Alloc /= 0) then
-    write(*, Fmt_ALLCT) Err_Alloc; write(FileInfo, Fmt_ALLCT) Err_Alloc;
-    write(*, Fmt_FL); write(FileInfo, Fmt_FL); write(*, Fmt_End); read(*,*); stop;
-  end if
+  if (Err_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
 ! Reading input arrays ----------------------------------------------------------------------------
 write(*,        fmt="(A)") " -Reading arrays form data file ..."
@@ -154,10 +149,7 @@ call Partitioner_1D_Sub(Geometry, Discretization, ModelInfo)
 
 ! Deallocating arrays
 DEallocate(Arguments%Length, Arguments%Arg, Arguments%Argstatus,      stat = ERR_DeAlloc )
-  if (ERR_DeAlloc /= 0) then
-    write(*, Fmt_DEALLCT) ERR_DeAlloc; write(FileInfo, Fmt_DEALLCT) ERR_DeAlloc;
-    write(*, Fmt_FL); write(FileInfo, Fmt_FL);  write(*, Fmt_End);  read(*,*);   stop;
-  end if
+  if (ERR_DeAlloc /= 0) call error_in_deallocation(ERR_DeAlloc)
 
 ! Running time of the code ========================================================================
 Call cpu_time(SimulationTime%Time_End)
@@ -180,21 +172,9 @@ stop
 
 ! Errors ==========================================================================================
 ! Opening statement Errors
-1001  if (IO_File > 0) then
-        write(*, Fmt_Err1_OPEN) UnFile, IO_File; write(FileInfo, Fmt_Err1_OPEN) UnFile, IO_File;
-        write(*, Fmt_FL); write(FileInfo, Fmt_FL);
-        write(*, Fmt_End); read(*,*); stop;
-      Else if (IO_File < 0) then
-        write(*, Fmt_Err1_OPEN) UnFile, IO_File;
-        write(FileInfo, Fmt_Err1_OPEN) UnFile, IO_File; write(*, Fmt_FL); write(FileInfo, Fmt_FL);
-        write(*, Fmt_End);  read(*,*);   stop;
-      end if
+1001  call errorMessage(UnFile, IO_File)
 
 ! Close statement Errors
-1002  if (IO_File > 0) then
-        write(*, Fmt_Err1_Close) UnFile, IO_File; write(FileInfo, Fmt_Err1_Close) UnFile, IO_File;
-        write(*, Fmt_FL); write(FileInfo, Fmt_FL);
-        write(*, Fmt_End); read(*,*);   stop;
-      end if
+1002  call error_in_closing_a_file(UnFile, IO_File)
 
-end program Shallow_Water_Equation
+end program Partitioner_program_for_Solving_Shallow_Water_Equation

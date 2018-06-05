@@ -47,6 +47,7 @@ use Information_mod
 use Input_mod
 use Model_mod,  only: model_tp
 use Solver_mod, only: SolverWithLimiter_tp
+use messages_and_errors_mod
 
 ! Global Variables ================================================================================
 Implicit None
@@ -78,10 +79,7 @@ Arguments%ArgCount = command_argument_count()
 ! Allocating arg arrays
 allocate(Arguments%Length(Arguments%ArgCount), Arguments%Arg(Arguments%ArgCount), &
          Arguments%Argstatus(Arguments%ArgCount), stat = ERR_Alloc)
-  if (ERR_Alloc /= 0) then
-    write(*, Fmt_ALLCT) ERR_Alloc; write(FileInfo, Fmt_ALLCT) ERR_Alloc;
-    write(*, Fmt_FL); write(FileInfo, Fmt_FL); read(*, Fmt_End); stop;
-  end if
+  if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
   do ii=1,Arguments%ArgCount
     call get_command_argument(ii, Arguments%Arg(ii), Arguments%Length(ii), Arguments%Argstatus(ii))
@@ -172,10 +170,7 @@ call InputTime%stop()
 
 ! Deallocating arrays
 DEallocate(Arguments%Length, Arguments%Arg, Arguments%Argstatus,      stat = ERR_DeAlloc )
-  if (ERR_DeAlloc /= 0) then
-    write(*, Fmt_DEALLCT) ERR_DeAlloc; write(FileInfo, Fmt_DEALLCT) ERR_DeAlloc;
-    write(*, Fmt_FL); write(FileInfo, Fmt_FL);  write(*, Fmt_End);  read(*,*);   stop;
-  end if
+if (ERR_DeAlloc /= 0) call error_in_deallocation(ERR_DeAlloc)
 
 ! RUNNING TIME OF THE CODE ========================================================================
 call TotalTime%stop()
@@ -216,22 +211,10 @@ stop
 
 ! Errors ==========================================================================================
 ! Opening statement Errors
-1001  if (IO_File > 0) then
-        write(*, Fmt_Err1_OPEN) UnFile, IO_File; write(FileInfo, Fmt_Err1_OPEN) UnFile, IO_File;
-        write(*, Fmt_FL); write(FileInfo, Fmt_FL);
-        write(*, Fmt_End); read(*,*); stop;
-      Else if (IO_File < 0) then
-        write(*, Fmt_Err1_OPEN) UnFile, IO_File;
-        write(FileInfo, Fmt_Err1_OPEN) UnFile, IO_File; write(*, Fmt_FL); write(FileInfo, Fmt_FL);
-        write(*, Fmt_End);  read(*,*);   stop;
-      end if
+1001 call errorMessage(UnFile, IO_File)
 
 
 ! Close statement Errors
-1002  if (IO_File > 0) then
-        write(*, Fmt_Err1_Close) UnFile, IO_File; write(FileInfo, Fmt_Err1_Close) UnFile, IO_File;
-        write(*, Fmt_FL); write(FileInfo, Fmt_FL);
-        write(*, Fmt_End); read(*,*);   stop;
-      end if
+1002 call error_in_closing_a_file(UnFile, IO_File)
 
 end program Shallow_Water_Equations

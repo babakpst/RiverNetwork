@@ -51,6 +51,7 @@ use Results_mod, only: Plot_Results_1D_limiter_tp
 use Input_mod
 use Model_mod,  only: model_tp
 use Timer_mod
+use messages_and_errors_mod
 
 implicit none
 private
@@ -255,10 +256,7 @@ write(FileInfo,*) " -Applying initial conditions ..."
 
 !allocate(Plot_Results_1D_limiter_tp(NCells = this%Model%NCells) :: Results)
 allocate(Results%U(-1:this%Model%NCells+2),     stat=ERR_Alloc)
- if (ERR_Alloc /= 0) then
-    write (*, Fmt_ALLCT) ERR_Alloc;  write (FileInfo, Fmt_ALLCT) ERR_Alloc;
-    write(*, Fmt_FL);  write(FileInfo, Fmt_FL); read(*, Fmt_End);  stop;
-  end if
+if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
 Results%NCells = this%Model%NCells
 
@@ -618,10 +616,7 @@ Results%ModelInfo = this%ModelInfo
 
 ! Deallocating
 deallocate(Results%U, stat=ERR_DeAlloc)
-  if (ERR_DeAlloc /= 0) then
-    write (*, Fmt_DEALLCT) ERR_DeAlloc;  write (FileInfo, Fmt_DEALLCT) ERR_DeAlloc;
-    write(*, Fmt_FL);  write(FileInfo, Fmt_FL); write(*, Fmt_End); read(*,*);  stop;
-  end if
+if (ERR_DeAlloc /= 0) call error_in_deallocation(ERR_DeAlloc)
 
 write(*,       *) " end subroutine < Solver_1D_with_Limiter_sub >"
 write(FileInfo,*) " end subroutine < Solver_1D_with_Limiter_sub >"

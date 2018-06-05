@@ -35,6 +35,7 @@
 module Input_mod
 
 use Parameters_mod
+use messages_and_errors_mod
 
 implicit none
 private
@@ -139,10 +140,8 @@ read(FileAdr,*) this%NumberOfAnalyses; !write(*,*) this%NumberOfAnalyses
 
 ! Allocating
 allocate(this%AnalysesNames(this%NumberOfAnalyses),  stat=ERR_Alloc)
-  if (ERR_Alloc /= 0) then
-    write(*, Fmt_ALLCT) ERR_Alloc ;  write(FileInfo, Fmt_ALLCT) ERR_Alloc;
-    write(*, Fmt_FL);  write(FileInfo, Fmt_FL); read(*, Fmt_End);  stop;
-  end if
+if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
+
 read(FileAdr,*)
 read(FileAdr,*)
   do i_analyses = 1, this%NumberOfAnalyses
@@ -186,23 +185,11 @@ Return
 
 ! Errors ==========================================================================================
 ! Opening statement Errors
-1001 if (IO_File > 0) then
-       write(*, Fmt_Err1_OPEN) UnFile, IO_File; write(FileInfo, Fmt_Err1_OPEN) UnFile, IO_File;
-       write(*, Fmt_FL); write(FileInfo, Fmt_FL);
-       write(*, Fmt_End); read(*,*); stop;
-     Else if ( IO_File < 0 ) then
-       write(*, Fmt_Err1_OPEN) UnFile, IO_File
-       write(FileInfo, Fmt_Err1_OPEN) UnFile, IO_File;  write(*, Fmt_FL); write(FileInfo, Fmt_FL);
-       write(*, Fmt_End); read(*,*); stop;
-     end if
+1001 call errorMessage(UnFile, IO_File)
 
 
 ! Close statement Errors
-1002 if (IO_File > 0) then
-       write(*, Fmt_Err1_Close) UnFile, IO_File; write(FileInfo, Fmt_Err1_Close) UnFile, IO_File;
-       write(*, Fmt_FL); write(FileInfo, Fmt_FL);
-       write(*, Fmt_End); read(*,*); stop;
-     end if
+1002 call error_in_closing_a_file(UnFile, IO_File)
 
 End Subroutine Input_Address_sub
 

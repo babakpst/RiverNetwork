@@ -39,6 +39,7 @@ module Results_mod
 ! User defined modules ============================================================================
 use Parameters_mod
 use Input_mod
+use messages_and_errors_mod
 
 implicit none
 private
@@ -178,26 +179,13 @@ return
 
 ! Errors ==========================================================================================
 ! Opening statement Errors
-1001 if (IO_File > 0) then
-       write(*, Fmt_Err1_OPEN) UnFile, IO_File; write(FileInfo, Fmt_Err1_OPEN) UnFile, IO_File;
-       write(*, Fmt_FL); write(FileInfo, Fmt_FL);
-       write(*, Fmt_end); read(*,*); stop;
-     else if ( IO_File < 0 ) then
-       write(*, Fmt_Err1_OPEN) UnFile, IO_File
-       write(FileInfo, Fmt_Err1_OPEN) UnFile, IO_File;  write(*, Fmt_FL) ; write(FileInfo, Fmt_FL);
-       write(*, Fmt_end); read(*,*); stop;
-     end if
+1001 call errorMessage(UnFile, IO_File)
 
 ! Close statement Errors
-1002 if (IO_File > 0) then
-       write(*, Fmt_Err1_Close) UnFile, IO_File; write(FileInfo, Fmt_Err1_Close) UnFile, IO_File;
-       write(*, Fmt_FL); write(FileInfo, Fmt_FL);
-       write(*, Fmt_End); read(*,*); stop;
-     end if
+1002 call error_in_closing_a_file(UnFile, IO_File)
 
 ! write statement errors
-1006 write(*, Fmt_write1) UnFile, IO_write; write(UnFile, Fmt_write1) UnFile, IO_write;
-     write(*, Fmt_FL); write(FileInfo, Fmt_FL); write(*, Fmt_End); read(*,*);  stop;
+1006 call error_in_writing(UnFile, IO_write)
 
 end subroutine Plot_Results_1D_limiter_sub
 

@@ -42,7 +42,7 @@ use Parameters_mod
 use Input_mod, only: Input_Data_tp
 use Model_mod, only: Geometry_tp
 use Results_mod, only: Plot_domain_1D_tp
-
+use messages_and_errors_mod
 
 implicit none
 private
@@ -164,11 +164,7 @@ allocate(this%LengthCell(this%NCells,2),            &
          this%X_Disc(this%NCells),                  &
          this%X_Full(this%NCells*2_Lng + 1_Lng),    &
          stat=ERR_Alloc)
-
-  if (ERR_Alloc /= 0) then
-    write (*, Fmt_ALLCT) ERR_Alloc;  write (FileInfo, Fmt_ALLCT) ERR_Alloc;
-    write(*, Fmt_FL);  write(FileInfo, Fmt_FL); read(*, Fmt_End);  stop;
-  end if
+  if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
 ! Finding the highest point in the domain:
 write(*,        fmt="(A)")" Calculating the highest point in the domain ... "
@@ -324,11 +320,7 @@ write(FileInfo, fmt="(' -Plotting the discretized domain ... ')")
 
 ! Plot the discretized domain (cell centers)
 allocate(Plot_domain_1D_tp(CellCounter) :: Plot, stat=ERR_Alloc)
-
-  if (ERR_Alloc /= 0) then
-    write (*, Fmt_ALLCT) ERR_Alloc;  write (FileInfo, Fmt_ALLCT) ERR_Alloc;
-    write(*, Fmt_FL);  write(FileInfo, Fmt_FL); read(*, Fmt_End);  stop;
-  end if
+if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
 ! Filling the coordinates for plot
 Plot%XCoor(:)      = this%X_Disc(:)

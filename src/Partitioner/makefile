@@ -15,6 +15,7 @@ F90=ifort
 FFLAGS=-O2
 
 SOURCESF=	Parameters_mod.f90 \
+					messages_and_errors_mod.f90 \
 					Input_mod.f90 \
 					Model_mod.f90 \
 					Inf_mod.f90 \
