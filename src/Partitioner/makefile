@@ -16,8 +16,8 @@ FFLAGS=-O2
 
 SOURCESF=	Parameters_mod.f90 \
 					messages_and_errors_mod.f90 \
-					Input_mod.f90 \
-					Model_mod.f90 \
+					reading_address_file_mod.f90 \
+					reading_model_mod.f90 \
 					Inf_mod.f90 \
 					Results_mod.f90 \
 					Discretization_mod.f90 \

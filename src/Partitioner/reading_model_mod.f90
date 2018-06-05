@@ -15,6 +15,7 @@
 ! V2.00: 04/17/2018 - Partitioner
 ! V2.10: 05/15/2018 - Separating the input model from the input address
 ! V2.20: 05/30/2018 - Initializing types
+! V3.00: 06/05/2018 - Reading network
 !
 ! File version $Id $
 !
@@ -48,10 +49,16 @@ type Geometry_tp
   integer(kind=Lng),  allocatable, dimension(:) :: ReachDisc ! no. of control volume in each reach
   integer(kind=Shrt), allocatable, dimension(:) :: ReachType ! reach type
 
+  integer(kind=Lng),  allocatable, dimension(:,2) :: ReachNodes ! holds the node number at the each
+                                                                ! reach, start and end node number
+
   real(kind=DBL), allocatable, dimension(:) :: ReachLength  ! the length of each reach
   real(kind=DBL), allocatable, dimension(:) :: ReachSlope   ! the slope of each reach
   real(kind=DBL), allocatable, dimension(:) :: ReachManning ! the Manning's number for each reach
   real(kind=DBL), allocatable, dimension(:) :: ReachWidth   ! Stores the width of each reach
+  real(kind=DBL), allocatable, dimension(:) :: ReachAngle   ! Stores the orientation of the reach
+                                                            ! in comparison to the vertical axis
+
 
   Character(kind = 1,len = 20):: IndexSize="   "!Size no in the Char. fmt to add to input file Name
 

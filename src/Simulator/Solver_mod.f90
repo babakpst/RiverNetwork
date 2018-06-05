@@ -837,7 +837,6 @@ real(kind=Dbl) :: u_ave   ! the average velocity at the interface
 real(kind=Dbl) :: h_ave  ! the average height at the interface
 
 real(kind=Dbl) :: c  ! wave speed
-real(kind=Dbl) :: temp_rl  ! temp variable
 
 real(kind=Dbl), dimension(2,2) :: A_up  ! the average discharge at the interface
 real(kind=Dbl), dimension(2,2) :: A_dw  ! the average discharge at the interface
@@ -858,8 +857,6 @@ real(kind=Dbl), dimension(2,2) :: A_dw  ! the average discharge at the interface
     h_ave = 0.5_Dbl*(h_up+h_dw)   ! <modify> for unstructured discretization
     u_ave = 0.5_Dbl*(u_up+u_dw)   ! <modify> for unstructured discretization
 
-    c = dsqrt (Gravity * h_ave)   ! wave speed
-
     ! Computing the Jacobian - A
     this%A(1,1) = 0.0_Dbl
     this%A(1,2) = 1.0_Dbl
@@ -867,9 +864,9 @@ real(kind=Dbl), dimension(2,2) :: A_dw  ! the average discharge at the interface
     this%A(2,2) = 2.0_Dbl * u_ave
 
     ! Computing the eigenvalues
-    temp_rl = dsqrt(Gravity * h_ave)
-    this%Lambda%U(1) = u_ave - temp_rl
-    this%Lambda%U(2) = u_ave + temp_rl
+    c = dsqrt (Gravity * h_ave)   ! wave speed
+    this%Lambda%U(1) = u_ave - c
+    this%Lambda%U(2) = u_ave + c
 
     this%Lambda_plus%U(1) =  dmax1(this%Lambda%U(1), 0.0_Dbl)
     this%Lambda_plus%U(2) =  dmax1(this%Lambda%U(2), 0.0_Dbl)
