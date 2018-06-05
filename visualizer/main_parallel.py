@@ -38,7 +38,7 @@ def main(arg):
   print(" Allocating memory ...")
 
   # Input section:
-  InputName = "EX5_EX5_case1_s4.VisPy"
+  InputName = "EX3_Limiter_EX3_case1_s6.VisPy"
   Infofile = open(InputName,"r")
 
   Temp = Infofile.readline().rstrip("\n")  # 1

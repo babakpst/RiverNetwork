@@ -69,8 +69,8 @@ end type LimiterFunc_tp
 ! This type consists of all variables/arrays regarding the Jacobian, used to apply the limiter.
 type Jacobian_tp
   integer(kind=Tiny) :: option=1_Tiny ! indicates how to interpolate the Jacobian at the interface:
-                                 ! 1: for average on the solution
-                                 ! 2: direct average on the Jacobian itself
+                                      ! 1: for average on the solution
+                                      ! 2: direct average on the Jacobian itself
 
   real(kind=Dbl),dimension(2,2) :: A=0.0_dbl ! Jacobian matrix at each time step at interface i-1/2
   real(kind=Dbl),dimension(2,2) :: R=0.0_dbl ! eigenvectors at each time step at interface i-1/2
@@ -221,7 +221,7 @@ logical   :: PrintResults
 
 ! - type ------------------------------------------------------------------------------------------
 type(vector) :: TempSolution
-type(Jacobian_tp)      :: Jacobian ! Contains the Jacobian and all related items.
+type(Jacobian_tp)      :: Jacobian          ! Contains the Jacobian and all related items.
 type(Jacobian_tp)      :: Jacobian_neighbor ! Contains the Jacobian and all related items.
 type(LimiterFunc_tp)   :: LimiterFunc ! Contains the values of the limiter
 type(Plot_Results_1D_limiter_tp) :: Results ! in each time step/ all cells
@@ -270,25 +270,24 @@ dx     = this%Model%LengthCell(1,2)
 dtdx = dt / dx
 
 ! <modify>
-Jacobian%option = 1
-Jacobian_neighbor%option = 1
+!Jacobian%option = 1
+!Jacobian_neighbor%option = 1
 
 LimiterFunc%limiter_Type = this%AnalysisInfo%limiter ! Define what limiter to use in the algorithm
 !PrintResults = .true.
 PrintResults = .false.
-SourceTerms%Identity(:,:) = 0.0_Dbl
+!SourceTerms%Identity(:,:) = 0.0_Dbl
 SourceTerms%Identity(1,1) = 1.0_Dbl
 SourceTerms%Identity(2,2) = 1.0_Dbl
 
 ! <modify>
-!UU(1:this%Model%NCells)%U(1) = this%AnalysisInfo%CntrlV -    this%Model%ZCell(:)
-if ( this%ModelInfo%rank == 0 .or. this%ModelInfo%rank == 1) then
-UU(1:this%Model%NCells)%U(1) = this%AnalysisInfo%CntrlV
-else if ( this%ModelInfo%rank == 2 .or. this%ModelInfo%rank == 3) then
-UU(1:this%Model%NCells)%U(1) = this%AnalysisInfo%h_dw
-end if
+UU(1:this%Model%NCells)%U(1) = this%AnalysisInfo%CntrlV -    this%Model%ZCell(:)
 
-
+!if ( this%ModelInfo%rank == 0 .or. this%ModelInfo%rank == 1) then
+!UU(1:this%Model%NCells)%U(1) = this%AnalysisInfo%CntrlV
+!else if ( this%ModelInfo%rank == 2 .or. this%ModelInfo%rank == 3) then
+!UU(1:this%Model%NCells)%U(1) = this%AnalysisInfo%h_dw
+!end if
 
 
 UU(:)%U(2) = 0.0_Dbl
@@ -453,7 +452,7 @@ Results%ModelInfo = this%ModelInfo
                       *(this%Model%SlopeInter(i_Cell+i_Interface-1_Tiny)-SourceTerms%S_f_interface)
 
             SourceTerms%Source_2%U(:) = SourceTerms%Source_2%U(:) + 0.5_Dbl * (dt**2) / dx &
-                             * ( Coefficient * matmul( Jacobian%A, SourceTerms%S_interface%U(:)))
+                             * ( Coefficient * matmul(Jacobian%A, SourceTerms%S_interface%U(:)))
 
             if ( alpha%U(1) ==0.0_Dbl .and. alpha%U(2) ==0.0_Dbl) cycle
 
@@ -932,6 +931,7 @@ real(kind=Dbl), dimension(2,2) :: A_dw  ! the average discharge at the interface
     ! Computing the Jacobian at the upstream - A
     h_up = this%U_up%U(1)
     u_up = this%U_up%U(2) / this%U_up%U(1)
+
     A_up(1,1) = 0.0_Dbl
     A_up(1,2) = 1.0_Dbl
     A_up(2,1) = Gravity * h_up - u_up**2
@@ -941,6 +941,7 @@ real(kind=Dbl), dimension(2,2) :: A_dw  ! the average discharge at the interface
     ! Computing the Jacobian at the upstream - A
     h_dw = this%U_dw%U(1)
     u_dw = this%U_dw%U(2) / this%U_dw%U(1)
+
     A_dw(1,1) = 0.0_Dbl
     A_dw(1,2) = 1.0_Dbl
     A_dw(2,1) = Gravity * h_dw - u_dw**2

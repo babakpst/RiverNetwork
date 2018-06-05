@@ -1,3 +1,5 @@
 #!/bin/bash
 module load c7 intel/17.0 mpich2/3.1.4
 
+mpiexec -n 4 ./main
+

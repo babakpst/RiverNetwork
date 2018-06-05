@@ -126,6 +126,8 @@ write(*,        fmt="(A)") " -Opening the input file ..."
 write(FileInfo, fmt="(A)") " -Opening the input file ..."
 ! Open the input file for arrays
 UnFile = FilePartition
+print*,ModelInfo%ModelNameParallel
+print*,ModelInfo%InputDir
 
 open(Unit=UnFile, file=trim(ModelInfo%ModelNameParallel)//'.par', &
      err=1001, iostat=IO_File, access='sequential', action='read', asynchronous='no', &
