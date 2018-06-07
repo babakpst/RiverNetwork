@@ -19,7 +19,7 @@ type(Input_Data_tp) :: ModelInfo      ! Holds info. (name, dir, output dir) of t
 type(ArgCommands)   :: Arguments      ! Holds the entered arguments from the command line
 type(timing)        :: SimulationTime ! Holds the run time
 type(Geometry_tp)   :: Geometry       ! Holds information about the geometry of the domain
-type(model_tp)      :: Discretization ! Holds all information required for discretization
+type(DiscretizedNetwork_tp) :: Discretization ! Holds all information required for discretization
 
 ! - Character Variables ---------------------------------------------------------------------------
 !Character (kind = 1, Len = 50 ) :: arg  ! Holds the entered argument

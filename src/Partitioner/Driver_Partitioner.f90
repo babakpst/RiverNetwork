@@ -103,7 +103,7 @@ write(*,        fmt="(A)") " -Reading the initial data file ..."
 write(FileInfo, fmt="(A)") " -Reading the initial data file ..."
 
 ! Initializing the geometry -----------------------------------------------------------------------
-!Geometry = Geometry_tp(ReachDisc=null(), ReachType=null(), ReachLength=null(), ReachSlope=null(), &
+!Geometry = Geometry_tp(ReachCells=null(), ReachType=null(), ReachLength=null(), ReachSlope=null(), &
 !                       ReachManning=null(), ReachWidth=null(), ReachWidth=null() )
 
 ! Reading basic data: -----------------------------------------------------------------------------
@@ -133,13 +133,26 @@ Call cpu_time(SimulationTime%Input_Ends)
 write(*,        fmt="(A)") " -Discretization ..."
 write(FileInfo, fmt="(A)") " -Discretization ..."
 
+
+
+
+
 ! Initialization ----------------------------------------------------------------------------------
+
 Discretization = model_tp(SlopeCell=null(), SlopeInter=null(), ZCell=null(), ZFull=null(), &
                           ManningCell=null(), WidthCell=null(), X_Disc=null(), X_Full=null(), &
                           LengthCell=null() )
 
 ! Discretize the domain ---------------------------------------------------------------------------
 call Discretization%Discretize(Geometry, ModelInfo)
+
+
+
+
+
+
+
+
 
 ! Partitioning and writing results ================================================================
 call Partitioner_1D_Sub(Geometry, Discretization, ModelInfo)

@@ -16,10 +16,11 @@
 ! V1.10: 04/10/2018 - Minor modifications in the objects/classes.
 ! V2.10: 05/24/2018 - modifying for MPI
 ! V2.20: 05/30/2018 - Initializing types
+! V3.20: 06/07/2018 - network discretization
 !
 ! File version $Id $
 !
-! Last update: 05/30/2018
+! Last update: 06/07/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! Discretize_1D: Discretizes the 1D model.
@@ -48,28 +49,36 @@ implicit none
 private
 
 ! Contains all information after discretization
-type model_tp
+type DiscretizedReach_tp
   integer (kind=Lng)  :: NCells=0_Lng ! Total number of cells in the domain
 
   real(kind=DBL), allocatable, dimension(:) :: SlopeCell  ! the slope of each cell at the center
   real(kind=DBL), allocatable, dimension(:) :: SlopeInter ! the slope of each cell at the center
   real(kind=DBL), allocatable, dimension(:) :: ZCell      ! bottom elev. at the center of each cell
   real(kind=DBL), allocatable, dimension(:) :: ZFull      ! bottom elevation at all points
-  real(kind=DBL), allocatable, dimension(:) :: ManningCell! the Manning's number of each cell
-  real(kind=DBL), allocatable, dimension(:) :: WidthCell  ! the Manning's number of each cell
+
   real(kind=DBL), allocatable, dimension(:) :: X_Disc     ! the coordinates of the cell center
   real(kind=DBL), allocatable, dimension(:) :: X_Full     ! the coordinates all points
 
-  real(kind=DBL), allocatable, dimension(:,:) :: LengthCell ! the length of each cell
-            ! note: the first col holds the actual cell length (length of the controal volume), and
-            !       the second col holds the projection(x)
+  real(kind=DBL), allocatable, dimension(:) :: LengthCell ! the length of each cell
 
+  real(kind=DBL) :: ReachManning    ! the Manning's number of each cell
+  real(kind=DBL) :: ReachWidthCell  ! the Manning's number of each cell
+  real(kind=DBL) :: CellPorjectionLength  ! the length of each cell in the horizontal dir.
+
+end type DiscretizedReach_tp
+
+
+
+type DiscretizedNetwork_tp
+
+  type(DiscretizedReach_tp), allocatable, dimension(:) :: DiscretizedReach
   contains
     procedure Discretize => Discretize_1D_sub
 
-end type model_tp
+end type DiscretizedNetwork_tp
 
-public:: model_tp
+public:: DiscretizedNetwork_tp
 
 contains
 
@@ -148,7 +157,7 @@ write(*,        fmt="(A)") " Calculating the total number of the cells in the do
 write(FileInfo, fmt="(A)") " Calculating the total number of the cells in the domain ... "
 
   do i_reach = 1_Lng,Geometry%NoReaches
-    this%NCells = this%NCells + Geometry%ReachDisc(i_reach)
+    this%NCells = this%NCells + Geometry%ReachCells(i_reach)
   end do
 
 write(*,        fmt="(A,I15)") " Total number of cells: ", this%NCells
@@ -195,7 +204,7 @@ CellCounter = 0_Lng
       if (Geometry%ReachType(i_reach)==0_Shrt) then
 
         CntrlVolumeLength = floor(Geometry%ReachLength(i_reach)*1.0E10/ &
-                            Geometry%ReachDisc(i_reach), kind=Lng)/1.0E10 ! Control volume length
+                            Geometry%ReachCells(i_reach), kind=Lng)/1.0E10 ! Control volume length
         write(*,fmt="(A,I5,A,F23.10)")" Cell length in the reach ",i_reach," is:",CntrlVolumeLength
 
         Height = MaxHeight
@@ -208,7 +217,7 @@ CellCounter = 0_Lng
             XCoordinate = XCoordinate + Geometry%ReachLength(jj)
           end do
 
-          do jj = 1_Lng, Geometry%ReachDisc(i_reach) - 1_Lng
+          do jj = 1_Lng, Geometry%ReachCells(i_reach) - 1_Lng
               CellCounter = CellCounter + 1_Lng
               this%LengthCell(CellCounter,1)= CntrlVolumeLength
               this%LengthCell(CellCounter,2)= CntrlVolumeLength ! <modify> use horizontal distance
@@ -261,14 +270,14 @@ CellCounter = 0_Lng
 
         Height = MaxHeight
         ProjectionLength = floor(1.0E9 * Geometry%ReachLength(i_reach)/&
-                           Geometry%ReachDisc(i_reach) )/1.0E9
+                           Geometry%ReachCells(i_reach) )/1.0E9
         XCoordinate = 0.5_Dbl * ProjectionLength
 
           do jj = 1_Lng,i_reach-1_Lng
             XCoordinate = XCoordinate + Geometry%ReachLength(jj)
           end do
 
-          do jj = 1_Lng, Geometry%ReachDisc(i_reach)
+          do jj = 1_Lng, Geometry%ReachCells(i_reach)
             CellCounter = CellCounter + 1_Lng
             !Z_loss = Domain_Func_1D(XCoordinate)
             Z_loss = Domain_Func_1D_MacDonald(XCoordinate)

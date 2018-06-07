@@ -56,7 +56,7 @@ end type Geometry_tp
 
 ! This type contains all required information for each reach.
 type reach_tp
-  integer(kind=Lng)  :: ReachDisc=0_Lng  ! no. of control volumes (cells) in each reach
+  integer(kind=Lng)  :: ReachCells=0_Lng  ! no. of control volumes (cells) in each reach
   integer(kind=Shrt) :: ReachType=0_Shrt ! reach type - 0 for straight, 1 for geometry form func.
   integer(kind=Lng), dimension(2) :: ReachNodes=0_Lng ! holds the node number at the each
                                                       ! reach, start and end node number
@@ -281,120 +281,48 @@ read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, e
 
 
 ! Reading the network info
+UnFile = FileDataGeo
   do i_reach= 1, this%NoReaches
-    UnFile = FileDataGeo
     read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read,  &
-         err=1003, end=1004) &
-         reach_no,  & ! reach no.
-         this%ReachLength(reach_no), & ! Length of the reach
-
-
-
+    err=1003, end=1004) &
+    reach_no,  & ! reach no.
+    this%network(reach_no)%ReachLength, & ! Length of the reach
+    this%network(reach_no)%ReachCells, &  ! no. of cells in each reach- constant length
+    this%network(reach_no)%ReachType, &   ! type of the reach - straight 0, from function 1
+    this%network(reach_no)%ReachSlope, &  ! slopes of each reach
+    this%network(reach_no)%ReachManning, &! Manning's number of each reach
+    this%network(reach_no)%ReachWidth, &  ! width of channel- constant channel width in each reach
+    this%network(reach_no)%ReachNodes(1:2), & ! nodes of the reach
+    this%network(reach_no)%ReachAngle(1:2), & ! angles of the junctions of the reach
+    this%network(reach_no)%JunctionLength(1:2) ! Length of the reach at each junction
   end do
 
-
+! writing the network in the info file
 UnFile = FileInfo
-write(unit=*,      fmt="(' The length of reach ', I5, ' is:', F23.10,' m')") &
-                                                            i_reach, this%ReachLength(i_reach)
-write(unit=UnFile, fmt="(' The length of reach ', I5, ' is:', F23.10,' m')") &
-                                                            i_reach, this%ReachLength(i_reach)
-
-
-
-
-! Reading total number of control volumes in each reach/For now we have a constant discretization
-UnFile = FileDataGeo
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+write(unit=*,      fmt="('Reach no. -- Length -- no. of cells -- reach type (straight(0) or based on a funciton(1)) -- slope -- Manning's number -- width of channel -- nodes(start, end) -- angles(start, end) -- Length in juction(start, end)')")
+write(unit=UnFile, fmt="('Reach no. -- Length -- no. of cells -- reach type (straight(0) or based on a funciton(1)) -- slope -- Manning's number -- width of channel -- nodes(start, end) -- angles(start, end) -- Length in juction(start, end)')")
   do i_reach= 1, this%NoReaches
-    UnFile = FileDataGeo
-    read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
-         end=1004) this%ReachDisc(i_reach)
-    UnFile = FileInfo
-    write(unit=*,      fmt="(' No. of discretization of reach ', I5, ' is:', I10)") &
-                                                                  i_reach, this%ReachDisc(i_reach)
-    write(unit=UnFile, fmt="(' No. of discretization of reach ', I5, ' is:', I10)") &
-                                                                  i_reach, this%ReachDisc(i_reach)
+    write(unit=*,      fmt="(I7, F23.10, I5, I3, 3F23.10, 2I7, 2F23.10, 2F23.10)") i_reach,
+    this%network(reach_no)%ReachLength, & ! Length of the reach
+    this%network(reach_no)%ReachCells, &  ! no. of cells in each reach- constant length
+    this%network(reach_no)%ReachType, &   ! type of the reach - straight 0, from function 1
+    this%network(reach_no)%ReachSlope, &  ! slopes of each reach
+    this%network(reach_no)%ReachManning, &! Manning's number of each reach
+    this%network(reach_no)%ReachWidth, &  ! width of channel- constant channel width in each reach
+    this%network(reach_no)%ReachNodes(1:2), & ! nodes of the reach
+    this%network(reach_no)%ReachAngle(1:2), & ! angles of the junctions of the reach
+    this%network(reach_no)%JunctionLength(1:2) ! Length of the reach at each junction
+    write(unit=UnFile, fmt="(I7, F23.10, I5, I3, 3F23.10, 2I7, 2F23.10, 2F23.10)") i_reach,
+    this%network(reach_no)%ReachLength, & ! Length of the reach
+    this%network(reach_no)%ReachCells, &  ! no. of cells in each reach- constant length
+    this%network(reach_no)%ReachType, &   ! type of the reach - straight 0, from function 1
+    this%network(reach_no)%ReachSlope, &  ! slopes of each reach
+    this%network(reach_no)%ReachManning, &! Manning's number of each reach
+    this%network(reach_no)%ReachWidth, &  ! width of channel- constant channel width in each reach
+    this%network(reach_no)%ReachNodes(1:2), & ! nodes of the reach
+    this%network(reach_no)%ReachAngle(1:2), & ! angles of the junctions of the reach
+    this%network(reach_no)%JunctionLength(1:2) ! Length of the reach at each junction
   end do
-
-! Reading reach type
-UnFile = FileDataGeo
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-  do i_reach= 1, this%NoReaches
-    UnFile = FileDataGeo
-    read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
-         end=1004) this%ReachType(i_reach)
-
-    UnFile = FileInfo
-    write(unit=*,     fmt="(' Rreach ', I10,' is of type: ', I5)") i_reach, this%ReachType(i_reach)
-    write(unit=UnFile,fmt="(' Rreach ', I10,' is of type: ', I5)") i_reach, this%ReachType(i_reach)
-  end do
-
-! Reading slopes of reach
-UnFile = FileDataGeo
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-  do i_reach= 1, this%NoReaches
-    UnFile = FileDataGeo
-    read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
-         end=1004) this%ReachSlope(i_reach)
-
-    UnFile = FileInfo
-    write(unit=*,      fmt="(' The slope of reach ', I10,' is: ', F23.10)") &
-                                                                  i_reach, this%ReachSlope(i_reach)
-    write(unit=UnFile, fmt="(' The slope of reach ', I10,' is: ', F23.10)") &
-                                                                  i_reach, this%ReachSlope(i_reach)
-  end do
-
-! Reading Manning number of each reach
-UnFile = FileDataGeo
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-  do i_reach= 1, this%NoReaches
-    UnFile = FileDataGeo
-    read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
-         end=1004) this%ReachManning(i_reach)
-
-    UnFile = FileInfo
-    write(unit=*,      fmt="(' The Mannings no. for reach ', I10,' is: ', F23.10)") &
-                                                                i_reach, this%ReachManning(i_reach)
-    write(unit=UnFile, fmt="(' The Mannings no. for reach ', I10,' is: ', F23.10)") &
-                                                                i_reach, this%ReachManning(i_reach)
-  end do
-
-! Reading the width of each reach
-UnFile = FileDataGeo
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-  do i_reach= 1, this%NoReaches
-
-    UnFile = FileDataGeo
-    read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
-         end=1004) this%ReachWidth(i_reach)
-
-    UnFile = FileInfo
-    write(unit=*,      fmt="(' The width of reach ', I10,' is: ', F23.10)") &
-                                                                  i_reach, this%ReachWidth(i_reach)
-    write(unit=UnFile, fmt="(' The width of reach ', I10,' is: ', F23.10)") &
-                                                                  i_reach, this%ReachWidth(i_reach)
-  end do
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
