@@ -36,23 +36,24 @@
 		<Unit filename="src/Partitioner/Driver_Partitioner.f90" />
 		<Unit filename="src/Partitioner/Global_Variables_Inc.f90" />
 		<Unit filename="src/Partitioner/Inf_mod.f90" />
-		<Unit filename="src/Partitioner/Input_mod.f90" />
-		<Unit filename="src/Partitioner/Model_mod.f90" />
 		<Unit filename="src/Partitioner/Parameters_mod.f90" />
 		<Unit filename="src/Partitioner/Partitioner_mod.f90" />
 		<Unit filename="src/Partitioner/Results_mod.f90" />
 		<Unit filename="src/Partitioner/makefile" />
+		<Unit filename="src/Partitioner/reading_address_file_mod.f90" />
+		<Unit filename="src/Partitioner/reading_model_mod.f90" />
 		<Unit filename="src/Simulator/Address.txt" />
 		<Unit filename="src/Simulator/Driver_Simulation.f90" />
 		<Unit filename="src/Simulator/Global_Variables_Inc.f90" />
 		<Unit filename="src/Simulator/Inf_mod.f90" />
-		<Unit filename="src/Simulator/Input_mod.f90" />
-		<Unit filename="src/Simulator/Model_mod.f90" />
 		<Unit filename="src/Simulator/Parameters_mod.f90" />
 		<Unit filename="src/Simulator/Results_mod.f90" />
 		<Unit filename="src/Simulator/Solver_mod.f90" />
 		<Unit filename="src/Simulator/Timer_mod.f90" />
 		<Unit filename="src/Simulator/makefile" />
+		<Unit filename="src/Simulator/messages_and_errors_mod.f90" />
+		<Unit filename="src/Simulator/reading_address_file_mod.f90" />
+		<Unit filename="src/Simulator/reading_partitioned_model_mod.f90" />
 		<Extensions>
 			<envvars />
 			<code_completion />

@@ -20,7 +20,7 @@
 !
 ! ================================ S U B R O U T I N E ============================================
 ! Input_Address_sub: Reads file name and directories from the address file.
-! Input_Array_sub
+! reading_network_geometry_sub
 ! Input_Analysis_sub
 !
 ! ================================ F U N C T I O N ================================================

@@ -119,7 +119,6 @@ write(*,       *) " Subroutine < Input_Address_sub >: "
 !write(FileInfo,*)
 !write(FileInfo,*) " Subroutine < Input_Address_sub >: "
 
-
 UnFile=FileAdr
 Open(Unit=UnFile, File='Address.txt', Err=1001, IOStat=IO_File, Access='SEQUENTIAL', &
      action='READ', Asynchronous='NO', blank='NULL', blocksize=0, DisPOSE='Keep', &

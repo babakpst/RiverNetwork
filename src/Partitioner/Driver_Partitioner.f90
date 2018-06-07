@@ -25,7 +25,7 @@
 !
 ! File version $Id $
 !
-! Last update: 05/30/2018
+! Last update: 06/07/2018
 !
 ! ================================ Global   V A R I A B L E S =====================================
 !  . . . . . . . . . . . . . . . . Variables . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -103,20 +103,17 @@ write(*,        fmt="(A)") " -Reading the initial data file ..."
 write(FileInfo, fmt="(A)") " -Reading the initial data file ..."
 
 ! Initializing the geometry -----------------------------------------------------------------------
-Geometry = Geometry_tp(ReachDisc=null(), ReachType=null(), ReachLength=null(), ReachSlope=null(), &
-                       ReachManning=null(), ReachWidth=null() )
+!Geometry = Geometry_tp(ReachDisc=null(), ReachType=null(), ReachLength=null(), ReachSlope=null(), &
+!                       ReachManning=null(), ReachWidth=null(), ReachWidth=null() )
 
 ! Reading basic data: -----------------------------------------------------------------------------
-call Geometry%Basic(ModelInfo)
+call Geometry%Base_Geometry%initial_network_info(ModelInfo)
 
 ! Allocating required arrays
 write(*,        fmt="(A)") " -Allocating the required arrays ..."
 write(FileInfo, fmt="(A)") " -Allocating the required arrays ..."
 
-allocate(Geometry%ReachLength(Geometry%NoReaches), Geometry%ReachDisc(Geometry%NoReaches),  &
-         Geometry%ReachType(Geometry%NoReaches), Geometry%ReachSlope(Geometry%NoReaches),   &
-         Geometry%ReachManning(Geometry%NoReaches), Geometry%ReachWidth(Geometry%NoReaches),&
-         stat=Err_Alloc)
+allocate(Geometry%network(Geometry%Base_Geometry%NoReaches), stat=Err_Alloc)
   if (Err_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
 ! Reading input arrays ----------------------------------------------------------------------------
@@ -124,7 +121,7 @@ write(*,        fmt="(A)") " -Reading arrays form data file ..."
 write(FileInfo, fmt="(A)") " -Reading arrays form data file ..."
 
 ! Geometry
-call Geometry%Array(ModelInfo)
+call Geometry%reading_network(ModelInfo)
 
 Call cpu_time(SimulationTime%Input_Ends)
 

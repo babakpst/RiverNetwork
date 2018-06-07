@@ -15,15 +15,15 @@
 ! V2.00: 04/17/2018 - Partitioner
 ! V2.10: 05/15/2018 - Separating the input model from the input address
 ! V2.20: 05/30/2018 - Initializing types
-! V3.00: 06/05/2018 - Reading network
+! V3.00: 06/07/2018 - Reading network
 !
 ! File version $Id $
 !
-! Last update: 05/30/2018
+! Last update: 06/07/2018
 !
 ! ================================ S U B R O U T I N E ============================================
-! Input_Basic_sub
-! Input_Array_sub
+! reading_initial_info_on_network_sub
+! reading_network_geometry_sub
 ! ================================ F U N C T I O N ================================================
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
@@ -41,31 +41,45 @@ use messages_and_errors_mod
 implicit none
 private
 
-! Contains all information about the geometry of the domain. (input)
-type Geometry_tp
+
+! Contains the information we read from the base input file.
+type Base_Geometry_tp
   integer(kind=Lng) :: NoReaches=0_Lng ! Number of reaches
+  integer(kind=Lng) :: NoNodes=0_Lng   ! Number of nodes
   integer(kind=Shrt):: size=0          ! Number of partitions/ranks
-
-  integer(kind=Lng),  allocatable, dimension(:) :: ReachDisc ! no. of control volume in each reach
-  integer(kind=Shrt), allocatable, dimension(:) :: ReachType ! reach type
-
-  integer(kind=Lng),  allocatable, dimension(:,2) :: ReachNodes ! holds the node number at the each
-                                                                ! reach, start and end node number
-
-  real(kind=DBL), allocatable, dimension(:) :: ReachLength  ! the length of each reach
-  real(kind=DBL), allocatable, dimension(:) :: ReachSlope   ! the slope of each reach
-  real(kind=DBL), allocatable, dimension(:) :: ReachManning ! the Manning's number for each reach
-  real(kind=DBL), allocatable, dimension(:) :: ReachWidth   ! Stores the width of each reach
-  real(kind=DBL), allocatable, dimension(:) :: ReachAngle   ! Stores the orientation of the reach
-                                                            ! in comparison to the vertical axis
-
 
   Character(kind = 1,len = 20):: IndexSize="   "!Size no in the Char. fmt to add to input file Name
 
   contains
-    procedure Basic => Input_Basic_sub
-    procedure Array => Input_Array_sub
+    procedure initial_network_info => reading_initial_info_on_network_sub
+end type Geometry_tp
 
+! This type contains all required information for each reach.
+type reach_tp
+  integer(kind=Lng)  :: ReachDisc=0_Lng  ! no. of control volumes (cells) in each reach
+  integer(kind=Shrt) :: ReachType=0_Shrt ! reach type - 0 for straight, 1 for geometry form func.
+  integer(kind=Lng), dimension(2) :: ReachNodes=0_Lng ! holds the node number at the each
+                                                      ! reach, start and end node number
+  real(kind=DBL) :: ReachLength=0.0_dbl  ! the length of each reach
+  real(kind=DBL) :: ReachSlope=0.0_dbl   ! the slope of each reach
+  real(kind=DBL) :: ReachManning=0.0_dbl ! the Manning's number for each reach
+  real(kind=DBL) :: ReachWidth=0.0_dbl   ! Stores the width of each reach
+
+  real(kind=DBL), dimension(2) :: ReachAngle=0.0_dbl ! Stores the orientation of the reach
+                                                     ! in comparison to the vertical axis
+
+  real(kind=DBL), dimension(2) :: JunctionLength=0.0_dbl ! Length of the junction
+end type reach_tp
+
+
+! Contains all information about the geometry of the domain. (input)
+type Geometry_tp
+
+  type(reach_tp), allocatable, dimension(:):: network
+  type(Base_Geometry_tp) :: Base_Geometry
+
+  contains
+    procedure reading_network => reading_network_geometry_sub
 end type Geometry_tp
 
 public:: Geometry_tp
@@ -76,7 +90,7 @@ contains
 ! Purpose: This subroutine reads the initial information for simulation, so that the arrays can be
 !          allocated.
 !
-! Developed by: Babak Poursartip
+! Developed by:  Babak Poursartip
 ! Supervised by: Clint Dawson
 !
 ! The Institute for Computational Engineering and Sciences (ICES)
@@ -86,11 +100,11 @@ contains
 ! V0.10: 02/21/2018 - Initiation.
 ! V1.00: 03/01/2018 - Compiled without error.
 ! V1.10: 04/10/2018 - Minor modifications.
-!
+! V2.00: 06/07/2018 - Modifications for network.
 !
 ! File version $Id $
 !
-! Last update: 04/10/2018
+! Last update: 06/07/2018
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
 ! (Refer to the main code to see the list of imported variables)
@@ -98,7 +112,7 @@ contains
 !
 !##################################################################################################
 
-Subroutine Input_Basic_sub(this, ModelInfo)
+Subroutine reading_initial_info_on_network_sub(this, ModelInfo)
 
 ! Libraries =======================================================================================
 
@@ -110,7 +124,7 @@ Implicit None
 
 ! - Types -----------------------------------------------------------------------------------------
 type(Input_Data_tp),  intent(In)  :: ModelInfo ! Holds info. (name, dir, output dir) of the model
-class(Geometry_tp),   intent(out) :: this  ! Holds information about the geometry of the domain
+class(Base_Geometry_tp), intent(out) :: this  ! Holds information about the geometry of the domain
 
 ! Local Variables =================================================================================
 ! - integer Variables -----------------------------------------------------------------------------
@@ -121,9 +135,9 @@ integer(kind=Smll) :: IO_write ! Used for IOSTAT - Input Output Status - in the 
 
 ! code ============================================================================================
 write(*,       *)
-write(*,       *) " Subroutine < Input_Basic_sub >: "
+write(*,       *) " Subroutine < reading_initial_info_on_network_sub >: "
 write(FileInfo,*)
-write(FileInfo,*) " Subroutine < Input_Basic_sub >: "
+write(FileInfo,*) " Subroutine < reading_initial_info_on_network_sub >: "
 
 ! - Opening the data model file -------------------------------------------------------------------
 write(*,        fmt="(A)") " -Opening the data model file ..."
@@ -170,9 +184,9 @@ write(FileInfo, fmt="(A)") " -Closing the data model file"
 UnFile =  FileDataModel
 Close(Unit = UnFile, status = 'keep', ERR =  1002, IOSTAT = IO_File)
 
-write(*,       *) ' End Subroutine < Input_Basic_sub >'
+write(*,       *) ' End Subroutine < reading_initial_info_on_network_sub >'
 write(*,       *)
-write(FileInfo,*) ' End Subroutine < Input_Basic_sub >'
+write(FileInfo,*) ' End Subroutine < reading_initial_info_on_network_sub >'
 write(FileInfo,*)
 Return
 
@@ -193,7 +207,7 @@ Return
 1006 call error_in_writing(UnFile, IO_write)
 
 
-End Subroutine Input_Basic_sub
+End Subroutine reading_initial_info_on_network_sub
 
 
 !##################################################################################################
@@ -220,7 +234,7 @@ End Subroutine Input_Basic_sub
 !
 !##################################################################################################
 
-Subroutine Input_Array_sub(this, ModelInfo)
+Subroutine reading_network_geometry_sub(this, ModelInfo)
 
 
 Implicit None
@@ -237,13 +251,15 @@ integer(kind=Smll) :: UnFile   ! Holds Unit of a file for error message
 integer(kind=Smll) :: IO_File  ! For IOSTAT: Input Output status in OPEN command
 integer(kind=Smll) :: IO_read  ! Holds error of read statements
 integer(kind=Smll) :: IO_write ! Used for IOSTAT - Input Output Status - in the write command
-integer(kind=Smll) :: i_reach  ! loop index on the number of reaches
+
+integer(kind=Lng)  :: i_reach  ! loop index on the number of reaches
+integer(kind=Lng)  :: reach_no ! loop index on the number of reaches
 
 ! code ============================================================================================
 write(*,       *)
-write(*,       *) " Subroutine < Input_Array_sub >: "
+write(*,       *) " Subroutine < reading_network_geometry_sub >: "
 write(FileInfo,*)
-write(FileInfo,*) " Subroutine < Input_Array_sub >: "
+write(FileInfo,*) " Subroutine < reading_network_geometry_sub >: "
 
 ! Open required Files -----------------------------------------------------------------------------
 write(*,        fmt="(A)") " -Opening the input files for arrays ..."
@@ -256,23 +272,35 @@ open(Unit=UnFile, file=trim(ModelInfo%ModelName)//'.Geo', &
      blank='null', blocksize=0, defaultfile=trim(ModelInfo%InputDir), DisPOSE='keep', &
      form='formatted', position='asis', status='old')
 
+! reading the network
 UnFile = FileDataGeo
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-
-! Reading the length of each reach
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+
+
+! Reading the network info
   do i_reach= 1, this%NoReaches
     UnFile = FileDataGeo
-    read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
-         end=1004) this%ReachLength(i_reach); !write(*,*)this%ReachLength(i_reach)
+    read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read,  &
+         err=1003, end=1004) &
+         reach_no,  & ! reach no.
+         this%ReachLength(reach_no), & ! Length of the reach
 
-    UnFile = FileInfo
-    write(unit=*,      fmt="(' The length of reach ', I5, ' is:', F23.10,' m')") &
-                                                                i_reach, this%ReachLength(i_reach)
-    write(unit=UnFile, fmt="(' The length of reach ', I5, ' is:', F23.10,' m')") &
-                                                                i_reach, this%ReachLength(i_reach)
+
+
   end do
+
+
+UnFile = FileInfo
+write(unit=*,      fmt="(' The length of reach ', I5, ' is:', F23.10,' m')") &
+                                                            i_reach, this%ReachLength(i_reach)
+write(unit=UnFile, fmt="(' The length of reach ', I5, ' is:', F23.10,' m')") &
+                                                            i_reach, this%ReachLength(i_reach)
+
+
+
 
 ! Reading total number of control volumes in each reach/For now we have a constant discretization
 UnFile = FileDataGeo
@@ -352,6 +380,24 @@ read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, e
                                                                   i_reach, this%ReachWidth(i_reach)
   end do
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ! - Closing the geometry file ---------------------------------------------------------------------
 write(*,        fmt="(A)") " -Closing the geometry file"
 write(FileInfo, fmt="(A)") " -Closing the geometry file"
@@ -359,9 +405,9 @@ write(FileInfo, fmt="(A)") " -Closing the geometry file"
 UnFile = FileDataGeo
 Close(Unit = UnFile, status = 'keep', ERR =  1002, IOSTAT = IO_File)
 
-write(*,       *) " End Subroutine < Input_Array_sub >"
+write(*,       *) " End Subroutine < reading_network_geometry_sub >"
 write(*,       *)
-write(FileInfo,*) " End Subroutine < Input_Array_sub >"
+write(FileInfo,*) " End Subroutine < reading_network_geometry_sub >"
 write(FileInfo,*)
 Return
 
@@ -382,7 +428,7 @@ Return
 ! - write statement error -------------------------------------------------------------------------
 1006 call error_in_writing(UnFile, IO_write)
 
-end Subroutine Input_Array_sub
+end Subroutine reading_network_geometry_sub
 
 end module Model_mod
 
