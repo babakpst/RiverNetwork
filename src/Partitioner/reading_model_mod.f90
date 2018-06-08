@@ -74,9 +74,10 @@ end type reach_tp
 
 ! Contains all information about the geometry of the domain. (input)
 type Geometry_tp
-
-  type(reach_tp), allocatable, dimension(:):: network
-  type(Base_Geometry_tp) :: Base_Geometry
+  integer(kind=Tiny), allocatable, dimension(:) :: BoundaryCondition ! Holds BC: 0 for free nodes
+                                                                     !           1 for junction
+  type(reach_tp), allocatable, dimension(:) :: network
+  type(Base_Geometry_tp)                    :: Base_Geometry
 
   contains
     procedure reading_network => reading_network_geometry_sub
@@ -153,7 +154,7 @@ UnFile = FileDataModel  ! Total number of reaches in the domain
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile,fmt="(I10)",advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)&
+read(unit=UnFile,fmt="(I10)",advance='yes', asReachType=0_Shrt ! reach type - 0 for straight, 1 for geometry form func.ynchronous='no', iostat=IO_read, err=1003, end=1004)&
                                                                                      this%NoReaches
 
 UnFile = FileInfo
@@ -253,7 +254,8 @@ integer(kind=Smll) :: IO_read  ! Holds error of read statements
 integer(kind=Smll) :: IO_write ! Used for IOSTAT - Input Output Status - in the write command
 
 integer(kind=Lng)  :: i_reach  ! loop index on the number of reaches
-integer(kind=Lng)  :: reach_no ! loop index on the number of reaches
+integer(kind=Lng)  :: reach_no ! temp var to read the reach no.
+integer(kind=Lng)  :: i_Node   ! loop index on the node number in the network
 
 ! code ============================================================================================
 write(*,       *)
@@ -282,7 +284,7 @@ read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, e
 
 ! Reading the network info
 UnFile = FileDataGeo
-  do i_reach= 1, this%NoReaches
+  do i_reach= 1, this%Base_Geometry%NoReaches
     read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read,  &
     err=1003, end=1004) &
     reach_no,  & ! reach no.
@@ -297,11 +299,32 @@ UnFile = FileDataGeo
     this%network(reach_no)%JunctionLength(1:2) ! Length of the reach at each junction
   end do
 
+! Reading Boundary conditions - free nodes vs junction nodes
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+UnFile = FileDataGeo
+  do i_Node = 1, this%Base_Geometry%NoNodes
+    read(unit=UnFile, fmt="(I2)", advance='yes', asynchronous='no', iostat=IO_read,
+    err=1003, end=1004)this%BoundaryCondition(i_Node)
+  end do
+
 ! writing the network in the info file
+write(unit=*,      fmt="('')")
+write(unit=*,      fmt="(' Network:')")
+write(unit=*,      fmt="(' Reach no. -- Length -- no. of cells -- reach type (straight(0) or &
+                          based on a funciton(1)) -- slope -- Manning's number -- width of channel&
+                          -- nodes(start, end) -- angles(start, end) -- &
+                          Length in juction(start, end)')")
 UnFile = FileInfo
-write(unit=*,      fmt="('Reach no. -- Length -- no. of cells -- reach type (straight(0) or based on a funciton(1)) -- slope -- Manning's number -- width of channel -- nodes(start, end) -- angles(start, end) -- Length in juction(start, end)')")
-write(unit=UnFile, fmt="('Reach no. -- Length -- no. of cells -- reach type (straight(0) or based on a funciton(1)) -- slope -- Manning's number -- width of channel -- nodes(start, end) -- angles(start, end) -- Length in juction(start, end)')")
-  do i_reach= 1, this%NoReaches
+write(unit=UnFile, fmt="('')")
+write(unit=UnFile, fmt="(' Network:')")
+write(unit=UnFile, fmt="(' Reach no. -- Length -- no. of cells -- reach type (straight(0) or &
+                          based on a funciton(1)) -- slope -- Manning's number -- width of channel&
+                          -- nodes(start, end) -- angles(start, end) -- &
+                          Length in juction(start, end)')")
+
+  do i_reach= 1, this%Base_Geometry%NoNodes
+    ! writing the network on screen
     write(unit=*,      fmt="(I7, F23.10, I5, I3, 3F23.10, 2I7, 2F23.10, 2F23.10)") i_reach,
     this%network(reach_no)%ReachLength, & ! Length of the reach
     this%network(reach_no)%ReachCells, &  ! no. of cells in each reach- constant length
@@ -312,6 +335,7 @@ write(unit=UnFile, fmt="('Reach no. -- Length -- no. of cells -- reach type (str
     this%network(reach_no)%ReachNodes(1:2), & ! nodes of the reach
     this%network(reach_no)%ReachAngle(1:2), & ! angles of the junctions of the reach
     this%network(reach_no)%JunctionLength(1:2) ! Length of the reach at each junction
+    ! writing the network in the info file
     write(unit=UnFile, fmt="(I7, F23.10, I5, I3, 3F23.10, 2I7, 2F23.10, 2F23.10)") i_reach,
     this%network(reach_no)%ReachLength, & ! Length of the reach
     this%network(reach_no)%ReachCells, &  ! no. of cells in each reach- constant length
@@ -324,7 +348,23 @@ write(unit=UnFile, fmt="('Reach no. -- Length -- no. of cells -- reach type (str
     this%network(reach_no)%JunctionLength(1:2) ! Length of the reach at each junction
   end do
 
+write(unit=*,      fmt="('')")
+write(unit=*,      fmt="(' Boundary conditions: ')")
+write(unit=*,      fmt="(' Node no. -- BC ')")
 
+UnFile = FileInfo
+write(unit=UnFile, fmt="('')")
+write(unit=UnFile, fmt="(' Boundary conditions: ')")
+write(unit=UnFile, fmt="(' Node no. -- BC ')")
+
+  do i_Node= 1, this%Base_Geometry%NoNodes
+    ! writing the boundary conditions on screen
+    write(unit=*,      fmt="(I10, I2)") i_Node, this%BoundaryCondition(i_Node)
+
+    ! writing the boundary conditions in the info file
+    write(unit=UnFile, fmt="(I10, I2)") i_Node, this%BoundaryCondition(i_Node)
+
+  end do
 
 ! - Closing the geometry file ---------------------------------------------------------------------
 write(*,        fmt="(A)") " -Closing the geometry file"

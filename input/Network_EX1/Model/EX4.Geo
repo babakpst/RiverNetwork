@@ -6,3 +6,10 @@ Reach no. -- Length -- no. of cells -- reach type (straight(0) or based on a fun
 2            100.0     400             0                                                     0.001    0.0                 1.0                 2  3                 60   240              0   0
 3            100.0     400             0                                                     0.001    0.0                 1.0                 2  4                 180  180              0   0
 
+Boundary conditions
+0
+1
+0
+0
+
+

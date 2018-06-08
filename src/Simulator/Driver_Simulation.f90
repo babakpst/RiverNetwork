@@ -115,8 +115,8 @@ write(*,        fmt="(A)") " -Reading the input file ..."
 write(FileInfo, fmt="(A)") " -Reading the input file ..."
 
 ! Initialization
-Model = model_tp(slopeCell=null(), SlopeInter=null(), ZCell=null(), ManningCell=null(), &
-                 WidthCell=null(), X_Disc=null(), LengthCell=null() )
+Model = model_tp(CellSlope=null(), InterfaceSlope=null(), ZCell=null(), ManningCell=null(), &
+                 WidthCell=null(), XCell=null(), LengthCell=null() )
 
 ! Filling the Model object
 call Model%Input(ModelInfo)

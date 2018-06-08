@@ -16,11 +16,11 @@
 ! V1.10: 04/10/2018 - Minor modifications in the objects/classes.
 ! V2.10: 05/24/2018 - modifying for MPI
 ! V2.20: 05/30/2018 - Initializing types
-! V3.20: 06/07/2018 - network discretization
+! V3.20: 06/08/2018 - network discretization
 !
 ! File version $Id $
 !
-! Last update: 06/07/2018
+! Last update: 06/08/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! Discretize_1D: Discretizes the 1D model.
@@ -48,33 +48,34 @@ use messages_and_errors_mod
 implicit none
 private
 
-! Contains all information after discretization
+! contains all information after discretization
 type DiscretizedReach_tp
-  integer (kind=Lng)  :: NCells=0_Lng ! Total number of cells in the domain
+  integer (kind=Lng)  :: NCells_reach=0_Lng ! number of cells in the reach
 
-  real(kind=DBL), allocatable, dimension(:) :: SlopeCell  ! the slope of each cell at the center
-  real(kind=DBL), allocatable, dimension(:) :: SlopeInter ! the slope of each cell at the center
-  real(kind=DBL), allocatable, dimension(:) :: ZCell      ! bottom elev. at the center of each cell
-  real(kind=DBL), allocatable, dimension(:) :: ZFull      ! bottom elevation at all points
+  real(kind=DBL), allocatable, dimension(:) :: CellSlope      ! slope of each cell at the center
+  real(kind=DBL), allocatable, dimension(:) :: InterfaceSlope ! slope of each cell at the center
+  real(kind=DBL), allocatable, dimension(:) :: ZCell     ! bottom elev. at the center of each cell
+  real(kind=DBL), allocatable, dimension(:) :: XCell     ! the coordinates of the cell center
 
-  real(kind=DBL), allocatable, dimension(:) :: X_Disc     ! the coordinates of the cell center
-  real(kind=DBL), allocatable, dimension(:) :: X_Full     ! the coordinates all points
+  real(kind=DBL), allocatable, dimension(:) :: ZFull     ! bottom elevation at cells and interfaces
+  real(kind=DBL), allocatable, dimension(:) :: XFull     ! coordinates at cells and interfaces
 
   real(kind=DBL), allocatable, dimension(:) :: LengthCell ! the length of each cell
 
-  real(kind=DBL) :: ReachManning    ! the Manning's number of each cell
-  real(kind=DBL) :: ReachWidthCell  ! the Manning's number of each cell
+  real(kind=DBL) :: ReachManning          ! the Manning's number of each cell
+  real(kind=DBL) :: ReachWidthCell        ! the Manning's number of each cell
   real(kind=DBL) :: CellPorjectionLength  ! the length of each cell in the horizontal dir.
-
 end type DiscretizedReach_tp
 
 
-
+! contains the information about the entire network, separated by reaches
 type DiscretizedNetwork_tp
 
-  type(DiscretizedReach_tp), allocatable, dimension(:) :: DiscretizedReach
+  integer (kind=Lng)  :: NCells=0_Lng  ! Total number of cells in the network
+  type(DiscretizedReach_tp), allocatable, dimension(:) :: DiscretizedReach ! info about each reach
+
   contains
-    procedure Discretize => Discretize_1D_sub
+    procedure Discretize => Discretize_1D_sub ! subroutine to discretize the
 
 end type DiscretizedNetwork_tp
 
@@ -96,10 +97,11 @@ contains
 ! V0.01: 00/00/2018 - Initiated: Compiled without error for the first time.
 ! V1.00: 03/20/2018 - Compiled with no error/warnings.
 ! V1.10: 04/10/2018 - Minor modifications in the objects/classes.
+! V2.00: 06/08/2018 - Network discretization
 !
 ! File version $Id $
 !
-! Last update: 04/10/2018
+! Last update: 06/08/2018
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
 ! (Refer to the main code to see the list of imported variables)
@@ -107,7 +109,7 @@ contains
 !
 !##################################################################################################
 
-subroutine Discretize_1D_sub(this, Geometry, ModelInfo)
+subroutine Discretize_network_sub(this, Geometry, ModelInfo)
 
 ! Libraries =======================================================================================
 
@@ -121,7 +123,7 @@ implicit none
 type(Geometry_tp),   intent(in)   :: Geometry   ! Holds the geometry of the domain.
 type(Input_Data_tp), intent(in)   :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
 
-class(model_tp), intent(out) :: this ! Discretization
+class(DiscretizedNetwork_tp), intent(out) :: this ! Discretization
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
@@ -130,6 +132,12 @@ integer(kind=Smll) :: ERR_Alloc, ERR_DeAlloc ! Allocating and DeAllocating error
 integer (kind=Lng) :: i_reach     ! Loop index on the number of reaches
 integer (kind=Lng) :: jj          ! Loop index
 integer (kind=Lng) :: CellCounter ! Counts number of cells
+
+
+
+
+
+
 
 ! - real variables --------------------------------------------------------------------------------
 real(kind=Dbl)    :: MaxHeight         ! Maximum height of the domain
@@ -164,14 +172,14 @@ write(*,        fmt="(A,I15)") " Total number of cells: ", this%NCells
 write(FileInfo, fmt="(A,I15)") " Total number of cells: ", this%NCells
 
 allocate(this%LengthCell(this%NCells,2),            &
-         this%SlopeCell(this%NCells),               &
-         this%SlopeInter(this%NCells+1),            &
+         this%CellSlope(this%NCells),               &
+         this%InterfaceSlope(this%NCells+1),            &
          this%ZCell(this%NCells),                   &
          this%ZFull(this%NCells*2_Lng + 1_Lng),     &
          this%ManningCell(this%NCells),             &
          this%WidthCell(this%NCells),               &
-         this%X_Disc(this%NCells),                  &
-         this%X_Full(this%NCells*2_Lng + 1_Lng),    &
+         this%XCell(this%NCells),                  &
+         this%XFull(this%NCells*2_Lng + 1_Lng),    &
          stat=ERR_Alloc)
   if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
@@ -221,16 +229,16 @@ CellCounter = 0_Lng
               CellCounter = CellCounter + 1_Lng
               this%LengthCell(CellCounter,1)= CntrlVolumeLength
               this%LengthCell(CellCounter,2)= CntrlVolumeLength ! <modify> use horizontal distance
-              this%X_Disc(CellCounter)      = XCoordinate
-              this%X_Full(CellCounter)      = XCoordinate - 0.5_Dbl * CntrlVolumeLength
-              this%X_Full(CellCounter*2_Lng+1_Lng) = XCoordinate
+              this%XCell(CellCounter)      = XCoordinate
+              this%XFull(CellCounter)      = XCoordinate - 0.5_Dbl * CntrlVolumeLength
+              this%XFull(CellCounter*2_Lng+1_Lng) = XCoordinate
 
               XCoordinate = XCoordinate + CntrlVolumeLength
               TotalLength = TotalLength + CntrlVolumeLength
               Height      = Height - Z_loss
 
-              this%SlopeCell(CellCounter)  = Geometry%ReachSlope(i_reach)
-              this%SlopeInter(CellCounter) = Geometry%ReachSlope(i_reach)
+              this%CellSlope(CellCounter)  = Geometry%ReachSlope(i_reach)
+              this%InterfaceSlope(CellCounter) = Geometry%ReachSlope(i_reach)
               this%ZCell(CellCounter)      = Height
               this%ZFull(CellCounter*2)    = Height + 0.5_Dbl * Z_loss
               this%ZFull(CellCounter*2+1)  = Height
@@ -241,15 +249,15 @@ CellCounter = 0_Lng
         CellCounter = CellCounter + 1_Lng
         this%LengthCell(CellCounter,1) = Geometry%ReachLength(i_reach) - TotalLength
 
-        this%SlopeCell(CellCounter)  = Geometry%ReachSlope(i_reach)
-        this%SlopeInter(CellCounter) = Geometry%ReachSlope(i_reach)
+        this%CellSlope(CellCounter)  = Geometry%ReachSlope(i_reach)
+        this%InterfaceSlope(CellCounter) = Geometry%ReachSlope(i_reach)
 
         XCoordinate = XCoordinate-0.5_dbl*CntrlVolumeLength+0.5_dbl*this%LengthCell(CellCounter,1)
 
-        this%X_Disc(CellCounter)     = XCoordinate
-        this%X_Full(CellCounter*2_Lng)       = XCoordinate - 0.5 * this%LengthCell(CellCounter,1)
-        this%X_Full(CellCounter*2_Lng+1_Lng) = XCoordinate
-        this%X_Full(CellCounter*2_Lng+2_Lng) = XCoordinate + 0.5 * this%LengthCell(CellCounter,1)
+        this%XCell(CellCounter)     = XCoordinate
+        this%XFull(CellCounter*2_Lng)       = XCoordinate - 0.5 * this%LengthCell(CellCounter,1)
+        this%XFull(CellCounter*2_Lng+1_Lng) = XCoordinate
+        this%XFull(CellCounter*2_Lng+2_Lng) = XCoordinate + 0.5 * this%LengthCell(CellCounter,1)
 
         Height = Height - (0.5_dbl * Z_loss + 0.5_dbl * this%LengthCell(CellCounter,1) &
                                                       * Geometry%ReachSlope(i_reach))
@@ -284,15 +292,15 @@ CellCounter = 0_Lng
 
             this%LengthCell(CellCounter,1) = dsqrt(ProjectionLength**2 + Z_loss**2)
             this%LengthCell(CellCounter,2) = ProjectionLength
-            this%X_Disc(CellCounter) = XCoordinate
-            this%X_Full(CellCounter*2_Lng)       = XCoordinate - 0.5_Dbl * ProjectionLength
-            this%X_Full(CellCounter*2_Lng+1_Lng) = XCoordinate
+            this%XCell(CellCounter) = XCoordinate
+            this%XFull(CellCounter*2_Lng)       = XCoordinate - 0.5_Dbl * ProjectionLength
+            this%XFull(CellCounter*2_Lng+1_Lng) = XCoordinate
 
 
-            !this%SlopeCell(CellCounter)  = Domain_Func_1D_D(XCoordinate)
-            !this%SlopeInter(CellCounter) = Domain_Func_1D_D(XCoordinate-0.5_Dbl * ProjectionLength)
-            this%SlopeCell(CellCounter)  = Domain_Func_1D_MacDonald_D(XCoordinate)
-            this%SlopeInter(CellCounter) = Domain_Func_1D_MacDonald_D(XCoordinate-0.5_Dbl * ProjectionLength)
+            !this%CellSlope(CellCounter)  = Domain_Func_1D_D(XCoordinate)
+            !this%InterfaceSlope(CellCounter) = Domain_Func_1D_D(XCoordinate-0.5_Dbl * ProjectionLength)
+            this%CellSlope(CellCounter)  = Domain_Func_1D_MacDonald_D(XCoordinate)
+            this%InterfaceSlope(CellCounter) = Domain_Func_1D_MacDonald_D(XCoordinate-0.5_Dbl * ProjectionLength)
             this%ZCell(CellCounter)      = Height + Z_loss
             !this%ZFull(CellCounter*2)    = Height &
             !                             + Domain_Func_1D(XCoordinate - 0.5_Dbl * ProjectionLength)
@@ -332,9 +340,9 @@ allocate(Plot_domain_1D_tp(CellCounter) :: Plot, stat=ERR_Alloc)
 if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
 ! Filling the coordinates for plot
-Plot%XCoor(:)      = this%X_Disc(:)
+Plot%XCoor(:)      = this%XCell(:)
 Plot%ZCoor(:)      = this%ZCell(:)
-Plot%SlopeCell(:)  = this%SlopeCell(:)
+Plot%CellSlope(:)  = this%CellSlope(:)
 Plot%IndexSize     = Geometry%IndexSize
 
 call Plot%plot(ModelInfo)
@@ -343,7 +351,7 @@ write(*,       *) " end subroutine < Discretize_1D_sub >"
 write(FileInfo,*) " end subroutine < Discretize_1D_sub >"
 
 return
-end subroutine Discretize_1D_sub
+end subroutine Discretize_network_sub
 
 !##################################################################################################
 ! Purpose: This function determines the shape of the 1D domain.

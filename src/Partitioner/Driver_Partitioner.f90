@@ -113,7 +113,8 @@ call Geometry%Base_Geometry%initial_network_info(ModelInfo)
 write(*,        fmt="(A)") " -Allocating the required arrays ..."
 write(FileInfo, fmt="(A)") " -Allocating the required arrays ..."
 
-allocate(Geometry%network(Geometry%Base_Geometry%NoReaches), stat=Err_Alloc)
+allocate(Geometry%network(Geometry%Base_Geometry%NoReaches), &
+         Geomtery%BoundaryCondition(Geometry%Base_Geometry%NoNodes), stat=Err_Alloc)
   if (Err_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
 ! Reading input arrays ----------------------------------------------------------------------------
@@ -138,9 +139,13 @@ write(FileInfo, fmt="(A)") " -Discretization ..."
 
 
 ! Initialization ----------------------------------------------------------------------------------
+Discretization%DiscretizedReach = DiscretizedReach_tp(CellSlope=null(), InterfaceSlope=null(), &
+                                  ZCell=null(), ZFull=null(), &
 
-Discretization = model_tp(SlopeCell=null(), SlopeInter=null(), ZCell=null(), ZFull=null(), &
-                          ManningCell=null(), WidthCell=null(), X_Disc=null(), X_Full=null(), &
+
+
+
+                          ManningCell=null(), WidthCell=null(), XCell=null(), XFull=null(), &
                           LengthCell=null() )
 
 ! Discretize the domain ---------------------------------------------------------------------------

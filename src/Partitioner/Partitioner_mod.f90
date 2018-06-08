@@ -149,21 +149,21 @@ write(FileInfo,*) " -Data partitioning ... "
               advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
               Discretization%LengthCell (counter,1),                       &
               Discretization%LengthCell (counter,2),                       &
-              Discretization%SlopeCell  (counter),                         &
+              Discretization%CellSlope  (counter),                         &
               Discretization%ZCell      (counter),                         &
               Discretization%ManningCell(counter),                         &
               Discretization%WidthCell  (counter),                         &
-              Discretization%X_Disc     (counter),                         &
-              Discretization%SlopeInter (counter)
+              Discretization%XCell     (counter),                         &
+              Discretization%InterfaceSlope (counter)
 
               !Discretization%ZFull      (counter*2_Lng-1_Lng),             &
               !Discretization%ZFull      (counter*2_Lng),                   &
-              !Discretization%X_Full     (counter*2_Lng-1_Lng),             &
-              !Discretization%X_Full     (counter*2_Lng      )
+              !Discretization%XFull     (counter*2_Lng-1_Lng),             &
+              !Discretization%XFull     (counter*2_Lng      )
       end do
     write(unit=UnFile, fmt="(F35.20)", &
           advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
-          Discretization%SlopeInter(counter+1_Lng)
+          Discretization%InterfaceSlope(counter+1_Lng)
 
     ! - Closing the input file for this partition -------------------------------------------------
     write(*,        *) " Closing the input file ... "
