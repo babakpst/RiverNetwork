@@ -72,6 +72,9 @@ end type DiscretizedReach_tp
 type DiscretizedNetwork_tp
 
   integer (kind=Lng)  :: NCells=0_Lng  ! Total number of cells in the network
+
+  real(kind=DBL), allocatable, dimension(:) :: NodeHeight
+
   type(DiscretizedReach_tp), allocatable, dimension(:) :: DiscretizedReach ! info about each reach
 
   contains
@@ -133,12 +136,6 @@ integer (kind=Lng) :: i_reach     ! Loop index on the number of reaches
 integer (kind=Lng) :: jj          ! Loop index
 integer (kind=Lng) :: CellCounter ! Counts number of cells
 
-
-
-
-
-
-
 ! - real variables --------------------------------------------------------------------------------
 real(kind=Dbl)    :: MaxHeight         ! Maximum height of the domain
 real(kind=Dbl)    :: Height            ! Height
@@ -163,6 +160,15 @@ this%NCells = 0_Lng
 
 write(*,        fmt="(A)") " Calculating the total number of the cells in the domain ... "
 write(FileInfo, fmt="(A)") " Calculating the total number of the cells in the domain ... "
+
+
+
+
+
+
+
+
+
 
   do i_reach = 1_Lng,Geometry%NoReaches
     this%NCells = this%NCells + Geometry%ReachCells(i_reach)
