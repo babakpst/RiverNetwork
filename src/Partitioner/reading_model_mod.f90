@@ -154,7 +154,7 @@ UnFile = FileDataModel  ! Total number of reaches in the domain
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile,fmt="(I10)",advance='yes', asReachType=0_Shrt ! reach type - 0 for straight, 1 for geometry form func.ynchronous='no', iostat=IO_read, err=1003, end=1004)&
+read(unit=UnFile,fmt="(I10)",advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)&
                                                                                      this%NoReaches
 
 UnFile = FileInfo
@@ -304,8 +304,8 @@ read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, e
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 UnFile = FileDataGeo
   do i_Node = 1, this%Base_Geometry%NoNodes
-    read(unit=UnFile, fmt="(I2)", advance='yes', asynchronous='no', iostat=IO_read,
-    err=1003, end=1004)this%BoundaryCondition(i_Node)
+    read(unit=UnFile, fmt="(I2)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
+                                                            end=1004)this%BoundaryCondition(i_Node)
   end do
 
 ! writing the network in the info file

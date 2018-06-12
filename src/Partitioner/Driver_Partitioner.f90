@@ -103,7 +103,7 @@ write(*,        fmt="(A)") " -Reading the initial data file ..."
 write(FileInfo, fmt="(A)") " -Reading the initial data file ..."
 
 ! Initializing the geometry -----------------------------------------------------------------------
-!Geometry = Geometry_tp(ReachCells=null(), ReachType=null(), ReachLength=null(), ReachSlope=null(), &
+!Geometry=Geometry_tp(ReachCells=null(), ReachType=null(), ReachLength=null(), ReachSlope=null(), &
 !                       ReachManning=null(), ReachWidth=null(), ReachWidth=null() )
 
 ! Reading basic data: -----------------------------------------------------------------------------
@@ -135,22 +135,16 @@ write(*,        fmt="(A)") " -Discretization ..."
 write(FileInfo, fmt="(A)") " -Discretization ..."
 
 
-
-
-
 ! Initialization ----------------------------------------------------------------------------------
 Discretization%DiscretizedReach = DiscretizedReach_tp(CellSlope=null(), InterfaceSlope=null(), &
                                   ZCell=null(), ZFull=null(), ManningCell=null(), &
                                   WidthCell=null(), XCell=null(), XFull=null(), LengthCell=null() )
 
-! allocating
-allocate(Discretization%DiscretizedReach%NodeHeight(Geometry%Base_Geometry%NoNodes) , &
-         Discretization%DiscretizedReach%DiscretizedReach(Geometry%Base_Geometry%NoReaches), &
+! allocating the network class itself
+allocate(Discretization%NodeHeight(Geometry%Base_Geometry%NoNodes) ,         &
+         Discretization%DiscretizedReach(Geometry%Base_Geometry%NoReaches),  &
          stat=Err_Alloc)
   if (Err_Alloc /= 0) call error_in_allocation(ERR_Alloc)
-
-
-
 
 ! Discretize the domain ---------------------------------------------------------------------------
 call Discretization%Discretize(Geometry, ModelInfo)

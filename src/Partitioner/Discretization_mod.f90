@@ -16,15 +16,15 @@
 ! V1.10: 04/10/2018 - Minor modifications in the objects/classes.
 ! V2.10: 05/24/2018 - modifying for MPI
 ! V2.20: 05/30/2018 - Initializing types
-! V3.20: 06/08/2018 - network discretization
+! V3.20: 06/11/2018 - network discretization
 !
 ! File version $Id $
 !
-! Last update: 06/08/2018
+! Last update: 06/11/2018
 !
 ! ================================ S U B R O U T I N E ============================================
-! Discretize_1D: Discretizes the 1D model.
-! Domain_Func_1D:   Determines the shape of domain
+! Discretize_1D:  Discretizes the 1D model.
+! Domain_Func_1D: Determines the shape of domain
 !
 ! ================================ F U N C T I O N ================================================
 !
@@ -55,9 +55,11 @@ type DiscretizedReach_tp
   real(kind=DBL), allocatable, dimension(:) :: CellSlope      ! slope of each cell at the center
   real(kind=DBL), allocatable, dimension(:) :: InterfaceSlope ! slope of each cell at the center
   real(kind=DBL), allocatable, dimension(:) :: ZCell     ! bottom elev. at the center of each cell
+  real(kind=DBL), allocatable, dimension(:) :: YCell     ! the coordinates of the cell center
   real(kind=DBL), allocatable, dimension(:) :: XCell     ! the coordinates of the cell center
 
   real(kind=DBL), allocatable, dimension(:) :: ZFull     ! bottom elevation at cells and interfaces
+  real(kind=DBL), allocatable, dimension(:) :: YFull     ! coordinates at cells and interfaces
   real(kind=DBL), allocatable, dimension(:) :: XFull     ! coordinates at cells and interfaces
 
   real(kind=DBL), allocatable, dimension(:) :: LengthCell ! the length of each cell
@@ -100,11 +102,11 @@ contains
 ! V0.01: 00/00/2018 - Initiated: Compiled without error for the first time.
 ! V1.00: 03/20/2018 - Compiled with no error/warnings.
 ! V1.10: 04/10/2018 - Minor modifications in the objects/classes.
-! V2.00: 06/08/2018 - Network discretization
+! V2.00: 06/11/2018 - Network discretization
 !
 ! File version $Id $
 !
-! Last update: 06/08/2018
+! Last update: 06/11/2018
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
 ! (Refer to the main code to see the list of imported variables)
@@ -132,9 +134,13 @@ class(DiscretizedNetwork_tp), intent(out) :: this ! Discretization
 ! - integer variables -----------------------------------------------------------------------------
 integer(kind=Smll) :: ERR_Alloc, ERR_DeAlloc ! Allocating and DeAllocating errors
 
-integer (kind=Lng) :: i_reach     ! Loop index on the number of reaches
-integer (kind=Lng) :: jj          ! Loop index
-integer (kind=Lng) :: CellCounter ! Counts number of cells
+integer(kind=Lng) :: i_reach     ! Loop index on the number of reaches
+integer(kind=Lng) :: jj          ! Loop index
+integer(kind=Lng) :: CellCounter ! Counts number of cells
+integer(kind=Lng) :: i_Node      ! loop index on the node number in the network
+integer(kind=Lng) :: NetworkOutletNode      ! loop index on the node number in the network
+
+
 
 ! - real variables --------------------------------------------------------------------------------
 real(kind=Dbl)    :: MaxHeight         ! Maximum height of the domain
@@ -161,15 +167,6 @@ this%NCells = 0_Lng
 write(*,        fmt="(A)") " Calculating the total number of the cells in the domain ... "
 write(FileInfo, fmt="(A)") " Calculating the total number of the cells in the domain ... "
 
-
-
-
-
-
-
-
-
-
   do i_reach = 1_Lng,Geometry%NoReaches
     this%NCells = this%NCells + Geometry%ReachCells(i_reach)
   end do
@@ -177,25 +174,46 @@ write(FileInfo, fmt="(A)") " Calculating the total number of the cells in the do
 write(*,        fmt="(A,I15)") " Total number of cells: ", this%NCells
 write(FileInfo, fmt="(A,I15)") " Total number of cells: ", this%NCells
 
-allocate(this%LengthCell(this%NCells,2),            &
-         this%CellSlope(this%NCells),               &
-         this%InterfaceSlope(this%NCells+1),            &
-         this%ZCell(this%NCells),                   &
-         this%ZFull(this%NCells*2_Lng + 1_Lng),     &
-         this%ManningCell(this%NCells),             &
-         this%WidthCell(this%NCells),               &
-         this%XCell(this%NCells),                  &
-         this%XFull(this%NCells*2_Lng + 1_Lng),    &
-         stat=ERR_Alloc)
-  if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
+
+  do i_reach= 1, Geometry%Base_Geometry%NoReaches
+    ! allocating each reach in the network
+    allocate(
+     this%DiscretizedReach%CellSlope(this%DiscretizedReach(i_reach)%NCells_reach),          &
+     this%DiscretizedReach%InterfaceSlope(this%DiscretizedReach(i_reach)%NCells_reach+1),   &
+     this%DiscretizedReach%ZCell(this%DiscretizedReach(i_reach)%NCells_reach),              &
+     this%DiscretizedReach%YCell(this%DiscretizedReach(i_reach)%NCells_reach),              &
+     this%DiscretizedReach%XCell(this%DiscretizedReach(i_reach)%NCells_reach),              &
+     this%DiscretizedReach%ZFull(this%DiscretizedReach(i_reach)%NCells_reach*2_Lng + 1_Lng),&
+     this%DiscretizedReach%YFull(this%DiscretizedReach(i_reach)%NCells_reach*2_Lng + 1_Lng),&
+     this%DiscretizedReach%XFull(this%DiscretizedReach(i_reach)%NCells_reach*2_Lng + 1_Lng),&
+     this%DiscretizedReach%LengthCell(this%DiscretizedReach(i_reach)%NCells_reach ,2),      &
+     stat=ERR_Alloc)
+    if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
+  end do
 
 ! Finding the highest point in the domain:
-write(*,        fmt="(A)")" Calculating the highest point in the domain ... "
-write(FileInfo, fmt="(A)")" Calculating the highest point in the domain ... "
+write(*,        fmt="(A)")" Calculating the height of each node ... "
+write(FileInfo, fmt="(A)")" Calculating the height of each node ... "
+
+! Calculation the height of each node =============================================================
+  ! Finding out the output node number of the network
+  do i_Node = 1, this%Base_Geometry%NoNodes
+    if (Geometry%BoundaryCondition(i_Node) == 0_Tiny) then
+      NetworkOutletNode = i_Node
+      exit
+    end if
+  end do
+
+
+  this%NodeHeight(NetworkOutletNode)
+
+
+
+
 
 MaxHeight = 0.0_Dbl
 
-  do i_reach = 1_Lng,Geometry%NoReaches
+  do i_reach = 1_Lng, Geometry%NoReaches
     MaxHeight = MaxHeight + Geometry%ReachSlope(i_reach) * Geometry%ReachLength(i_reach)
   end do
 
@@ -306,13 +324,14 @@ CellCounter = 0_Lng
             !this%CellSlope(CellCounter)  = Domain_Func_1D_D(XCoordinate)
             !this%InterfaceSlope(CellCounter) = Domain_Func_1D_D(XCoordinate-0.5_Dbl * ProjectionLength)
             this%CellSlope(CellCounter)  = Domain_Func_1D_MacDonald_D(XCoordinate)
-            this%InterfaceSlope(CellCounter) = Domain_Func_1D_MacDonald_D(XCoordinate-0.5_Dbl * ProjectionLength)
+            this%InterfaceSlope(CellCounter) = &
+                                 Domain_Func_1D_MacDonald_D(XCoordinate-0.5_Dbl * ProjectionLength)
             this%ZCell(CellCounter)      = Height + Z_loss
-            !this%ZFull(CellCounter*2)    = Height &
-            !                             + Domain_Func_1D(XCoordinate - 0.5_Dbl * ProjectionLength)
+            !this%ZFull(CellCounter*2)   = Height &
+            !                            + Domain_Func_1D(XCoordinate - 0.5_Dbl * ProjectionLength)
 
-            this%ZFull(CellCounter*2)    = Height &
-                                         + Domain_Func_1D_MacDonald(XCoordinate - 0.5_Dbl * ProjectionLength)
+            this%ZFull(CellCounter*2)  = Height &
+                              + Domain_Func_1D_MacDonald(XCoordinate - 0.5_Dbl * ProjectionLength)
 
             this%ZFull(CellCounter*2+1)  = Height + Z_loss
             this%ManningCell(CellCounter)= Geometry%ReachManning(i_reach)
