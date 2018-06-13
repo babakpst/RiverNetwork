@@ -136,9 +136,9 @@ write(FileInfo, fmt="(A)") " -Discretization ..."
 
 
 ! Initialization ----------------------------------------------------------------------------------
-Discretization%DiscretizedReach = DiscretizedReach_tp(CellSlope=null(), InterfaceSlope=null(), &
-                                  ZCell=null(), ZFull=null(), ManningCell=null(), &
-                                  WidthCell=null(), XCell=null(), XFull=null(), LengthCell=null() )
+!Discretization%DiscretizedReach = DiscretizedReach_tp(CellSlope=null(), InterfaceSlope=null(), &
+!                                  ZCell=null(), ZFull=null(), ManningCell=null(), &
+!                                  WidthCell=null(), XCell=null(), XFull=null(), LengthCell=null() )
 
 ! allocating the network class itself
 allocate(Discretization%NodeHeight(Geometry%Base_Geometry%NoNodes) ,         &

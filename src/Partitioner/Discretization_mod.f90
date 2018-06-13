@@ -204,8 +204,8 @@ write(FileInfo, fmt="(A)")" Calculating the height of each node ... "
     end if
   end do
 
-
-  this%NodeHeight(NetworkOutletNode)
+! setting the height of the output node
+this%NodeHeight(NetworkOutletNode) = 0.0_Dbl
 
 
 

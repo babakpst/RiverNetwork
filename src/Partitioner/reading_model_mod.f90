@@ -15,11 +15,11 @@
 ! V2.00: 04/17/2018 - Partitioner
 ! V2.10: 05/15/2018 - Separating the input model from the input address
 ! V2.20: 05/30/2018 - Initializing types
-! V3.00: 06/07/2018 - Reading network
+! V3.00: 06/13/2018 - Reading network
 !
 ! File version $Id $
 !
-! Last update: 06/07/2018
+! Last update: 06/13/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! reading_initial_info_on_network_sub
