@@ -140,7 +140,8 @@ integer(kind=Lng) :: CellCounter ! Counts number of cells
 integer(kind=Lng) :: i_Node      ! loop index on the node number in the network
 integer(kind=Lng) :: NetworkOutletNode      ! loop index on the node number in the network
 
-
+integer(kind=Tiny), allocatable, dimension(:,:) :: UpstreamNodes ! Indicates all nodes above
+                                                                 ! another node
 
 ! - real variables --------------------------------------------------------------------------------
 real(kind=Dbl)    :: MaxHeight         ! Maximum height of the domain
@@ -197,7 +198,7 @@ write(FileInfo, fmt="(A)")" Calculating the height of each node ... "
 
 ! Calculation the height of each node =============================================================
   ! Finding out the output node number of the network
-  do i_Node = 1, this%Base_Geometry%NoNodes
+  do i_Node = 1_lng, Geometry%Base_Geometry%NoNodes
     if (Geometry%BoundaryCondition(i_Node) == 0_Tiny) then
       NetworkOutletNode = i_Node
       exit
@@ -206,6 +207,30 @@ write(FileInfo, fmt="(A)")" Calculating the height of each node ... "
 
 ! setting the height of the output node
 this%NodeHeight(NetworkOutletNode) = 0.0_Dbl
+
+  allocate(UpstreamNodes(Geometry%Base_Geometry%NoNodes,Geometry%Base_Geometry%NoNodes),
+           stat=ERR_Alloc)
+    if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
+
+! initializing the nodes
+UpstreamNodes(:,:) = 0
+
+! figuring out what nodes are located at the upstream
+
+! one level up
+  do i_reach = 1_Lng, Geometry%Base_Geometry%NoReaches
+    UpstreamNodes(Geometry%network(i_reach)%ReachNodes(2),Geometry%network(i_reach)%ReachNodes(1))=1_Tiny
+  end do
+
+  do i_Node = 1_Lng, Geometry%Base_Geometry%NoNodes
+    do i_Node2 = 1_Lng, Geometry%Base_Geometry%NoNodes
+      if ()UpstreamNodes(i_Node, i_Node2)==1_Tiny) then
+
+      end if
+    end do
+  end do
+
+
 
 
 
@@ -219,6 +244,15 @@ MaxHeight = 0.0_Dbl
 
 write(*,        fmt="(A,F23.10)") " Maximum height is:", MaxHeight
 write(FileInfo, fmt="(A,F23.10)") " Maximum height is:", MaxHeight
+
+
+
+
+
+
+
+
+
 
 write(*,        fmt="(A)")" Basic calculations ..."
 write(FileInfo, fmt="(A)")" Basic calculations ..."
