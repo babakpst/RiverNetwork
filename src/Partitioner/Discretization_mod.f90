@@ -139,6 +139,8 @@ integer(kind=Lng) :: jj          ! Loop index
 integer(kind=Lng) :: CellCounter ! Counts number of cells
 integer(kind=Lng) :: i_Node      ! loop index on the node number in the network
 integer(kind=Lng) :: NetworkOutletNode      ! loop index on the node number in the network
+integer(kind=Lng) :: sum_upstream_nodes
+integer(kind=Lng) :: Max_Nodes
 
 integer(kind=Tiny), allocatable, dimension(:,:) :: UpstreamNodes ! Indicates all nodes above
                                                                  ! another node
@@ -152,6 +154,8 @@ real(kind=Dbl)    :: CntrlVolumeLength ! The length of control volume
 real(kind=Dbl)    :: XCoordinate       ! Temp var to compute the coordinate of the cell center
 real(kind=Dbl)    :: ProjectionLength
 
+logical           :: check_iteration   ! a check parameter on the while loop to make sure that
+                                       ! all the upstream nodes are copied
 ! - type ------------------------------------------------------------------------------------------
 type(Plot_domain_1D_tp(NCells=:)), allocatable :: Plot ! Plots the discretized domain
 
@@ -215,21 +219,54 @@ this%NodeHeight(NetworkOutletNode) = 0.0_Dbl
 ! initializing the nodes
 UpstreamNodes(:,:) = 0
 
-! figuring out what nodes are located at the upstream
+! figuring out what nodes are located at the upstream each node: I do it using a matrix called
+! Upstream. if node j is at the upstream of node i the value of upstream(i,j) = 1. This is an
+! iterative process. In the first step, we find out the immediate upstream node through the node
+! connective of each reach. Next, we add each level of nodes in the upstream in an iterative
+! method.
 
 ! one level up
   do i_reach = 1_Lng, Geometry%Base_Geometry%NoReaches
-    UpstreamNodes(Geometry%network(i_reach)%ReachNodes(2),Geometry%network(i_reach)%ReachNodes(1))=1_Tiny
+    UpstreamNodes(Geometry%network(i_reach)%ReachNodes(2),Geometry%network(i_reach)
+                                                                             %ReachNodes(1))=1_Tiny
   end do
 
-  do i_Node = 1_Lng, Geometry%Base_Geometry%NoNodes
-    do i_Node2 = 1_Lng, Geometry%Base_Geometry%NoNodes
-      if ()UpstreamNodes(i_Node, i_Node2)==1_Tiny) then
 
+check_iteration == .true.
+Max_Nodes = 0
+  do while (check_iteration == .true.)
+    sum_upstream_nodes = 0
+    check_iteration == .false.
+      do i_Node = 1_Lng, Geometry%Base_Geometry%NoNodes
+        do i_Node2 = 1_Lng, Geometry%Base_Geometry%NoNodes
+          if (UpstreamNodes(i_Node, i_Node2)==1_Tiny) then
+            UpstreamNodes(i_Node, :)= UpstreamNodes(i_Node, :) + UpstreamNodes(i_Node2, :)
+          end if
+        end do
+      end do
+
+    ! returning the values equal to one again
+      do i_Node = 1_Lng, Geometry%Base_Geometry%NoNodes
+        do i_Node2 = 1_Lng, Geometry%Base_Geometry%NoNodes
+          if (UpstreamNodes(i_Node, i_Node2)/=1_Tiny .and.
+              UpstreamNodes(i_Node, i_Node2)/=0_Tiny) then
+            UpstreamNodes(i_Node, i_Node2)=1_Tiny
+          end if
+        end do
+      end do
+
+      do i_Node = 1_Lng, Geometry%Base_Geometry%NoNodes
+        do i_Node2 = 1_Lng, Geometry%Base_Geometry%NoNodes
+          sum_upstream_nodes = sum_upstream_nodes + UpstreamNodes(i_Node, i_Node2)
+        end do
+      end do
+
+      if (Max_Nodes < sum_upstream_nodes ) then
+        Max_Nodes = sum_upstream_nodes
+        check_iteration == .true.
       end if
-    end do
-  end do
 
+  end do
 
 
 
