@@ -16,11 +16,11 @@
 ! V1.10: 04/10/2018 - Minor modifications in the objects/classes.
 ! V2.10: 05/24/2018 - modifying for MPI
 ! V2.20: 05/30/2018 - Initializing types
-! V3.20: 06/11/2018 - network discretization
+! V3.20: 06/19/2018 - network discretization
 !
 ! File version $Id $
 !
-! Last update: 06/11/2018
+! Last update: 06/19/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! Discretize_1D:  Discretizes the 1D model.
@@ -72,16 +72,11 @@ end type DiscretizedReach_tp
 
 ! contains the information about the entire network, separated by reaches
 type DiscretizedNetwork_tp
-
   integer (kind=Lng)  :: NCells=0_Lng  ! Total number of cells in the network
-
   real(kind=DBL), allocatable, dimension(:) :: NodeHeight
-
   type(DiscretizedReach_tp), allocatable, dimension(:) :: DiscretizedReach ! info about each reach
-
   contains
-    procedure Discretize => Discretize_1D_sub ! subroutine to discretize the
-
+    procedure Discretize => Discretize_1D_sub ! subroutine to discretize the reach
 end type DiscretizedNetwork_tp
 
 public:: DiscretizedNetwork_tp
@@ -134,13 +129,16 @@ class(DiscretizedNetwork_tp), intent(out) :: this ! Discretization
 ! - integer variables -----------------------------------------------------------------------------
 integer(kind=Smll) :: ERR_Alloc, ERR_DeAlloc ! Allocating and DeAllocating errors
 
-integer(kind=Lng) :: i_reach     ! Loop index on the number of reaches
+
 integer(kind=Lng) :: jj          ! Loop index
 integer(kind=Lng) :: CellCounter ! Counts number of cells
-integer(kind=Lng) :: i_Node      ! loop index on the node number in the network
 integer(kind=Lng) :: NetworkOutletNode      ! loop index on the node number in the network
 integer(kind=Lng) :: sum_upstream_nodes
 integer(kind=Lng) :: Max_Nodes
+integer(kind=Lng) :: i_Node      ! loop index on the node number in the network
+integer(kind=Lng) :: i_reach     ! Loop index on the number of reaches
+integer(kind=Lng) :: UpperNode   ! A temporary var that holds the upstream node of a reach.
+                                 ! We use this var. to find the height of the network
 
 integer(kind=Tiny), allocatable, dimension(:,:) :: UpstreamNodes ! Indicates all nodes above
                                                                  ! another node
@@ -152,7 +150,9 @@ real(kind=Dbl)    :: Z_loss            ! loss of height in each cell
 real(kind=Dbl)    :: TotalLength       ! Temp var
 real(kind=Dbl)    :: CntrlVolumeLength ! The length of control volume
 real(kind=Dbl)    :: XCoordinate       ! Temp var to compute the coordinate of the cell center
-real(kind=Dbl)    :: ProjectionLength
+real(kind=Dbl)    :: ProjectionLength  ! The horizontal length of the reach
+real(kind=Dbl)    :: RaisedHeight      ! A temporary variable that holds the difference in height
+                                       ! between the upstream and downstream nodes in a reach
 
 logical           :: check_iteration   ! a check parameter on the while loop to make sure that
                                        ! all the upstream nodes are copied
@@ -179,20 +179,20 @@ write(FileInfo, fmt="(A)") " Calculating the total number of the cells in the do
 write(*,        fmt="(A,I15)") " Total number of cells: ", this%NCells
 write(FileInfo, fmt="(A,I15)") " Total number of cells: ", this%NCells
 
-
+! allocating all items for each reach.
   do i_reach= 1, Geometry%Base_Geometry%NoReaches
     ! allocating each reach in the network
     allocate(
-     this%DiscretizedReach%CellSlope(this%DiscretizedReach(i_reach)%NCells_reach),          &
-     this%DiscretizedReach%InterfaceSlope(this%DiscretizedReach(i_reach)%NCells_reach+1),   &
-     this%DiscretizedReach%ZCell(this%DiscretizedReach(i_reach)%NCells_reach),              &
-     this%DiscretizedReach%YCell(this%DiscretizedReach(i_reach)%NCells_reach),              &
-     this%DiscretizedReach%XCell(this%DiscretizedReach(i_reach)%NCells_reach),              &
-     this%DiscretizedReach%ZFull(this%DiscretizedReach(i_reach)%NCells_reach*2_Lng + 1_Lng),&
-     this%DiscretizedReach%YFull(this%DiscretizedReach(i_reach)%NCells_reach*2_Lng + 1_Lng),&
-     this%DiscretizedReach%XFull(this%DiscretizedReach(i_reach)%NCells_reach*2_Lng + 1_Lng),&
-     this%DiscretizedReach%LengthCell(this%DiscretizedReach(i_reach)%NCells_reach ,2),      &
-     stat=ERR_Alloc)
+    this%DiscretizedReach(i_reach)%CellSlope(this%DiscretizedReach(i_reach)%NCells_reach),        &
+    this%DiscretizedReach(i_reach)%InterfaceSlope(this%DiscretizedReach(i_reach)%NCells_reach+1), &
+    this%DiscretizedReach(i_reach)%ZCell(this%DiscretizedReach(i_reach)%NCells_reach),            &
+    this%DiscretizedReach(i_reach)%YCell(this%DiscretizedReach(i_reach)%NCells_reach),            &
+    this%DiscretizedReach(i_reach)%XCell(this%DiscretizedReach(i_reach)%NCells_reach),            &
+    this%DiscretizedReach(i_reach)%ZFull(this%DiscretizedReach(i_reach)%NCells_reach*2_Lng+1_Lng),&
+    this%DiscretizedReach(i_reach)%YFull(this%DiscretizedReach(i_reach)%NCells_reach*2_Lng+1_Lng),&
+    this%DiscretizedReach(i_reach)%XFull(this%DiscretizedReach(i_reach)%NCells_reach*2_Lng+1_Lng),&
+    this%DiscretizedReach(i_reach)%LengthCell(this%DiscretizedReach(i_reach)%NCells_reach ,2),    &
+    stat=ERR_Alloc)
     if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
   end do
 
@@ -228,12 +228,21 @@ this%NodeHeight(NetworkOutletNode) = 0.0_Dbl
 ! initializing the nodes
 UpstreamNodes(:,:) = 0
 
-! one level up
+! one level up: Initially, we go through all reaches and set the upstream node of each reach at the
+! upstream of the drain node.
   do i_reach = 1_Lng, Geometry%Base_Geometry%NoReaches
     UpstreamNodes(Geometry%network(i_reach)%ReachNodes(2),Geometry%network(i_reach)
                                                                              %ReachNodes(1))=1_Tiny
   end do
 
+! In the next step, through an iterative method, we go through all nodes and we do the following
+! process for each node. We do the following process repeatedly, until we make sure that we
+! recognized all upstream nodes.
+! The idea for recognizing the upstream node is that for each node, we read the upstream nodes,
+! one by one, and we add the corresponding upstream nodes here. (see the figure.)
+! When to stop this process: If we include all upstream nodes in this matrix, then the sum of all
+! entries of this matrix would be constant. Thus, we keep track of the sum of all entries, once it
+! becomes constant, we stop the process.
 
 check_iteration == .true.
 Max_Nodes = 0
@@ -268,35 +277,43 @@ Max_Nodes = 0
         Max_Nodes = sum_upstream_nodes
         check_iteration == .true.
       end if
-
   end do
 
 
+! Now, that we have all the upstream nodes, we figure out the height of each node.
+! The idea is that for each reach, we raise the height of the nodes on the upstream of that reach
+  do i_reach = 1_Lng, Geometry%Base_Geometry%NoReaches
 
+    ! The difference between the height of upstream and downstream nodes:
+    ! (Multiplying the length of each reach by its slope)
+    RaisedHeight =  Geometry%network%ReachLength * Geometry%network%ReachSlope
 
+    ! raising the upstream nodes:
+    UpperNode = Geometry%network(i_reach)%ReachNodes(1) ! the node at the upstream of the reach
 
+    ! raising the height of the upper node first
+    this%NodeHeight(UpperNode) = this%NodeHeight(UpperNode) + RaisedHeight
 
-
-
-  do i_reach = 1_Lng, Geometry%NoReaches
-    MaxHeight = MaxHeight + Geometry%ReachSlope(i_reach) * Geometry%ReachLength(i_reach)
+    ! raising the rest of the nodes on the upstream (we loop over all nodes to see if it is
+    ! located at the upstream. If yes, then we raise the height.)
+    do i_Node = 1_Lng, Geometry%Base_Geometry%NoNodes
+      if (UpstreamNodes(UpperNode, i_Node) = 1_Tiny ) then
+        this%NodeHeight(i_Node) = this%NodeHeight(i_Node) + RaisedHeight
+      end if
+    end do
   end do
 
-
-
-
-MaxHeight = 0.0_Dbl
 write(*,        fmt="(A)") " The height of each node calculated."
 write(FileInfo, fmt="(A)") " The height of each node calculated."
 
 
+! =========
+! calculating total number of cells within the network
 
 
 
 
-
-
-
+! ====== modified up to here  === <delete>
 
 write(*,        fmt="(A)")" Basic calculations ..."
 write(FileInfo, fmt="(A)")" Basic calculations ..."
