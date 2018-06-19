@@ -74,7 +74,8 @@ end type DiscretizedReach_tp
 type DiscretizedNetwork_tp
   integer (kind=Lng)  :: NCells=0_Lng  ! Total number of cells in the network
   real(kind=DBL), allocatable, dimension(:) :: NodeHeight
-  type(DiscretizedReach_tp), allocatable, dimension(:) :: DiscretizedReach ! info about each reach
+  ! To hold the discretization of each reach. The size of this type is equal to the no of reaches.
+  type(DiscretizedReach_tp), allocatable, dimension(:) :: DiscretizedReach
   contains
     procedure Discretize => Discretize_1D_sub ! subroutine to discretize the reach
 end type DiscretizedNetwork_tp
@@ -129,14 +130,13 @@ class(DiscretizedNetwork_tp), intent(out) :: this ! Discretization
 ! - integer variables -----------------------------------------------------------------------------
 integer(kind=Smll) :: ERR_Alloc, ERR_DeAlloc ! Allocating and DeAllocating errors
 
-
-integer(kind=Lng) :: jj          ! Loop index
+integer(kind=Lng) :: i_Node      ! loop index on the node number in the network
+integer(kind=Lng) :: i_reach     ! Loop index on the number of reaches
+integer(kind=Lng) :: i_Cell          ! Loop index on the cell numbers for each reach
 integer(kind=Lng) :: CellCounter ! Counts number of cells
 integer(kind=Lng) :: NetworkOutletNode      ! loop index on the node number in the network
 integer(kind=Lng) :: sum_upstream_nodes
 integer(kind=Lng) :: Max_Nodes
-integer(kind=Lng) :: i_Node      ! loop index on the node number in the network
-integer(kind=Lng) :: i_reach     ! Loop index on the number of reaches
 integer(kind=Lng) :: UpperNode   ! A temporary var that holds the upstream node of a reach.
                                  ! We use this var. to find the height of the network
 
@@ -146,7 +146,7 @@ integer(kind=Tiny), allocatable, dimension(:,:) :: UpstreamNodes ! Indicates all
 ! - real variables --------------------------------------------------------------------------------
 real(kind=Dbl)    :: MaxHeight         ! Maximum height of the domain
 real(kind=Dbl)    :: Height            ! Height
-real(kind=Dbl)    :: Z_loss            ! loss of height in each cell
+real(kind=Dbl)    :: Z_loss            ! temp var. to hold loss of height in each cell of reach
 real(kind=Dbl)    :: TotalLength       ! Temp var
 real(kind=Dbl)    :: CntrlVolumeLength ! The length of control volume
 real(kind=Dbl)    :: XCoordinate       ! Temp var to compute the coordinate of the cell center
@@ -173,7 +173,7 @@ write(*,        fmt="(A)") " Calculating the total number of the cells in the do
 write(FileInfo, fmt="(A)") " Calculating the total number of the cells in the domain ... "
 
   do i_reach = 1_Lng,Geometry%NoReaches
-    this%NCells = this%NCells + Geometry%ReachCells(i_reach)
+    this%NCells = this%NCells + Geometry%NCells_Reach(i_reach)
   end do
 
 write(*,        fmt="(A,I15)") " Total number of cells: ", this%NCells
@@ -306,14 +306,9 @@ Max_Nodes = 0
 write(*,        fmt="(A)") " The height of each node calculated."
 write(FileInfo, fmt="(A)") " The height of each node calculated."
 
-
-! calculating total number of cells within the network
-  do i_reach = 1_Lng, Geometry%Base_Geometry%NoReaches
-    this%NCells = this%NCells + Geometry%network(i_reach)%ReachCells
-  end do
-
-
-! In the following loop we discretize each reach
+! In the following loop we discretize each reach. Note that we discretize each reach from the
+! upstream node to the downstream node. That means the cell number attached to the upstream
+! node is 1.
 write(*,        fmt="(A)")" Loop over reaches to discretize the domain ..."
 write(FileInfo, fmt="(A)")" Loop over reaches to discretize the domain ..."
 
@@ -326,22 +321,27 @@ write(FileInfo, fmt="(A)")" Loop over reaches to discretize the domain ..."
 
       if (Geometry%ReachType(i_reach)==0_Shrt) then
 
-        CntrlVolumeLength = floor(Geometry%ReachLength(i_reach)*1.0E10/ &
-                            Geometry%ReachCells(i_reach), kind=Lng)/1.0E10 ! Control volume length
+        CntrlVolumeLength = Geometry%network(i_reach)%ReachLength/
+                            Geometry%network(i_reach)%NCells_Reach ! Control volume length
+
         write(*,fmt="(A,I5,A,F23.10)")" Cell length in the reach ",i_reach," is:",CntrlVolumeLength
 
-        Height = MaxHeight
-        Z_loss = floor(1.0E10*CntrlVolumeLength * Geometry%ReachSlope(i_reach))/ 1.0E10
-        Height = Height +  floor(1.0E10 * 0.5_Dbl * Z_loss)/1.0E10
-        TotalLength = 0.0_Dbl
-        XCoordinate = 0.5_Dbl * CntrlVolumeLength
+        Z_loss = CntrlVolumeLength * Geometry%ReachSlope(i_reach)  ! Height loss in each cell
 
-          do jj = 1_Lng,i_reach-1_Lng
-            XCoordinate = XCoordinate + Geometry%ReachLength(jj)
-          end do
+        ! The height of the upstream node
+        Height = this%NodeHeight( Geometry%network(i_reach)%ReachNodes(2))
+        ! we raise the initial height by half of Z_loss, which is equivalent to the height of
+        ! an imaginary cell center just before the upstream node. To find the height of each cell
+        ! thereafter, we reduce Z_loss from Height each time.
+        Height = Height +  0.5_Dbl * Z_loss
 
-          do jj = 1_Lng, Geometry%ReachCells(i_reach) - 1_Lng
-              CellCounter = CellCounter + 1_Lng
+        TotalLength = 0.0_Dbl  ! The accumulation of length
+        XCoordinate = 0.5_Dbl * CntrlVolumeLength ! This would be the coordinate of first cell.
+
+          ! loop on the number of cells of each reach
+          do i_Cell = 1_Lng, Geometry%network(i_reach)%NCells_Reach
+              this%DiscretizedReach(i_reach)
+
               this%LengthCell(CellCounter,1)= CntrlVolumeLength
               this%LengthCell(CellCounter,2)= CntrlVolumeLength ! <modify> use horizontal distance
               this%XCell(CellCounter)      = XCoordinate
@@ -393,14 +393,14 @@ write(FileInfo, fmt="(A)")" Loop over reaches to discretize the domain ..."
 
         Height = MaxHeight
         ProjectionLength = floor(1.0E9 * Geometry%ReachLength(i_reach)/&
-                           Geometry%ReachCells(i_reach) )/1.0E9
+                           Geometry%NCells_Reach(i_reach) )/1.0E9
         XCoordinate = 0.5_Dbl * ProjectionLength
 
           do jj = 1_Lng,i_reach-1_Lng
             XCoordinate = XCoordinate + Geometry%ReachLength(jj)
           end do
 
-          do jj = 1_Lng, Geometry%ReachCells(i_reach)
+          do jj = 1_Lng, Geometry%NCells_Reach(i_reach)
             CellCounter = CellCounter + 1_Lng
             !Z_loss = Domain_Func_1D(XCoordinate)
             Z_loss = Domain_Func_1D_MacDonald(XCoordinate)

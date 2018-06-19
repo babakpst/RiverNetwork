@@ -41,7 +41,6 @@ use messages_and_errors_mod
 implicit none
 private
 
-
 ! Contains the information we read from the base input file.
 type Base_Geometry_tp
   integer(kind=Lng) :: NoReaches=0_Lng ! Number of reaches
@@ -56,7 +55,7 @@ end type Geometry_tp
 
 ! This type contains all required information for each reach.
 type reach_tp
-  integer(kind=Lng)  :: ReachCells=0_Lng  ! no. of control volumes (cells) in each reach
+  integer(kind=Lng)  :: NCells_Reach=0_Lng  ! no. of control volumes (cells) in each reach
   integer(kind=Shrt) :: ReachType=0_Shrt ! reach type - 0 for straight, 1 for geometry form func.
   integer(kind=Lng), dimension(2) :: ReachNodes=0_Lng ! holds the node number at the each
                                                       ! reach, start and end node number
@@ -289,7 +288,7 @@ UnFile = FileDataGeo
     err=1003, end=1004) &
     reach_no,  & ! reach no.
     this%network(reach_no)%ReachLength, & ! Length of the reach
-    this%network(reach_no)%ReachCells, &  ! no. of cells in each reach- constant length
+    this%network(reach_no)%NCells_Reach, &  ! no. of cells in each reach- constant length
     this%network(reach_no)%ReachType, &   ! type of the reach - straight 0, from function 1
     this%network(reach_no)%ReachSlope, &  ! slopes of each reach
     this%network(reach_no)%ReachManning, &! Manning's number of each reach
@@ -327,7 +326,7 @@ write(unit=UnFile, fmt="(' Reach no. -- Length -- no. of cells -- reach type (st
     ! writing the network on screen
     write(unit=*,      fmt="(I7, F23.10, I5, I3, 3F23.10, 2I7, 2F23.10, 2F23.10)") i_reach,
     this%network(reach_no)%ReachLength, & ! Length of the reach
-    this%network(reach_no)%ReachCells, &  ! no. of cells in each reach- constant length
+    this%network(reach_no)%NCells_Reach, &  ! no. of cells in each reach- constant length
     this%network(reach_no)%ReachType, &   ! type of the reach - straight 0, from function 1
     this%network(reach_no)%ReachSlope, &  ! slopes of each reach
     this%network(reach_no)%ReachManning, &! Manning's number of each reach
@@ -338,7 +337,7 @@ write(unit=UnFile, fmt="(' Reach no. -- Length -- no. of cells -- reach type (st
     ! writing the network in the info file
     write(unit=UnFile, fmt="(I7, F23.10, I5, I3, 3F23.10, 2I7, 2F23.10, 2F23.10)") i_reach,
     this%network(reach_no)%ReachLength, & ! Length of the reach
-    this%network(reach_no)%ReachCells, &  ! no. of cells in each reach- constant length
+    this%network(reach_no)%NCells_Reach, &  ! no. of cells in each reach- constant length
     this%network(reach_no)%ReachType, &   ! type of the reach - straight 0, from function 1
     this%network(reach_no)%ReachSlope, &  ! slopes of each reach
     this%network(reach_no)%ReachManning, &! Manning's number of each reach

@@ -103,7 +103,7 @@ write(*,        fmt="(A)") " -Reading the initial data file ..."
 write(FileInfo, fmt="(A)") " -Reading the initial data file ..."
 
 ! Initializing the geometry -----------------------------------------------------------------------
-!Geometry=Geometry_tp(ReachCells=null(), ReachType=null(), ReachLength=null(), ReachSlope=null(), &
+!Geometry=Geometry_tp(NCells_Reach=null(), ReachType=null(), ReachLength=null(), ReachSlope=null(), &
 !                       ReachManning=null(), ReachWidth=null(), ReachWidth=null() )
 
 ! Reading basic data: -----------------------------------------------------------------------------
