@@ -307,23 +307,19 @@ write(*,        fmt="(A)") " The height of each node calculated."
 write(FileInfo, fmt="(A)") " The height of each node calculated."
 
 
-! =========
 ! calculating total number of cells within the network
+  do i_reach = 1_Lng, Geometry%Base_Geometry%NoReaches
+    this%NCells = this%NCells + Geometry%network(i_reach)%ReachCells
+  end do
 
 
-
-
-! ====== modified up to here  === <delete>
-
-write(*,        fmt="(A)")" Basic calculations ..."
-write(FileInfo, fmt="(A)")" Basic calculations ..."
-
+! In the following loop we discretize each reach
 write(*,        fmt="(A)")" Loop over reaches to discretize the domain ..."
 write(FileInfo, fmt="(A)")" Loop over reaches to discretize the domain ..."
 
-CellCounter = 0_Lng
+! CellCounter = 0_Lng <delete>
 
-  do i_reach = 1_Lng, Geometry%NoReaches  ! Loop over the reaches
+  do i_reach = 1_Lng, Geometry%Base_Geometry%NoReaches  ! Loop over the reaches
 
     write(*,        fmt="(A, I10,A)")" -Discretizing reach no.: ", i_reach, " ..."
     write(FileInfo, fmt="(A, I10,A)")" -Discretizing reach no.: ", i_reach, " ..."
