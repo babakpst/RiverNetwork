@@ -102,11 +102,11 @@ contains
 ! V0.01: 00/00/2018 - Initiated: Compiled without error for the first time.
 ! V1.00: 03/20/2018 - Compiled with no error/warnings.
 ! V1.10: 04/10/2018 - Minor modifications in the objects/classes.
-! V2.00: 06/11/2018 - Network discretization
+! V2.00: 06/19/2018 - Network discretization
 !
 ! File version $Id $
 !
-! Last update: 06/11/2018
+! Last update: 06/19/2018
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
 ! (Refer to the main code to see the list of imported variables)
@@ -209,21 +209,24 @@ write(FileInfo, fmt="(A)")" Calculating the height of each node ... "
     end if
   end do
 
-! setting the height of the output node
+! setting the height of the output node - we assume that the height of drain node is zero
 this%NodeHeight(NetworkOutletNode) = 0.0_Dbl
 
   allocate(UpstreamNodes(Geometry%Base_Geometry%NoNodes,Geometry%Base_Geometry%NoNodes),
            stat=ERR_Alloc)
     if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
-! initializing the nodes
-UpstreamNodes(:,:) = 0
 
+! UpstreamNode shows the nodes located at the upstream of each node. Clearly, all nodes are at the
+! upstream of the drainage node.
 ! figuring out what nodes are located at the upstream each node: I do it using a matrix called
 ! Upstream. if node j is at the upstream of node i the value of upstream(i,j) = 1. This is an
 ! iterative process. In the first step, we find out the immediate upstream node through the node
 ! connective of each reach. Next, we add each level of nodes in the upstream in an iterative
 ! method.
+
+! initializing the nodes
+UpstreamNodes(:,:) = 0
 
 ! one level up
   do i_reach = 1_Lng, Geometry%Base_Geometry%NoReaches
@@ -273,14 +276,18 @@ Max_Nodes = 0
 
 
 
-MaxHeight = 0.0_Dbl
+
 
   do i_reach = 1_Lng, Geometry%NoReaches
     MaxHeight = MaxHeight + Geometry%ReachSlope(i_reach) * Geometry%ReachLength(i_reach)
   end do
 
-write(*,        fmt="(A,F23.10)") " Maximum height is:", MaxHeight
-write(FileInfo, fmt="(A,F23.10)") " Maximum height is:", MaxHeight
+
+
+
+MaxHeight = 0.0_Dbl
+write(*,        fmt="(A)") " The height of each node calculated."
+write(FileInfo, fmt="(A)") " The height of each node calculated."
 
 
 
