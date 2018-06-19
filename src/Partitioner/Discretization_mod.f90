@@ -52,8 +52,11 @@ private
 type DiscretizedReach_tp
   integer (kind=Lng)  :: NCells_reach=0_Lng ! number of cells in the reach
 
+  real(kind=DBL), allocatable, dimension(:) :: LengthCell     ! the length of each cell
   real(kind=DBL), allocatable, dimension(:) :: CellSlope      ! slope of each cell at the center
   real(kind=DBL), allocatable, dimension(:) :: InterfaceSlope ! slope of each cell at the center
+
+  ! coordinate
   real(kind=DBL), allocatable, dimension(:) :: ZCell     ! bottom elev. at the center of each cell
   real(kind=DBL), allocatable, dimension(:) :: YCell     ! the coordinates of the cell center
   real(kind=DBL), allocatable, dimension(:) :: XCell     ! the coordinates of the cell center
@@ -61,8 +64,6 @@ type DiscretizedReach_tp
   real(kind=DBL), allocatable, dimension(:) :: ZFull     ! bottom elevation at cells and interfaces
   real(kind=DBL), allocatable, dimension(:) :: YFull     ! coordinates at cells and interfaces
   real(kind=DBL), allocatable, dimension(:) :: XFull     ! coordinates at cells and interfaces
-
-  real(kind=DBL), allocatable, dimension(:) :: LengthCell ! the length of each cell
 
   real(kind=DBL) :: ReachManning          ! the Manning's number of each cell
   real(kind=DBL) :: ReachWidthCell        ! the Manning's number of each cell
@@ -74,6 +75,7 @@ end type DiscretizedReach_tp
 type DiscretizedNetwork_tp
   integer (kind=Lng)  :: NCells=0_Lng  ! Total number of cells in the network
   real(kind=DBL), allocatable, dimension(:) :: NodeHeight
+
   ! To hold the discretization of each reach. The size of this type is equal to the no of reaches.
   type(DiscretizedReach_tp), allocatable, dimension(:) :: DiscretizedReach
   contains
@@ -312,138 +314,86 @@ write(FileInfo, fmt="(A)") " The height of each node calculated."
 write(*,        fmt="(A)")" Loop over reaches to discretize the domain ..."
 write(FileInfo, fmt="(A)")" Loop over reaches to discretize the domain ..."
 
-! CellCounter = 0_Lng <delete>
 
-  do i_reach = 1_Lng, Geometry%Base_Geometry%NoReaches  ! Loop over the reaches
+  do i_reach=1_Lng, Geometry%Base_Geometry%NoReaches  ! Loop over the reaches
 
     write(*,        fmt="(A, I10,A)")" -Discretizing reach no.: ", i_reach, " ..."
     write(FileInfo, fmt="(A, I10,A)")" -Discretizing reach no.: ", i_reach, " ..."
 
-      if (Geometry%ReachType(i_reach)==0_Shrt) then
+    this%DiscretizedReach(i_reach)%NCells_reach = Geometry%network(i_reach)%NCells_Reach
 
-        CntrlVolumeLength = Geometry%network(i_reach)%ReachLength/
-                            Geometry%network(i_reach)%NCells_Reach ! Control volume length
+    CntrlVolumeLength = Geometry%network(i_reach)%ReachLength/
+                        Geometry%network(i_reach)%NCells_Reach ! Control volume length
 
-        write(*,fmt="(A,I5,A,F23.10)")" Cell length in the reach ",i_reach," is:",CntrlVolumeLength
+    write(*,fmt="(A,I5,A,F23.10)")" Cell length in the reach ", i_reach," is:", CntrlVolumeLength
 
-        Z_loss = CntrlVolumeLength * Geometry%ReachSlope(i_reach)  ! Height loss in each cell
+    Z_loss = CntrlVolumeLength * Geometry%ReachSlope(i_reach)  ! Height loss in each cell
 
-        ! The height of the upstream node
-        Height = this%NodeHeight( Geometry%network(i_reach)%ReachNodes(2))
-        ! we raise the initial height by half of Z_loss, which is equivalent to the height of
-        ! an imaginary cell center just before the upstream node. To find the height of each cell
-        ! thereafter, we reduce Z_loss from Height each time.
-        Height = Height +  0.5_Dbl * Z_loss
+    ! The height of the upstream node
+    Height = this%NodeHeight( Geometry%network(i_reach)%ReachNodes(2))
+    ! we raise the initial height by half of Z_loss, which is equivalent to the height of
+    ! an imaginary cell center just before the upstream node. To find the height of each cell
+    ! thereafter, we reduce Z_loss from Height each time.
+    Height = Height + 0.5_Dbl * Z_loss
 
-        TotalLength = 0.0_Dbl  ! The accumulation of length
-        XCoordinate = 0.5_Dbl * CntrlVolumeLength ! This would be the coordinate of first cell.
+    XCoordinate = 0.5_Dbl * CntrlVolumeLength ! This would be the coordinate of first cell.
 
-          ! loop on the number of cells of each reach
-          do i_Cell = 1_Lng, Geometry%network(i_reach)%NCells_Reach
-              this%DiscretizedReach(i_reach)
+      ! loop on the number of cells of each reach
+      do i_Cell = 1_Lng, Geometry%network(i_reach)%NCells_Reach
+        this%DiscretizedReach(i_reach)%LengthCell(i_Cell)     = CntrlVolumeLength
+        this%DiscretizedReach(i_reach)%CellSlope(i_Cell)      = Geometry%ReachSlope(i_reach)
+        this%DiscretizedReach(i_reach)%InterfaceSlope(i_Cell) = Geometry%ReachSlope(i_reach)
 
-              this%LengthCell(CellCounter,1)= CntrlVolumeLength
-              this%LengthCell(CellCounter,2)= CntrlVolumeLength ! <modify> use horizontal distance
-              this%XCell(CellCounter)      = XCoordinate
-              this%XFull(CellCounter)      = XCoordinate - 0.5_Dbl * CntrlVolumeLength
-              this%XFull(CellCounter*2_Lng+1_Lng) = XCoordinate
+        this%DiscretizedReach(i_reach)%XCell(i_Cell)             = XCoordinate
+        this%DiscretizedReach(i_reach)%XFull(i_Cell*2_Lng-1_Lng) =
+                                                              XCoordinate-0.5_Dbl*CntrlVolumeLength
+        this%DiscretizedReach(i_reach)%XFull(i_Cell*2_Lng      ) = XCoordinate
 
-              XCoordinate = XCoordinate + CntrlVolumeLength
-              TotalLength = TotalLength + CntrlVolumeLength
-              Height      = Height - Z_loss
+        XCoordinate = XCoordinate + CntrlVolumeLength
+        Height      = Height - Z_loss
 
-              this%CellSlope(CellCounter)  = Geometry%ReachSlope(i_reach)
-              this%InterfaceSlope(CellCounter) = Geometry%ReachSlope(i_reach)
-              this%ZCell(CellCounter)      = Height
-              this%ZFull(CellCounter*2)    = Height + 0.5_Dbl * Z_loss
-              this%ZFull(CellCounter*2+1)  = Height
-              this%ManningCell(CellCounter)= Geometry%ReachManning(i_reach)
-              this%WidthCell(CellCounter)  = Geometry%ReachWidth(i_reach)
-          end do
+        this%DiscretizedReach(i_reach)%ZCell(i_Cell)             = Height
+        this%DiscretizedReach(i_reach)%ZFull(i_Cell*2_Lng-1_Lng) = Height + 0.5_Dbl * Z_loss
+        this%DiscretizedReach(i_reach)%ZFull(i_Cell*2_Lng      ) = Height
 
-        CellCounter = CellCounter + 1_Lng
-        this%LengthCell(CellCounter,1) = Geometry%ReachLength(i_reach) - TotalLength
+        this%DiscretizedReach(i_reach)%ReachManning = Geometry%network(i_reach)%ReachManning
+        this%DiscretizedReach(i_reach)%ReachWidthCell = Geometry%network(i_reach)%ReachWidth
+      end do
 
-        this%CellSlope(CellCounter)  = Geometry%ReachSlope(i_reach)
-        this%InterfaceSlope(CellCounter) = Geometry%ReachSlope(i_reach)
-
-        XCoordinate = XCoordinate-0.5_dbl*CntrlVolumeLength+0.5_dbl*this%LengthCell(CellCounter,1)
-
-        this%XCell(CellCounter)     = XCoordinate
-        this%XFull(CellCounter*2_Lng)       = XCoordinate - 0.5 * this%LengthCell(CellCounter,1)
-        this%XFull(CellCounter*2_Lng+1_Lng) = XCoordinate
-        this%XFull(CellCounter*2_Lng+2_Lng) = XCoordinate + 0.5 * this%LengthCell(CellCounter,1)
-
-        Height = Height - (0.5_dbl * Z_loss + 0.5_dbl * this%LengthCell(CellCounter,1) &
-                                                      * Geometry%ReachSlope(i_reach))
-
-        this%ZCell(CellCounter)             = Height
-
-        this%ZFull(CellCounter*2_Lng)       = Height + 0.5_dbl * this%LengthCell(CellCounter,1) &
-                                                               * Geometry%ReachSlope(i_reach)
-        this%ZFull(CellCounter*2_Lng+1_Lng) = Height
-        this%ZFull(CellCounter*2_Lng)       = Height - 0.5_dbl * this%LengthCell(CellCounter,1) &
-                                                               * Geometry%ReachSlope(i_reach)
-        this%ManningCell(CellCounter)= Geometry%ReachManning(i_reach)
-        this%WidthCell(CellCounter)  = Geometry%ReachWidth(i_reach)
-
-        MaxHeight = MaxHeight - Geometry%ReachLength(i_reach) * Geometry%ReachSlope(i_reach)
-
-      else if (Geometry%ReachType(i_reach)==1_Shrt) then
-
-        Height = MaxHeight
-        ProjectionLength = floor(1.0E9 * Geometry%ReachLength(i_reach)/&
-                           Geometry%NCells_Reach(i_reach) )/1.0E9
-        XCoordinate = 0.5_Dbl * ProjectionLength
-
-          do jj = 1_Lng,i_reach-1_Lng
-            XCoordinate = XCoordinate + Geometry%ReachLength(jj)
-          end do
-
-          do jj = 1_Lng, Geometry%NCells_Reach(i_reach)
-            CellCounter = CellCounter + 1_Lng
-            !Z_loss = Domain_Func_1D(XCoordinate)
-            Z_loss = Domain_Func_1D_MacDonald(XCoordinate)
-
-            this%LengthCell(CellCounter,1) = dsqrt(ProjectionLength**2 + Z_loss**2)
-            this%LengthCell(CellCounter,2) = ProjectionLength
-            this%XCell(CellCounter) = XCoordinate
-            this%XFull(CellCounter*2_Lng)       = XCoordinate - 0.5_Dbl * ProjectionLength
-            this%XFull(CellCounter*2_Lng+1_Lng) = XCoordinate
+!!!! up to here
+          this%DiscretizedReach(i_reach)%XFull(i_Cell*2_Lng      ) = XCoordinate + 0.5000====
 
 
-            !this%CellSlope(CellCounter)  = Domain_Func_1D_D(XCoordinate)
-            !this%InterfaceSlope(CellCounter) = Domain_Func_1D_D(XCoordinate-0.5_Dbl * ProjectionLength)
-            this%CellSlope(CellCounter)  = Domain_Func_1D_MacDonald_D(XCoordinate)
-            this%InterfaceSlope(CellCounter) = &
-                                 Domain_Func_1D_MacDonald_D(XCoordinate-0.5_Dbl * ProjectionLength)
-            this%ZCell(CellCounter)      = Height + Z_loss
-            !this%ZFull(CellCounter*2)   = Height &
-            !                            + Domain_Func_1D(XCoordinate - 0.5_Dbl * ProjectionLength)
+    i_Cell = i_Cell + 1_Lng
+    this%DiscretizedReach(i_reach)%LengthCell(i_Cell,1) = Geometry%ReachLength(i_reach) - TotalLength
 
-            this%ZFull(CellCounter*2)  = Height &
-                              + Domain_Func_1D_MacDonald(XCoordinate - 0.5_Dbl * ProjectionLength)
+    this%DiscretizedReach(i_reach)%CellSlope(i_Cell)  = Geometry%ReachSlope(i_reach)
+    this%DiscretizedReach(i_reach)%InterfaceSlope(i_Cell) = Geometry%ReachSlope(i_reach)
 
-            this%ZFull(CellCounter*2+1)  = Height + Z_loss
-            this%ManningCell(CellCounter)= Geometry%ReachManning(i_reach)
-            this%WidthCell(CellCounter)  = Geometry%ReachWidth(i_reach)
+    XCoordinate = XCoordinate-0.5_dbl*CntrlVolumeLength+0.5_dbl*this%DiscretizedReach(i_reach)%LengthCell(i_Cell,1)
 
-            XCoordinate = XCoordinate + ProjectionLength
-            TotalLength = TotalLength + ProjectionLength
-          end do
+    this%DiscretizedReach(i_reach)%XCell(i_Cell)     = XCoordinate
+    this%DiscretizedReach(i_reach)%XFull(i_Cell*2_Lng)       = XCoordinate - 0.5 * this%DiscretizedReach(i_reach)%LengthCell(i_Cell,1)
+    this%DiscretizedReach(i_reach)%XFull(i_Cell*2_Lng+1_Lng) = XCoordinate
+    this%DiscretizedReach(i_reach)%XFull(i_Cell*2_Lng+2_Lng) = XCoordinate + 0.5 * this%DiscretizedReach(i_reach)%LengthCell(i_Cell,1)
 
-        MaxHeight = MaxHeight - Geometry%ReachLength(i_reach) * Geometry%ReachSlope(i_reach)
-      end if
+    Height = Height - (0.5_dbl * Z_loss + 0.5_dbl * this%DiscretizedReach(i_reach)%LengthCell(i_Cell,1) &
+                                                  * Geometry%ReachSlope(i_reach))
+
+    this%DiscretizedReach(i_reach)%ZCell(i_Cell)             = Height
+
+    this%DiscretizedReach(i_reach)%ZFull(i_Cell*2_Lng)       = Height + 0.5_dbl * this%DiscretizedReach(i_reach)%LengthCell(i_Cell,1) &
+                                                           * Geometry%ReachSlope(i_reach)
+    this%DiscretizedReach(i_reach)%ZFull(i_Cell*2_Lng+1_Lng) = Height
+    this%DiscretizedReach(i_reach)%ZFull(i_Cell*2_Lng)       = Height - 0.5_dbl * this%DiscretizedReach(i_reach)%LengthCell(i_Cell,1) &
+                                                           * Geometry%ReachSlope(i_reach)
+    this%DiscretizedReach(i_reach)%ManningCell(i_Cell)= Geometry%ReachManning(i_reach)
+    this%DiscretizedReach(i_reach)%WidthCell(i_Cell)  = Geometry%ReachWidth(i_reach)
+
+    MaxHeight = MaxHeight - Geometry%ReachLength(i_reach) * Geometry%ReachSlope(i_reach)
 
   end do
 
-  if (this%NCells /= CellCounter) then
-    write(*,        fmt = "(A,2I10)") "Fatal error: Mismatch between the number of cells. &
-                          Check the discretization module.", this%NCells, CellCounter
-    write(FileInfo, fmt = "(A,2I10)") "Fatal error: Mismatch between the number of cells. &
-                          Check the discretization module.", this%NCells, CellCounter
-    write(*, Fmt_End); read(*,*); stop;
-  end if
 
 write(*,        fmt="(' Discretization was successful. ')")
 write(FileInfo, fmt="(' Discretization was successful. ')")
@@ -452,7 +402,7 @@ write(*,        fmt="(' -Plotting the discretized domain ... ')")
 write(FileInfo, fmt="(' -Plotting the discretized domain ... ')")
 
 ! Plot the discretized domain (cell centers)
-allocate(Plot_domain_1D_tp(CellCounter) :: Plot, stat=ERR_Alloc)
+allocate(Plot_domain_1D_tp(i_Cell) :: Plot, stat=ERR_Alloc)
 if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
 ! Filling the coordinates for plot
