@@ -360,37 +360,10 @@ write(FileInfo, fmt="(A)")" Loop over reaches to discretize the domain ..."
         this%DiscretizedReach(i_reach)%ReachWidthCell = Geometry%network(i_reach)%ReachWidth
       end do
 
-!!!! up to here
-          this%DiscretizedReach(i_reach)%XFull(i_Cell*2_Lng      ) = XCoordinate + 0.5000====
-
-
-    i_Cell = i_Cell + 1_Lng
-    this%DiscretizedReach(i_reach)%LengthCell(i_Cell,1) = Geometry%ReachLength(i_reach) - TotalLength
-
-    this%DiscretizedReach(i_reach)%CellSlope(i_Cell)  = Geometry%ReachSlope(i_reach)
-    this%DiscretizedReach(i_reach)%InterfaceSlope(i_Cell) = Geometry%ReachSlope(i_reach)
-
-    XCoordinate = XCoordinate-0.5_dbl*CntrlVolumeLength+0.5_dbl*this%DiscretizedReach(i_reach)%LengthCell(i_Cell,1)
-
-    this%DiscretizedReach(i_reach)%XCell(i_Cell)     = XCoordinate
-    this%DiscretizedReach(i_reach)%XFull(i_Cell*2_Lng)       = XCoordinate - 0.5 * this%DiscretizedReach(i_reach)%LengthCell(i_Cell,1)
-    this%DiscretizedReach(i_reach)%XFull(i_Cell*2_Lng+1_Lng) = XCoordinate
-    this%DiscretizedReach(i_reach)%XFull(i_Cell*2_Lng+2_Lng) = XCoordinate + 0.5 * this%DiscretizedReach(i_reach)%LengthCell(i_Cell,1)
-
-    Height = Height - (0.5_dbl * Z_loss + 0.5_dbl * this%DiscretizedReach(i_reach)%LengthCell(i_Cell,1) &
-                                                  * Geometry%ReachSlope(i_reach))
-
-    this%DiscretizedReach(i_reach)%ZCell(i_Cell)             = Height
-
-    this%DiscretizedReach(i_reach)%ZFull(i_Cell*2_Lng)       = Height + 0.5_dbl * this%DiscretizedReach(i_reach)%LengthCell(i_Cell,1) &
-                                                           * Geometry%ReachSlope(i_reach)
-    this%DiscretizedReach(i_reach)%ZFull(i_Cell*2_Lng+1_Lng) = Height
-    this%DiscretizedReach(i_reach)%ZFull(i_Cell*2_Lng)       = Height - 0.5_dbl * this%DiscretizedReach(i_reach)%LengthCell(i_Cell,1) &
-                                                           * Geometry%ReachSlope(i_reach)
-    this%DiscretizedReach(i_reach)%ManningCell(i_Cell)= Geometry%ReachManning(i_reach)
-    this%DiscretizedReach(i_reach)%WidthCell(i_Cell)  = Geometry%ReachWidth(i_reach)
-
-    MaxHeight = MaxHeight - Geometry%ReachLength(i_reach) * Geometry%ReachSlope(i_reach)
+    ! double check here to see what i_cell is
+    this%DiscretizedReach(i_reach)%XFull(i_Cell*2_Lng+2_Lng)=XCoordinate+0.5_Dbl*CntrlVolumeLength
+    this%DiscretizedReach(i_reach)%ZFull(i_Cell*2_Lng+2_Lng)= &
+                                           this%NodeHeight(Geometry%network(i_reach)%ReachNodes(1))
 
   end do
 
