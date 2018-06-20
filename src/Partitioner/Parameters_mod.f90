@@ -77,9 +77,6 @@ character(144),Parameter, Public:: Fmt_Element2="('Error in the element type. Th
 
 ! Unit NUMBERS OF EXTERNAL FILES ==================================================================
 
-
-
-
 enum, bind(C)
   enumerator:: FileAdr=500   ! Address file that holds the model name & directories (.txt)
   enumerator:: FileDataModel !=501 Input file (.dataModel)

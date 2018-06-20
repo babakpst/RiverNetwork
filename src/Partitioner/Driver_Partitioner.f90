@@ -25,7 +25,7 @@
 !
 ! File version $Id $
 !
-! Last update: 06/07/2018
+! Last update: 06/20/2018
 !
 ! ================================ Global   V A R I A B L E S =====================================
 !  . . . . . . . . . . . . . . . . Variables . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -33,7 +33,6 @@
 !##################################################################################################
 
 program Partitioner_program_for_Solving_Shallow_Water_Equation
-
 
 ! Libraries =======================================================================================
 use ifport
@@ -137,9 +136,6 @@ write(FileInfo, fmt="(A)") " -Discretization ..."
 
 
 ! Initialization ----------------------------------------------------------------------------------
-!Discretization%DiscretizedReach = DiscretizedReach_tp(CellSlope=null(), InterfaceSlope=null(), &
-!                                  ZCell=null(), ZFull=null(), ManningCell=null(), &
-!                                  WidthCell=null(), XCell=null(), XFull=null(), LengthCell=null() )
 
 ! allocating the network class itself
 allocate(Discretization%NodeHeight(Geometry%Base_Geometry%NoNodes) ,         &
@@ -151,15 +147,8 @@ allocate(Discretization%NodeHeight(Geometry%Base_Geometry%NoNodes) ,         &
 call Discretization%Discretize(Geometry, ModelInfo)
 
 
-
-
-
-
-
-
-
 ! Partitioning and writing results ================================================================
-call Partitioner_1D_Sub(Geometry, Discretization, ModelInfo)
+!call Partitioner_1D_Sub(Geometry, Discretization, ModelInfo)
 
 ! Deallocating arrays
 DEallocate(Arguments%Length, Arguments%Arg, Arguments%Argstatus,      stat = ERR_DeAlloc )

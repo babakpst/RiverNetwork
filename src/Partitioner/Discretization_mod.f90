@@ -16,11 +16,11 @@
 ! V1.10: 04/10/2018 - Minor modifications in the objects/classes.
 ! V2.10: 05/24/2018 - modifying for MPI
 ! V2.20: 05/30/2018 - Initializing types
-! V3.20: 06/19/2018 - network discretization
+! V3.20: 06/20/2018 - network discretization
 !
 ! File version $Id $
 !
-! Last update: 06/19/2018
+! Last update: 06/20/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! Discretize_1D:  Discretizes the 1D model.
@@ -79,7 +79,7 @@ type DiscretizedNetwork_tp
   ! To hold the discretization of each reach. The size of this type is equal to the no of reaches.
   type(DiscretizedReach_tp), allocatable, dimension(:) :: DiscretizedReach
   contains
-    procedure Discretize => Discretize_1D_sub ! subroutine to discretize the reach
+    procedure Discretize => Discretize_network_sub ! subroutine to discretize the reach
 end type DiscretizedNetwork_tp
 
 public:: DiscretizedNetwork_tp
@@ -132,13 +132,13 @@ class(DiscretizedNetwork_tp), intent(out) :: this ! Discretization
 ! - integer variables -----------------------------------------------------------------------------
 integer(kind=Smll) :: ERR_Alloc, ERR_DeAlloc ! Allocating and DeAllocating errors
 
-integer(kind=Lng) :: i_Node      ! loop index on the node number in the network
-integer(kind=Lng) :: i_reach     ! Loop index on the number of reaches
-integer(kind=Lng) :: i_Cell          ! Loop index on the cell numbers for each reach
-integer(kind=Lng) :: CellCounter ! Counts number of cells
-integer(kind=Lng) :: NetworkOutletNode      ! loop index on the node number in the network
-integer(kind=Lng) :: sum_upstream_nodes
-integer(kind=Lng) :: Max_Nodes
+integer(kind=Lng) :: i_Node, i_Node2     ! loop index on the node number in the network
+integer(kind=Lng) :: i_reach             ! loop index on the number of reaches
+integer(kind=Lng) :: i_Cell              ! loop index on the cell numbers for each reach
+integer(kind=Lng) :: CellCounter         ! counts number of cells
+integer(kind=Lng) :: NetworkOutletNode   ! loop index on the node number in the network
+integer(kind=Lng) :: sum_upstream_nodes  ! Temp var. to find out the upstream nodes
+integer(kind=Lng) :: Max_Nodes           ! Temp var. to find out the upstream nodes
 integer(kind=Lng) :: UpperNode   ! A temporary var that holds the upstream node of a reach.
                                  ! We use this var. to find the height of the network
 
@@ -162,8 +162,8 @@ logical           :: check_iteration   ! a check parameter on the while loop to 
 type(Plot_domain_1D_tp(NCells=:)), allocatable :: Plot ! Plots the discretized domain
 
 ! code ============================================================================================
-write(*,       *) " subroutine < Discretize_1D_sub >: "
-write(FileInfo,*) " subroutine < Discretize_1D_sub >: "
+write(*,       *) " subroutine < Discretize_network_sub >: "
+write(FileInfo,*) " subroutine < Discretize_network_sub >: "
 
 write(*,       *) " -Discretizing the domain ..."
 write(FileInfo,*) " -Discretizing the domain ..."
@@ -174,8 +174,8 @@ this%NCells = 0_Lng
 write(*,        fmt="(A)") " Calculating the total number of the cells in the domain ... "
 write(FileInfo, fmt="(A)") " Calculating the total number of the cells in the domain ... "
 
-  do i_reach = 1_Lng,Geometry%NoReaches
-    this%NCells = this%NCells + Geometry%NCells_Reach(i_reach)
+  do i_reach = 1_Lng, Geometry%Base_Geometry%NoReaches
+    this%NCells = this%NCells + Geometry%network(i_reach)%NCells_Reach
   end do
 
 write(*,        fmt="(A,I15)") " Total number of cells: ", this%NCells
@@ -184,7 +184,7 @@ write(FileInfo, fmt="(A,I15)") " Total number of cells: ", this%NCells
 ! allocating all items for each reach.
   do i_reach= 1, Geometry%Base_Geometry%NoReaches
     ! allocating each reach in the network
-    allocate(
+    allocate( &
     this%DiscretizedReach(i_reach)%CellSlope(this%DiscretizedReach(i_reach)%NCells_reach),        &
     this%DiscretizedReach(i_reach)%InterfaceSlope(this%DiscretizedReach(i_reach)%NCells_reach+1), &
     this%DiscretizedReach(i_reach)%ZCell(this%DiscretizedReach(i_reach)%NCells_reach),            &
@@ -193,7 +193,7 @@ write(FileInfo, fmt="(A,I15)") " Total number of cells: ", this%NCells
     this%DiscretizedReach(i_reach)%ZFull(this%DiscretizedReach(i_reach)%NCells_reach*2_Lng+1_Lng),&
     this%DiscretizedReach(i_reach)%YFull(this%DiscretizedReach(i_reach)%NCells_reach*2_Lng+1_Lng),&
     this%DiscretizedReach(i_reach)%XFull(this%DiscretizedReach(i_reach)%NCells_reach*2_Lng+1_Lng),&
-    this%DiscretizedReach(i_reach)%LengthCell(this%DiscretizedReach(i_reach)%NCells_reach ,2),    &
+    this%DiscretizedReach(i_reach)%LengthCell(this%DiscretizedReach(i_reach)%NCells_reach),    &
     stat=ERR_Alloc)
     if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
   end do
@@ -214,9 +214,9 @@ write(FileInfo, fmt="(A)")" Calculating the height of each node ... "
 ! setting the height of the output node - we assume that the height of drain node is zero
 this%NodeHeight(NetworkOutletNode) = 0.0_Dbl
 
-  allocate(UpstreamNodes(Geometry%Base_Geometry%NoNodes,Geometry%Base_Geometry%NoNodes),
-           stat=ERR_Alloc)
-    if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
+allocate(UpstreamNodes(Geometry%Base_Geometry%NoNodes,Geometry%Base_Geometry%NoNodes), &
+        stat=ERR_Alloc)
+if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
 
 ! UpstreamNode shows the nodes located at the upstream of each node. Clearly, all nodes are at the
@@ -233,8 +233,8 @@ UpstreamNodes(:,:) = 0
 ! one level up: Initially, we go through all reaches and set the upstream node of each reach at the
 ! upstream of the drain node.
   do i_reach = 1_Lng, Geometry%Base_Geometry%NoReaches
-    UpstreamNodes(Geometry%network(i_reach)%ReachNodes(2),Geometry%network(i_reach)
-                                                                             %ReachNodes(1))=1_Tiny
+    UpstreamNodes(Geometry%network(i_reach)%ReachNodes(2),Geometry%network(i_reach)%ReachNodes(1))&
+                                                                                            =1_Tiny
   end do
 
 ! In the next step, through an iterative method, we go through all nodes and we do the following
@@ -246,11 +246,11 @@ UpstreamNodes(:,:) = 0
 ! entries of this matrix would be constant. Thus, we keep track of the sum of all entries, once it
 ! becomes constant, we stop the process.
 
-check_iteration == .true.
+check_iteration = .true.
 Max_Nodes = 0
   do while (check_iteration == .true.)
     sum_upstream_nodes = 0
-    check_iteration == .false.
+    check_iteration = .false.
       do i_Node = 1_Lng, Geometry%Base_Geometry%NoNodes
         do i_Node2 = 1_Lng, Geometry%Base_Geometry%NoNodes
           if (UpstreamNodes(i_Node, i_Node2)==1_Tiny) then
@@ -262,7 +262,7 @@ Max_Nodes = 0
     ! returning the values equal to one again
       do i_Node = 1_Lng, Geometry%Base_Geometry%NoNodes
         do i_Node2 = 1_Lng, Geometry%Base_Geometry%NoNodes
-          if (UpstreamNodes(i_Node, i_Node2)/=1_Tiny .and.
+          if (UpstreamNodes(i_Node, i_Node2)/=1_Tiny .and. &
               UpstreamNodes(i_Node, i_Node2)/=0_Tiny) then
             UpstreamNodes(i_Node, i_Node2)=1_Tiny
           end if
@@ -277,7 +277,7 @@ Max_Nodes = 0
 
       if (Max_Nodes < sum_upstream_nodes ) then
         Max_Nodes = sum_upstream_nodes
-        check_iteration == .true.
+        check_iteration = .true.
       end if
   end do
 
@@ -288,7 +288,7 @@ Max_Nodes = 0
 
     ! The difference between the height of upstream and downstream nodes:
     ! (Multiplying the length of each reach by its slope)
-    RaisedHeight =  Geometry%network%ReachLength * Geometry%network%ReachSlope
+    RaisedHeight =  Geometry%network(i_reach)%ReachLength * Geometry%network(i_reach)%ReachSlope
 
     ! raising the upstream nodes:
     UpperNode = Geometry%network(i_reach)%ReachNodes(1) ! the node at the upstream of the reach
@@ -299,7 +299,7 @@ Max_Nodes = 0
     ! raising the rest of the nodes on the upstream (we loop over all nodes to see if it is
     ! located at the upstream. If yes, then we raise the height.)
     do i_Node = 1_Lng, Geometry%Base_Geometry%NoNodes
-      if (UpstreamNodes(UpperNode, i_Node) = 1_Tiny ) then
+      if (UpstreamNodes(UpperNode, i_Node) == 1_Tiny ) then
         this%NodeHeight(i_Node) = this%NodeHeight(i_Node) + RaisedHeight
       end if
     end do
@@ -322,12 +322,12 @@ write(FileInfo, fmt="(A)")" Loop over reaches to discretize the domain ..."
 
     this%DiscretizedReach(i_reach)%NCells_reach = Geometry%network(i_reach)%NCells_Reach
 
-    CntrlVolumeLength = Geometry%network(i_reach)%ReachLength/
+    CntrlVolumeLength = Geometry%network(i_reach)%ReachLength/ &
                         Geometry%network(i_reach)%NCells_Reach ! Control volume length
 
     write(*,fmt="(A,I5,A,F23.10)")" Cell length in the reach ", i_reach," is:", CntrlVolumeLength
 
-    Z_loss = CntrlVolumeLength * Geometry%ReachSlope(i_reach)  ! Height loss in each cell
+    Z_loss = CntrlVolumeLength * Geometry%network(i_reach)%ReachSlope  ! Height loss in each cell
 
     ! The height of the upstream node
     Height = this%NodeHeight( Geometry%network(i_reach)%ReachNodes(2))
@@ -340,12 +340,12 @@ write(FileInfo, fmt="(A)")" Loop over reaches to discretize the domain ..."
 
       ! loop on the number of cells of each reach
       do i_Cell = 1_Lng, Geometry%network(i_reach)%NCells_Reach
-        this%DiscretizedReach(i_reach)%LengthCell(i_Cell)     = CntrlVolumeLength
-        this%DiscretizedReach(i_reach)%CellSlope(i_Cell)      = Geometry%ReachSlope(i_reach)
-        this%DiscretizedReach(i_reach)%InterfaceSlope(i_Cell) = Geometry%ReachSlope(i_reach)
+        this%DiscretizedReach(i_reach)%LengthCell(i_Cell)    = CntrlVolumeLength
+        this%DiscretizedReach(i_reach)%CellSlope(i_Cell)     = Geometry%network(i_reach)%ReachSlope
+        this%DiscretizedReach(i_reach)%InterfaceSlope(i_Cell)= Geometry%network(i_reach)%ReachSlope
 
         this%DiscretizedReach(i_reach)%XCell(i_Cell)             = XCoordinate
-        this%DiscretizedReach(i_reach)%XFull(i_Cell*2_Lng-1_Lng) =
+        this%DiscretizedReach(i_reach)%XFull(i_Cell*2_Lng-1_Lng) = &
                                                               XCoordinate-0.5_Dbl*CntrlVolumeLength
         this%DiscretizedReach(i_reach)%XFull(i_Cell*2_Lng      ) = XCoordinate
 
@@ -374,142 +374,22 @@ write(FileInfo, fmt="(' Discretization was successful. ')")
 write(*,        fmt="(' -Plotting the discretized domain ... ')")
 write(FileInfo, fmt="(' -Plotting the discretized domain ... ')")
 
-! Plot the discretized domain (cell centers)
-allocate(Plot_domain_1D_tp(i_Cell) :: Plot, stat=ERR_Alloc)
-if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
+!! Plot the discretized domain (cell centers)
+!allocate(Plot_domain_1D_tp(i_Cell) :: Plot, stat=ERR_Alloc)
+!if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
-! Filling the coordinates for plot
-Plot%XCoor(:)      = this%XCell(:)
-Plot%ZCoor(:)      = this%ZCell(:)
-Plot%CellSlope(:)  = this%CellSlope(:)
-Plot%IndexSize     = Geometry%IndexSize
+!! Filling the coordinates for plot
+!Plot%XCoor(:)      = this%XCell(:)
+!Plot%ZCoor(:)      = this%ZCell(:)
+!Plot%CellSlope(:)  = this%CellSlope(:)
+!Plot%IndexSize     = Geometry%IndexSize
 
-call Plot%plot(ModelInfo)
+!call Plot%plot(ModelInfo)
 
-write(*,       *) " end subroutine < Discretize_1D_sub >"
-write(FileInfo,*) " end subroutine < Discretize_1D_sub >"
+write(*,       *) " end subroutine < Discretize_network_sub >"
+write(FileInfo,*) " end subroutine < Discretize_network_sub >"
 
 return
 end subroutine Discretize_network_sub
-
-!##################################################################################################
-! Purpose: This function determines the shape of the 1D domain.
-!
-! Developed by: Babak Poursartip
-! Supervised by: Clint Dawson
-!
-! The Institute for Computational Engineering and Sciences (ICES)
-! The University of Texas at Austin
-!
-! ================================ V E R S I O N ==================================================
-! V0.00: 02/26/2018 - File initiated.
-! V0.01: 02/26/2018 - Initiated: Compiled without error for the first time.
-!
-! File version $Id $
-!
-! Last update: 02/26/2018
-!
-! ================================ L O C A L   V A R I A B L E S ==================================
-! (Refer to the main code to see the list of imported variables)
-!  . . . . . . . . . . . . . . . . variables . . . . . . . . . . . . . . . . . . . . . . . . . . .
-! x: The location of the domain
-! Bathymetry: The height of the domain
-! DBathymetry: The derivative of the domain at one specific point.
-!
-!##################################################################################################
-
-function Domain_Func_1D(x) result(Bathymetry)
-
-implicit none
-
-real(kind=Dbl)  :: x
-real(kind=Dbl)  :: Bathymetry
-
-
-! code ============================================================================================
-
-Bathymetry = 0.2_Dbl - 0.05_Dbl * (x-10.0_Dbl)**2
-
-end function Domain_Func_1D
-
-!##################################################################################################
-function Domain_Func_1D_D(x) result(DBathymetry)
-
-implicit none
-
-real(kind=Dbl) :: x
-real(kind=Dbl) :: DBathymetry
-
-! code ============================================================================================
-DBathymetry = - 0.05_Dbl * 2.0_Dbl * (x-10.0_Dbl)
-
-end function Domain_Func_1D_D
-
-
-!#####################################
-function Domain_Func_1D_MacDonald(x) result(Bathymetry)
-
-implicit none
-
-real(kind=Dbl)  :: x
-real(kind=Dbl)  :: Bathymetry
-
-real(kind=Dbl)  :: a1 = 0.674202
-real(kind=Dbl)  :: a2 = 21.7112
-real(kind=Dbl)  :: a3 = 14.492
-real(kind=Dbl)  :: a4 = 1.4305
-
-! code ============================================================================================
-
-  if (0.0<= x .and. x <= 200.0_dbl/3.0_dbl) then
-    Bathymetry = ((4.0_dbl/Gravity)**(1.0_dbl/3.0_dbl)) * ( 4.0_dbl/3.0_dbl - x/100.0_dbl ) &
-               - (9*x/1000.0_dbl) * ( x/100.0_dbl - 2.0_dbl/3.0_dbl)
-  else if (200.0_dbl/3.0_dbl <= x .and. x <= 100.0_dbl) then
-    Bathymetry = ((4.0_dbl/Gravity)**(1.0_dbl/3.0_dbl))*( &
-                 +a1 * (x/100.0_dbl - 2.0_dbl/3.0_dbl)**4 &
-                 +a1 * (x/100.0_dbl - 2.0_dbl/3.0_dbl)**3 &
-                 -a2 * (x/100.0_dbl - 2.0_dbl/3.0_dbl)**2 &
-                 +a3 * (x/100.0_dbl - 2.0_dbl/3.0_dbl) &
-                 + a4 &
-                 )
-  else
-    write(*,*)" The defined bathymetry in the discretization_mod is wrong.",x
-    stop
-  end if
-
-end function Domain_Func_1D_MacDonald
-
-!##################################################################################################
-function Domain_Func_1D_MacDonald_D(x) result(DBathymetry)
-
-implicit none
-
-real(kind=Dbl) :: x
-real(kind=Dbl) :: DBathymetry
-
-real(kind=Dbl)  :: a1 = 0.674202
-real(kind=Dbl)  :: a2 = 21.7112
-real(kind=Dbl)  :: a3 = 14.492
-real(kind=Dbl)  :: a4 = 1.4305
-
-! code ============================================================================================
-
-  if (0.0<= x .and. x <= 200.0_dbl/3.0_dbl) then
-    DBathymetry = ((4.0_dbl/Gravity)**(1.0_dbl/3.0_dbl)) * ( - 1.0_dbl/100.0_dbl ) &
-               - (9/1000.0_dbl) * ( x/100.0_dbl - 2.0_dbl/3.0_dbl) &
-               - (9*x/1000.0_dbl) * ( 1.0_dbl/100.0_dbl)
-  else if (200.0_dbl/3.0_dbl <= x .and. x <= 100.0_dbl) then
-    DBathymetry = ((4.0_dbl/Gravity)**(1.0_dbl/3.0_dbl))*( &
-                 +4.0_dbl * a1 * (1.0_dbl/100.0_dbl) * (x/100.0_dbl - 2.0_dbl/3.0_dbl)**3 &
-                 +3.0_dbl * a1 * (1.0_dbl/100.0_dbl) * (x/100.0_dbl - 2.0_dbl/3.0_dbl)**2 &
-                 -2.0_dbl * a2 * (1.0_dbl/100.0_dbl) * (x/100.0_dbl                  )**1 &
-                 +a3 * (1.0_dbl/100.0_dbl) &
-                 )
-  else
-    write(*,*)" The defined bathymetry in the discretization_mod is wrong.",x
-    stop
-  end if
-
-end function Domain_Func_1D_MacDonald_D
 
 end module Discretization_mod
