@@ -42,20 +42,25 @@ use Model_mod,          only: Geometry_tp
 implicit none
 
 ! This type contains all the variables required to partition a graph using METIS version 5.1.0
-type METIS_var5( )
-  integer(kind=Lng) :: nvtxs ! The number of vertices in the graph
-! ncon:  The number of balancing constraints. It should be at least 1
-! xadj:  The adjacency structure of the graph as described in Section 5.5
-! adjncy: The adjacency structure of the graph as described in Section 5.5
-! vwgt:   The weights of the vertices as described in Section 5.5
-! vsize:  The size of the vertices for computing the total communication volume as described in Section 5.7
-! adjwgt: The weights of the edges as described in Section 5.5
-! nparts: The number of parts to partition the graph
-! tpwgts:
-! ubvec
-! options
-! objval
-! part
+type METIS_var5
+  integer(kind=Lng), len :: NCells ! The number of vertices in the graph= NoNodes in the network
+  integer(kind=Lng), pointer :: nvtxs => null ! The number of vertices in the graph= NoNodes in the network
+  integer(kind=Lng), pointer :: ncon => null  ! The number of balancing constraints. It should be at least 1
+  integer(kind=Lng), pointer, dimension(:) :: xadj => null ! The adjacency structure of the graph as described in Section 5.5- The size of this array is "nvtxs+1"
+  integer(kind=Lng), pointer, dimension(:) :: adjncy => null ! The adjacency structure of the graph as described in Section 5.5- The size of this array is "2*(number of edges)"
+  integer(kind=Lng), pointer, dimension(:) :: vwgt => null ! The weights of the vertices as described in Section 5.5- This array stays null in our case.
+  integer(kind=Lng), pointer, dimension(:) :: vsize ! The size of the vertices for computing the total communication volume as described in Section 5.7
+  integer(kind=Lng), pointer, dimension(:) ::! adjwgt: The weights of the edges as described in Section 5.5
+  integer(kind=Lng), pointer, dimension(:) ::! nparts: The number of parts to partition the graph
+  integer(kind=Lng), pointer, dimension(:) ::! tpwgts:
+  integer(kind=Lng), pointer, dimension(:) ::! ubvec
+  integer(kind=Lng), pointer, dimension(:) :: options => null!
+  integer(kind=Lng), pointer               :: objval => null!
+  integer(kind=Lng), pointer, dimension(:) :: part => null ! This is a vector of "size nvtxs" that upon
+                                                   ! successful completion stores the partition
+                                                   ! vector of the graph. The numbering of this
+                                                   ! vector starts from either 0 or 1, depending on
+                                                   ! the value of options[METIS OPTION NUMBERING].
 end type METIS_var5
 
 ! This type contains all the variables required to partition a graph using METIS version 4.0.0

@@ -46,6 +46,8 @@ type Base_Geometry_tp
   integer(kind=Lng) :: NoReaches=0_Lng ! Number of reaches
   integer(kind=Lng) :: NoNodes=0_Lng   ! Number of nodes
   integer(kind=Shrt):: size=0          ! Number of partitions/ranks
+  integer(kind=Tiny):: METIS_ver=0_Tiny! Indicates which version of METIS should be used for
+                                       ! partitioning: 0: for METIS V4- 1: for METIS V5
 
   Character(kind = 1,len = 20):: IndexSize="   "!Size no in the Char. fmt to add to input file Name
 
@@ -173,9 +175,26 @@ write(unit=UnFile, fmt="(' Total number of core(s) is(are): ', I10)", advance='y
 write(unit=*,      fmt="(' Total number of core(s) is(are): ', I10)") this%size
 
 
+
+UnFile = FileDataModel  ! Partitioning type - using METIS version 4 or METIS version 5
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile,fmt="(I10)",advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)&
+                                                                                    this%METIS_ver
+
+UnFile = FileInfo
+write(unit=UnFile, fmt="(' You select mesh partitioning subroutine: ', I2)", advance='yes', &
+      asynchronous='no', iostat=IO_write, err=1006) this%METIS_ver
+write(unit=UnFile, &
+    fmt="(' If 0 is selected means METIS version 4, if 1 is selected means METIS version 5 ')",  &
+    advance='yes', asynchronous='no', iostat=IO_write, err=1006)
+
+write(unit=*,      fmt="(' You select mesh partitioning subroutine: ', I10)") this%METIS_ver
+write(unit=*, &
+    fmt="(' If 0 is selected means METIS version 4, if 1 is selected means METIS version 5 ')",  &
+    advance='yes', asynchronous='no', iostat=IO_write, err=1006)
+
 write(this%IndexSize, *) this%size ! Converts Size to Character format for the file Name
-
-
 
 ! - Closing the data model file -------------------------------------------------------------------
 write(*,        fmt="(A)") " -Closing the data model file"
