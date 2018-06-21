@@ -11,10 +11,11 @@
 ! ================================ V E R S I O N ==================================================
 ! V0.00: 04/15/2018 - File initiated.
 ! V2.00: 04/17/2018 - Debugged successfully.
+! V3.00: 06/21/2018 - Modifying the partitioner module to partition a network.
 !
 ! File version $Id $
 !
-! Last update: 05/30/2018
+! Last update: 06/21/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! Partitioner_1D_Sub: Creates the input files for various processes.
@@ -33,17 +34,32 @@ module Partitioner_mod
 
 ! User defined modules ============================================================================
 use Parameters_mod
-use Discretization_mod, only: model_tp
-use Input_mod, only: Input_Data_tp
-use Model_mod, only: Geometry_tp
 use messages_and_errors_mod
+use Discretization_mod, only: DiscretizedNetwork_tp
+use Input_mod,          only: Input_Data_tp
+use Model_mod,          only: Geometry_tp
 
 implicit none
 
 contains
 
 !##################################################################################################
-! Purpose: This subroutine creates the input file for each partition/process.
+! Purpose: This subroutine creates the input file for each partition/process. To this aim, we are
+! using METIS graph partitioner. We treat nodes (the upstream and downstream point of each reach)
+! as vertices, and reaches as edges. Since the length of each reach is different, consequently, the
+! number of cells are different in each reach, to have a balanced load distribution, we use a
+! "weighted" graph partitioner subroutine/ function in METIS, as follows:
+!
+! 1- If we use METIS v4.0, to partition a graph, we have two options (see page 8 of the METIS
+! manual v4.0): one method is "pmetis", and the other one is "kmetis". According the instruction in
+! the manual, kmetis is more efficient to partition a model to more than 8 partitions. Therefore,
+! we only use this option. The corresponding subroutine/function is METIS_PartGraphKway, discussed
+! on page 22 of the manual.
+!
+! 2- If we use METIS V5.1.0, the only option for graph partitioning is METIS_PartGraphKway,
+! described on page 26.
+!
+! The arguments of the two subroutines are different. We design this code the latest version.
 !
 ! Developed by: Babak Poursartip
 !
@@ -53,10 +69,12 @@ contains
 ! ================================ V E R S I O N ==================================================
 ! V0.00: 04/15/2018 - Subroutine initiated.
 ! V0.01: 04/16/2018 - Initiated: Compiled without error for the first time.
+! V1.00: 04/20/2018 - Make it compatible with the main code
+! V2.00: 06/21/2018 - Modifying the subroutine to partition a network, use METIS graph partitioner
 !
 ! File version $Id $
 !
-! Last update: 04/16/2018
+! Last update: 06/21/2018
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
 ! (Refer to the main code to see the list of imported variables)
@@ -64,7 +82,7 @@ contains
 !
 !##################################################################################################
 
-subroutine Partitioner_1D_Sub(Geometry, Discretization, ModelInfo)
+subroutine Network_Partitioner_Sub(Geometry, Discretization, ModelInfo)
 
 ! Libraries =======================================================================================
 
@@ -75,9 +93,9 @@ implicit none
 ! Global variables ================================================================================
 
 ! - types -----------------------------------------------------------------------------------------
-type(Input_Data_tp),     intent(In) :: ModelInfo ! Holds info. (name, dir, output dir) of the model
-type(Geometry_tp),       intent(In) :: Geometry
-type(model_tp), intent(In) :: Discretization
+type(Input_Data_tp), intent(In) :: ModelInfo ! Holds info. (name, dir, output dir) of the model
+type(Geometry_tp),   intent(In) :: Geometry  ! Holds the geometry of the network
+type(DiscretizedNetwork_tp),      intent(In) :: Discretization ! Holds the discretized network
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
@@ -99,8 +117,17 @@ integer(kind=Lng), dimension (Geometry%size)  :: chunk       ! share of the doma
 Character(kind = 1, len = 20) :: IndexRank ! Rank no in the Char. fmt to add to the input file Name
 
 ! code ============================================================================================
-write(*,       *) " subroutine < Partitioner_1D_Sub >: "
-write(FileInfo,*) " subroutine < Partitioner_1D_Sub >: "
+write(*,       *) " subroutine < Network_Partitioner_Sub >: "
+write(FileInfo,*) " subroutine < Network_Partitioner_Sub >: "
+
+
+
+
+
+
+
+
+
 
 ! Computing the chunk of each process
 remainder = mod(Discretization%NCells, Geometry%size)
@@ -186,8 +213,8 @@ write(FileInfo,*) " -Data partitioning ... "
 write(*,       *) " Partitioning conducted successfully."
 write(FileInfo,*) " Partitioning conducted successfully."
 
-write(*,       *) " end subroutine < Partitioner_1D_Sub >"
-write(FileInfo,*) " end subroutine < Partitioner_1D_Sub >"
+write(*,       *) " end subroutine < Network_Partitioner_Sub >"
+write(FileInfo,*) " end subroutine < Network_Partitioner_Sub >"
 return
 
 ! Errors ==========================================================================================
@@ -200,7 +227,6 @@ return
 ! write statement errors
 1006 call error_in_writing(UnFile, IO_write)
 
-
-end subroutine Partitioner_1D_Sub
+end subroutine Network_Partitioner_Sub
 
 end module Partitioner_mod
