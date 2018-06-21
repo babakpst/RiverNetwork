@@ -41,6 +41,29 @@ use Model_mod,          only: Geometry_tp
 
 implicit none
 
+! This type contains all the variables required to partition a graph using METIS version 5.1.0
+type METIS_var5( )
+  integer(kind=Lng) :: nvtxs ! The number of vertices in the graph
+! ncon:  The number of balancing constraints. It should be at least 1
+! xadj:  The adjacency structure of the graph as described in Section 5.5
+! adjncy: The adjacency structure of the graph as described in Section 5.5
+! vwgt:   The weights of the vertices as described in Section 5.5
+! vsize:  The size of the vertices for computing the total communication volume as described in Section 5.7
+! adjwgt: The weights of the edges as described in Section 5.5
+! nparts: The number of parts to partition the graph
+! tpwgts:
+! ubvec
+! options
+! objval
+! part
+end type METIS_var5
+
+! This type contains all the variables required to partition a graph using METIS version 4.0.0
+type METIS_var4
+
+end type METIS_var4
+
+
 contains
 
 !##################################################################################################
@@ -97,6 +120,18 @@ type(Input_Data_tp), intent(In) :: ModelInfo ! Holds info. (name, dir, output di
 type(Geometry_tp),   intent(In) :: Geometry  ! Holds the geometry of the network
 type(DiscretizedNetwork_tp),      intent(In) :: Discretization ! Holds the discretized network
 
+
+
+
+
+type(METIS_var5()) :: METIS4 ! defining the variables to partition a network using METIS v5
+type(METIS_var4()) :: METIS5 ! defining the variables to partition a network using METIS v4
+
+
+
+
+
+
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
 integer(kind=Smll) :: UnFile      ! Holds Unit of a file for error message
@@ -117,29 +152,54 @@ integer(kind=Lng), dimension (Geometry%size)  :: chunk       ! share of the doma
 Character(kind = 1, len = 20) :: IndexRank ! Rank no in the Char. fmt to add to the input file Name
 
 ! code ============================================================================================
-write(*,       *) " subroutine < Network_Partitioner_Sub >: "
-write(FileInfo,*) " subroutine < Network_Partitioner_Sub >: "
-
-
-
-
-
-
-
-
-
+write(*,        fmt="(A)") " subroutine < Network_Partitioner_Sub >: "
+write(FileInfo, fmt="(A)") " subroutine < Network_Partitioner_Sub >: "
 
 ! Computing the chunk of each process
-remainder = mod(Discretization%NCells, Geometry%size)
-chunk(:) = (Discretization%NCells - remainder)/Geometry%size
-counter = 0_Lng
+write(*,        fmt="(A)") " calculating the average number of cells on each rank ... "
+write(FileInfo, fmt="(A)") " calculating the average number of cells on each rank ... "
 
+remainder = mod(Discretization%NCells, Geometry%Base_Geometry%size)
+chunk(:)  = (Discretization%NCells - remainder)/Geometry%Base_Geometry%size
   do i = 1_Shrt, remainder
     chunk(i) = chunk(i) + 1
   end do
 
-write(*,       *) " -Data partitioning ... "
-write(FileInfo,*) " -Data partitioning ... "
+! - Prepare for partitioning ----------------------------------------------------------------------
+write(*,        fmt="(A)") " -Preparing data for METIS ... "
+write(FileInfo, fmt="(A)") " -Preparing data for METIS ... "
+
+
+
+! - partitioning using METIS ----------------------------------------------------------------------
+write(*,        fmt="(A)") " -Graph partitioning using METIS_PartGraphKway... "
+write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
+
+
+call METIS_PartGraphKway(   & !
+                            & ! nvtxs: The number of vertices in the graph
+                            & ! ncon:  The number of balancing constraints. It should be at least 1
+                            & ! xadj:  The adjacency structure of the graph as described in Section 5.5
+                            & ! adjncy: The adjacency structure of the graph as described in Section 5.5
+                            & ! vwgt:   The weights of the vertices as described in Section 5.5
+                            & ! vsize:  The size of the vertices for computing the total communication volume as described in Section 5.7
+                            & ! adjwgt: The weights of the edges as described in Section 5.5
+                            & ! nparts: The number of parts to partition the graph
+                            & ! tpwgts:
+                            & ! ubvec
+                            & ! options
+                            & ! objval
+                            & ! part
+)
+
+
+
+
+! - printing out the partitioned data -------------------------------------------------------------
+
+
+
+counter = 0_Lng
 
   On_Partitions: do i_partition = 1, Geometry%size
     write(*,*)
@@ -209,6 +269,13 @@ write(FileInfo,*) " -Data partitioning ... "
     write(*, Fmt_FL); write(FileInfo, Fmt_FL);
     write(*, Fmt_end); read(*,*); stop;
   end if
+
+
+
+
+
+
+
 
 write(*,       *) " Partitioning conducted successfully."
 write(FileInfo,*) " Partitioning conducted successfully."

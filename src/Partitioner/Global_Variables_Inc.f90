@@ -17,9 +17,9 @@ Real (kind=DBL)      :: TimeSolveS, TimeSolveE  ! TIME Variables for Effective S
 type(TimeDate_tp)   :: TimeDate       ! Indicates the time and date of simulation
 type(Input_Data_tp) :: ModelInfo      ! Holds info. (name, dir, output dir) of the model
 type(ArgCommands)   :: Arguments      ! Holds the entered arguments from the command line
-type(timing)        :: SimulationTime ! Holds the run time
+type(timing_tp)     :: SimulationTime ! Holds the run time
 type(Geometry_tp)   :: Geometry       ! Holds information about the geometry of the domain
-type(DiscretizedNetwork_tp) :: Discretization ! Holds all information required for discretization
+type(DiscretizedNetwork_tp) :: Discretization ! Holds the discretized network
 
 ! - Character Variables ---------------------------------------------------------------------------
 !Character (kind = 1, Len = 50 ) :: arg  ! Holds the entered argument

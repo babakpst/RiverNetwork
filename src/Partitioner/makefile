@@ -20,8 +20,8 @@ SOURCESF=	Parameters_mod.f90 \
 					reading_model_mod.f90 \
 					Inf_mod.f90 \
 					Results_mod.f90 \
-					Discretization_mod.f90 \
-					Partitioner_mod.f90 \
+					discretize_the_network_mod.f90 \
+					partition_the_network_mod.f90 \
 					Driver_Partitioner.f90
 
 

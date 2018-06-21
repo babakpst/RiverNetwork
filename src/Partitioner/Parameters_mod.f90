@@ -108,10 +108,10 @@ type TimeDate_tp
 end type TimeDate_tp
 
 ! Holds data about the run time
-type timing
+type timing_tp
   real(kind=DBL):: Time_Start, Time_End !TIME Variables for total run time
   real(kind=DBL):: Input_Starts, Input_Ends ! required time to read the input file
-end type timing
+end type timing_tp
 
 ! This vector will be used in the main type as the solution in each type step
 type vector
