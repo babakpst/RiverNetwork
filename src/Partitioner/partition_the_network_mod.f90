@@ -18,7 +18,7 @@
 ! Last update: 06/21/2018
 !
 ! ================================ S U B R O U T I N E ============================================
-! Partitioner_1D_Sub: Creates the input files for various processes.
+! Network_Partitioner_Sub: Creates the input files for various processes.
 !
 ! ================================ F U N C T I O N ================================================
 !
@@ -28,7 +28,7 @@
 !
 !##################################################################################################
 
-module Partitioner_mod
+module Network_Partitioner_mod
 
 ! Libraries =======================================================================================
 
@@ -99,6 +99,9 @@ end type METIS_var5
 ! This type contains all the variables required to partition a graph using METIS version 4.0.0
 type METIS_var4
 
+integer(kind=Lng), pointer, dimension(:) :: => null
+
+
 end type METIS_var4
 
 
@@ -165,11 +168,6 @@ type(DiscretizedNetwork_tp),      intent(In) :: Discretization ! Holds the discr
 type(METIS_var5()) :: METIS4 ! defining the variables to partition a network using METIS v5
 type(METIS_var4()) :: METIS5 ! defining the variables to partition a network using METIS v4
 
-
-
-
-
-
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
 integer(kind=Smll) :: UnFile      ! Holds Unit of a file for error message
@@ -234,8 +232,6 @@ call METIS_PartGraphKway(   & !
 
 
 ! - printing out the partitioned data -------------------------------------------------------------
-
-
 
 counter = 0_Lng
 
@@ -308,13 +304,6 @@ counter = 0_Lng
     write(*, Fmt_end); read(*,*); stop;
   end if
 
-
-
-
-
-
-
-
 write(*,       *) " Partitioning conducted successfully."
 write(FileInfo,*) " Partitioning conducted successfully."
 
@@ -334,4 +323,4 @@ return
 
 end subroutine Network_Partitioner_Sub
 
-end module Partitioner_mod
+end module Network_Partitioner_mod

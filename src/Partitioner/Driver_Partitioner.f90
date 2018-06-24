@@ -42,8 +42,8 @@ use Parameters_mod
 use Information_mod
 use Input_mod, only: Input_Data_tp
 use Model_mod, only: Geometry_tp
-use Discretization_mod, only: model_tp
-use Partitioner_mod
+use Discretize_the_network_mod, only: model_tp
+use Network_Partitioner_mod
 use messages_and_errors_mod
 
 ! Global Variables ================================================================================
@@ -129,11 +129,9 @@ Call cpu_time(SimulationTime%Input_Ends)
 !UnFile= Un_CHK
 !Close(Unit=UnFile, status='Keep', Err=1002, IOstat=IO_File)
 
-
 ! Discretization ==================================================================================
 write(*,        fmt="(A)") " -Discretization ..."
 write(FileInfo, fmt="(A)") " -Discretization ..."
-
 
 ! Initialization ----------------------------------------------------------------------------------
 
@@ -148,7 +146,7 @@ call Discretization%Discretize(Geometry, ModelInfo)
 
 
 ! Partitioning and writing results ================================================================
-!call Partitioner_1D_Sub(Geometry, Discretization, ModelInfo)
+call Partitioner_1D_Sub(Geometry, Discretization, ModelInfo)
 
 ! Deallocating arrays
 DEallocate(Arguments%Length, Arguments%Arg, Arguments%Argstatus,      stat = ERR_DeAlloc )

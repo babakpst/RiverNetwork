@@ -34,7 +34,7 @@
 !
 !##################################################################################################
 
-module Discretization_mod
+module Discretize_the_network_mod
 
 ! Libraries =======================================================================================
 
@@ -392,4 +392,4 @@ write(FileInfo,*) " end subroutine < Discretize_network_sub >"
 return
 end subroutine Discretize_network_sub
 
-end module Discretization_mod
+end module Discretize_the_network_mod
