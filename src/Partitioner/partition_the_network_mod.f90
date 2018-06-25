@@ -156,10 +156,10 @@ end type METIS_var4_tp
 
 type partitioner_tp
 
-  fill it ! <modify>
-
+  type(METIS_var4_tp) :: METIS4
+  type(METIS_var5_tp) :: METIS5
   contains
-    generic ::
+    generic :: Partition => Network_Partitioner_Sub
 
 end type partitioner_tp
 
@@ -205,7 +205,7 @@ contains
 !
 !##################################################################################################
 
-subroutine Network_Partitioner_Sub(Geometry, Discretization, ModelInfo)
+subroutine Network_Partitioner_Sub(this, Geometry, Discretization, ModelInfo)
 
 ! Libraries =======================================================================================
 
@@ -220,12 +220,7 @@ type(Input_Data_tp), intent(In) :: ModelInfo ! Holds info. (name, dir, output di
 type(Geometry_tp),   intent(In) :: Geometry  ! Holds the geometry of the network
 type(DiscretizedNetwork_tp),      intent(In) :: Discretization ! Holds the discretized network
 
-
-
-
-
-type(METIS_var5()) :: METIS4 <modify> ! defining the variables to partition a network using METIS v5
-type(METIS_var4()) :: METIS5 <modify> ! defining the variables to partition a network using METIS v4
+class(partitioner_tp) :: this ! defining the variables to partition a network using METIS
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
@@ -266,10 +261,11 @@ write(FileInfo, fmt="(A)") " -Preparing data for METIS ... "
 
 
 
+
+
 ! - partitioning using METIS ----------------------------------------------------------------------
 write(*,        fmt="(A)") " -Graph partitioning using METIS_PartGraphKway... "
 write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
-
 
 call METIS_PartGraphKway(   & !
                             & ! nvtxs: The number of vertices in the graph
@@ -362,6 +358,25 @@ counter = 0_Lng
     write(*, Fmt_FL); write(FileInfo, Fmt_FL);
     write(*, Fmt_end); read(*,*); stop;
   end if
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 write(*,       *) " Partitioning conducted successfully."
 write(FileInfo,*) " Partitioning conducted successfully."

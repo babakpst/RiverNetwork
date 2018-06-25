@@ -145,8 +145,23 @@ allocate(Discretization%NodeHeight(Geometry%Base_Geometry%NoNodes) ,         &
 call Discretization%Discretize(Geometry, ModelInfo)
 
 
+
+
+
+
+
 ! Partitioning and writing results ================================================================
-call Partitioner_1D_Sub(Geometry, Discretization, ModelInfo)
+call NetworkPartitioner%Partition(Geometry, Discretization, ModelInfo)
+
+
+
+
+
+
+
+
+
+
 
 ! Deallocating arrays
 DEallocate(Arguments%Length, Arguments%Arg, Arguments%Argstatus,      stat = ERR_DeAlloc )

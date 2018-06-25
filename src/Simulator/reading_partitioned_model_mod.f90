@@ -144,11 +144,11 @@ write(FileInfo, fmt="(A)") " -Allocating discretization ..."
 
 allocate(this%LengthCell(this%NCells,2),            &
          this%CellSlope(this%NCells),               &
-         this%InterfaceSlope(this%NCells+1),            &
+         this%InterfaceSlope(this%NCells+1),        &
          this%ZCell(this%NCells),                   &
          this%ManningCell(this%NCells),             &
          this%WidthCell(this%NCells),               &
-         this%XCell(this%NCells),                  &
+         this%XCell(this%NCells),                   &
          stat=ERR_Alloc)
          !this%XFull(this%NCells*2_Lng + 1_Lng),    &
          !this%ZFull(this%NCells*2_Lng + 1_Lng),     &
@@ -164,7 +164,7 @@ UnFile = FilePartition
     this%ZCell      (i_cells),                         &
     this%ManningCell(i_cells),                         &
     this%WidthCell  (i_cells),                         &
-    this%XCell     (i_cells),                         &
+    this%XCell     (i_cells),                          &
     this%InterfaceSlope (i_cells)
   end do
 !read(unit=UnFile, fmt="(F35.20)", advance='yes', asynchronous='no', iostat=IO_read, &
