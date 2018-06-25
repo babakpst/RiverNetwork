@@ -1,6 +1,13 @@
 
 !##################################################################################################
-! Purpose: This module writes down the input file for each process/rank.
+! Purpose: This module partitions the network and creates the input file for each process/rank.
+!          To partition the network, we are using METIS graph partitioner. At the time of
+!          developing this code, we have two versions of METIS: V4.0 and V5.X. We develop the code
+!          such that both options are available. The main reason for having both options, and not
+!          not just having the latest version, is that, based on our experience, the older version
+!          handles the partitioning more efficiently.
+!          The other option is using ParMetis, which is the parallel version of the METIS. We do
+!          not believe that ParMETIS is needed. Metis would be efficient enough.
 !
 ! Developed by: Babak Poursartip
 ! Supervised by: Clint Dawson
@@ -11,11 +18,11 @@
 ! ================================ V E R S I O N ==================================================
 ! V0.00: 04/15/2018 - File initiated.
 ! V2.00: 04/17/2018 - Debugged successfully.
-! V3.00: 06/21/2018 - Modifying the partitioner module to partition a network.
+! V3.00: 06/25/2018 - Modifying the partitioner module to partition a network.
 !
 ! File version $Id $
 !
-! Last update: 06/21/2018
+! Last update: 06/25/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! Network_Partitioner_Sub: Creates the input files for various processes.
@@ -41,11 +48,11 @@ use Model_mod,          only: Geometry_tp
 
 implicit none
 
-! This type contains all the variables required to partition a graph using METIS version 5.1.0
-type METIS_var5
-  ! The number of vertices in the graph= NoNodes in the network
-  integer(kind=Lng), len :: NCells
-
+! This type contains all the variables required to partition a graph using METIS version 5.1.0.
+! We define the required variables as pointers, because it is described in the METIS manual. Using
+! non-pointer variables is also possible, but, to have more control over the METIS options, we
+! prefer pointers.
+type METIS_var5_tp
   ! The number of vertices in the graph= NoNodes in the network
   integer(kind=Lng), pointer :: nvtxs => null
 
@@ -56,7 +63,7 @@ type METIS_var5
   integer(kind=Lng), pointer, dimension(:) :: xadj => null
 
   ! The adjacency structure of the graph as described in Section 5.5.
-  ! The size of this array is "2*(number of edges)"
+  ! The size of this array is "2*(number of edges(=no or reaches))"
   integer(kind=Lng), pointer, dimension(:) :: adjncy => null
 
   ! The weights of the vertices as described in Section 5.5.
@@ -94,15 +101,67 @@ type METIS_var5
   ! vector of the graph. The numbering of this vector starts from either 0 or 1, depending on
   ! the value of options[METIS OPTION NUMBERING].
   integer(kind=Lng), pointer, dimension(:) :: part => null
-end type METIS_var5
+end type METIS_var5_tp
 
 ! This type contains all the variables required to partition a graph using METIS version 4.0.0
-type METIS_var4
+! We define the required variables as pointers, because it is described in the METIS manual. Using
+! non-pointer variables is also possible, but, to have more control over the METIS options, we
+! prefer pointers.
+type METIS_var4_tp
 
-integer(kind=Lng), pointer, dimension(:) :: => null
+  ! The number of vertices in the graph= NoNodes in the network
+  integer(kind=Lng), pointer :: n => null
+
+  ! The adjacency structure of the graph as described in Section 5.1. The size of array is n+1
+  integer(kind=Lng), pointer, dimension(:) :: xadj => null
+
+  ! The adjacency structure of the graph as described in Section 5.1.
+  ! The size of this array is "2*(number of edges(=no or reaches))"
+  integer(kind=Lng), pointer, dimension(:) :: adjncy => null
+
+  ! The weights of the vertices as described in Section 5.1.
+  ! This array stays null in our case. The size of this array is nvtxs * ncon
+  integer(kind=Lng), pointer, dimension(:) :: vwgt => null
+
+  ! The weights of the edges as described in Section 5.5. The size of this array is 2 * m,
+  ! where m is the total number of edges.
+  integer(kind=Lng), pointer, dimension(:) :: adjwgt => null
+
+  ! Used the indicate if the graph is weighted. (see page 22 of manual of version 4).
+  ! wgtflags can take the following values:
+  ! 1 weights on the edges only (vwgts = NULL)
+  integer(kind=Lng), pointer               :: wgtflag => null
+
+  ! Indicated the C or Fortran style of numbering: 0: C or 1: fortran
+  integer(kind=Lng), pointer               :: numflag => null
+
+  ! The number of parts to partition the graph
+  integer(kind=Lng), pointer,              :: nparts => null
+
+  ! see page 22. Use options[0]=0.
+  integer(kind=Lng), pointer, dimension(:) :: options => null
+
+  ! The number of edges that are cut by the partition. In our case, this indicates the total number
+  ! of communication between the ranks.
+  integer(kind=Lng), pointer               :: edgecut => null
+
+  ! This is a vector of "size nvtxs" that upon successful completion stores the partition
+  ! vector of the graph. The numbering of this vector starts from either 0 or 1, depending on
+  ! the value of options[METIS OPTION NUMBERING].
+  integer(kind=Lng), pointer, dimension(:) :: part => null
 
 
-end type METIS_var4
+end type METIS_var4_tp
+
+
+type partitioner_tp
+
+  fill it ! <modify>
+
+  contains
+    generic ::
+
+end type partitioner_tp
 
 
 contains
@@ -165,8 +224,8 @@ type(DiscretizedNetwork_tp),      intent(In) :: Discretization ! Holds the discr
 
 
 
-type(METIS_var5()) :: METIS4 ! defining the variables to partition a network using METIS v5
-type(METIS_var4()) :: METIS5 ! defining the variables to partition a network using METIS v4
+type(METIS_var5()) :: METIS4 <modify> ! defining the variables to partition a network using METIS v5
+type(METIS_var4()) :: METIS5 <modify> ! defining the variables to partition a network using METIS v4
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------

@@ -32,14 +32,14 @@
 			<Add option="-Wall" />
 		</Compiler>
 		<Unit filename="src/Partitioner/Address.txt" />
-		<Unit filename="src/Partitioner/Discretization_mod.f90" />
 		<Unit filename="src/Partitioner/Driver_Partitioner.f90" />
 		<Unit filename="src/Partitioner/Global_Variables_Inc.f90" />
 		<Unit filename="src/Partitioner/Inf_mod.f90" />
 		<Unit filename="src/Partitioner/Parameters_mod.f90" />
-		<Unit filename="src/Partitioner/Partitioner_mod.f90" />
 		<Unit filename="src/Partitioner/Results_mod.f90" />
+		<Unit filename="src/Partitioner/discretize_the_network_mod.f90" />
 		<Unit filename="src/Partitioner/makefile" />
+		<Unit filename="src/Partitioner/partition_the_network_mod.f90" />
 		<Unit filename="src/Partitioner/reading_address_file_mod.f90" />
 		<Unit filename="src/Partitioner/reading_model_mod.f90" />
 		<Unit filename="src/Simulator/Address.txt" />
