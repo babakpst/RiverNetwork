@@ -56,7 +56,8 @@ type METIS_var5_tp
   ! The number of vertices in the graph= NoNodes in the network
   integer(kind=Lng), pointer :: nvtxs => null
 
-  ! The number of balancing constraints. It should be at least 1
+  ! The number of balancing constraints.
+  ! ncon is discussed at the beginning of page 10 of the manual.
   integer(kind=Lng), pointer :: ncon => null
 
   ! The adjacency structure of the graph as described in Section 5.5. The size of array is nvtxs+1
@@ -235,6 +236,8 @@ integer(kind=Shrt) :: remainder   !
 integer(kind=Lng) :: counter      ! Counter for cells
 integer(kind=Lng) :: i_cells      ! Loop index for counting number of cells
 
+integer(kind=Lng) :: ncon         ! Temp variable for graph partitioning.
+
 ! - integer Arrays --------------------------------------------------------------------------------
 integer(kind=Lng), dimension (Geometry%size)  :: chunk       ! share of the domain for each rank
 
@@ -258,6 +261,18 @@ chunk(:)  = (Discretization%NCells - remainder)/Geometry%Base_Geometry%size
 ! - Prepare for partitioning ----------------------------------------------------------------------
 write(*,        fmt="(A)") " -Preparing data for METIS ... "
 write(FileInfo, fmt="(A)") " -Preparing data for METIS ... "
+
+! Preparing data for version 5:
+
+! Setting the number of vertices:
+this%METIS5%nvtxs => Geometry%Base_Geometry%NoNodes
+
+! setting the number of balancing constraints.
+ncon = 0  ! <modify> The other option is to nullify the pointer. Check both cases.
+this%METIS5%ncon => ncon
+
+! Setting the adjacency structure of the graph.
+
 
 
 
@@ -294,6 +309,10 @@ counter = 0_Lng
     write(*,*)
     write(*,        fmt="(A,I10)") " Partitioning for process no.: ", i_partition-1_Shrt
     write(FileInfo, fmt="(A,I10)") " Partitioning for process no.: ", i_partition-1_Shrt
+
+
+
+
 
     ! Opening the output files.
     write(*,       *) " Creating input files ..."

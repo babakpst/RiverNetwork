@@ -77,7 +77,7 @@ end type reach_tp
 type Geometry_tp
   integer(kind=Tiny), allocatable, dimension(:) :: BoundaryCondition ! Holds BC: 0 for free nodes
                                                                      !           1 for junction
-  type(reach_tp), allocatable, dimension(:) :: network
+  type(reach_tp), allocatable, dimension(:) :: network ! The size of this array is NoReaches
   type(Base_Geometry_tp)                    :: Base_Geometry
 
   contains
