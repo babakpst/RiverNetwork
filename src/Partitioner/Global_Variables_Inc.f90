@@ -20,7 +20,7 @@ type(ArgCommands)   :: Arguments      ! Holds the entered arguments from the com
 type(timing_tp)     :: SimulationTime ! Holds the run time
 type(Geometry_tp)   :: Geometry       ! Holds information about the geometry of the domain
 type(DiscretizedNetwork_tp) :: Discretization ! Holds the discretized network
-type(partitioner_tp):: NetworkPartitioner ! This class handles the network partitioner.
+type(partitioner_tp(edges=:, nodes=:)):: NetworkPartitioner ! This class handles the network partitioner.
 
 ! - Character Variables ---------------------------------------------------------------------------
 !Character (kind = 1, Len = 50 ) :: arg  ! Holds the entered argument

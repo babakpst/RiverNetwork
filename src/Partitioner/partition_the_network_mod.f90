@@ -48,6 +48,21 @@ use Model_mod,          only: Geometry_tp
 
 implicit none
 
+! We define this type for so that we can define a linked list based on that. We use this type to
+! find the nodes connected to each node.
+type NodeConncetivity_tp
+ integer :: nodes
+ type(NodeConncetivity_tp) :: pointer :: next => null()
+end type NodeConncetivity_tp
+
+
+
+type NodeConncetivityArray_tp
+  integer :: counter = 0
+  type(NodeConncetivity_tp), pointer :: head => null()
+end type NodeConncetivityArray_tp
+
+
 ! This type contains all the variables required to partition a graph using METIS version 5.1.0.
 ! We define the required variables as pointers, because it is described in the METIS manual. Using
 ! non-pointer variables is also possible, but, to have more control over the METIS options, we
@@ -151,11 +166,16 @@ type METIS_var4_tp
   ! the value of options[METIS OPTION NUMBERING].
   integer(kind=Lng), pointer, dimension(:) :: part => null
 
-
 end type METIS_var4_tp
 
 
-type partitioner_tp
+type partitioner_tp(edges, nodes)
+  integer(kind=Lng), len :: edges  ! number of edges in the network
+  integer(kind=Lng), len :: nodes  ! number of nodes in the network
+
+  integer(kind=Lng), dimension(nodges+1), target :: xadj_target
+  integer(kind=Lng), dimension(2*edges),  target :: adjncy_target
+  integer(kind=Lng), dimension(2*edges),  target :: adjwgt_target
 
   type(METIS_var4_tp) :: METIS4
   type(METIS_var5_tp) :: METIS5
@@ -219,30 +239,37 @@ implicit none
 ! - types -----------------------------------------------------------------------------------------
 type(Input_Data_tp), intent(In) :: ModelInfo ! Holds info. (name, dir, output dir) of the model
 type(Geometry_tp),   intent(In) :: Geometry  ! Holds the geometry of the network
-type(DiscretizedNetwork_tp),      intent(In) :: Discretization ! Holds the discretized network
+type(DiscretizedNetwork_tp), intent(In) :: Discretization ! Holds the discretized network
 
 class(partitioner_tp) :: this ! defining the variables to partition a network using METIS
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
-integer(kind=Smll) :: UnFile      ! Holds Unit of a file for error message
-integer(kind=Smll) :: IO_File        ! For IOSTAT: Input Output Status in OPEN command
-integer(kind=Smll) :: IO_write       ! Used for IOSTAT: Input/Output Status in the write command
+integer(kind=Smll) :: UnFile        ! Holds Unit of a file for error message
+integer(kind=Smll) :: IO_File       ! For IOSTAT: Input Output Status in OPEN command
+integer(kind=Smll) :: IO_write      ! Used for IOSTAT: Input/Output Status in the write command
 
-integer(kind=Shrt) :: i_partition ! Loop index for the number of processes/ranks
-integer(kind=Shrt) :: i           ! Loop index
-integer(kind=Shrt) :: remainder   !
+integer(kind=Shrt) :: i_partition   ! Loop index for the number of processes/ranks
+integer(kind=Shrt) :: i             ! Loop index
+integer(kind=Shrt) :: remainder     ! Temp var to see the approximate number of cells in each rank
 
-integer(kind=Lng) :: counter      ! Counter for cells
-integer(kind=Lng) :: i_cells      ! Loop index for counting number of cells
+integer(kind=Lng)  :: counter       ! Counter for cells
+integer(kind=Lng)  :: i_cells       ! Loop index over cells
+integer(kind=Lng)  :: i_reach       ! Loop index over reaches
+integer(kind=Lng)  :: i_node        ! Loop index over nodes
+integer(kind=Lng)  :: NodeI, NodeII ! Temp var to hold node number of each reach
+integer(kind=Lng)  :: NodeLocation  ! Temp var to hold the location of adjacent nodes in the graph
 
-integer(kind=Lng) :: ncon         ! Temp variable for graph partitioning.
+integer(kind=Lng) :: ncon          ! Temp variable for graph partitioning.
 
 ! - integer Arrays --------------------------------------------------------------------------------
 integer(kind=Lng), dimension (Geometry%size)  :: chunk       ! share of the domain for each rank
 
 ! - character variables ---------------------------------------------------------------------------
 Character(kind = 1, len = 20) :: IndexRank ! Rank no in the Char. fmt to add to the input file Name
+
+type(NodeConncetivityArray_tp), allocatable, dimension(:) :: NodeConnectivity ! Linked list
+type(NodeConncetivity_tp), pointer :: Temp ! This is a temporary type to create the list
 
 ! code ============================================================================================
 write(*,        fmt="(A)") " subroutine < Network_Partitioner_Sub >: "
@@ -271,8 +298,59 @@ this%METIS5%nvtxs => Geometry%Base_Geometry%NoNodes
 ncon = 0  ! <modify> The other option is to nullify the pointer. Check both cases.
 this%METIS5%ncon => ncon
 
-! Setting the adjacency structure of the graph.
+! setting the adjncy and xadj of the graph for METIS ----------------------------------------------
+! To fill these vectors, we loop over the reaches, and find the both nodes connected to the reach
+! and we add the connectivities to each node. We are using a linked list for this purpose, because
+! we do not know in advance, how many nodes are connected to each node.
 
+allocate(NodeConnectivity(Geometry%Base_Geometry%NoNodes), stat=ERR_Alloc)
+if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
+
+  ! This loop figures out all connectivities between nodes
+  do i_reach = 1_Lng, Geometry%Base_Geometry%NoReaches
+    NodeI = Geometry%network(i_reach)%ReachNodes(1)
+    NodeII= Geometry%network(i_reach)%ReachNodes(2)
+
+    allocate(Temp)
+    Temp= NodeConncetivity_tp( NodeII, NodeConnectivity(NodeI)%head)
+    NodeConnectivity(NodeI)%counter = NodeConnectivity(NodeI)%counter + 1_Lng
+    NodeConnectivity(NodeI)%head => Temp
+
+    allocate(Temp)
+    Temp= NodeConncetivity_tp( NodeI, NodeConnectivity(NodeII)%head)
+    NodeConnectivity(NodeII)%counter = NodeConnectivity(NodeII)%counter + 1_Lng
+    NodeConnectivity(NodeII)%head => Temp
+  end do
+
+! Now that we have the connectivities, we need to fill xadj, adjncy.
+
+NodeLocation = 0
+counter = 0
+  do i_node = 1_Lng, Geometry%Base_Geometry%NoNodes
+    this%xadj_target(i_node) = NodeLocation
+    NodeLocation = NodeLocation + NodeConnectivity(i_node)
+
+    Temp => NodeConnectivity(i_node)%head
+      do
+        if (.not.associated(Temp)) exit
+        counter = counter+1_Lng
+        this%adjncy_target(counter) = Temp%nodes
+        Temp => Temp%next
+      end do
+
+  end do
+
+this%xadj_target(i_node+1) = NodeLocation ! <modify>
+
+  if (counter /= 2_Lng *  Geometry%Base_Geometry%NoReaches) then
+    write(*,*) " Something is wrong with the adjacency finder"
+    stop
+  end if
+
+this%METIS5%adjncy => this%adjncy_target
+this%METIS5%xadj   => this%xadj_target
+
+! filling adjacency weight (adjwgt), based on the number of cells in each reach.
 
 
 
@@ -282,22 +360,29 @@ this%METIS5%ncon => ncon
 write(*,        fmt="(A)") " -Graph partitioning using METIS_PartGraphKway... "
 write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
 
-call METIS_PartGraphKway(   & !
-                            & ! nvtxs: The number of vertices in the graph
-                            & ! ncon:  The number of balancing constraints. It should be at least 1
-                            & ! xadj:  The adjacency structure of the graph as described in Section 5.5
-                            & ! adjncy: The adjacency structure of the graph as described in Section 5.5
-                            & ! vwgt:   The weights of the vertices as described in Section 5.5
-                            & ! vsize:  The size of the vertices for computing the total communication volume as described in Section 5.7
-                            & ! adjwgt: The weights of the edges as described in Section 5.5
-                            & ! nparts: The number of parts to partition the graph
-                            & ! tpwgts:
-                            & ! ubvec
-                            & ! options
-                            & ! objval
-                            & ! part
-)
+  if (----- metis5 == ) then
+    call METIS_PartGraphKway(   & !
+                                & ! nvtxs: The number of vertices in the graph
+                                & ! ncon:  The number of balancing constraints. It should be at least 1
+                                & ! xadj:  The adjacency structure of the graph as described in Section 5.5
+                                & ! adjncy: The adjacency structure of the graph as described in Section 5.5
+                                & ! vwgt:   The weights of the vertices as described in Section 5.5
+                                & ! vsize:  The size of the vertices for computing the total communication volume as described in Section 5.7
+                                & ! adjwgt: The weights of the edges as described in Section 5.5
+                                & ! nparts: The number of parts to partition the graph
+                                & ! tpwgts:
+                                & ! ubvec
+                                & ! options
+                                & ! objval
+                                & ! part
+    )
+  else if (---metis4 == ) then
+    ---
 
+  else
+    write(*,*) " The requested partitioner does not exists. Modify"
+    stop
+  end if
 
 
 

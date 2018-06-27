@@ -144,13 +144,13 @@ allocate(Discretization%NodeHeight(Geometry%Base_Geometry%NoNodes) ,         &
 ! Discretize the domain ---------------------------------------------------------------------------
 call Discretization%Discretize(Geometry, ModelInfo)
 
-
-
-
-
-
-
 ! Partitioning and writing results ================================================================
+allocate(type(partitioner_tp(edges=Geometry%Base_Geometry%NoReaches,  &
+                             nodes=Geometry%Base_Geometry%NoNodes)):: NetworkPartitioner, &
+         stat = ERR_Alloc)
+  if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
+
+
 call NetworkPartitioner%Partition(Geometry, Discretization, ModelInfo)
 
 
