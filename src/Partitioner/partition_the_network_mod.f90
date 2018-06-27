@@ -52,7 +52,8 @@ implicit none
 ! find the nodes connected to each node.
 type NodeConncetivity_tp
  integer :: nodes
- type(NodeConncetivity_tp) :: pointer :: next => null()
+ integer :: cells
+ type(NodeConncetivity_tp), pointer :: next => null()
 end type NodeConncetivity_tp
 
 
@@ -258,6 +259,7 @@ integer(kind=Lng)  :: i_cells       ! Loop index over cells
 integer(kind=Lng)  :: i_reach       ! Loop index over reaches
 integer(kind=Lng)  :: i_node        ! Loop index over nodes
 integer(kind=Lng)  :: NodeI, NodeII ! Temp var to hold node number of each reach
+integer(kind=Lng)  :: Weights       ! Weight of each edge (= no. cells in the edge= reach)
 integer(kind=Lng)  :: NodeLocation  ! Temp var to hold the location of adjacent nodes in the graph
 
 integer(kind=Lng) :: ncon          ! Temp variable for graph partitioning.
@@ -302,7 +304,7 @@ this%METIS5%ncon => ncon
 ! To fill these vectors, we loop over the reaches, and find the both nodes connected to the reach
 ! and we add the connectivities to each node. We are using a linked list for this purpose, because
 ! we do not know in advance, how many nodes are connected to each node.
-
+! At the same time, we fill the adjacency weight (adjwgt), based on the n. of cells in each reach.
 allocate(NodeConnectivity(Geometry%Base_Geometry%NoNodes), stat=ERR_Alloc)
 if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
@@ -310,20 +312,20 @@ if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
   do i_reach = 1_Lng, Geometry%Base_Geometry%NoReaches
     NodeI = Geometry%network(i_reach)%ReachNodes(1)
     NodeII= Geometry%network(i_reach)%ReachNodes(2)
+    Weights = Geometry%network(i_reach)%NCells_Reach
 
     allocate(Temp)
-    Temp= NodeConncetivity_tp( NodeII, NodeConnectivity(NodeI)%head)
+    Temp= NodeConncetivity_tp(NodeII, Weights, NodeConnectivity(NodeI)%head)
     NodeConnectivity(NodeI)%counter = NodeConnectivity(NodeI)%counter + 1_Lng
     NodeConnectivity(NodeI)%head => Temp
 
     allocate(Temp)
-    Temp= NodeConncetivity_tp( NodeI, NodeConnectivity(NodeII)%head)
+    Temp= NodeConncetivity_tp(NodeI, Weights, NodeConnectivity(NodeII)%head)
     NodeConnectivity(NodeII)%counter = NodeConnectivity(NodeII)%counter + 1_Lng
     NodeConnectivity(NodeII)%head => Temp
   end do
 
 ! Now that we have the connectivities, we need to fill xadj, adjncy.
-
 NodeLocation = 0
 counter = 0
   do i_node = 1_Lng, Geometry%Base_Geometry%NoNodes
@@ -335,6 +337,7 @@ counter = 0
         if (.not.associated(Temp)) exit
         counter = counter+1_Lng
         this%adjncy_target(counter) = Temp%nodes
+        this%adjwgt_target(counter) = Temp%cells
         Temp => Temp%next
       end do
 
@@ -348,13 +351,9 @@ this%xadj_target(i_node+1) = NodeLocation ! <modify>
   end if
 
 this%METIS5%adjncy => this%adjncy_target
+this%METIS5%adjwgt => this%adjwgt_target
 this%METIS5%xadj   => this%xadj_target
-
-! filling adjacency weight (adjwgt), based on the number of cells in each reach.
-
-
-
-
+this%METIS5%nparts => Geometry%Base_Geometry%size
 
 ! - partitioning using METIS ----------------------------------------------------------------------
 write(*,        fmt="(A)") " -Graph partitioning using METIS_PartGraphKway... "
@@ -383,6 +382,12 @@ write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
     write(*,*) " The requested partitioner does not exists. Modify"
     stop
   end if
+
+
+
+
+
+
 
 
 
