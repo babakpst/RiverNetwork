@@ -174,6 +174,12 @@ type partitioner_tp(edges, nodes)
   integer(kind=Lng), len :: edges  ! number of edges in the network
   integer(kind=Lng), len :: nodes  ! number of nodes in the network
 
+  integer                :: ncon          ! Temp variable for graph partitioning.
+  integer                :: wgtflag
+  integer                :: numflag
+  integer, dimension(0:5):: options4
+  integer, dimension(METIS_NOPTIONS) :: options5
+
   integer(kind=Lng), dimension(nodges+1), target :: xadj_target
   integer(kind=Lng), dimension(2*edges),  target :: adjncy_target
   integer(kind=Lng), dimension(2*edges),  target :: adjwgt_target
@@ -262,8 +268,6 @@ integer(kind=Lng)  :: NodeI, NodeII ! Temp var to hold node number of each reach
 integer(kind=Lng)  :: Weights       ! Weight of each edge (= no. cells in the edge= reach)
 integer(kind=Lng)  :: NodeLocation  ! Temp var to hold the location of adjacent nodes in the graph
 
-integer(kind=Lng) :: ncon          ! Temp variable for graph partitioning.
-
 ! - integer Arrays --------------------------------------------------------------------------------
 integer(kind=Lng), dimension (Geometry%size)  :: chunk       ! share of the domain for each rank
 
@@ -291,14 +295,7 @@ chunk(:)  = (Discretization%NCells - remainder)/Geometry%Base_Geometry%size
 write(*,        fmt="(A)") " -Preparing data for METIS ... "
 write(FileInfo, fmt="(A)") " -Preparing data for METIS ... "
 
-! Preparing data for version 5:
-
-! Setting the number of vertices:
-this%METIS5%nvtxs => Geometry%Base_Geometry%NoNodes
-
-! setting the number of balancing constraints.
-ncon = 0  ! <modify> The other option is to nullify the pointer. Check both cases.
-this%METIS5%ncon => ncon
+! Preparing data for partitioning:
 
 ! setting the adjncy and xadj of the graph for METIS ----------------------------------------------
 ! To fill these vectors, we loop over the reaches, and find the both nodes connected to the reach
@@ -327,7 +324,7 @@ if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
 ! Now that we have the connectivities, we need to fill xadj, adjncy.
 NodeLocation = 0
-counter = 0
+counter      = 0
   do i_node = 1_Lng, Geometry%Base_Geometry%NoNodes
     this%xadj_target(i_node) = NodeLocation
     NodeLocation = NodeLocation + NodeConnectivity(i_node)
@@ -350,45 +347,76 @@ this%xadj_target(i_node+1) = NodeLocation ! <modify>
     stop
   end if
 
-this%METIS5%adjncy => this%adjncy_target
-this%METIS5%adjwgt => this%adjwgt_target
-this%METIS5%xadj   => this%xadj_target
-this%METIS5%nparts => Geometry%Base_Geometry%size
 
 ! - partitioning using METIS ----------------------------------------------------------------------
 write(*,        fmt="(A)") " -Graph partitioning using METIS_PartGraphKway... "
 write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
 
-  if (----- metis5 == ) then
-    call METIS_PartGraphKway(   & !
-                                & ! nvtxs: The number of vertices in the graph
-                                & ! ncon:  The number of balancing constraints. It should be at least 1
-                                & ! xadj:  The adjacency structure of the graph as described in Section 5.5
-                                & ! adjncy: The adjacency structure of the graph as described in Section 5.5
-                                & ! vwgt:   The weights of the vertices as described in Section 5.5
-                                & ! vsize:  The size of the vertices for computing the total communication volume as described in Section 5.7
-                                & ! adjwgt: The weights of the edges as described in Section 5.5
-                                & ! nparts: The number of parts to partition the graph
-                                & ! tpwgts:
-                                & ! ubvec
-                                & ! options
-                                & ! objval
-                                & ! part
-    )
-  else if (---metis4 == ) then
-    ---
+  if (Geometry%Base_Geometry%METIS_version == 1_Tiny) then ! Partitioning using METIS version 5
 
+    this%METIS5%nvtxs => Geometry%Base_Geometry%NoNodes  ! Setting the number of vertices
+
+    ! setting the number of balancing constraints.
+    this%ncon = 0  ! <modify> The other option is to nullify the pointer. Check both cases.
+    this%options5(METIS_OPTION_OBJTYPE) = METIS_OBJTYPE_CUT
+    !this%options5(METIS_OPTION_NCUTS)   = ?
+    this%options5(METIS_OPTION_NUMBERING) = 1
+
+    this%METIS5%ncon   => this%ncon
+    this%METIS5%adjncy => this%adjncy_target
+    this%METIS5%adjwgt => this%adjwgt_target
+    this%METIS5%xadj   => this%xadj_target
+    this%METIS5%nparts => Geometry%Base_Geometry%size
+    this%METIS5%options=> this%options5
+
+    call METIS_PartGraphKway(this%METIS5%nvtxs,   &
+                             this%METIS5%ncon,    &
+                             this%METIS5%xadj,    &
+                             this%METIS5%adjncy,  &
+                             this%METIS5%vwgt,    &
+                             this%METIS5%vsize,   &
+                             this%METIS5%adjwgt,  &
+                             this%METIS5%nparts,  &
+                             this%METIS5%tpwgts,  &
+                             this%METIS5%ubvec,   &
+                             this%METIS5%options, &
+                             this%METIS5%objval,  &
+                             this%METIS5%part)    &
+
+  else if (Geometry%Base_Geometry%METIS_version == 0_Tiny) then ! Partitioning using METIS ver. 4
+
+    this%wgtflag = 1
+    this%numflag = 1
+    this%options(:) = 0
+    this%METIS4%n       => Geometry%Base_Geometry%NoNodes  ! Setting the number of vertices
+    this%METIS4%xadj    => this%xadj_target
+    this%METIS4%adjncy  => this%adjncy_target
+    this%METIS4%adjwgt  => this%adjwgt_target
+    this%METIS4%wgtflag => this%wgtflag
+    this%METIS4%numflag => this%numflag
+    this%METIS4%nparts  => Geometry%Base_Geometry%size
+    this%METIS4%options => this%options4
+
+    call METIS_PartGraphKway(this%METIS4%n,       &
+                             this%METIS4%xadj,    &
+                             this%METIS4%adjncy,  &
+                             this%METIS4%vwgt,    &
+                             this%METIS4%adjwgt,  &
+                             this%METIS4%wgtflag, &
+                             this%METIS4%numflag, &
+                             this%METIS4%nparts,  &
+                             this%METIS4%options, &
+                             this%METIS4%edgecut, &
+                             this%METIS4%part)    &
   else
-    write(*,*) " The requested partitioner does not exists. Modify"
+    write(*,*) " The requested METIS version does not exist. Please, enter 0 for METIS version 4 &
+                 or 1 for METIS version 5 in the --.DataModel file."
+
+    call error_in_the_requested_option()
     stop
   end if
 
-
-
-
-
-
-
+! - analyzing the partitioned graph
 
 
 ! - printing out the partitioned data -------------------------------------------------------------

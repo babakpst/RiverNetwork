@@ -64,12 +64,6 @@ contains
 
 subroutine error_in_opening_a_file(UnFile, IO_File)
 
-
-! Libraries =======================================================================================
-
-! User defined modules ============================================================================
-
-
 implicit none
 
 ! Global variables ================================================================================
@@ -116,12 +110,6 @@ end subroutine error_in_opening_a_file
 
 subroutine error_in_closing_a_file(UnFile, IO_File)
 
-
-! Libraries =======================================================================================
-
-! User defined modules ============================================================================
-
-
 implicit none
 
 ! Global variables ================================================================================
@@ -166,12 +154,6 @@ end subroutine error_in_closing_a_file
 
 subroutine error_in_allocation(ERR_Alloc)
 
-
-! Libraries =======================================================================================
-
-! User defined modules ============================================================================
-
-
 implicit none
 
 ! Global variables ================================================================================
@@ -212,12 +194,6 @@ end subroutine error_in_allocation
 
 subroutine error_in_deallocation(ERR_DeAlloc)
 
-
-! Libraries =======================================================================================
-
-! User defined modules ============================================================================
-
-
 implicit none
 
 ! Global variables ================================================================================
@@ -257,12 +233,6 @@ end subroutine error_in_deallocation
 
 subroutine error_in_writing(UnFile, IO_write)
 
-
-! Libraries =======================================================================================
-
-! User defined modules ============================================================================
-
-
 implicit none
 
 ! Global variables ================================================================================
@@ -272,7 +242,7 @@ integer(kind=Smll):: IO_write ! Used for IOSTAT - Input Output Status - in the w
 ! Local variables =================================================================================
 
 ! code ============================================================================================
-write(*, Fmt_write1) UnFile, IO_write; write(UnFile, Fmt_write1) UnFile, IO_write;
+write(*, Fmt_write1) UnFile, IO_write; write(FileInfo, Fmt_write1) UnFile, IO_write;
 write(*, Fmt_FL); write(FileInfo, Fmt_FL); write(*, Fmt_End); read(*,*);  stop;
 
 return
@@ -304,12 +274,6 @@ end subroutine error_in_writing
 
 subroutine error_in_reading_data_from_file(UnFile, IO_read)
 
-
-! Libraries =======================================================================================
-
-! User defined modules ============================================================================
-
-
 implicit none
 
 ! Global variables ================================================================================
@@ -319,7 +283,7 @@ integer(kind=Smll):: IO_read  ! Holds error of read statements
 ! Local variables =================================================================================
 
 ! code ============================================================================================
-write(*, Fmt_read1) UnFile, IO_read; write(UnFile, Fmt_read1) UnFile, IO_read;
+write(*, Fmt_read1) UnFile, IO_read; write(FileInfo, Fmt_read1) UnFile, IO_read;
 write(*, Fmt_FL);  write(FileInfo, Fmt_FL); write(*, Fmt_End); read(*,*);  stop;
 
 return
@@ -350,12 +314,6 @@ end subroutine error_in_reading_data_from_file
 
 subroutine error_in_reading_data_from_file_EOF(UnFile, IO_read)
 
-
-! Libraries =======================================================================================
-
-! User defined modules ============================================================================
-
-
 implicit none
 
 ! Global variables ================================================================================
@@ -365,11 +323,95 @@ integer(kind=Smll):: IO_read  ! Holds error of read statements
 ! Local variables =================================================================================
 
 ! code ============================================================================================
-write(*, Fmt_read1) UnFile, IO_read; write(UnFile, Fmt_read1) UnFile, IO_read;
+write(*, Fmt_read1) UnFile, IO_read; write(FileInfo, Fmt_read1) UnFile, IO_read;
 write(*, Fmt_FL);  write(FileInfo, Fmt_FL); write(*, Fmt_End); read(*,*);  stop;
 
 return
 end subroutine error_in_reading_data_from_file_EOF
 
 
+!##################################################################################################
+! Purpose: This subroutine writes down the error message if the requested option does not exist.
+!
+! Developed by: Babak Poursartip
+! Supervised by:
+!
+! The Institute for Computational Engineering and Sciences (ICES)
+! The University of Texas at Austin
+!
+! ================================ V E R S I O N ==================================================
+! V0.01: 06/05/2018 - Initiated: Compiled without error for the first time.
+! V1.01: 06/28/2018 - Initiated: Compiled without error for the first time.
+!
+! File version $Id $
+!
+! Last update: 06/28/2018
+!
+! ================================ L O C A L   V A R I A B L E S ==================================
+! (Refer to the main code to see the list of imported variables)
+!  . . . . . . . . . . . . . . . . Variables . . . . . . . . . . . . . . . . . . . . . . . . . . .
+!
+!##################################################################################################
+
+subroutine error_in_the_requested_option()
+
+implicit none
+
+write(*,      Fmt_METIS)
+write(UnInfo, Fmt_METIS)
+
+write(*,        Fmt_FL)
+write(FileInfo, Fmt_FL)
+
+write(*, Fmt_End)
+read(*,*)
+stop
+
+return
+end subroutine error_in_reading_data_from_file_EOF
+
 end module messages_and_errors_mod
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

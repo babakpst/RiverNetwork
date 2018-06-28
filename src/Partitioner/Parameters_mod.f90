@@ -46,13 +46,15 @@ real(kind=Dbl), Parameter, Public :: Gravity=9.81_Dbl  ! the ground acceleration
 ! FORMATS =========================================================================================
 character(87), Parameter, Public:: Fmt_DATE="(' DATE :  ',I2.2,' - ',I2.2,' - ',I4,/,' TIME : ',&
                                               I2.2,':',I2.2,':',I2.2,':',I2.2,/)"
+
 character(27), Parameter, Public:: Fmt_End="(' PRESS ENTER TO END ...')"
-character(80), Parameter, Public:: Fmt_ERR1_OPEN="( 'ERROR IN OPEN STATEMENT. Unit NUMBER=', I3, &
-                                                    '   ERROR NUMBER IS=', I4  )"
-character(91), Parameter, Public:: Fmt_ERR2_OPEN="('End-OF-FILE ERROR IN OPEN STATEMENT. &
+
+character(84), Parameter, Public:: Fmt_ERR1_OPEN="( 'ERROR IN THE OPEN STATEMENT. Unit NUMBER=', &
+                                                    I3, '   ERROR NUMBER IS=', I4  )"
+character(95), Parameter, Public:: Fmt_ERR2_OPEN="('End-OF-FILE ERROR IN THE OPEN STATEMENT. &
                                                     Unit NUMBER=',I3, ' ERROR NUMBER IS=',I4)"
-character(81), Parameter, Public:: Fmt_ERR1_Close="( 'ERROR IN Close STATEMENT. Unit NUMBER=', I3,&
-                                                     '   ERROR NUMBER IS=', I4  )"
+character(84), Parameter, Public:: Fmt_ERR1_Close="( 'ERROR IN THE Close STATEMENT. Unit NUMBER=',&
+                                                      I3,'   ERROR NUMBER IS=', I4  )"
 character(163),Parameter, Public:: Fmt_NM="(' FILE Name : ',A20,//,' Directories :',/,&
                             'INPUT FILE DIRECTORY   : ',A100,/,'OUTPUT FILES DIRECTORY  : ',A100)"
 character(41), Parameter, Public:: Fmt_SUC="('CONGRATULATIONS! DONE SUCCESSFULLY. ')"
@@ -74,6 +76,9 @@ character(143),Parameter, Public:: Fmt_Element1="('Error in the element type. Ei
    mistake in the input file for element type or element type in not available in the code yet.')"
 character(144),Parameter, Public:: Fmt_Element2="('Error in the element type. This element number'&
    ,I3,'is not available in the list of this code. Check the input file for element number',I19)"
+
+character(56), Parameter, Public:: Fmt_METIS="(' ERROR IN THE METIS VERSION. CHECK THE .DATAMODEL &
+                                                FILE.')
 
 ! Unit NUMBERS OF EXTERNAL FILES ==================================================================
 
