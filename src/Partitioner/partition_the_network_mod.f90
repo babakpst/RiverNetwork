@@ -272,7 +272,11 @@ integer(kind=Lng)  :: Weights       ! Weight of each edge (= no. cells in the ed
 integer(kind=Lng)  :: NodeLocation  ! Temp var to hold the location of adjacent nodes in the graph
 
 ! - integer Arrays --------------------------------------------------------------------------------
-integer(kind=Lng), dimension (Geometry%size)  :: chunk       ! share of the domain for each rank
+integer(kind=Lng), dimension (Geometry%size,4)  :: chunk   ! share of the domain for each rank
+                         ! col 1: ideal chunk size
+                         ! col 2: certain cells, from reaches with both nodes on this rank
+                         ! col 3: unsure cells, from ranks with two nodes on two different ranks
+                         ! col 4: summation of cols 2 and 3, the actual no. of cells on this ranks
 
 ! - character variables ---------------------------------------------------------------------------
 Character(kind = 1, len = 20) :: IndexRank ! Rank no in the Char. fmt to add to the input file Name
@@ -290,10 +294,11 @@ write(FileInfo, fmt="(A)") " subroutine < Network_Partitioner_Sub >: "
 write(*,        fmt="(A)") " calculating the average number of cells on each rank ... "
 write(FileInfo, fmt="(A)") " calculating the average number of cells on each rank ... "
 
+chunk(:,:) = 0_Lng
 remainder = mod(Discretization%NCells, Geometry%Base_Geometry%size)
-chunk(:)  = (Discretization%NCells - remainder)/Geometry%Base_Geometry%size
+chunk(:,1)  = (Discretization%NCells - remainder)/Geometry%Base_Geometry%size
   do i = 1_Shrt, remainder
-    chunk(i) = chunk(i) + 1
+    chunk(i,1) = chunk(i,1) + 1
   end do
 
 ! - Prepare for partitioning ----------------------------------------------------------------------
@@ -442,30 +447,36 @@ write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
     if (this%ReachPartition(i_reach,1) == this%ReachPartition(i_reach,2)) then
       this%ReachPartition(i_reach,3) = Discretization%DiscretizedReach(i_reach)%NCells_reach
       this%ReachPartition(i_reach,4) = 0
+      chunk(part(NodeI),2) = chunk(part(NodeI),2) + this%ReachPartition(i_reach,3)
     else
 
-      if (mod(Discretization%DiscretizedReach(i_reach)%NCells_reach,2)=0 ) then
+      if (mod(Discretization%DiscretizedReach(i_reach)%NCells_reach,2)==0 ) then
         ! even no. of cells in this reach:
         tempCell = Discretization%DiscretizedReach(i_reach)%NCells_reach /2_Lng
         this%ReachPartition(i_reach,3) = tempCell
         this%ReachPartition(i_reach,4) = tempCell
+        chunk(part(NodeI),3)  = chunk(part(NodeI),3) + tempCell
+        chunk(part(NodeII),3) = chunk(part(NodeI),3) + tempCell
       else
         ! odd no. of cells in this reach
         tempCell = (Discretization%DiscretizedReach(i_reach)%NCells_reach -1_Lng)/2_Lng
         this%ReachPartition(i_reach,3) = tempCell
         this%ReachPartition(i_reach,4) = tempCell+1_Lng
+        chunk(part(NodeI),3)  = chunk(part(NodeI),3) + tempCell
+        chunk(part(NodeII),3) = chunk(part(NodeI),3) + tempCell+1_Lng
       end if
-
     end if
+
   end do
 
+! no. of cells on each rank, saved in col 4.
+chunk(:,4) = chunk(:,2) + chunk(:,3)
 
-
-  while ()
-
-
-
-
+! We develop an optimization problem here to equalize the no. of cells on each rank.
+!Balanced_load = .true.
+!  while (Balanced_load) do
+!    Balanced_load = .false.
+!  end do
 
 
 
@@ -479,10 +490,6 @@ counter = 0_Lng
     write(*,*)
     write(*,        fmt="(A,I10)") " Partitioning for process no.: ", i_partition-1_Shrt
     write(FileInfo, fmt="(A,I10)") " Partitioning for process no.: ", i_partition-1_Shrt
-
-
-
-
 
     ! Opening the output files.
     write(*,       *) " Creating input files ..."
@@ -499,6 +506,9 @@ counter = 0_Lng
          Err=1001, iostat=IO_File, access='sequential', action='write', asynchronous='no', &
          blank='NULL', blocksize=0, defaultfile=trim(ModelInfo%InputDir), dispose='keep', &
          form='formatted', position='asis', status='replace')
+
+
+
 
     ! Writing the total number of cells in each partition
     UnFile = FilePartition
