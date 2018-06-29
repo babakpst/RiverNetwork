@@ -478,10 +478,6 @@ chunk(:,4) = chunk(:,2) + chunk(:,3)
 !    Balanced_load = .false.
 !  end do
 
-
-
-
-
 ! - printing out the partitioned data -------------------------------------------------------------
 
 counter = 0_Lng
@@ -513,9 +509,19 @@ counter = 0_Lng
     ! Writing the total number of cells in each partition
     UnFile = FilePartition
     write(unit=UnFile, fmt="(I23)", advance='yes', asynchronous='no', &
-          iostat=IO_write, err=1006) chunk(i_partition)
+          iostat=IO_write, err=1006) chunk(i_partition,4)
 
     UnFile = FilePartition
+
+      do i_reach = 1_Lng, Geometry%Base_Geometry%NoReaches
+        this%ReachPartition()
+      end do
+
+
+
+
+
+
 
       do i_cells = 1_Lng, chunk(i_partition)
 
@@ -528,7 +534,7 @@ counter = 0_Lng
               Discretization%ZCell      (counter),                         &
               Discretization%ManningCell(counter),                         &
               Discretization%WidthCell  (counter),                         &
-              Discretization%XCell     (counter),                         &
+              Discretization%XCell     (counter),                          &
               Discretization%InterfaceSlope (counter)
 
               !Discretization%ZFull      (counter*2_Lng-1_Lng),             &
