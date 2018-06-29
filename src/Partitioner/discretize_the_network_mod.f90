@@ -78,6 +78,7 @@ type DiscretizedNetwork_tp
 
   ! To hold the discretization of each reach. The size of this type is equal to the no of reaches.
   type(DiscretizedReach_tp), allocatable, dimension(:) :: DiscretizedReach
+
   contains
     procedure Discretize => Discretize_network_sub ! subroutine to discretize the reach
 end type DiscretizedNetwork_tp

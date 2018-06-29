@@ -180,6 +180,8 @@ type partitioner_tp(edges, nodes)
   integer, dimension(0:5):: options4
   integer, dimension(METIS_NOPTIONS) :: options5
 
+  integer(kind=Lng), dimension(edges,4) :: ReachPartition
+
   integer(kind=Lng), dimension(nodges+1), target :: xadj_target
   integer(kind=Lng), dimension(2*edges),  target :: adjncy_target
   integer(kind=Lng), dimension(2*edges),  target :: adjwgt_target
@@ -221,7 +223,7 @@ contains
 ! V0.00: 04/15/2018 - Subroutine initiated.
 ! V0.01: 04/16/2018 - Initiated: Compiled without error for the first time.
 ! V1.00: 04/20/2018 - Make it compatible with the main code
-! V2.00: 06/21/2018 - Modifying the subroutine to partition a network, use METIS graph partitioner
+! V2.00: 06/21/2018 - Modifying the subroutineDiscretization to partition a network, use METIS graph partitioner
 !
 ! File version $Id $
 !
@@ -265,6 +267,7 @@ integer(kind=Lng)  :: i_cells       ! Loop index over cells
 integer(kind=Lng)  :: i_reach       ! Loop index over reaches
 integer(kind=Lng)  :: i_node        ! Loop index over nodes
 integer(kind=Lng)  :: NodeI, NodeII ! Temp var to hold node number of each reach
+integer(kind=Lng)  :: tempCell      ! Temp var to hold no. of cells of each rank for a shared reach
 integer(kind=Lng)  :: Weights       ! Weight of each edge (= no. cells in the edge= reach)
 integer(kind=Lng)  :: NodeLocation  ! Temp var to hold the location of adjacent nodes in the graph
 
@@ -273,6 +276,8 @@ integer(kind=Lng), dimension (Geometry%size)  :: chunk       ! share of the doma
 
 ! - character variables ---------------------------------------------------------------------------
 Character(kind = 1, len = 20) :: IndexRank ! Rank no in the Char. fmt to add to the input file Name
+
+logical :: Balanced_load
 
 type(NodeConncetivityArray_tp), allocatable, dimension(:) :: NodeConnectivity ! Linked list
 type(NodeConncetivity_tp), pointer :: Temp ! This is a temporary type to create the list
@@ -417,6 +422,53 @@ write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
   end if
 
 ! - analyzing the partitioned graph
+
+! In this loop, we loop over the reaches and we see ranks the two nodes of the reach are belong to.
+! If both nodes of a reach belong to one rank, then we devote the entire cells in this reach, to
+! this rank. But, if the two nodes of the reach belong to two different ranks, then, initially, we
+! divide the cells evenly between the two ranks. In the next step, we will play with the cells
+! until we have an even distribution. We would like to distribute the
+! cells as even as possible, so that the share of each rank is as close as possible to the number
+! we calculated in the beginning of this subroutine, saved in the "chunk" array.
+! At the end of this loop, we have a rough estimation of the partitioning and the no. of cells on
+! each rank. In the next step, we try to equalize the no. of cells on each reach.
+  do i_reach = 1_Lng, Geometry%Base_Geometry%NoReaches
+    NodeI = Geometry%network(i_reach)%ReachNodes(1)
+    NodeII= Geometry%network(i_reach)%ReachNodes(2)
+
+    this%ReachPartition(i_reach,1) = part(NodeI)
+    this%ReachPartition(i_reach,2) = part(NodeII)
+
+    if (this%ReachPartition(i_reach,1) == this%ReachPartition(i_reach,2)) then
+      this%ReachPartition(i_reach,3) = Discretization%DiscretizedReach(i_reach)%NCells_reach
+      this%ReachPartition(i_reach,4) = 0
+    else
+
+      if (mod(Discretization%DiscretizedReach(i_reach)%NCells_reach,2)=0 ) then
+        ! even no. of cells in this reach:
+        tempCell = Discretization%DiscretizedReach(i_reach)%NCells_reach /2_Lng
+        this%ReachPartition(i_reach,3) = tempCell
+        this%ReachPartition(i_reach,4) = tempCell
+      else
+        ! odd no. of cells in this reach
+        tempCell = (Discretization%DiscretizedReach(i_reach)%NCells_reach -1_Lng)/2_Lng
+        this%ReachPartition(i_reach,3) = tempCell
+        this%ReachPartition(i_reach,4) = tempCell+1_Lng
+      end if
+
+    end if
+  end do
+
+
+
+  while ()
+
+
+
+
+
+
+
 
 
 ! - printing out the partitioned data -------------------------------------------------------------

@@ -39,6 +39,7 @@
 		<Unit filename="src/Partitioner/Results_mod.f90" />
 		<Unit filename="src/Partitioner/discretize_the_network_mod.f90" />
 		<Unit filename="src/Partitioner/makefile" />
+		<Unit filename="src/Partitioner/messages_and_errors_mod.f90" />
 		<Unit filename="src/Partitioner/partition_the_network_mod.f90" />
 		<Unit filename="src/Partitioner/reading_address_file_mod.f90" />
 		<Unit filename="src/Partitioner/reading_model_mod.f90" />

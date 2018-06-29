@@ -2,100 +2,9 @@
 <CodeBlocks_layout_file>
 	<FileVersion major="1" minor="0" />
 	<ActiveTarget name="Debug" />
-	<File name="src/Partitioner/makefile" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="633" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="src/Simulator/Parameters_mod.f90" open="0" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="2573" topLine="41" />
-		</Cursor>
-	</File>
-	<File name="src/Simulator/Global_Variables_Inc.f90" open="0" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="434" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="src/Partitioner/partition_the_network_mod.f90" open="1" top="0" tabpos="3" split="2" active="1" splitpos="1111" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="12959" topLine="264" />
-			<Cursor2 position="2973" topLine="33" />
-		</Cursor>
-	</File>
-	<File name="src/Partitioner/Parameters_mod.f90" open="0" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="0" topLine="48" />
-		</Cursor>
-	</File>
-	<File name="src/Partitioner/discretize_the_network_mod.f90" open="1" top="1" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="3456" topLine="34" />
-		</Cursor>
-	</File>
-	<File name="src/Simulator/Driver_Simulation.f90" open="0" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="5191" topLine="99" />
-		</Cursor>
-	</File>
-	<File name="src/Simulator/Address.txt" open="0" top="0" tabpos="10" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="193" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="src/Simulator/makefile" open="0" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="1069" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="src/Partitioner/reading_model_mod.f90" open="1" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="3612" topLine="45" />
-		</Cursor>
-	</File>
-	<File name="src/Partitioner/Results_mod.f90" open="0" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="3765" topLine="87" />
-		</Cursor>
-	</File>
-	<File name="src/Simulator/Timer_mod.f90" open="0" top="0" tabpos="11" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="1776" topLine="48" />
-		</Cursor>
-	</File>
-	<File name="src/Simulator/Solver_mod.f90" open="0" top="0" tabpos="9" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="20142" topLine="409" />
-		</Cursor>
-	</File>
-	<File name="src/Partitioner/Address.txt" open="0" top="0" tabpos="9" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="200" topLine="0" />
-		</Cursor>
-	</File>
 	<File name="src/Partitioner/Inf_mod.f90" open="0" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
 			<Cursor1 position="4539" topLine="102" />
-		</Cursor>
-	</File>
-	<File name="src/Simulator/Results_mod.f90" open="0" top="0" tabpos="8" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="7937" topLine="150" />
-		</Cursor>
-	</File>
-	<File name="src/Partitioner/Driver_Partitioner.f90" open="1" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="6623" topLine="98" />
-		</Cursor>
-	</File>
-	<File name="src/Partitioner/reading_address_file_mod.f90" open="0" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="2414" topLine="24" />
-		</Cursor>
-	</File>
-	<File name="src/Simulator/messages_and_errors_mod.f90" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="13764" topLine="326" />
 		</Cursor>
 	</File>
 	<File name="src/Simulator/reading_address_file_mod.f90" open="0" top="0" tabpos="9" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
@@ -103,9 +12,19 @@
 			<Cursor1 position="0" topLine="0" />
 		</Cursor>
 	</File>
-	<File name="src/Partitioner/Global_Variables_Inc.f90" open="1" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="src/Simulator/messages_and_errors_mod.f90" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="1422" topLine="0" />
+			<Cursor1 position="13764" topLine="326" />
+		</Cursor>
+	</File>
+	<File name="src/Simulator/makefile" open="0" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1069" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="src/Simulator/Timer_mod.f90" open="0" top="0" tabpos="11" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1776" topLine="48" />
 		</Cursor>
 	</File>
 	<File name="src/Simulator/reading_partitioned_model_mod.f90" open="0" top="0" tabpos="11" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
@@ -113,9 +32,95 @@
 			<Cursor1 position="7234" topLine="125" />
 		</Cursor>
 	</File>
+	<File name="src/Partitioner/partition_the_network_mod.f90" open="1" top="1" tabpos="3" split="2" active="1" splitpos="1111" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="19387" topLine="393" />
+			<Cursor2 position="7957" topLine="141" />
+		</Cursor>
+	</File>
+	<File name="src/Partitioner/Results_mod.f90" open="0" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="3765" topLine="87" />
+		</Cursor>
+	</File>
+	<File name="src/Partitioner/Driver_Partitioner.f90" open="1" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="6834" topLine="106" />
+		</Cursor>
+	</File>
+	<File name="src/Simulator/Solver_mod.f90" open="0" top="0" tabpos="9" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="20142" topLine="409" />
+		</Cursor>
+	</File>
+	<File name="src/Simulator/Results_mod.f90" open="0" top="0" tabpos="8" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="7937" topLine="150" />
+		</Cursor>
+	</File>
+	<File name="src/Simulator/Parameters_mod.f90" open="0" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="2573" topLine="41" />
+		</Cursor>
+	</File>
+	<File name="src/Partitioner/reading_model_mod.f90" open="0" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="57" />
+		</Cursor>
+	</File>
+	<File name="src/Simulator/Global_Variables_Inc.f90" open="0" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="434" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="src/Partitioner/messages_and_errors_mod.f90" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="14410" topLine="332" />
+		</Cursor>
+	</File>
+	<File name="src/Partitioner/discretize_the_network_mod.f90" open="1" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="6935" topLine="145" />
+		</Cursor>
+	</File>
+	<File name="src/Partitioner/reading_address_file_mod.f90" open="0" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="2414" topLine="24" />
+		</Cursor>
+	</File>
 	<File name="src/Simulator/Inf_mod.f90" open="0" top="0" tabpos="10" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
 			<Cursor1 position="763" topLine="20" />
+		</Cursor>
+	</File>
+	<File name="src/Partitioner/Address.txt" open="0" top="0" tabpos="9" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="200" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="src/Partitioner/Parameters_mod.f90" open="0" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="4901" topLine="27" />
+		</Cursor>
+	</File>
+	<File name="src/Simulator/Address.txt" open="0" top="0" tabpos="10" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="193" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="src/Partitioner/makefile" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="633" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="src/Partitioner/Global_Variables_Inc.f90" open="0" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1383" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="src/Simulator/Driver_Simulation.f90" open="0" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="5191" topLine="99" />
 		</Cursor>
 	</File>
 </CodeBlocks_layout_file>
