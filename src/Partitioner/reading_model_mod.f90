@@ -299,7 +299,6 @@ read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, e
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 
-
 ! Reading the network info
 UnFile = FileDataGeo
   do i_reach= 1, this%Base_Geometry%NoReaches

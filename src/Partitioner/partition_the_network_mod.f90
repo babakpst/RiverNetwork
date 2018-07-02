@@ -256,8 +256,19 @@ class(partitioner_tp) :: this ! defining the variables to partition a network us
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
 integer(kind=tiny) :: Communication ! indicates if a reach needs to communicate with other ranks
+integer(kind=tiny) :: BCNodeI       ! the BC of the upstream node of the reach,
+integer(kind=tiny) :: BCNodeII      ! the BC of the downstream node of the reach,
+                                    ! -1 not on this rank, 0 BC, 1 connected to other nodes, 2 outlet
+
 integer(kind=Shrt) :: CommRank      ! indicates the rank number that a reach needs to communicate
                                     ! with, i.e., if the reach is divided between two ranks.
+
+integer(kind=Lng)  :: CellCounter   ! Counter for cells
+integer(kind=Lng)  :: ReachCounter  ! Counter for reaches
+integer(kind=Lng)  :: NodeI, NodeII ! Temp var to hold node number of each reach
+integer(kind=Lng)  :: RankNodeI     ! Temp var to hold the rank no. of the firs node of each reach
+integer(kind=Lng)  :: RankNodeII    ! Temp var to hold the rank no. of the firs node of each reach
+
 
 integer(kind=Smll) :: UnFile        ! Holds Unit of a file for error message
 integer(kind=Smll) :: IO_File       ! For IOSTAT: Input Output Status in OPEN command
@@ -267,14 +278,10 @@ integer(kind=Shrt) :: i_rank        ! Loop index for the number of processes/ran
 integer(kind=Shrt) :: i             ! Loop index
 integer(kind=Shrt) :: remainder     ! Temp var to see the approximate number of cells in each rank
 
-integer(kind=Lng)  :: CellCounter   ! Counter for cells
-integer(kind=Lng)  :: ReachCounter  ! Counter for reaches
 integer(kind=Lng)  :: i_cells       ! Loop index over cells
 integer(kind=Lng)  :: i_reach       ! Loop index over reaches
 integer(kind=Lng)  :: i_node        ! Loop index over nodes
-integer(kind=Lng)  :: NodeI, NodeII ! Temp var to hold node number of each reach
-integer(kind=Lng)  :: RankNodeI     ! Temp var to hold the rank no. of the firs node of each reach
-integer(kind=Lng)  :: RankNodeII    ! Temp var to hold the rank no. of the firs node of each reach
+
 integer(kind=Lng)  :: tempCell      ! Temp var to hold no. of cells of each rank for a shared reach
 integer(kind=Lng)  :: Weights       ! Weight of each edge (= no. cells in the edge= reach)
 integer(kind=Lng)  :: NodeLocation  ! Temp var to hold the location of adjacent nodes in the graph
@@ -529,10 +536,12 @@ chunk(:,4) = chunk(:,2) + chunk(:,3)
           ! In this case, both nodes of the reach belong to the same rank, thus, we dedicate all
           ! cells in this reach on this rank.
 
-            RangeCell_I  = 1_Lng
-            RangeCell_II = this%ReachPartition(i_reach,3)
+            RangeCell_I   = 1_Lng
+            RangeCell_II  = this%ReachPartition(i_reach,3)
             Communication = -1_Tiny
-            CommRank = -1_Tiny
+            CommRank      = -1_Tiny
+            BCNodeI       = Geometry%BoundaryCondition(RankNodeI)
+            BCNodeII      = Geometry%BoundaryCondition(RankNodeII)
 
           else if (RankNodeI /= RankNodeII) then
           ! In this case, each node of this reach belong to two different ranks, thus, we dedicate
@@ -545,42 +554,44 @@ chunk(:,4) = chunk(:,2) + chunk(:,3)
               Communication = 1_Tiny ! indicates that we need to communicate with the rank that
                                      ! holds the lower part of the rank.
               CommRank = RankNodeII
+              BCNodeI       = Geometry%BoundaryCondition(RankNodeI)
+              BCNodeII      = -1_Tiny
+
             else if ( INT4(RankNodeI) == i_rank) then
               RangeCell_I  = this%ReachPartition(i_reach,3) + 1_Lng
               RangeCell_II = this%ReachPartition(i_reach,4)
               Communication = 2_Tiny ! indicates that we need to communicate with the rank that
                                      ! holds the upper part of the rank.
               CommRank = RankNodeI
+              BCNodeI       = -1_Tiny
+              BCNodeII      = Geometry%BoundaryCondition(RankNodeII)
             end if
           end if
 
         ReachCounter= ReachCounter + 1_Lng
 
-        write(unit=UnFile, fmt="(8F35.20)", advance='yes', asynchronous='no', iostat=IO_write, &
-        err=1006) i_reach, ReachCounter, Communication, CommRank,
+        write(unit=UnFile, fmt="(8F35.20)", advance='yes', asynchronous='no', &
+              iostat=IO_write, err=1006)
+              i_reach, ReachCounter, Communication, CommRank, BCNodeI, BCNodeII, &
+              Discretization%DiscretizedReach(i_reach)%ReachManning, &
+              Discretization%DiscretizedReach(i_reach)%ReachWidthCell, &
+              Discretization%DiscretizedReach(i_reach)%CellPorjectionLength
 
           do i_cells = RangeCell_I, RangeCell_II
 
             CellCounter = CellCounter + 1_Lng
             write(unit=UnFile, fmt="(8F35.20)", &
-                  advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
-                  Discretization%LengthCell (counter,1),                       &
-                  Discretization%LengthCell (counter,2),                       &
-                  Discretization%CellSlope  (counter),                         &
-                  Discretization%ZCell      (counter),                         &
-                  Discretization%ManningCell(counter),                         &
-                  Discretization%WidthCell  (counter),                         &
-                  Discretization%XCell     (counter),                          &
-                  Discretization%InterfaceSlope (counter)
-
-                  !Discretization%ZFull      (counter*2_Lng-1_Lng),             &
-                  !Discretization%ZFull      (counter*2_Lng),                   &
-                  !Discretization%XFull     (counter*2_Lng-1_Lng),             &
-                  !Discretization%XFull     (counter*2_Lng      )
+                  advance='yes', asynchronous='no', iostat=IO_write, err=1006)       &
+                  Discretization%DiscretizedReach(i_reach)%LengthCell    (i_cells),  &
+                  Discretization%DiscretizedReach(i_reach)%CellSlope     (i_cells),  &
+                  Discretization%DiscretizedReach(i_reach)%InterfaceSlope(i_cells),  &
+                  Discretization%DiscretizedReach(i_reach)%ZCell      (i_cells),     &
+                  Discretization%DiscretizedReach(i_reach)%YCell      (i_cells),     &
+                  Discretization%DiscretizedReach(i_reach)%XCell      (i_cells)     &
           end do
         write(unit=UnFile, fmt="(F35.20)", &
               advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
-              Discretization%InterfaceSlope(counter+1_Lng)
+              Discretization%InterfaceSlope(i_cells+1_Lng)
       end do
 
     ! - Closing the input file for this partition -------------------------------------------------
@@ -600,25 +611,6 @@ chunk(:,4) = chunk(:,2) + chunk(:,3)
     write(*, Fmt_FL); write(FileInfo, Fmt_FL);
     write(*, Fmt_end); read(*,*); stop;
   end if
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 write(*,       *) " Partitioning conducted successfully."
 write(FileInfo,*) " Partitioning conducted successfully."
