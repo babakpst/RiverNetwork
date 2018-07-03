@@ -357,8 +357,8 @@ subroutine error_in_the_requested_option()
 
 implicit none
 
-write(*,      Fmt_METIS)
-write(UnInfo, Fmt_METIS)
+write(*,        Fmt_METIS)
+write(FileInfo, Fmt_METIS)
 
 write(*,        Fmt_FL)
 write(FileInfo, Fmt_FL)
@@ -368,7 +368,7 @@ read(*,*)
 stop
 
 return
-end subroutine error_in_reading_data_from_file_EOF
+end subroutine error_in_the_requested_option
 
 end module messages_and_errors_mod
 

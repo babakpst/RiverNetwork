@@ -77,8 +77,7 @@ character(143),Parameter, Public:: Fmt_Element1="('Error in the element type. Ei
 character(144),Parameter, Public:: Fmt_Element2="('Error in the element type. This element number'&
    ,I3,'is not available in the list of this code. Check the input file for element number',I19)"
 
-character(56), Parameter, Public:: Fmt_METIS="(' ERROR IN THE METIS VERSION. CHECK THE .DATAMODEL &
-                                                FILE.')
+character(60), Parameter, Public:: Fmt_METIS="(' ERROR IN THE METIS VERSION. CHECK THE .DATAMODEL FILE.')"
 
 ! Unit NUMBERS OF EXTERNAL FILES ==================================================================
 
