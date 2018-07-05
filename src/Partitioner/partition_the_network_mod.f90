@@ -74,7 +74,7 @@ type METIS_var5_tp
 
   ! The number of balancing constraints.
   ! ncon is discussed at the beginning of page 10 of the manual.
-  integer(kind=Lng), pointer :: ncon => null()
+  integer(kind=Shrt), pointer :: ncon => null()
 
   ! The adjacency structure of the graph as described in Section 5.5. The size of array is nvtxs+1
   integer(kind=Lng), pointer, dimension(:) :: xadj => null()
@@ -107,7 +107,7 @@ type METIS_var5_tp
   integer(kind=Lng), pointer, dimension(:) :: ubvec => null()
 
   ! see page 21.
-  integer(kind=Lng), pointer, dimension(:) :: options => null()
+  integer(kind=Shrt), pointer, dimension(:) :: options => null()
 
   ! Upon successful completion, this variable stores the edge-cut or the total communication volume
   ! of the partitioning solution. The value returned depends on the partitioning’s objective
@@ -117,7 +117,7 @@ type METIS_var5_tp
   ! This is a vector of "size nvtxs" that upon successful completion stores the partition
   ! vector of the graph. The numbering of this vector starts from either 0 or 1, depending on
   ! the value of options[METIS OPTION NUMBERING].
-  integer(kind=Lng), pointer, dimension(:) :: part => null()
+  integer(kind=Shrt), pointer, dimension(:) :: part => null()
 end type METIS_var5_tp
 
 ! This type contains all the variables required to partition a graph using METIS version 4.0.0
@@ -147,16 +147,16 @@ type METIS_var4_tp
   ! Used the indicate if the graph is weighted. (see page 22 of manual of version 4).
   ! wgtflags can take the following values:
   ! 1 weights on the edges only (vwgts = NULL)
-  integer(kind=Lng), pointer               :: wgtflag => null()
+  integer(kind=Shrt), pointer               :: wgtflag => null()
 
   ! Indicated the C or Fortran style of numbering: 0: C or 1: fortran
-  integer(kind=Lng), pointer               :: numflag => null()
+  integer(kind=Shrt), pointer               :: numflag => null()
 
   ! The number of parts to partition the graph
   integer(kind=Lng), pointer               :: nparts => null()
 
   ! see page 22. Use options[0]=0.
-  integer(kind=Lng), pointer, dimension(:) :: options => null()
+  integer(kind=Shrt), pointer, dimension(:) :: options => null()
 
   ! The number of edges that are cut by the partition. In our case, this indicates the total number
   ! of communication between the ranks.
@@ -165,7 +165,7 @@ type METIS_var4_tp
   ! This is a vector of "size nvtxs" that upon successful completion stores the partition
   ! vector of the graph. The numbering of this vector starts from either 0 or 1, depending on
   ! the value of options[METIS OPTION NUMBERING].
-  integer(kind=Lng), pointer, dimension(:) :: part => null()
+  integer(kind=Shrt), pointer, dimension(:) :: part => null()
 
 end type METIS_var4_tp
 
@@ -174,10 +174,11 @@ type partitioner_tp(edges, nodes)
   integer(kind=Lng), len :: edges  ! number of edges in the network
   integer(kind=Lng), len :: nodes  ! number of nodes in the network
 
-  integer                :: ncon          ! Temp variable for graph partitioning.
-  integer                :: wgtflag
-  integer                :: numflag
-  integer, dimension(0:5):: options4
+  integer                   :: ncon          ! Temp variable for graph partitioning.
+  integer                   :: wgtflag
+  integer                   :: numflag
+  integer, dimension(nodes) :: part
+  integer, dimension(0:5)   :: options4
   integer, dimension(METIS_NOPTIONS) :: options5
 
   integer(kind=Lng), dimension(edges,4) :: ReachPartition
@@ -250,14 +251,16 @@ type(Input_Data_tp), intent(In) :: ModelInfo ! Holds info. (name, dir, output di
 type(Geometry_tp),   intent(In) :: Geometry  ! Holds the geometry of the network
 type(DiscretizedNetwork_tp), intent(In) :: Discretization ! Holds the discretized network
 
-class(partitioner_tp) :: this ! defining the variables to partition a network using METIS
+! defining the variables to partition a network using METIS
+class(partitioner_tp(edges=*, nodes=*)), target :: this
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
 integer(kind=tiny) :: Communication ! indicates if a reach needs to communicate with other ranks
 integer(kind=tiny) :: BCNodeI       ! the BC of the upstream node of the reach,
 integer(kind=tiny) :: BCNodeII      ! the BC of the downstream node of the reach,
-                                    ! -1 not on this rank, 0 BC, 1 connected to other nodes, 2 outlet
+                                    ! -1 not on this rank, 0 BC,
+                                    !  1 connected to other nodes, 2 outlet
 
 integer(kind=Shrt) :: CommRank      ! indicates the rank number that a reach needs to communicate
                                     ! with, i.e., if the reach is divided between two ranks.
@@ -267,6 +270,8 @@ integer(kind=Lng)  :: ReachCounter  ! Counter for reaches
 integer(kind=Lng)  :: NodeI, NodeII ! Temp var to hold node number of each reach
 integer(kind=Lng)  :: RankNodeI     ! Temp var to hold the rank no. of the firs node of each reach
 integer(kind=Lng)  :: RankNodeII    ! Temp var to hold the rank no. of the firs node of each reach
+integer(kind=Lng)  :: RangeCell_I   ! Temp var to hold the cell no. a reach on the current rank
+integer(kind=Lng)  :: RangeCell_II  ! Temp var to hold the cell no. a reach on the current rank
 
 integer(kind=Smll) :: ERR_Alloc, ERR_DeAlloc ! Allocating and DeAllocating errors
 
@@ -286,6 +291,9 @@ integer(kind=Lng)  :: counter       ! counter for the edges
 integer(kind=Lng)  :: tempCell      ! Temp var to hold no. of cells of each rank for a shared reach
 integer(kind=Lng)  :: Weights       ! Weight of each edge (= no. cells in the edge= reach)
 integer(kind=Lng)  :: NodeLocation  ! Temp var to hold the location of adjacent nodes in the graph
+
+integer(kind=Lng), target :: NumberOfNodes ! saves total number of nodes
+integer(kind=Lng), target :: NumberOfRanks ! saves total number of ranks
 
 ! - integer Arrays --------------------------------------------------------------------------------
 integer(kind=Lng), dimension (Geometry%Base_Geometry%size,4)  :: chunk   ! share of the domain for each rank
@@ -380,7 +388,8 @@ write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
 
   if (Geometry%Base_Geometry%METIS_version == 1_Tiny) then ! Partitioning using METIS version 5
 
-    this%METIS5%nvtxs => Geometry%Base_Geometry%NoNodes  ! Setting the number of vertices
+    NumberOfNodes = Geometry%Base_Geometry%NoNodes
+    this%METIS5%nvtxs => NumberOfNodes ! Setting the number of vertices
 
     ! setting the number of balancing constraints.
     this%ncon = 0  ! <modify> The other option is to nullify the pointer. Check both cases.
@@ -392,8 +401,11 @@ write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
     this%METIS5%adjncy => this%adjncy_target
     this%METIS5%adjwgt => this%adjwgt_target
     this%METIS5%xadj   => this%xadj_target
-    this%METIS5%nparts => Geometry%Base_Geometry%size
+
+    NumberOfRanks = Geometry%Base_Geometry%size
+    this%METIS5%nparts => NumberOfRanks
     this%METIS5%options=> this%options5
+    this%METIS5%part    => this%part
 
     call METIS_PartGraphKway(this%METIS5%nvtxs,   &
                              this%METIS5%ncon,    &
@@ -413,15 +425,18 @@ write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
 
     this%wgtflag = 1
     this%numflag = 1
-    this%options(:) = 0
-    this%METIS4%n       => Geometry%Base_Geometry%NoNodes  ! Setting the number of vertices
+    this%options4(:) = 0
+    NumberOfNodes = Geometry%Base_Geometry%NoNodes
+    this%METIS4%n       => NumberOfNodes ! Setting the number of vertices
     this%METIS4%xadj    => this%xadj_target
     this%METIS4%adjncy  => this%adjncy_target
     this%METIS4%adjwgt  => this%adjwgt_target
     this%METIS4%wgtflag => this%wgtflag
     this%METIS4%numflag => this%numflag
-    this%METIS4%nparts  => Geometry%Base_Geometry%size
+    NumberOfRanks = Geometry%Base_Geometry%size
+    this%METIS4%nparts  => NumberOfRanks
     this%METIS4%options => this%options4
+    this%METIS4%part    => this%part
 
     call METIS_PartGraphKway(this%METIS4%n,       &
                              this%METIS4%xadj,    &
@@ -457,13 +472,13 @@ write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
     NodeI = Geometry%network(i_reach)%ReachNodes(1)
     NodeII= Geometry%network(i_reach)%ReachNodes(2)
 
-    this%ReachPartition(i_reach,1) = part(NodeI)
-    this%ReachPartition(i_reach,2) = part(NodeII)
+    this%ReachPartition(i_reach,1) = this%part(NodeI)
+    this%ReachPartition(i_reach,2) = this%part(NodeII)
 
     if (this%ReachPartition(i_reach,1) == this%ReachPartition(i_reach,2)) then
       this%ReachPartition(i_reach,3) = Discretization%DiscretizedReach(i_reach)%NCells_reach
       this%ReachPartition(i_reach,4) = 0
-      chunk(part(NodeI),2) = chunk(part(NodeI),2) + this%ReachPartition(i_reach,3)
+      chunk(this%part(NodeI),2) = chunk(this%part(NodeI),2) + this%ReachPartition(i_reach,3)
     else
 
       if (mod(Discretization%DiscretizedReach(i_reach)%NCells_reach,2)==0 ) then
@@ -471,15 +486,15 @@ write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
         tempCell = Discretization%DiscretizedReach(i_reach)%NCells_reach /2_Lng
         this%ReachPartition(i_reach,3) = tempCell
         this%ReachPartition(i_reach,4) = tempCell
-        chunk(part(NodeI),3)  = chunk(part(NodeI),3) + tempCell
-        chunk(part(NodeII),3) = chunk(part(NodeI),3) + tempCell
+        chunk(this%part(NodeI),3)  = chunk(this%part(NodeI),3) + tempCell
+        chunk(this%part(NodeII),3) = chunk(this%part(NodeI),3) + tempCell
       else
         ! odd no. of cells in this reach
         tempCell = (Discretization%DiscretizedReach(i_reach)%NCells_reach -1_Lng)/2_Lng
         this%ReachPartition(i_reach,3) = tempCell
         this%ReachPartition(i_reach,4) = tempCell+1_Lng
-        chunk(part(NodeI),3)  = chunk(part(NodeI),3) + tempCell
-        chunk(part(NodeII),3) = chunk(part(NodeI),3) + tempCell+1_Lng
+        chunk(this%part(NodeI),3)  = chunk(this%part(NodeI),3) + tempCell
+        chunk(this%part(NodeII),3) = chunk(this%part(NodeI),3) + tempCell+1_Lng
       end if
     end if
 
@@ -495,7 +510,7 @@ chunk(:,4) = chunk(:,2) + chunk(:,3)
 !  end do
 
 ! - printing out the partitioned data -------------------------------------------------------------
-  On_Partitions: do i_rank = 1_Shrt, Geometry%size
+  On_Partitions: do i_rank = 1_Shrt, Geometry%Base_Geometry%size
     write(*,*)
     write(*,        fmt="(A,I10)") " Partitioning for process no.: ", i_rank-1_Shrt
     write(FileInfo, fmt="(A,I10)") " Partitioning for process no.: ", i_rank-1_Shrt
@@ -511,7 +526,7 @@ chunk(:,4) = chunk(:,2) + chunk(:,3)
     UnFile = FilePartition
     open(unit=UnFile, &
          file=trim(ModelInfo%ModelName)//'_s'//&
-              trim(adjustL(Geometry%IndexSize))//'_p'//trim(adjustL(IndexRank))//'.par', &
+         trim(adjustL(Geometry%Base_Geometry%IndexSize))//'_p'//trim(adjustL(IndexRank))//'.par', &
          Err=1001, iostat=IO_File, access='sequential', action='write', asynchronous='no', &
          blank='NULL', blocksize=0, defaultfile=trim(ModelInfo%InputDir), dispose='keep', &
          form='formatted', position='asis', status='replace')
@@ -592,7 +607,7 @@ chunk(:,4) = chunk(:,2) + chunk(:,3)
           end do
         write(unit=UnFile, fmt="(F35.20)", &
               advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
-              Discretization%InterfaceSlope(i_cells+1_Lng)
+              Discretization%DiscretizedReach(i_reach)%InterfaceSlope(i_cells+1_Lng)
       end do
 
     ! - Closing the input file for this partition -------------------------------------------------

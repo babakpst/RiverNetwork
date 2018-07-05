@@ -42,7 +42,7 @@ use Parameters_mod
 use Information_mod
 use Input_mod, only: Input_Data_tp
 use Model_mod, only: Geometry_tp
-use Discretize_the_network_mod, only: model_tp
+use Discretize_the_network_mod, only: DiscretizedNetwork_tp
 use Network_Partitioner_mod
 use messages_and_errors_mod
 
@@ -113,7 +113,7 @@ write(*,        fmt="(A)") " -Allocating the required arrays ..."
 write(FileInfo, fmt="(A)") " -Allocating the required arrays ..."
 
 allocate(Geometry%network(Geometry%Base_Geometry%NoReaches), &
-         Geomtery%BoundaryCondition(Geometry%Base_Geometry%NoNodes), stat=Err_Alloc)
+         Geometry%BoundaryCondition(Geometry%Base_Geometry%NoNodes), stat=Err_Alloc)
   if (Err_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
 ! Reading input arrays ----------------------------------------------------------------------------
@@ -145,23 +145,12 @@ allocate(Discretization%NodeHeight(Geometry%Base_Geometry%NoNodes) ,         &
 call Discretization%Discretize(Geometry, ModelInfo)
 
 ! Partitioning and writing results ================================================================
-allocate(type(partitioner_tp(edges=Geometry%Base_Geometry%NoReaches,  &
-                             nodes=Geometry%Base_Geometry%NoNodes)):: NetworkPartitioner, &
+allocate(partitioner_tp(edges=Geometry%Base_Geometry%NoReaches,  &
+                             nodes=Geometry%Base_Geometry%NoNodes):: NetworkPartitioner, &
          stat = ERR_Alloc)
   if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
-
 call NetworkPartitioner%Partition(Geometry, Discretization, ModelInfo)
-
-
-
-
-
-
-
-
-
-
 
 ! Deallocating arrays
 DEallocate(Arguments%Length, Arguments%Arg, Arguments%Argstatus,      stat = ERR_DeAlloc )
