@@ -9,6 +9,7 @@
 # Last Update  : 02/13/2018
 #
 # =================================================================================================
+METIS_DIR=/workspace/source/metis-5.1.0
 
 F90=ifort
 #F90= gfortran -ffree-line-length-none
@@ -28,14 +29,15 @@ SOURCESF=	Parameters_mod.f90 \
 
 OBJSF=$(SOURCESF:%.F90=%.o)
 
+
 main:$(OBJSF)
 	@echo Linking...
-	$(F90) $(FFLAGS) $(OBJSF) -o main
+	$(F90) $(FFLAGS) $(OBJSF) -cpp -I$(METIS_DIR)/include -o main
 	@echo Done!
 
 %.o   : %.F90
 	@echo Compiling...
-	$(F90) $(FFLAGS) -c $<
+	$(F90) $(FFLAGS) -c -cpp -I$(METIS_DIR)/include $<
 
 
 

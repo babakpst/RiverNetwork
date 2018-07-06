@@ -35,9 +35,12 @@
 !
 !##################################################################################################
 
+
+
 module Network_Partitioner_mod
 
 ! Libraries =======================================================================================
+#include "metis.h"
 
 ! User defined modules ============================================================================
 use Parameters_mod
@@ -238,10 +241,6 @@ contains
 
 subroutine Network_Partitioner_Sub(this, Geometry, Discretization, ModelInfo)
 
-! Libraries =======================================================================================
-
-! User defined modules ============================================================================
-
 implicit none
 
 ! Global variables ================================================================================
@@ -252,7 +251,7 @@ type(Geometry_tp),   intent(In) :: Geometry  ! Holds the geometry of the network
 type(DiscretizedNetwork_tp), intent(In) :: Discretization ! Holds the discretized network
 
 ! defining the variables to partition a network using METIS
-class(partitioner_tp(edges=*, nodes=*)), target :: this
+class(partitioner_tp(edges=*, nodes=*)), intent(inout), target :: this
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------

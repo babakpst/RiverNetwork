@@ -169,7 +169,7 @@ contains
 !
 !##################################################################################################
 
-subroutine Solver_1D_with_Limiter_sub(this, TotalTime)
+pure subroutine Solver_1D_with_Limiter_sub(this, TotalTime)
 
 ! Libraries =======================================================================================
 !$ use omp_lib
@@ -345,7 +345,7 @@ UU(:)%U(2) = 0.0_Dbl
   end if
 
   if (this%ModelInfo%rank == this%ModelInfo%size-1) then ! applying bC at the downstream
-    call Impose_BC_1D_dw_sub(UU(this%Model%NCells)%U(2), this%Model%NCells, &
+    call Impose_BC_1D_dw_sub(UU(this%Model%NCells)%U(2), &
                              this%AnalysisInfo%h_dw, &
                              UU(this%Model%NCells+1_Lng), &
                              UU(this%Model%NCells+2_Lng))
@@ -563,7 +563,7 @@ Results%ModelInfo = this%ModelInfo
     end if
 
     if (this%ModelInfo%rank == this%ModelInfo%size-1) then ! applying bc at the downstream
-      call Impose_BC_1D_dw_sub(UU(this%Model%NCells)%U(2), this%Model%NCells, &
+      call Impose_BC_1D_dw_sub(UU(this%Model%NCells)%U(2), &
                               this%AnalysisInfo%h_dw, &
                               UU(this%Model%NCells+1_Lng), &
                               UU(this%Model%NCells+2_Lng))
@@ -648,7 +648,7 @@ end subroutine Solver_1D_with_Limiter_sub
 !
 !##################################################################################################
 
-subroutine Impose_BC_1D_up_sub(h_upstream, NCells, Q_Up, Width, UU_N1,UU_0)
+pure subroutine Impose_BC_1D_up_sub(h_upstream, NCells, Q_Up, Width, UU_N1,UU_0)
 
 ! Libraries =======================================================================================
 
@@ -682,7 +682,7 @@ return
 end subroutine Impose_BC_1D_up_sub
 
 
-subroutine Impose_BC_1D_dw_sub(Q_dw, NCells, h_dw, UU_NCp1,UU_NCp2)
+pure subroutine Impose_BC_1D_dw_sub(Q_dw, h_dw, UU_NCp1,UU_NCp2)
 
 ! Libraries =======================================================================================
 
@@ -691,8 +691,7 @@ subroutine Impose_BC_1D_dw_sub(Q_dw, NCells, h_dw, UU_NCp1,UU_NCp2)
 implicit none
 
 ! Global variables ================================================================================
-integer(kind=Lng) :: NCells
-real(kind=DBL) :: h_dw, Q_dw
+real(kind=DBL), intent(in) :: Q_dw, h_dw
 
 ! Local variables =================================================================================
 type(vector), intent(out)   :: UU_NCp1,UU_NCp2
@@ -737,7 +736,7 @@ end subroutine Impose_BC_1D_dw_sub
 !
 !##################################################################################################
 
-subroutine Limiters_sub(this)
+pure subroutine Limiters_sub(this)
 
 
 ! Libraries =======================================================================================
@@ -749,7 +748,7 @@ implicit none
 
 ! Global variables ================================================================================
 ! - types -----------------------------------------------------------------------------------------
-class(LimiterFunc_tp) :: this
+class(LimiterFunc_tp), intent(inout) :: this
 
 ! Local variables =================================================================================
 
@@ -811,7 +810,7 @@ end subroutine Limiters_sub
 !
 !##################################################################################################
 
-subroutine Jacobian_sub(this)
+pure subroutine Jacobian_sub(this)
 
 
 ! Libraries =======================================================================================
@@ -823,7 +822,7 @@ implicit none
 
 ! Global variables ================================================================================
 ! - types -----------------------------------------------------------------------------------------
-class(Jacobian_tp) :: this
+class(Jacobian_tp), intent(inout) :: this
 
 ! Local variables =================================================================================
 
@@ -1024,7 +1023,7 @@ end subroutine Jacobian_sub
 !
 !##################################################################################################
 
-subroutine Eigenvalues_sub(A, Lambda1, Lambda2)
+pure subroutine Eigenvalues_sub(A, Lambda1, Lambda2)
 
 
 ! Libraries =======================================================================================
@@ -1096,7 +1095,7 @@ end subroutine Eigenvalues_sub
 !
 !##################################################################################################
 
-subroutine Inverse(Matrix_in, Matrix_out)
+pure subroutine Inverse(Matrix_in, Matrix_out)
 
 
 ! Libraries =======================================================================================
