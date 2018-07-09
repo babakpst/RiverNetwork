@@ -10,11 +10,8 @@
 #
 # =================================================================================================
 METIS_DIR=/workspace/source/metis-5.1.0
-#include ${METIS_DIR}/include
-#include ${METIS_DIR}/libmetis
 
 F90=ifort
-#F90=ifort libmetis.a
 #F90= gfortran -ffree-line-length-none
 FFLAGS=-O2
 
@@ -28,13 +25,14 @@ SOURCESF=	Parameters_mod.f90 \
 					partition_the_network_mod.f90 \
 					Driver_Partitioner.f90
 
+
+
 OBJSF=$(SOURCESF:%.F90=%.o)
 
-#-lmetis
-#libmetis.a
+
 main:$(OBJSF)
 	@echo Linking...
-	$(F90) $(FFLAGS) $(OBJSF) -o -I$(METIS_DIR) main $(METIS_DIR)/build/libmetis/libmetis.a
+	$(F90) $(FFLAGS) $(OBJSF) -o main -cpp -I$(METIS_DIR)/include
 	@echo Done!
 
 %.o   : %.F90

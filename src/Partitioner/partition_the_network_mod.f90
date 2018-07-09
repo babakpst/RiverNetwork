@@ -40,7 +40,6 @@
 module Network_Partitioner_mod
 
 ! Libraries =======================================================================================
-#include "metis.h"
 
 ! User defined modules ============================================================================
 use Parameters_mod
@@ -182,7 +181,8 @@ type partitioner_tp(edges, nodes)
   integer                   :: numflag
   integer, dimension(nodes) :: part
   integer, dimension(0:5)   :: options4
-  integer, dimension(METIS_NOPTIONS) :: options5
+  !integer, dimension(METIS_NOPTIONS) :: options5
+  integer, dimension(0:40) :: options5
 
   integer(kind=Lng), dimension(edges,4) :: ReachPartition
 
@@ -240,6 +240,8 @@ contains
 !##################################################################################################
 
 subroutine Network_Partitioner_Sub(this, Geometry, Discretization, ModelInfo)
+
+!#include "metis.h"
 
 implicit none
 
@@ -392,9 +394,9 @@ write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
 
     ! setting the number of balancing constraints.
     this%ncon = 0  ! <modify> The other option is to nullify the pointer. Check both cases.
-    this%options5(METIS_OPTION_OBJTYPE) = METIS_OBJTYPE_CUT
+    !this%options5(METIS_OPTION_OBJTYPE) = METIS_OBJTYPE_CUT
     !this%options5(METIS_OPTION_NCUTS)   = ?
-    this%options5(METIS_OPTION_NUMBERING) = 1
+    !this%options5(METIS_OPTION_NUMBERING) = 1
 
     this%METIS5%ncon   => this%ncon
     this%METIS5%adjncy => this%adjncy_target
