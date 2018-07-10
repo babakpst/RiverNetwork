@@ -56,8 +56,6 @@ type NodeConncetivity_tp
  type(NodeConncetivity_tp), pointer :: next => null()
 end type NodeConncetivity_tp
 
-
-
 type NodeConncetivityArray_tp
   integer :: counter = 0
   type(NodeConncetivity_tp), pointer :: head => null()
@@ -295,7 +293,8 @@ integer(kind=Lng), target :: NumberOfNodes ! saves total number of nodes
 integer(kind=Lng), target :: NumberOfRanks ! saves total number of ranks
 
 ! - integer Arrays --------------------------------------------------------------------------------
-integer(kind=Lng), dimension (Geometry%Base_Geometry%size,4)  :: chunk   ! share of the domain for each rank
+integer(kind=Lng), dimension (Geometry%Base_Geometry%size,4) :: chunk
+                         ! share of the network cells for each rank
                          ! col 1: ideal chunk size
                          ! col 2: certain cells, from reaches with both nodes on this rank
                          ! col 3: unsure cells, from ranks with two nodes on two different ranks
@@ -306,8 +305,9 @@ Character(kind = 1, len = 20) :: IndexRank ! Rank no in the Char. fmt to add to 
 
 logical :: Balanced_load
 
+! We use this linked list to figure out how many nodes are connected to each node.
 type(NodeConncetivityArray_tp), allocatable, dimension(:) :: NodeConnectivity ! Linked list
-type(NodeConncetivity_tp), pointer :: Temp ! This is a temporary type to create the list
+type(NodeConncetivity_tp), pointer :: Temp ! This is a temporary type to create the linked list
 
 ! code ============================================================================================
 write(*,        fmt="(A)") " subroutine < Network_Partitioner_Sub >: "
@@ -331,7 +331,6 @@ write(FileInfo, fmt="(A)") " The ideal cell distribution is: "
     write(*, fmt="( ' rank: ' ,I6, ' no. cells: ', I 12)") i_rank, chunk(i_rank,1)
   end do
 
-
 ! - Prepare for partitioning ----------------------------------------------------------------------
 write(*,        fmt="(A)") " -Preparing data for METIS ... "
 write(FileInfo, fmt="(A)") " -Preparing data for METIS ... "
@@ -346,8 +345,15 @@ write(FileInfo, fmt="(A)") " -Preparing data for METIS ... "
 allocate(NodeConnectivity(Geometry%Base_Geometry%NoNodes), stat=ERR_Alloc)
 if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
+write(*,        fmt="(A)") " Reach connectivities ... "
+write(FileInfo, fmt="(A)") " Reach connectivities ... "
+
+
+print*," what is it: ", Geometry%Base_Geometry%NoNodes ! <delete>
+
   ! This loop figures out all connectivities between nodes
   do i_reach = 1_Lng, Geometry%Base_Geometry%NoReaches
+print*," yes", i_reach ! <delete>
     NodeI = Geometry%network(i_reach)%ReachNodes(1)
     NodeII= Geometry%network(i_reach)%ReachNodes(2)
     Weights = Geometry%network(i_reach)%NCells_Reach
@@ -364,12 +370,23 @@ if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
   end do
 
 ! Now that we have the connectivities, we need to fill xadj, adjncy.
+write(*,        fmt="(A)") " Filling the METIS arrays ... "
+write(FileInfo, fmt="(A)") " Filling the METIS arrays ... "
+
 NodeLocation = 0
 counter      = 0
+
+this%xadj_target(:)   = 0
+this%adjncy_target(:) = 0
+this%adjwgt_target(:) = 0
+
+
+print*," what is it: ", Geometry%Base_Geometry%NoNodes ! <delete>
+
   do i_node = 1_Lng, Geometry%Base_Geometry%NoNodes
+print*," no", i_node ! <delete>
     this%xadj_target(i_node) = NodeLocation
     NodeLocation = NodeLocation + NodeConnectivity(i_node)%counter
-
     Temp => NodeConnectivity(i_node)%head
       do
         if (.not.associated(Temp)) exit
@@ -378,15 +395,33 @@ counter      = 0
         this%adjwgt_target(counter) = Temp%cells
         Temp => Temp%next
       end do
-
   end do
 
 this%xadj_target(i_node+1) = NodeLocation ! <modify>
 
   if (counter /= 2_Lng *  Geometry%Base_Geometry%NoReaches) then
     write(*,*) " Something is wrong with the adjacency finder"
+    write(*,*) counter, 2_Lng *  Geometry%Base_Geometry%NoReaches
     stop
   end if
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ! - partitioning using METIS ----------------------------------------------------------------------

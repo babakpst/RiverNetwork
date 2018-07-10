@@ -164,6 +164,16 @@ write(unit=UnFile, fmt="(' Total number of reach(es) is(are): ', I10)", advance=
                    asynchronous='no', iostat=IO_write, err=1006) this%NoReaches
 write(unit=*,      fmt="(' Total number of reach(es) is(are): ', I10)") this%NoReaches
 
+UnFile = FileDataModel  ! Total number of nodes in the domain
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile,fmt="(I10)",advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)&
+                                                                                     this%NoNodes
+UnFile = FileInfo
+write(unit=UnFile, fmt="(' Total number of nodes are: ', I10)", advance='yes', &
+                   asynchronous='no', iostat=IO_write, err=1006) this%NoNodes
+write(unit=*,      fmt="(' Total number of nodes are: ', I10)") this%NoNodes
+
 UnFile = FileDataModel  ! Number of cores - required for mesh partitioning.
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
@@ -174,8 +184,6 @@ UnFile = FileInfo
 write(unit=UnFile, fmt="(' Total number of core(s) is(are): ', I10)", advance='yes', &
       asynchronous='no', iostat=IO_write, err=1006) this%size
 write(unit=*,      fmt="(' Total number of core(s) is(are): ', I10)") this%size
-
-
 
 UnFile = FileDataModel  ! Partitioning type - using METIS version 4 or METIS version 5
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
