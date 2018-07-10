@@ -22,10 +22,11 @@
 ! V1.00: 04/10/2018  - Cleaning the code after having the right results
 ! V2.00: 04/17/2018  - Developing the partitioner code.
 ! V2.20: 05/30/2018  - Initializing objects/types
+! V3.00: 07/10/2018  - Network partitioning
 !
 ! File version $Id $
 !
-! Last update: 06/20/2018
+! Last update: 07/10/2018
 !
 ! ================================ Global   V A R I A B L E S =====================================
 !  . . . . . . . . . . . . . . . . Variables . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -136,6 +137,9 @@ write(*,        fmt="(A)") " -Discretization ..."
 write(FileInfo, fmt="(A)") " -Discretization ..."
 
 ! Initialization ----------------------------------------------------------------------------------
+
+write(*,        fmt="(A)") " Allocating discretization arrays ... "
+write(FileInfo, fmt="(A)") " Allocating discretization arrays ... "
 
 ! allocating the network class itself
 allocate(Discretization%NodeHeight(Geometry%Base_Geometry%NoNodes) ,         &

@@ -1,5 +1,5 @@
 Input file name:
-EX6
+Network_EX1
 
 Input directory:
 "/h1/babak/Documents/Goofy/input"
@@ -11,6 +11,6 @@ Number of Analysis:
 1
 
 Names of the analysis files:
-EX6_case1
+Case1
 
 

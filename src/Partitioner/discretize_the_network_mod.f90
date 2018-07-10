@@ -127,7 +127,7 @@ implicit none
 type(Geometry_tp),   intent(in)   :: Geometry   ! Holds the geometry of the domain.
 type(Input_Data_tp), intent(in)   :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
 
-class(DiscretizedNetwork_tp), intent(out) :: this ! Discretization
+class(DiscretizedNetwork_tp), intent(inout) :: this ! Discretization
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
@@ -140,6 +140,7 @@ integer(kind=Lng) :: CellCounter         ! counts number of cells
 integer(kind=Lng) :: NetworkOutletNode   ! loop index on the node number in the network
 integer(kind=Lng) :: sum_upstream_nodes  ! Temp var. to find out the upstream nodes
 integer(kind=Lng) :: Max_Nodes           ! Temp var. to find out the upstream nodes
+integer(kind=Lng) :: No_CellsReach       ! No. Cells in each reach
 integer(kind=Lng) :: UpperNode   ! A temporary var that holds the upstream node of a reach.
                                  ! We use this var. to find the height of the network
 
@@ -182,19 +183,26 @@ write(FileInfo, fmt="(A)") " Calculating the total number of the cells in the do
 write(*,        fmt="(A,I15)") " Total number of cells: ", this%NCells
 write(FileInfo, fmt="(A,I15)") " Total number of cells: ", this%NCells
 
+
+write(*,        fmt="(A)") " -Allocating some arrays ... "
+write(FileInfo, fmt="(A)") " -Allocating some arrays ... "
+
 ! allocating all items for each reach.
   do i_reach= 1, Geometry%Base_Geometry%NoReaches
     ! allocating each reach in the network
-    allocate( &
-    this%DiscretizedReach(i_reach)%CellSlope(this%DiscretizedReach(i_reach)%NCells_reach),        &
-    this%DiscretizedReach(i_reach)%InterfaceSlope(this%DiscretizedReach(i_reach)%NCells_reach+1), &
-    this%DiscretizedReach(i_reach)%ZCell(this%DiscretizedReach(i_reach)%NCells_reach),            &
-    this%DiscretizedReach(i_reach)%YCell(this%DiscretizedReach(i_reach)%NCells_reach),            &
-    this%DiscretizedReach(i_reach)%XCell(this%DiscretizedReach(i_reach)%NCells_reach),            &
-    this%DiscretizedReach(i_reach)%ZFull(this%DiscretizedReach(i_reach)%NCells_reach*2_Lng+1_Lng),&
-    this%DiscretizedReach(i_reach)%YFull(this%DiscretizedReach(i_reach)%NCells_reach*2_Lng+1_Lng),&
-    this%DiscretizedReach(i_reach)%XFull(this%DiscretizedReach(i_reach)%NCells_reach*2_Lng+1_Lng),&
-    this%DiscretizedReach(i_reach)%LengthCell(this%DiscretizedReach(i_reach)%NCells_reach),    &
+    this%DiscretizedReach(i_reach)%NCells_reach = Geometry%network(i_reach)%NCells_Reach
+    No_CellsReach = Geometry%network(i_reach)%NCells_Reach
+
+    allocate(                                                                 &
+    this%DiscretizedReach(i_reach)%CellSlope     (No_CellsReach),             &
+    this%DiscretizedReach(i_reach)%InterfaceSlope(No_CellsReach+1),           &
+    this%DiscretizedReach(i_reach)%ZCell         (No_CellsReach),             &
+    this%DiscretizedReach(i_reach)%YCell         (No_CellsReach),             &
+    this%DiscretizedReach(i_reach)%XCell         (No_CellsReach),             &
+    this%DiscretizedReach(i_reach)%ZFull         (No_CellsReach*2_Lng+1_Lng), &
+    this%DiscretizedReach(i_reach)%YFull         (No_CellsReach*2_Lng+1_Lng), &
+    this%DiscretizedReach(i_reach)%XFull         (No_CellsReach*2_Lng+1_Lng), &
+    this%DiscretizedReach(i_reach)%LengthCell    (No_CellsReach),             &
     stat=ERR_Alloc)
     if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
   end do
@@ -389,6 +397,9 @@ write(FileInfo, fmt="(' -Plotting the discretized domain ... ')")
 
 write(*,       *) " end subroutine < Discretize_network_sub >"
 write(FileInfo,*) " end subroutine < Discretize_network_sub >"
+
+write(*,       *)
+write(FileInfo,*)
 
 return
 end subroutine Discretize_network_sub

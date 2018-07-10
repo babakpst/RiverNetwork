@@ -35,8 +35,6 @@
 !
 !##################################################################################################
 
-
-
 module Network_Partitioner_mod
 
 ! Libraries =======================================================================================
@@ -325,6 +323,14 @@ chunk(:,1)  = (Discretization%NCells - remainder)/Geometry%Base_Geometry%size
   do i = 1_Shrt, remainder
     chunk(i,1) = chunk(i,1) + 1
   end do
+
+write(*,        fmt="(A)") " The ideal cell distribution is: "
+write(FileInfo, fmt="(A)") " The ideal cell distribution is: "
+
+  do i_rank = 1_Shrt, Geometry%Base_Geometry%size
+    write(*, fmt="( ' rank: ' ,I6, ' no. cells: ', I 12)") i_rank, chunk(i_rank,1)
+  end do
+
 
 ! - Prepare for partitioning ----------------------------------------------------------------------
 write(*,        fmt="(A)") " -Preparing data for METIS ... "

@@ -61,10 +61,11 @@ type reach_tp
   integer(kind=Shrt) :: ReachType=0_Shrt ! reach type - 0 for straight, 1 for geometry form func.
   integer(kind=Lng), dimension(2) :: ReachNodes=0_Lng ! holds the node number at the each
                                                       ! reach, start and end node number
-  real(kind=DBL) :: ReachLength=0.0_dbl  ! the length of each reach
-  real(kind=DBL) :: ReachSlope=0.0_dbl   ! the slope of each reach
-  real(kind=DBL) :: ReachManning=0.0_dbl ! the Manning's number for each reach
-  real(kind=DBL) :: ReachWidth=0.0_dbl   ! Stores the width of each reach
+  real(kind=DBL) :: ReachLength  = 0.0_dbl ! the length of each reach
+  real(kind=DBL) :: ReachSlope   = 0.0_dbl ! the slope of each reach
+  real(kind=DBL) :: ReachManning = 0.0_dbl ! the Manning's number for each reach
+  real(kind=DBL) :: ReachWidth   = 0.0_dbl ! Stores the width of each reach
+                                         ! (we assume constant channel width in each reach)
 
   real(kind=DBL), dimension(2) :: ReachAngle=0.0_dbl ! Stores the orientation of the reach
                                                      ! in comparison to the vertical axis
@@ -125,7 +126,7 @@ Implicit None
 ! Global Variables ================================================================================
 
 ! - Types -----------------------------------------------------------------------------------------
-type(Input_Data_tp),  intent(In)  :: ModelInfo ! Holds info. (name, dir, output dir) of the model
+type(Input_Data_tp),     intent(In)  :: ModelInfo !Holds info. (name, dir, output dir) of the model
 class(Base_Geometry_tp), intent(out) :: this  ! Holds information about the geometry of the domain
 
 ! Local Variables =================================================================================
@@ -186,12 +187,12 @@ UnFile = FileInfo
 write(unit=UnFile, fmt="(' You select mesh partitioning subroutine: ', I2)", advance='yes', &
       asynchronous='no', iostat=IO_write, err=1006) this%METIS_version
 write(unit=UnFile, &
-    fmt="(' If 0 is selected means METIS version 4, if 1 is selected means METIS version 5 ')",  &
+    fmt="(' (If 0 is selected means METIS version 4, if 1 is selected means METIS version 5)')",  &
     advance='yes', asynchronous='no', iostat=IO_write, err=1006)
 
 write(unit=*,      fmt="(' You select mesh partitioning subroutine: ', I10)") this%METIS_version
 write(unit=*, &
-    fmt="(' If 0 is selected means METIS version 4, if 1 is selected means METIS version 5 ')",  &
+    fmt="(' (If 0 is selected means METIS version 4, if 1 is selected means METIS version 5)')",  &
     advance='yes', asynchronous='no', iostat=IO_write, err=1006)
 
 write(this%IndexSize, *) this%size ! Converts Size to Character format for the file Name
@@ -282,8 +283,8 @@ write(FileInfo,*)
 write(FileInfo,*) " Subroutine < reading_network_geometry_sub >: "
 
 ! Open required Files -----------------------------------------------------------------------------
-write(*,        fmt="(A)") " -Opening the input files for arrays ..."
-write(FileInfo, fmt="(A)") " -Opening the input files for arrays ..."
+write(*,        fmt="(A)") " -Opening the input file for the network ..."
+write(FileInfo, fmt="(A)") " -Opening the input file for the network ..."
 
 ! Open the input file for arrays
 UnFile = FileDataGeo
@@ -302,18 +303,22 @@ read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, e
 ! Reading the network info
 UnFile = FileDataGeo
   do i_reach= 1, this%Base_Geometry%NoReaches
-    read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read,  &
+    print*, " reading reach no.: ", i_reach
+    read(unit=UnFile, fmt=*, asynchronous='no', iostat=IO_read,  &
     err=1003, end=1004) &
     reach_no,  & ! reach no.
-    this%network(reach_no)%ReachLength, & ! Length of the reach
-    this%network(reach_no)%NCells_Reach, &  ! no. of cells in each reach- constant length
-    this%network(reach_no)%ReachType, &   ! type of the reach - straight 0, from function 1
-    this%network(reach_no)%ReachSlope, &  ! slopes of each reach
-    this%network(reach_no)%ReachManning, &! Manning's number of each reach
-    this%network(reach_no)%ReachWidth, &  ! width of channel- constant channel width in each reach
-    this%network(reach_no)%ReachNodes(1:2), & ! nodes of the reach
-    this%network(reach_no)%ReachAngle(1:2), & ! angles of the junctions of the reach
-    this%network(reach_no)%JunctionLength(1:2) ! Length of the reach at each junction
+    this%network(reach_no)%ReachLength,       & ! Length of the reach
+    this%network(reach_no)%NCells_Reach,      & ! no. of cells in each reach- constant length
+    this%network(reach_no)%ReachType,         & ! type of the reach - straight 0, from function 1
+    this%network(reach_no)%ReachSlope,        & ! slopes of each reach
+    this%network(reach_no)%ReachManning,      & ! Manning's number of each reach
+    this%network(reach_no)%ReachWidth,        & ! width of the channel-constant width in each reach
+    this%network(reach_no)%ReachNodes(1),     & ! nodes of the reach
+    this%network(reach_no)%ReachNodes(2),     & ! nodes of the reach
+    this%network(reach_no)%ReachAngle(1),     & ! angles of the junctions of the reach
+    this%network(reach_no)%ReachAngle(2),     & ! angles of the junctions of the reach
+    this%network(reach_no)%JunctionLength(1), & ! Length of the reach at each junction
+    this%network(reach_no)%JunctionLength(2)    ! Length of the reach at each junction
   end do
 
 ! Reading Boundary conditions - free nodes vs junction nodes
@@ -340,7 +345,7 @@ write(unit=UnFile, fmt="(' Reach no. -- Length -- no. of cells -- reach type (st
                           -- nodes(start, end) -- angles(start, end) -- &
                           Length in junction(start, end)')")
 
-  do i_reach= 1, this%Base_Geometry%NoNodes
+  do i_reach= 1, this%Base_Geometry%NoReaches
     ! writing the network on screen
     write(unit=*,      fmt="(I7, F23.10, I5, I3, 3F23.10, 2I7, 2F23.10, 2F23.10)") i_reach, &
     this%network(reach_no)%ReachLength, & ! Length of the reach
