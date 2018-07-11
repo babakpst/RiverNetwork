@@ -182,9 +182,10 @@ type partitioner_tp(edges, nodes)
 
   integer(kind=Lng), dimension(edges,4) :: ReachPartition
 
-  integer(kind=Lng), dimension(nodes+1)  :: xadj_target
-  integer(kind=Lng), dimension(2*edges)  :: adjncy_target
-  integer(kind=Lng), dimension(2*edges)  :: adjwgt_target
+  ! We go with the C style numbering- Arrays start from zero.
+  integer(kind=Lng), dimension(0:nodes+1-1)  :: xadj_target   ! Read METIS manual for details.
+  integer(kind=Lng), dimension(0:2*edges-1)  :: adjncy_target ! Read METIS manual for details.
+  integer(kind=Lng), dimension(0:2*edges-1)  :: adjwgt_target ! Read METIS manual for details.
 
   type(METIS_var4_tp) :: METIS4
   type(METIS_var5_tp) :: METIS5
@@ -348,12 +349,8 @@ if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 write(*,        fmt="(A)") " Reach connectivities ... "
 write(FileInfo, fmt="(A)") " Reach connectivities ... "
 
-
-print*," what is it: ", Geometry%Base_Geometry%NoNodes ! <delete>
-
   ! This loop figures out all connectivities between nodes
   do i_reach = 1_Lng, Geometry%Base_Geometry%NoReaches
-print*," yes", i_reach ! <delete>
     NodeI = Geometry%network(i_reach)%ReachNodes(1)
     NodeII= Geometry%network(i_reach)%ReachNodes(2)
     Weights = Geometry%network(i_reach)%NCells_Reach
@@ -374,18 +371,14 @@ write(*,        fmt="(A)") " Filling the METIS arrays ... "
 write(FileInfo, fmt="(A)") " Filling the METIS arrays ... "
 
 NodeLocation = 0
-counter      = 0
+counter      = -1_Lng ! We go with the C style numbering- Arrays start from zero.
 
-this%xadj_target(:)   = 0
-this%adjncy_target(:) = 0
-this%adjwgt_target(:) = 0
-
-
-print*," what is it: ", Geometry%Base_Geometry%NoNodes ! <delete>
+this%xadj_target(:)   = -1_Lng
+this%adjncy_target(:) = -1_Lng
+this%adjwgt_target(:) = -1_Lng
 
   do i_node = 1_Lng, Geometry%Base_Geometry%NoNodes
-print*," no", i_node ! <delete>
-    this%xadj_target(i_node) = NodeLocation
+    this%xadj_target(i_node-1_Lng) = NodeLocation
     NodeLocation = NodeLocation + NodeConnectivity(i_node)%counter
     Temp => NodeConnectivity(i_node)%head
       do
@@ -397,38 +390,31 @@ print*," no", i_node ! <delete>
       end do
   end do
 
-this%xadj_target(i_node+1) = NodeLocation ! <modify>
+print*,"checkpoint 000"
+this%xadj_target(i_node-1_Lng) = NodeLocation
+print*,"checkpoint 001"
+this%adjncy_target(:) = this%adjncy_target(:) - 1_Lng ! C style
+print*,"checkpoint 002"
 
-  if (counter /= 2_Lng *  Geometry%Base_Geometry%NoReaches) then
+  if (counter /= 2_Lng *  Geometry%Base_Geometry%NoReaches-1_Lng) then
     write(*,*) " Something is wrong with the adjacency finder"
-    write(*,*) counter, 2_Lng *  Geometry%Base_Geometry%NoReaches
+    write(*,*) counter, 2_Lng*Geometry%Base_Geometry%NoReaches-1_Lng
     stop
   end if
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+print*,"checkpoint 003"
+!print*, "adjncy:",  this%adjncy_target  ! <delete> after debugging
+!print*, "adjwgt:", this%adjwgt_target ! <delete> after debugging
+!print*, "xadj", this%xadj_target ! <delete> after debugging
+print*, Geometry%Base_Geometry%size
+print*,"checkpoint 004"
 ! - partitioning using METIS ----------------------------------------------------------------------
 write(*,        fmt="(A)") " -Graph partitioning using METIS_PartGraphKway... "
 write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
 
   if (Geometry%Base_Geometry%METIS_version == 1_Tiny) then ! Partitioning using METIS version 5
+
+    write(*,        fmt="(A)") " Partition the network using METIS 5.1.0 ..."
+    write(FileInfo, fmt="(A)") " Partition the network using METIS 5.1.0 ..."
 
     NumberOfNodes = Geometry%Base_Geometry%NoNodes
     this%METIS5%nvtxs => NumberOfNodes ! Setting the number of vertices
@@ -444,10 +430,17 @@ write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
     this%METIS5%adjwgt => this%adjwgt_target
     this%METIS5%xadj   => this%xadj_target
 
-    NumberOfRanks = Geometry%Base_Geometry%size
+    NumberOfRanks      = Geometry%Base_Geometry%size
     this%METIS5%nparts => NumberOfRanks
     this%METIS5%options=> this%options5
-    this%METIS5%part    => this%part
+    this%METIS5%part   => this%part
+
+    !print*, " xadj ",this%METIS5%xadj(-1), this%METIS5%xadj(0), this%METIS5%xadj(1), this%METIS5%xadj(2)
+    !print*, " adjwgt ",this%METIS5%adjwgt(-1), this%METIS5%adjwgt(0), this%METIS5%adjwgt(1), this%METIS5%adjwgt(2)
+    print*, this%METIS5%nparts
+
+    write(*,        fmt="(A)") " Calling METIS partitioner ... "
+    write(FileInfo, fmt="(A)") " Calling METIS partitioner ... "
 
     call METIS_PartGraphKway(this%METIS5%nvtxs,   &
                              this%METIS5%ncon,    &
@@ -465,6 +458,9 @@ write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
 
   else if (Geometry%Base_Geometry%METIS_version == 0_Tiny) then ! Partitioning using METIS ver. 4
 
+    write(*,        fmt="(A)") " Partition the network using METIS 4.0.0 ..."
+    write(FileInfo, fmt="(A)") " Partition the network using METIS 4.0.0 ..."
+
     this%wgtflag = 1
     this%numflag = 1
     this%options4(:) = 0
@@ -479,6 +475,9 @@ write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
     this%METIS4%nparts  => NumberOfRanks
     this%METIS4%options => this%options4
     this%METIS4%part    => this%part
+
+    write(*,        fmt="(A)") " Calling METIS partitioner ... "
+    write(FileInfo, fmt="(A)") " Calling METIS partitioner ... "
 
     call METIS_PartGraphKway(this%METIS4%n,       &
                              this%METIS4%xadj,    &
