@@ -45,6 +45,7 @@ use messages_and_errors_mod
 use Discretize_the_network_mod, only: DiscretizedNetwork_tp
 use Input_mod, only: Input_Data_tp
 use Model_mod, only: Geometry_tp
+use iso_c_binding
 
 implicit none
 
@@ -68,41 +69,41 @@ end type NodeConncetivityArray_tp
 ! prefer pointers.
 type METIS_var5_tp
   ! The number of vertices in the graph= NoNodes in the network
-  integer(kind=Lng), pointer :: nvtxs => null()
+  integer(kind=Shrt), pointer :: nvtxs => null()
 
   ! The number of balancing constraints.
   ! ncon is discussed at the beginning of page 10 of the manual.
   integer(kind=Shrt), pointer :: ncon => null()
 
   ! The adjacency structure of the graph as described in Section 5.5. The size of array is nvtxs+1
-  integer(kind=Lng), pointer, dimension(:) :: xadj => null()
+  integer(kind=Shrt), pointer, dimension(:) :: xadj => null()
 
   ! The adjacency structure of the graph as described in Section 5.5.
   ! The size of this array is "2*(number of edges(=no or reaches))"
-  integer(kind=Lng), pointer, dimension(:) :: adjncy => null()
+  integer(kind=Shrt), pointer, dimension(:) :: adjncy => null()
 
   ! The weights of the vertices as described in Section 5.5.
   ! This array stays null in our case. The size of this array is nvtxs * ncon
-  integer(kind=Lng), pointer, dimension(:) :: vwgt => null()
+  integer(kind=shrt), pointer, dimension(:) :: vwgt => null()
 
   ! The size of the vertices for computing the total communication volume as described in
   ! Section 5.7. The size of this array is nvtxs
-  integer(kind=Lng), pointer, dimension(:) :: vsize => null()
+  integer(kind=shrt), pointer, dimension(:) :: vsize => null()
 
   ! The weights of the edges as described in Section 5.5. The size of this array is 2 * m,
   ! where m is the total number of edges.
-  integer(kind=Lng), pointer, dimension(:) :: adjwgt => null()
+  integer(kind=shrt), pointer, dimension(:) :: adjwgt => null()
 
   ! The number of parts to partition the graph
-  integer(kind=Lng), pointer               :: nparts => null()
+  integer(kind=Shrt), pointer               :: nparts => null()
 
   ! specifies the desired weight for each partition and constraint.
   ! The size of the array nparts×ncon.
-  integer(kind=Lng), pointer, dimension(:) :: tpwgts  => null()
+  integer(kind=Shrt), pointer, dimension(:) :: tpwgts  => null()
 
   ! This is an array of size ncon that specifies the allowed load imbalance tolerance
   ! for each constraint.
-  integer(kind=Lng), pointer, dimension(:) :: ubvec => null()
+  integer(kind=Shrt), pointer, dimension(:) :: ubvec => null()
 
   ! see page 21.
   integer(kind=Shrt), pointer, dimension(:) :: options => null()
@@ -110,7 +111,7 @@ type METIS_var5_tp
   ! Upon successful completion, this variable stores the edge-cut or the total communication volume
   ! of the partitioning solution. The value returned depends on the partitioning’s objective
   ! function.
-  integer(kind=Lng), pointer               :: objval => null()
+  integer(kind=Shrt), pointer               :: objval => null()
 
   ! This is a vector of "size nvtxs" that upon successful completion stores the partition
   ! vector of the graph. The numbering of this vector starts from either 0 or 1, depending on
@@ -125,22 +126,22 @@ end type METIS_var5_tp
 type METIS_var4_tp
 
   ! The number of vertices in the graph= NoNodes in the network
-  integer(kind=Lng), pointer :: n => null()
+  integer(kind=Shrt), pointer :: n => null()
 
   ! The adjacency structure of the graph as described in Section 5.1. The size of array is n+1
-  integer(kind=Lng), pointer, dimension(:) :: xadj => null()
+  integer(kind=Shrt), pointer, dimension(:) :: xadj => null()
 
   ! The adjacency structure of the graph as described in Section 5.1.
   ! The size of this array is "2*(number of edges(=no or reaches))"
-  integer(kind=Lng), pointer, dimension(:) :: adjncy => null()
+  integer(kind=shrt), pointer, dimension(:) :: adjncy => null()
 
   ! The weights of the vertices as described in Section 5.1.
   ! This array stays null in our case. The size of this array is nvtxs * ncon
-  integer(kind=Lng), pointer, dimension(:) :: vwgt => null()
+  integer(kind=shrt), pointer, dimension(:) :: vwgt => null()
 
   ! The weights of the edges as described in Section 5.5. The size of this array is 2 * m,
   ! where m is the total number of edges.
-  integer(kind=Lng), pointer, dimension(:) :: adjwgt => null()
+  integer(kind=Shrt), pointer, dimension(:) :: adjwgt => null()
 
   ! Used the indicate if the graph is weighted. (see page 22 of manual of version 4).
   ! wgtflags can take the following values:
@@ -151,14 +152,14 @@ type METIS_var4_tp
   integer(kind=Shrt), pointer               :: numflag => null()
 
   ! The number of parts to partition the graph
-  integer(kind=Lng), pointer               :: nparts => null()
+  integer(kind=Shrt), pointer               :: nparts => null()
 
   ! see page 22. Use options[0]=0.
   integer(kind=Shrt), pointer, dimension(:) :: options => null()
 
   ! The number of edges that are cut by the partition. In our case, this indicates the total number
   ! of communication between the ranks.
-  integer(kind=Lng), pointer               :: edgecut => null()
+  integer(kind=Shrt), pointer               :: edgecut => null()
 
   ! This is a vector of "size nvtxs" that upon successful completion stores the partition
   ! vector of the graph. The numbering of this vector starts from either 0 or 1, depending on
@@ -169,13 +170,13 @@ end type METIS_var4_tp
 
 
 type partitioner_tp(edges, nodes)
-  integer(kind=Lng), len :: edges  ! number of edges in the network
-  integer(kind=Lng), len :: nodes  ! number of nodes in the network
+  integer(kind=Shrt), len :: edges  ! number of edges in the network
+  integer(kind=Shrt), len :: nodes  ! number of nodes in the network
 
   integer                   :: ncon          ! Temp variable for graph partitioning.
   integer                   :: wgtflag
   integer                   :: numflag
-  integer, dimension(nodes) :: part
+  integer, dimension(0:nodes-1_Lng) :: part
   integer, dimension(0:5)   :: options4
   !integer, dimension(METIS_NOPTIONS) :: options5
   integer, dimension(0:40) :: options5
@@ -183,9 +184,9 @@ type partitioner_tp(edges, nodes)
   integer(kind=Lng), dimension(edges,4) :: ReachPartition
 
   ! We go with the C style numbering- Arrays start from zero.
-  integer(kind=Lng), dimension(0:nodes+1-1)  :: xadj_target   ! Read METIS manual for details.
-  integer(kind=Lng), dimension(0:2*edges-1)  :: adjncy_target ! Read METIS manual for details.
-  integer(kind=Lng), dimension(0:2*edges-1)  :: adjwgt_target ! Read METIS manual for details.
+  integer(kind=Shrt), dimension(0:nodes+1-1)  :: xadj_target   ! Read METIS manual for details.
+  integer(kind=Shrt), dimension(0:2*edges-1)  :: adjncy_target ! Read METIS manual for details.
+  integer(kind=Shrt), dimension(0:2*edges-1)  :: adjwgt_target ! Read METIS manual for details.
 
   type(METIS_var4_tp) :: METIS4
   type(METIS_var5_tp) :: METIS5
@@ -290,8 +291,8 @@ integer(kind=Lng)  :: tempCell      ! Temp var to hold no. of cells of each rank
 integer(kind=Lng)  :: Weights       ! Weight of each edge (= no. cells in the edge= reach)
 integer(kind=Lng)  :: NodeLocation  ! Temp var to hold the location of adjacent nodes in the graph
 
-integer(kind=Lng), target :: NumberOfNodes ! saves total number of nodes
-integer(kind=Lng), target :: NumberOfRanks ! saves total number of ranks
+integer(kind=Shrt), target :: NumberOfNodes ! saves total number of nodes
+integer(kind=Shrt), target :: NumberOfRanks ! saves total number of ranks
 
 ! - integer Arrays --------------------------------------------------------------------------------
 integer(kind=Lng), dimension (Geometry%Base_Geometry%size,4) :: chunk
@@ -426,6 +427,7 @@ write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
     !this%options5(METIS_OPTION_NUMBERING) = 1
 
     this%METIS5%ncon   => this%ncon
+    !this%METIS5%ncon   => null()
     this%METIS5%adjncy => this%adjncy_target
     this%METIS5%adjwgt => this%adjwgt_target
     this%METIS5%xadj   => this%xadj_target
