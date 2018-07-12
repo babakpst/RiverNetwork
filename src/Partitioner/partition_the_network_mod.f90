@@ -175,7 +175,7 @@ type partitioner_tp(edges, nodes)
   integer                   :: ncon          ! Temp variable for graph partitioning.
   integer                   :: wgtflag
   integer                   :: numflag
-  integer, dimension(nodes) :: part
+  integer, dimension(0:nodes-1_Lng) :: part
   integer, dimension(0:5)   :: options4
   !integer, dimension(METIS_NOPTIONS) :: options5
   integer, dimension(0:40) :: options5
@@ -402,9 +402,9 @@ print*,"checkpoint 002"
     stop
   end if
 print*,"checkpoint 003"
-!print*, "adjncy:",  this%adjncy_target  ! <delete> after debugging
-!print*, "adjwgt:", this%adjwgt_target ! <delete> after debugging
-!print*, "xadj", this%xadj_target ! <delete> after debugging
+print*, "adjncy:",  this%adjncy_target  ! <delete> after debugging
+print*, "adjwgt:", this%adjwgt_target ! <delete> after debugging
+print*, "xadj", this%xadj_target ! <delete> after debugging
 print*, Geometry%Base_Geometry%size
 print*,"checkpoint 004"
 ! - partitioning using METIS ----------------------------------------------------------------------
@@ -416,6 +416,11 @@ write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
     write(*,        fmt="(A)") " Partition the network using METIS 5.1.0 ..."
     write(FileInfo, fmt="(A)") " Partition the network using METIS 5.1.0 ..."
 
+
+    print*, " options5: ", this%options5
+    call METIS_SetDefaultOptions(this%options5)
+    print*, " options5: ", this%options5
+
     NumberOfNodes = Geometry%Base_Geometry%NoNodes
     this%METIS5%nvtxs => NumberOfNodes ! Setting the number of vertices
 
@@ -425,10 +430,12 @@ write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
     !this%options5(METIS_OPTION_NCUTS)   = ?
     !this%options5(METIS_OPTION_NUMBERING) = 1
 
-    this%METIS5%ncon   => this%ncon
+    !this%METIS5%ncon   => this%ncon
+    this%METIS5%ncon   => null()
+    this%METIS5%xadj   => this%xadj_target
     this%METIS5%adjncy => this%adjncy_target
     this%METIS5%adjwgt => this%adjwgt_target
-    this%METIS5%xadj   => this%xadj_target
+
 
     NumberOfRanks      = Geometry%Base_Geometry%size
     this%METIS5%nparts => NumberOfRanks
