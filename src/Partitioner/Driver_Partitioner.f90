@@ -24,7 +24,8 @@
 ! V2.20: 05/30/2018  - Initializing objects/types
 ! V3.00: 07/10/2018  - Network partitioning
 !
-! File version $Id $
+! File version $Id: $
+! $Id: $
 !
 ! Last update: 07/10/2018
 !

@@ -20,7 +20,7 @@
 ! V2.00: 04/17/2018 - Debugged successfully.
 ! V3.00: 06/25/2018 - Modifying the partitioner module to partition a network.
 !
-! File version $Id $
+! File version $Id: $
 !
 ! Last update: 06/25/2018
 !
