@@ -70,45 +70,56 @@ end type NodeConncetivityArray_tp
 type METIS_var4_tp
 
   ! The number of vertices in the graph= NoNodes in the network
-  integer(kind=Shrt), pointer :: n => null()
+  !integer(kind=Shrt), pointer :: n => null()
+  integer(kind=Shrt) :: n
 
   ! The adjacency structure of the graph as described in Section 5.1. The size of array is n+1
-  integer(kind=Shrt), pointer, dimension(:) :: xadj => null()
+  !integer(kind=Shrt), pointer, dimension(:) :: xadj => null()
+  integer(kind=Shrt), dimension(:) :: xadj
 
   ! The adjacency structure of the graph as described in Section 5.1.
   ! The size of this array is "2*(number of edges(=no or reaches))"
-  integer(kind=shrt), pointer, dimension(:) :: adjncy => null()
+  !integer(kind=shrt), pointer, dimension(:) :: adjncy => null()
+  integer(kind=shrt), dimension(:) :: adjncy
 
   ! The weights of the vertices as described in Section 5.1.
   ! This array stays null in our case. The size of this array is nvtxs * ncon
-  integer(kind=shrt), pointer, dimension(:) :: vwgt => null()
+  !integer(kind=shrt), pointer, dimension(:) :: vwgt => null()
+  integer(kind=shrt), dimension(:) :: vwgt
 
   ! The weights of the edges as described in Section 5.5. The size of this array is 2 * m,
   ! where m is the total number of edges.
-  integer(kind=Shrt), pointer, dimension(:) :: adjwgt => null()
+  !integer(kind=Shrt), pointer, dimension(:) :: adjwgt => null()
+  integer(kind=Shrt), dimension(:) :: adjwgt
 
   ! Used the indicate if the graph is weighted. (see page 22 of manual of version 4).
   ! wgtflags can take the following values:
   ! 1 weights on the edges only (vwgts = NULL)
-  integer(kind=Shrt), pointer               :: wgtflag => null()
+  !integer(kind=Shrt), pointer               :: wgtflag => null()
+  integer(kind=Shrt) :: wgtflag
 
   ! Indicated the C or Fortran style of numbering: 0: C or 1: fortran
-  integer(kind=Shrt), pointer               :: numflag => null()
+  !integer(kind=Shrt), pointer               :: numflag => null()
+  integer(kind=Shrt)        :: numflag
 
   ! The number of parts to partition the graph
-  integer(kind=Shrt), pointer               :: nparts => null()
+  !integer(kind=Shrt), pointer               :: nparts => null()
+  integer(kind=Shrt) :: nparts
 
   ! see page 22. Use options[0]=0.
-  integer(kind=Shrt), pointer, dimension(:) :: options => null()
+  !integer(kind=Shrt), pointer, dimension(:) :: options => null()
+  integer(kind=Shrt), dimension(:) :: options
 
   ! The number of edges that are cut by the partition. In our case, this indicates the total number
   ! of communication between the ranks.
-  integer(kind=Shrt), pointer               :: edgecut => null()
+  !integer(kind=Shrt), pointer               :: edgecut => null()
+  integer(kind=Shrt) :: edgecut
 
   ! This is a vector of "size nvtxs" that upon successful completion stores the partition
   ! vector of the graph. The numbering of this vector starts from either 0 or 1, depending on
   ! the value of options[METIS OPTION NUMBERING].
-  integer(kind=Shrt), pointer, dimension(:) :: part => null()
+  !integer(kind=Shrt), pointer, dimension(:) :: part => null()
+  integer(kind=Shrt), dimension(:) :: part
 
 end type METIS_var4_tp
 
@@ -124,7 +135,7 @@ type METIS_var5_tp
   ! The number of balancing constraints.
   ! ncon is discussed at the beginning of page 10 of the manual.
   !integer(kind=c_int):: ncon
-  integer(kind=c_int):: ncon
+  integer(kind=c_int):: ncon ! ncon cannot be a pointer(null), at least ncon = 1
   !type(c_ptr) :: ncon
 
   ! The adjacency structure of the graph as described in Section 5.5. The size of array is nvtxs+1
@@ -138,8 +149,8 @@ type METIS_var5_tp
 
   ! The weights of the vertices as described in Section 5.5.
   ! This array stays null in our case. The size of this array is nvtxs * ncon
-  integer(kind=c_int), allocatable, dimension(:) :: vwgt
-  !type(c_ptr) :: vwgt
+  !integer(kind=c_int), allocatable, dimension(:) :: vwgt
+  type(c_ptr) :: vwgt
 
   ! The size of the vertices for computing the total communication volume as described in
   ! Section 5.7. The size of this array is nvtxs
@@ -163,8 +174,8 @@ type METIS_var5_tp
 
   ! This is an array of size ncon that specifies the allowed load imbalance tolerance
   ! for each constraint.
-  !integer(kind=c_int), allocatable, dimension(:) :: ubvec
-  type(c_ptr) :: ubvec
+  integer(kind=c_int), allocatable, dimension(:) :: ubvec
+  !type(c_ptr) :: ubvec
   ! see page 21.
   !integer(kind=c_int), allocatable, dimension(:) :: options
   integer(kind=c_int), allocatable, dimension(:) :: options
@@ -192,8 +203,8 @@ type partitioner_tp(edges, nodes)
   integer                   :: wgtflag
   integer                   :: numflag
 
-  integer, dimension(0:nodes-1_Lng) :: part
-  !integer, dimension(nodes) :: part
+  !integer, dimension(0:nodes-1_Lng) :: part
+  integer, dimension(nodes) :: part
   integer, dimension(0:5)   :: options4
   !integer, dimension(METIS_NOPTIONS) :: options5
   integer, dimension(0:40) :: options5
@@ -203,14 +214,16 @@ type partitioner_tp(edges, nodes)
 
   ! We go with the C style numbering- Arrays start from zero.
   !integer, dimension(0:nodes-1)    :: vwgt_target   ! Read METIS manual for details.
+  !integer, dimension(0:nodes-1)    :: vsize_target   ! Read METIS manual for details.
   !integer, dimension(0:nodes+1-1)  :: xadj_target   ! Read METIS manual for details.
   !integer, dimension(0:2*edges-1)  :: adjncy_target ! Read METIS manual for details.
-  !nteger, dimension(0:2*edges-1)  :: adjwgt_target ! Read METIS manual for details.
+  !integer, dimension(0:2*edges-1)  :: adjwgt_target ! Read METIS manual for details.
 
-  !integer, allocatable, dimension(:) :: tpwgts
-  type(c_ptr):: tpwgts
+  real, allocatable, dimension(:) :: tpwgts
+  !type(c_ptr):: tpwgts
 
   integer, dimension(nodes)    :: vwgt_target   ! Read METIS manual for details.
+  integer, dimension(nodes)    :: vsize_target   ! Read METIS manual for details.
   integer, dimension(nodes+1)  :: xadj_target   ! Read METIS manual for details.
   integer, dimension(2*edges)  :: adjncy_target ! Read METIS manual for details.
   integer, dimension(2*edges)  :: adjwgt_target ! Read METIS manual for details.
@@ -413,7 +426,7 @@ this%part(:)          = -1_Shrt
 !    NodeLocation = NodeLocation + NodeConnectivity(i_node)%counter
 !    Temp => NodeConnectivity(i_node)%head
 !      do
-!        if (.not.associated(Temp)) exit
+!      if (.not.associated(Temp)) exit
 !        counter = counter+1_Lng
 !        this%adjncy_target(counter) = Temp%nodes
 !        this%adjwgt_target(counter) = Temp%cells
@@ -423,7 +436,8 @@ this%part(:)          = -1_Shrt
 
 !this%xadj_target(i_node-1_Lng) = NodeLocation
 !this%adjncy_target(:) = this%adjncy_target(:) - 1_Lng ! C style
-!this%vwgt_target (:) = 0
+!this%vwgt_target (:) = 1 ! 0
+!this%vsize_target (:) = 0 ! 0
 
 !  if (counter /= 2_Lng *  Geometry%Base_Geometry%NoReaches-1_Lng) then
 !    write(*,*) " Something is wrong with the adjacency finder"
@@ -431,16 +445,16 @@ this%part(:)          = -1_Shrt
 !    stop
 !  end if
 
-!!!! fortran style
-NodeLocation = 1
-counter      = 0_Lng ! We go with the Fortran style numbering- Arrays start from zero.
+!!!! C style with fortran arrays
+NodeLocation = 0
+counter      = 0_Lng ! We go with the C style numbering- Arrays start from zero.
   do i_node = 1_Lng, Geometry%Base_Geometry%NoNodes
     this%xadj_target(i_node) = NodeLocation
     NodeLocation = NodeLocation + NodeConnectivity(i_node)%counter
     Temp => NodeConnectivity(i_node)%head
       do
         if (.not.associated(Temp)) exit
-       counter = counter+1_Lng
+        counter = counter+1_Lng
         this%adjncy_target(counter) = Temp%nodes
         this%adjwgt_target(counter) = Temp%cells
         Temp => Temp%next
@@ -448,21 +462,49 @@ counter      = 0_Lng ! We go with the Fortran style numbering- Arrays start from
   end do
 
 this%xadj_target(i_node) = NodeLocation
-this%adjncy_target(:) = this%adjncy_target(:)  ! Fortran style
-this%vwgt_target (:) = 1 ! 0
+this%adjncy_target(:) = this%adjncy_target(:) - 1_Lng ! C style
+this%vwgt_target (:) = 0 ! 0
+this%vsize_target (:) = 0 ! 0
 
   if (counter /= 2_Lng *  Geometry%Base_Geometry%NoReaches) then
     write(*,*) " Something is wrong with the adjacency finder"
-    write(*,*) counter, 2_Lng*Geometry%Base_Geometry%NoReaches
+    write(*,*) counter, 2_Lng*Geometry%Base_Geometry%NoReaches-1_Lng
     stop
   end if
 
+!!!! fortran style
+!NodeLocation = 1
+!counter      = 0_Lng ! We go with the Fortran style numbering- Arrays start from zero.
+!  do i_node = 1_Lng, Geometry%Base_Geometry%NoNodes
+!    this%xadj_target(i_node) = NodeLocation
+!    NodeLocation = NodeLocation + NodeConnectivity(i_node)%counter
+!    Temp => NodeConnectivity(i_node)%head
+!      do
+!        if (.not.associated(Temp)) exit
+!       counter = counter+1_Lng
+!        this%adjncy_target(counter) = Temp%nodes
+!        this%adjwgt_target(counter) = Temp%cells
+!        Temp => Temp%next
+!      end do
+!  end do
 
+!this%xadj_target(i_node) = NodeLocation
+!this%adjncy_target(:) = this%adjncy_target(:)  ! Fortran style
+!this%vwgt_target (:) = 5 ! 0
+!this%vsize_target (:) = 0 ! 0
+
+!  if (counter /= 2_Lng *  Geometry%Base_Geometry%NoReaches) then
+!    write(*,*) " Something is wrong with the adjacency finder"
+!    write(*,*) counter, 2_Lng*Geometry%Base_Geometry%NoReaches
+!    stop
+!  end if
+
+NumberOfRanks  = Geometry%Base_Geometry%size
 print*, "xadj",     this%xadj_target ! <delete> after debugging
 print*, "adjncy:",  this%adjncy_target  ! <delete> after debugging
 print*, "adjwgt:",  this%adjwgt_target ! <delete> after debugging
 print*, "vwgt:",    this%vwgt_target
-print*, "partitions", Geometry%Base_Geometry%size
+print*, "partitions", NumberOfRanks
 
 ! - partitioning using METIS ----------------------------------------------------------------------
 write(*,        fmt="(A)") " -Graph partitioning using METIS_PartGraphKway... "
@@ -473,45 +515,40 @@ write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
     write(*,        fmt="(A)") " Partition the network using METIS 5.1.0 ..."
     write(FileInfo, fmt="(A)") " Partition the network using METIS 5.1.0 ..."
 
-
-
     print*, " options5: ", this%options5
     call METIS_SetDefaultOptions(this%options5)
     !this%options5(METIS_OPTION_OBJTYPE) = METIS_OBJTYPE_CUT
     !this%options5(METIS_OPTION_NCUTS)   = ?
     !this%options5(METIS_OPTION_NUMBERING) = 1
-    this%options5(7) = 1
+    !this%options5(7) = 1
+    !this%options5(17) = 1
     print*, " options5: ", this%options5
-
-
 
     NumberOfNodes = Geometry%Base_Geometry%NoNodes
     this%METIS5%nvtxs = NumberOfNodes ! Setting the number of vertices
-    this%ncon = 1
+    this%ncon = 1 ! Do not change
     this%METIS5%ncon   =  this%ncon
     !this%METIS5%ncon   = c_null_ptr
-    !this%METIS5%vwgt   = c_null_ptr
+    this%METIS5%vwgt   = c_null_ptr
 
     this%METIS5%vsize  = c_null_ptr
     this%METIS5%tpwgts = c_null_ptr
-    this%METIS5%ubvec  = c_null_ptr
+    !this%METIS5%ubvec  = c_null_ptr
     this%options55     = c_null_ptr
 
     this%METIS5%xadj   = this%xadj_target
     this%METIS5%adjncy = this%adjncy_target
-    this%METIS5%vwgt   = this%vwgt_target
+    !this%METIS5%vwgt   = this%vwgt_target
     this%METIS5%adjwgt = this%adjwgt_target
 
 
-    NumberOfRanks      = Geometry%Base_Geometry%size
     this%METIS5%nparts = NumberOfRanks
     this%METIS5%options= this%options5
     this%METIS5%part   = this%part
 
 
-
-    !allocate( this%tpwgts(this%ncon*NumberOfRanks) )
-    !this%tpwgts = 0.5
+    allocate( this%tpwgts(this%ncon*NumberOfRanks), this%METIS5%ubvec(this%ncon) )
+    this%tpwgts = 1.0_sgl / NumberOfRanks
 
     print*, " xadj-   pointers", this%METIS5%xadj
     print*, " xadj-   pointers", this%METIS5%xadj(-1), this%METIS5%xadj(0), this%METIS5%xadj(1), this%METIS5%xadj(2)
@@ -523,35 +560,34 @@ write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
     write(*,        fmt="(A)") " Calling METIS partitioner ... "
     write(FileInfo, fmt="(A)") " Calling METIS partitioner ... "
 
-    !call METIS_PartGraphKway(NumberOfNodes,   &
-    !                         this%ncon,    &
-    !                         this%xadj_target,    &
-    !                         this%adjncy_target,  &
-    !                         this%METIS5%vwgt,    &
-    !                         this%METIS5%vsize,   &
-    !                         this%adjwgt_target,  &
-    !                         NumberOfRanks,  &
-    !                         this%tpwgts,  &
-     !                        !c_null_ptr, &
-    !                         this%METIS5%ubvec,   &
-!   !                          this%options5, &
-    !                         this%options55, &
-    !                         this%METIS5%objval,  &
-    !                         this%part)
-
-    call METIS_PartGraphKway(this%METIS5%nvtxs,   &
-                             this%METIS5%ncon,    &
-                             this%METIS5%xadj,    &
-                             this%METIS5%adjncy,  &
-                             this%METIS5%vwgt,    &
-                             this%METIS5%vsize,   &
-                             this%METIS5%adjwgt,  &
-                             this%METIS5%nparts,  &
-                             this%METIS5%tpwgts,  &
+    call METIS_PartGraphKway(NumberOfNodes,   &
+                             this%ncon,    &
+                             this%xadj_target,    &
+                             this%adjncy_target,  &
+                             this%vwgt_target, &
+                             this%vsize_target, &
+                             this%adjwgt_target,  &
+                             NumberOfRanks,  &
+                             this%tpwgts,  &
                              this%METIS5%ubvec,   &
-                             this%METIS5%options, &
+                             this%options5, &
                              this%METIS5%objval,  &
-                             this%METIS5%part)
+                             this%part)
+
+!    call METIS_PartGraphKway(this%METIS5%nvtxs,   &
+!                             this%METIS5%ncon,    &
+!                             this%METIS5%xadj,    &
+!                             this%METIS5%adjncy,  &
+!                             this%METIS5%vwgt,    &
+!                             this%METIS5%vsize,   &
+!                             this%METIS5%adjwgt,  &
+!                             this%METIS5%nparts,  &
+!                             this%METIS5%tpwgts,  &
+!                             this%METIS5%ubvec,   &
+!                             !this%METIS5%options, &
+!                             this%options55, &
+!                             this%METIS5%objval,  &
+!                             this%METIS5%part)
 
 
     write(*,        fmt="(A)") " Done with METIS!!! "
@@ -591,6 +627,20 @@ write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
                              this%METIS4%options, &
                              this%METIS4%edgecut, &
                              this%METIS4%part)
+
+!    call METIS_PartGraphKway(this%METIS4%n,       &
+!                             this%METIS4%xadj,    &
+!                             this%METIS4%adjncy,  &
+!                             this%METIS4%vwgt,    &
+!                             this%METIS4%adjwgt,  &
+!                             this%METIS4%wgtflag, &
+!                             this%METIS4%numflag, &
+!                             this%METIS4%nparts,  &
+!                             this%METIS4%options, &
+!                             this%METIS4%edgecut, &
+!                             this%METIS4%part)
+
+
   else
     write(*,*) " The requested METIS version does not exist. Please, enter 0 for METIS version 4 &
                  or 1 for METIS version 5 in the --.DataModel file."

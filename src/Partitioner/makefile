@@ -9,7 +9,8 @@
 # Last Update  : 02/13/2018
 #
 # =================================================================================================
-METIS_DIR=/workspace/source/metis-5.1.0
+#METIS_DIR=/workspace/source/metis-5.1.0
+METIS_DIR=/workspace/source/metis-4.0.3
 #include ${METIS_DIR}/include
 #include ${METIS_DIR}/libmetis
 
@@ -32,9 +33,10 @@ OBJSF=$(SOURCESF:%.F90=%.o)
 
 #-lmetis
 #libmetis.a
+#-L$(METIS_DIR) -lmetis
 main:$(OBJSF)
 	@echo Linking...
-	$(F90) $(FFLAGS) $(OBJSF) -o -I$(METIS_DIR) main $(METIS_DIR)/build/libmetis/libmetis.a
+	$(F90) $(FFLAGS) $(OBJSF) -o -I$(METIS_DIR) main $(METIS_DIR)/libmetis.a
 	@echo Done!
 
 %.o   : %.F90
