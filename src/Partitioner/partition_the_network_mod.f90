@@ -202,9 +202,13 @@ type partitioner_tp(edges, nodes)
   !integer(kind=Lng)        :: ncon          ! Temp variable for graph partitioning.
   integer                   :: wgtflag
   integer                   :: numflag
+<<<<<<< HEAD
 
   !integer, dimension(0:nodes-1_Lng) :: part
   integer, dimension(nodes) :: part
+=======
+  integer, dimension(0:nodes-1_Lng) :: part
+>>>>>>> b416e060eefbdb9decd1977cdac1fbb28e7cc80a
   integer, dimension(0:5)   :: options4
   !integer, dimension(METIS_NOPTIONS) :: options5
   integer, dimension(0:40) :: options5
@@ -471,6 +475,7 @@ this%vsize_target (:) = 0 ! 0
     write(*,*) counter, 2_Lng*Geometry%Base_Geometry%NoReaches-1_Lng
     stop
   end if
+<<<<<<< HEAD
 
 !!!! fortran style
 !NodeLocation = 1
@@ -506,6 +511,14 @@ print*, "adjwgt:",  this%adjwgt_target ! <delete> after debugging
 print*, "vwgt:",    this%vwgt_target
 print*, "partitions", NumberOfRanks
 
+=======
+print*,"checkpoint 003"
+print*, "adjncy:",  this%adjncy_target  ! <delete> after debugging
+print*, "adjwgt:", this%adjwgt_target ! <delete> after debugging
+print*, "xadj", this%xadj_target ! <delete> after debugging
+print*, Geometry%Base_Geometry%size
+print*,"checkpoint 004"
+>>>>>>> b416e060eefbdb9decd1977cdac1fbb28e7cc80a
 ! - partitioning using METIS ----------------------------------------------------------------------
 write(*,        fmt="(A)") " -Graph partitioning using METIS_PartGraphKway... "
 write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
@@ -515,8 +528,21 @@ write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
     write(*,        fmt="(A)") " Partition the network using METIS 5.1.0 ..."
     write(FileInfo, fmt="(A)") " Partition the network using METIS 5.1.0 ..."
 
+<<<<<<< HEAD
     print*, " options5: ", this%options5
     call METIS_SetDefaultOptions(this%options5)
+=======
+
+    print*, " options5: ", this%options5
+    call METIS_SetDefaultOptions(this%options5)
+    print*, " options5: ", this%options5
+
+    NumberOfNodes = Geometry%Base_Geometry%NoNodes
+    this%METIS5%nvtxs => NumberOfNodes ! Setting the number of vertices
+
+    ! setting the number of balancing constraints.
+    this%ncon = 0  ! <modify> The other option is to nullify the pointer. Check both cases.
+>>>>>>> b416e060eefbdb9decd1977cdac1fbb28e7cc80a
     !this%options5(METIS_OPTION_OBJTYPE) = METIS_OBJTYPE_CUT
     !this%options5(METIS_OPTION_NCUTS)   = ?
     !this%options5(METIS_OPTION_NUMBERING) = 1
@@ -546,6 +572,15 @@ write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
     this%METIS5%options= this%options5
     this%METIS5%part   = this%part
 
+<<<<<<< HEAD
+=======
+    !this%METIS5%ncon   => this%ncon
+    this%METIS5%ncon   => null()
+    this%METIS5%xadj   => this%xadj_target
+    this%METIS5%adjncy => this%adjncy_target
+    this%METIS5%adjwgt => this%adjwgt_target
+
+>>>>>>> b416e060eefbdb9decd1977cdac1fbb28e7cc80a
 
     allocate( this%tpwgts(this%ncon*NumberOfRanks), this%METIS5%ubvec(this%ncon) )
     this%tpwgts = 1.0_sgl / NumberOfRanks
