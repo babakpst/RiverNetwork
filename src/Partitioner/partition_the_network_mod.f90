@@ -1,4 +1,3 @@
-
 !##################################################################################################
 ! Purpose: This module partitions the network and creates the input file for each process/rank.
 !          To partition the network, we are using METIS graph partitioner. At the time of
@@ -123,22 +122,21 @@ end type METIS_var4_tp
 type METIS_var5_tp
   ! The number of vertices in the graph= NoNodes in the network
   !integer(kind=c_int) :: nvtxs
-  integer(kind=c_int) :: nvtxs
+  integer(kind=Shrt), pointer :: nvtxs
 
   ! The number of balancing constraints.
   ! ncon is discussed at the beginning of page 10 of the manual.
   !integer(kind=c_int):: ncon
-  integer(kind=c_int):: ncon ! ncon cannot be a pointer(null), at least ncon = 1
-  !type(c_ptr) :: ncon
+  integer(kind=Shrt), pointer :: ncon ! ncon cannot be a pointer(null), at least ncon = 1
 
   ! The adjacency structure of the graph as described in Section 5.5. The size of array is nvtxs+1
   !integer(kind=c_int), allocatable, dimension(:) :: xadj
-  integer(kind=c_int), allocatable, dimension(:) :: xadj
+  integer(kind=Shrt), pointer, dimension(:) :: xadj
 
   ! The adjacency structure of the graph as described in Section 5.5.
   ! The size of this array is "2*(number of edges(=no or reaches))"
   !integer(kind=c_int), allocatable, dimension(:) :: adjncy
-  integer(kind=c_int), allocatable, dimension(:) :: adjncy
+  integer(kind=Shrt), pointer, dimension(:) :: adjncy
 
   ! The weights of the vertices as described in Section 5.5.
   ! This array stays null in our case. The size of this array is nvtxs * ncon
@@ -153,12 +151,12 @@ type METIS_var5_tp
   ! The weights of the edges as described in Section 5.5. The size of this array is 2 * m,
   ! where m is the total number of edges.
   !integer(kind=c_int), allocatable, dimension(:) :: adjwgt
-  integer(kind=c_int), allocatable, dimension(:) :: adjwgt
+  integer(kind=Shrt), pointer, dimension(:) :: adjwgt
   !type(c_ptr) :: adjwgt
 
   ! The number of parts to partition the graph
   !integer(kind=c_int) :: nparts
-  integer(kind=c_int) :: nparts
+  integer(kind=Shrt), pointer :: nparts
 
   ! specifies the desired weight for each partition and constraint.
   ! The size of the array nparts×ncon.
@@ -167,24 +165,26 @@ type METIS_var5_tp
 
   ! This is an array of size ncon that specifies the allowed load imbalance tolerance
   ! for each constraint.
-  integer(kind=c_int), allocatable, dimension(:) :: ubvec
-  !type(c_ptr) :: ubvec
+  !integer(kind=Shrt), pointer, dimension(:) :: ubvec
+  type(c_ptr) :: ubvec
+
   ! see page 21.
   !integer(kind=c_int), allocatable, dimension(:) :: options
-  integer(kind=c_int), allocatable, dimension(:) :: options
+  !integer(kind=Shrt), pointer, dimension(:) :: options
+  type(c_ptr) :: options
 
   ! Upon successful completion, this variable stores the edge-cut or the total communication volume
   ! of the partitioning solution. The value returned depends on the partitioning’s objective
   ! function.
   !integer(kind=c_int) :: objval
-  integer(kind=c_int) :: objval
-  !type(c_ptr) :: objval
+  integer(kind=Shrt) :: objval=-1_shrt
+  !integer(kind=Shrt), pointer :: objval
 
   ! This is a vector of "size nvtxs" that upon successful completion stores the partition
   ! vector of the graph. The numbering of this vector starts from either 0 or 1, depending on
   ! the value of options[METIS OPTION NUMBERING].
   !integer(kind=c_int), allocatable, dimension(:) :: part
-  integer(kind=c_int), allocatable, dimension(:) :: part
+  integer(kind=Shrt), pointer, dimension(:) :: part
 end type METIS_var5_tp
 
 type partitioner_tp(edges, nodes)
@@ -218,7 +218,7 @@ type partitioner_tp(edges, nodes)
   !integer, dimension(0:2*edges-1)  :: adjncy_target ! Read METIS manual for details.
   !integer, dimension(0:2*edges-1)  :: adjwgt_target ! Read METIS manual for details.
 
-  real, allocatable, dimension(:) :: tpwgts
+  !real, allocatable, dimension(:) :: tpwgts
   !type(c_ptr):: tpwgts
 
   !integer, dimension(nodes)    :: vwgt_target   ! Read METIS manual for details.
@@ -416,86 +416,91 @@ this%adjncy_target(:) = -1_Shrt
 this%adjwgt_target(:) = -1_Shrt
 this%part(:)          = -1_Shrt
 
-!--------------------------------------------------------------------------------------------------
-! C style ----
-!NodeLocation = 0
-!counter      = -1_Lng ! We go with the C style numbering- Arrays start from zero.
-!  do i_node = 1_Lng, Geometry%Base_Geometry%NoNodes
-!    this%xadj_target(i_node-1_Lng) = NodeLocation
-!    NodeLocation = NodeLocation + NodeConnectivity(i_node)%counter
-!    Temp => NodeConnectivity(i_node)%head
-!      do
-!      if (.not.associated(Temp)) exit
-!        counter = counter+1_Lng
-!        this%adjncy_target(counter) = Temp%nodes
-!        this%adjwgt_target(counter) = Temp%cells
-!        Temp => Temp%next
-!      end do
-!  end do
 
-!this%xadj_target(i_node-1_Lng) = NodeLocation
-!this%adjncy_target(:) = this%adjncy_target(:) - 1_Lng ! C style
-!this%vwgt_target (:) = 1 ! 0
-!this%vsize_target (:) = 0 ! 0
+  if (Geometry%Base_Geometry%METIS_version == 1_Tiny) then ! Partitioning using METIS version 5
+    !----------------------------------------------------------------------------------------------
+    ! C style ----
+    !NodeLocation = 0
+    !counter      = -1_Lng ! We go with the C style numbering- Arrays start from zero.
+    !  do i_node = 1_Lng, Geometry%Base_Geometry%NoNodes
+    !    this%xadj_target(i_node-1_Lng) = NodeLocation
+    !    NodeLocation = NodeLocation + NodeConnectivity(i_node)%counter
+    !    Temp => NodeConnectivity(i_node)%head
+    !      do
+    !      if (.not.associated(Temp)) exit
+    !        counter = counter+1_Lng
+    !        this%adjncy_target(counter) = Temp%nodes
+    !        this%adjwgt_target(counter) = Temp%cells
+    !        Temp => Temp%next
+    !      end do
+    !  end do
 
-!  if (counter /= 2_Lng *  Geometry%Base_Geometry%NoReaches-1_Lng) then
-!    write(*,*) " Something is wrong with the adjacency finder"
-!    write(*,*) counter, 2_Lng*Geometry%Base_Geometry%NoReaches-1_Lng
-!    stop
-!  end if
+    !this%xadj_target(i_node-1_Lng) = NodeLocation
+    !this%adjncy_target(:) = this%adjncy_target(:) - 1_Lng ! C style
+    !this%vwgt_target (:) = 1 ! 0
+    !this%vsize_target (:) = 0 ! 0
 
-!--------------------------------------------------------------------------------------------------
-! C style with fortran arrays ----
-!NodeLocation = 0
-!counter      = 0_Lng ! We go with the C style numbering- Arrays start from zero.
-!  do i_node = 1_Lng, Geometry%Base_Geometry%NoNodes
-!    this%xadj_target(i_node) = NodeLocation
-!    NodeLocation = NodeLocation + NodeConnectivity(i_node)%counter
-!    Temp => NodeConnectivity(i_node)%head
-!      do
-!        if (.not.associated(Temp)) exit
-!        counter = counter+1_Lng
-!        this%adjncy_target(counter) = Temp%nodes
-!        this%adjwgt_target(counter) = Temp%cells
-!        Temp => Temp%next
-!      end do
-!  end do
+    !  if (counter /= 2_Lng *  Geometry%Base_Geometry%NoReaches-1_Lng) then
+    !    write(*,*) " Something is wrong with the adjacency finder"
+    !    write(*,*) counter, 2_Lng*Geometry%Base_Geometry%NoReaches-1_Lng
+    !    stop
+    !  end if
 
-!this%xadj_target(i_node) = NodeLocation
-!this%adjncy_target(:) = this%adjncy_target(:) - 1_Lng ! C style
-!this%vwgt_target (:) = 0 ! 0
-!this%vsize_target (:) = 0 ! 0
-
-!  if (counter /= 2_Lng *  Geometry%Base_Geometry%NoReaches) then
-!    write(*,*) " Something is wrong with the adjacency finder"
-!    write(*,*) counter, 2_Lng*Geometry%Base_Geometry%NoReaches-1_Lng
-!    stop
-!  end if
-
-!--------------------------------------------------------------------------------------------------
-! fortran style (numbering and arrays are all started from 1)
-NodeLocation = 1
-counter      = 0_Lng
-  do i_node = 1_Lng, Geometry%Base_Geometry%NoNodes
-    this%xadj_target(i_node) = NodeLocation
-    NodeLocation = NodeLocation + NodeConnectivity(i_node)%counter
-    Temp => NodeConnectivity(i_node)%head
-      do
-        if (.not.associated(Temp)) exit
-       counter = counter+1_Lng
-        this%adjncy_target(counter) = Temp%nodes
-        this%adjwgt_target(counter) = Temp%cells
-        Temp => Temp%next
+    !----------------------------------------------------------------------------------------------
+    ! C style with fortran arrays ----
+    NodeLocation = 0
+    counter      = 0_Lng ! We go with the C style numbering- Arrays start from zero.
+      do i_node = 1_Lng, Geometry%Base_Geometry%NoNodes
+        this%xadj_target(i_node) = NodeLocation
+        NodeLocation = NodeLocation + NodeConnectivity(i_node)%counter
+        Temp => NodeConnectivity(i_node)%head
+          do
+            if (.not.associated(Temp)) exit
+            counter = counter+1_Lng
+            this%adjncy_target(counter) = Temp%nodes
+            this%adjwgt_target(counter) = Temp%cells
+            Temp => Temp%next
+          end do
       end do
-  end do
 
-this%xadj_target(i_node) = NodeLocation
-this%adjncy_target(:) = this%adjncy_target(:)  ! Fortran style
+    this%xadj_target(i_node) = NodeLocation
+    this%adjncy_target(:) = this%adjncy_target(:) - 1_Lng ! C style
+    !this%vwgt_target (:) = 0 ! 0
+    !this%vsize_target (:) = 0 ! 0
 
-  if (counter /= 2_Lng *  Geometry%Base_Geometry%NoReaches) then
-    write(*,*) " Something is wrong with the adjacency finder"
-    write(*,*) counter, 2_Lng*Geometry%Base_Geometry%NoReaches
-    stop
+      if (counter /= 2_Lng *  Geometry%Base_Geometry%NoReaches) then
+        write(*,*) " Something is wrong with the adjacency finder"
+        write(*,*) counter, 2_Lng*Geometry%Base_Geometry%NoReaches-1_Lng
+        stop
+      end if
+
+  else if (Geometry%Base_Geometry%METIS_version == 0_Tiny) then ! Partitioning using METIS ver. 4
+    !----------------------------------------------------------------------------------------------
+    ! fortran style (numbering and arrays are all started from 1)
+    NodeLocation = 1
+    counter      = 0_Lng
+      do i_node = 1_Lng, Geometry%Base_Geometry%NoNodes
+        this%xadj_target(i_node) = NodeLocation
+        NodeLocation = NodeLocation + NodeConnectivity(i_node)%counter
+        Temp => NodeConnectivity(i_node)%head
+          do
+            if (.not.associated(Temp)) exit
+           counter = counter+1_Lng
+            this%adjncy_target(counter) = Temp%nodes
+            this%adjwgt_target(counter) = Temp%cells
+            Temp => Temp%next
+          end do
+      end do
+
+    this%xadj_target(i_node) = NodeLocation
+    this%adjncy_target(:) = this%adjncy_target(:)  ! Fortran style
+
+      if (counter /= 2_Lng *  Geometry%Base_Geometry%NoReaches) then
+        write(*,*) " Something is wrong with the adjacency finder"
+        write(*,*) counter, 2_Lng*Geometry%Base_Geometry%NoReaches
+        stop
+      end if
+
   end if
 
 NumberOfRanks  = Geometry%Base_Geometry%size
@@ -516,41 +521,46 @@ write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
     write(*,        fmt="(A)") " Partition the network using METIS 5.1.0 ..."
     write(FileInfo, fmt="(A)") " Partition the network using METIS 5.1.0 ..."
 
-    print*, " options5: ", this%options5
 
+    print*, "checkpoint 000"
+    !print*, " options5: ", this%options5
+    call METIS_SetDefaultOptions(this%options5)   ! <modify> using preprocessor derivative
+    !call METIS_SetDefaultOptions(this%METIS5%options)   ! <modify> using preprocessor derivative
 
-    !call METIS_SetDefaultOptions(this%options5)   ! <modify> using preprocessor derivative
+    print*, "checkpoint 001"
 
     !this%options5(METIS_OPTION_OBJTYPE) = METIS_OBJTYPE_CUT
     !this%options5(METIS_OPTION_NCUTS)   = ?
     !this%options5(METIS_OPTION_NUMBERING) = 1
     !this%options5(7) = 1
     !this%options5(17) = 1
-    print*, " options5: ", this%options5
+    !print*, " options5: ", this%options5
 
+    this%METIS5%nvtxs  => NumberOfNodes ! Setting the number of vertices
+    this%ncon          = 1 ! Do not change- This should be equal to 1, even though in some locations in the manual, it is said that we can put it equal to NULL.
+    this%METIS5%ncon   =>  this%ncon
 
-    this%METIS5%nvtxs = NumberOfNodes ! Setting the number of vertices
-    this%ncon = 1 ! Do not change
-    this%METIS5%ncon   =  this%ncon
-    !this%METIS5%ncon   = c_null_ptr
-    this%METIS5%vwgt   = c_null_ptr
+    this%METIS5%xadj   => this%xadj_target
+    this%METIS5%adjncy => this%adjncy_target
 
-    this%METIS5%vsize  = c_null_ptr
+    this%METIS5%vwgt   =  c_null_ptr
+    this%METIS5%vsize  =  c_null_ptr
+
+    this%METIS5%adjwgt => this%adjwgt_target
+
+    this%METIS5%nparts => NumberOfRanks
+
     this%METIS5%tpwgts = c_null_ptr
-    !this%METIS5%ubvec  = c_null_ptr
+    this%METIS5%ubvec  = c_null_ptr
+    this%METIS5%options= c_null_ptr
 
-    this%METIS5%xadj   = this%xadj_target
-    this%METIS5%adjncy = this%adjncy_target
-    !this%METIS5%vwgt   = this%vwgt_target
-    this%METIS5%adjwgt = this%adjwgt_target
-
-    this%METIS5%nparts = NumberOfRanks
-    this%METIS5%options= this%options5
+    !this%METIS5%options= this%options5
     this%METIS5%part   = this%part
 
+    !allocate( this%tpwgts(this%ncon*NumberOfRanks), this%METIS5%ubvec(this%ncon) )
+    !this%tpwgts = 1.0_sgl / NumberOfRanks
 
-    allocate( this%tpwgts(this%ncon*NumberOfRanks), this%METIS5%ubvec(this%ncon) )
-    this%tpwgts = 1.0_sgl / NumberOfRanks
+    print*, "checkpoint 010"
 
     print*, " xadj-   pointers", this%METIS5%xadj
     print*, " xadj-   pointers", this%METIS5%xadj(-1), this%METIS5%xadj(0), this%METIS5%xadj(1), this%METIS5%xadj(2)
@@ -562,39 +572,23 @@ write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
     write(*,        fmt="(A)") " Calling METIS partitioner ... "
     write(FileInfo, fmt="(A)") " Calling METIS partitioner ... "
 
-!    call METIS_PartGraphKway(NumberOfNodes,   &
-!                             this%ncon,    &
-!                             this%xadj_target,    &
-!                             this%adjncy_target,  &
-!                             this%vwgt_target, &
-!                             this%vsize_target, &
-!                             this%adjwgt_target,  &
-!                             NumberOfRanks,  &
-!                             this%tpwgts,  &
-!                             this%METIS5%ubvec,   &
-!                             this%options5, &
-!                             this%METIS5%objval,  &
-!                             this%part)
-
-!    call METIS_PartGraphKway(this%METIS5%nvtxs,   &
-!                             this%METIS5%ncon,    &
-!                             this%METIS5%xadj,    &
-!                             this%METIS5%adjncy,  &
-!                             this%METIS5%vwgt,    &
-!                             this%METIS5%vsize,   &
-!                             this%METIS5%adjwgt,  &
-!                             this%METIS5%nparts,  &
-!                             this%METIS5%tpwgts,  &
-!                             this%METIS5%ubvec,   &
-!                             !this%METIS5%options, &
-!                             this%options55, &
-!                             this%METIS5%objval,  &
-!                             this%METIS5%part)
-
+    !call METIS_PartGraphKway(this%METIS5%nvtxs,   &
+    !                         this%METIS5%ncon,    &
+    !                         this%METIS5%xadj,    &
+    !                         this%METIS5%adjncy,  &
+    !                         this%METIS5%vwgt,    &
+    !                         this%METIS5%vsize,   &
+    !                         this%METIS5%adjwgt,  &
+    !                         this%METIS5%nparts,  &
+    !                         this%METIS5%tpwgts,  &
+    !                         this%METIS5%ubvec,   &
+    !                         this%METIS5%options, &
+    !                         this%METIS5%objval,  &
+    !                         this%METIS5%part)
 
     write(*,        fmt="(A)") " Done with METIS!!! "
     write(FileInfo, fmt="(A)") " Done with METIS!!!  "
-
+    stop
   else if (Geometry%Base_Geometry%METIS_version == 0_Tiny) then ! Partitioning using METIS ver. 4
 
     write(*,        fmt="(A)") " Partition the network using METIS 4.0.0 ..."
@@ -634,10 +628,15 @@ write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
     stop
   end if
 
+! <delete>
 print*," edgecut after:   ",  this%METIS4%edgecut
 print*," partitions after: "
- do i = 1, this%METIS4%n
-  write(*,fmt="(2I2)")i, this%METIS4%part(i)
+! do i = 1, this%METIS4%n
+!  write(*,fmt="(2I2)")i, this%METIS4%part(i)
+! end do
+
+ do i = 1, NumberOfNodes
+  write(*,fmt="(2I2)")i, this%part(i)
  end do
 
 
