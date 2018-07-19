@@ -158,6 +158,7 @@ implicit none
 
 ! Global variables ================================================================================
 integer(kind=Smll) :: ERR_Alloc   ! Allocating and DeAllocating errors
+!integer :: ERR_Alloc   ! Allocating and DeAllocating errors
 integer(kind=Smll) :: ERR_DeAlloc ! Allocating and DeAllocating errors
 
 ! Local variables =================================================================================
