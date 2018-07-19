@@ -524,7 +524,7 @@ write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
 
     print*, "checkpoint 000"
     !print*, " options5: ", this%options5
-    call METIS_SetDefaultOptions(this%options5)   ! <modify> using preprocessor derivative
+    !call METIS_SetDefaultOptions(this%options5)   ! <modify> using preprocessor derivative
     !call METIS_SetDefaultOptions(this%METIS5%options)   ! <modify> using preprocessor derivative
 
     print*, "checkpoint 001"

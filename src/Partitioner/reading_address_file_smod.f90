@@ -2,31 +2,11 @@
 submodule (Input_mod) Input_submod
 
 implicit none
+
 contains
 
-!module procedure Input_Address_sub
-module subroutine Input_Address_sub(this)
-
-! Libraries =======================================================================================
-use ifport
-
-! User defined modules ============================================================================
-Implicit None
-
-! Global Variables ================================================================================
-! - Types -----------------------------------------------------------------------------------------
-class(Input_Data_tp), intent(out) :: this  ! Holds info. (name, dir, output dir) of the model
-
-! Local Variables =================================================================================
-! - integer Variables -----------------------------------------------------------------------------
-integer(kind=Smll) :: UnFile        ! Holds Unit of a file for error message
-integer(kind=Smll) :: IO_File       ! For IOSTAT: Input Output status in OPEN command
-integer(kind=Smll) :: i_analyses    ! loop index to read the analyses files
-integer(kind=Smll) :: ERR_Alloc, ERR_DeAlloc ! Allocating and DeAllocating errors
-!integer :: ERR_Alloc, ERR_DeAlloc ! Allocating and DeAllocating errors
-
-! - Logical Variables -----------------------------------------------------------------------------
-Logical (kind=Shrt)  :: Directory
+module procedure Input_Address_sub
+!module subroutine Input_Address_sub(this)
 
 write(*,       *)
 write(*,       *) " Subroutine < Input_Address_sub >: "
@@ -104,8 +84,7 @@ Return
 ! Close statement Errors
 1002 call error_in_closing_a_file(UnFile, IO_File)
 
-end subroutine Input_Address_sub
-!end procedure Input_Address_sub
+!end subroutine Input_Address_sub
+end procedure Input_Address_sub
 
 end submodule Input_submod
-
