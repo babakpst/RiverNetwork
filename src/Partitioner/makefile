@@ -9,13 +9,10 @@
 # Last Update  : 02/13/2018
 #
 # =================================================================================================
-#METIS_DIR=/workspace/source/metis-5.1.0
-METIS_DIR=/workspace/source/metis-4.0.3
-#include ${METIS_DIR}/include
-#include ${METIS_DIR}/libmetis
+METIS_DIR=/workspace/source/metis-5.1.0
+#METIS_DIR=/workspace/source/metis-4.0.3
 
 F90=ifort
-#F90=ifort libmetis.a
 #F90= gfortran -ffree-line-length-none
 FFLAGS=-O2
 
@@ -31,12 +28,16 @@ SOURCESF=	Parameters_mod.f90 \
 
 OBJSF=$(SOURCESF:%.F90=%.o)
 
-#-lmetis
-#libmetis.a
 #-L$(METIS_DIR) -lmetis
+# METIS 4
+# $(METIS_DIR)/libmetis.a
+
+# METIS 5
+# $(METIS_DIR)/build/libmetis/libmetis.a
+
 main:$(OBJSF)
 	@echo Linking...
-	$(F90) $(FFLAGS) $(OBJSF) -o -I$(METIS_DIR) main $(METIS_DIR)/libmetis.a
+	$(F90) $(FFLAGS) $(OBJSF) -o -I$(METIS_DIR) main $(METIS_DIR)/build/libmetis/libmetis.a
 	@echo Done!
 
 %.o   : %.F90
@@ -50,6 +51,7 @@ cln  :
 	@echo Clean Object files...
 	rm -rf *.o main
 	rm -rf *.mod main
+	rm -rf *.smod main
 	rm -rf fort.* main
 
 
