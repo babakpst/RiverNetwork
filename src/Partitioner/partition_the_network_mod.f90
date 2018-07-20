@@ -349,6 +349,9 @@ logical :: Balanced_load
 type(NodeConncetivityArray_tp), allocatable, dimension(:) :: NodeConnectivity ! Linked list
 type(NodeConncetivity_tp), pointer :: Temp ! This is a temporary type to create the linked list
 
+
+
+
 ! code ============================================================================================
 write(*,        fmt="(A)") " subroutine < Network_Partitioner_Sub >: "
 write(FileInfo, fmt="(A)") " subroutine < Network_Partitioner_Sub >: "
@@ -415,7 +418,6 @@ this%xadj_target(:)   = -1_Shrt
 this%adjncy_target(:) = -1_Shrt
 this%adjwgt_target(:) = -1_Shrt
 this%part(:)          = -1_Shrt
-
 
   if (Geometry%Base_Geometry%METIS_version == 1_Tiny) then ! Partitioning using METIS version 5
     !----------------------------------------------------------------------------------------------
@@ -506,28 +508,25 @@ this%part(:)          = -1_Shrt
 NumberOfRanks  = Geometry%Base_Geometry%size
 NumberOfNodes  = Geometry%Base_Geometry%NoNodes
 ! <delete> after debugging
-print*, "xadj",     this%xadj_target ! <delete> after debugging
-print*, "adjncy:",  this%adjncy_target  ! <delete> after debugging
-print*, "adjwgt:",  this%adjwgt_target ! <delete> after debugging
+!print*, "xadj",     this%xadj_target ! <delete> after debugging
+!print*, "adjncy:",  this%adjncy_target  ! <delete> after debugging
+!print*, "adjwgt:",  this%adjwgt_target ! <delete> after debugging
 !print*, "vwgt:",    this%vwgt_target
-print*, "partitions", NumberOfRanks
+!print*, "partitions", NumberOfRanks
 
 ! - partitioning using METIS ----------------------------------------------------------------------
 write(*,        fmt="(A)") " -Graph partitioning using METIS_PartGraphKway... "
 write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
 
-  if (Geometry%Base_Geometry%METIS_version == 1_Tiny) then ! Partitioning using METIS version 5
+  if (Geometry%Base_Geometry%METIS_version == 1_Tiny .and. NumberOfRanks /= 1_Shrt) then ! Partitioning using METIS version 5
 
     write(*,        fmt="(A)") " Partition the network using METIS 5.1.0 ..."
     write(FileInfo, fmt="(A)") " Partition the network using METIS 5.1.0 ..."
 
 
-    print*, "checkpoint 000"
     !print*, " options5: ", this%options5
     !call METIS_SetDefaultOptions(this%options5)   ! <modify> using preprocessor derivative
     !call METIS_SetDefaultOptions(this%METIS5%options)   ! <modify> using preprocessor derivative
-
-    print*, "checkpoint 001"
 
     !this%options5(METIS_OPTION_OBJTYPE) = METIS_OBJTYPE_CUT
     !this%options5(METIS_OPTION_NCUTS)   = ?
@@ -589,7 +588,7 @@ write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
     write(*,        fmt="(A)") " Done with METIS!!! "
     write(FileInfo, fmt="(A)") " Done with METIS!!!  "
     stop
-  else if (Geometry%Base_Geometry%METIS_version == 0_Tiny) then ! Partitioning using METIS ver. 4
+  else if (Geometry%Base_Geometry%METIS_version == 0_Tiny  .and. NumberOfRanks /= 1_Shrt) then ! Partitioning using METIS ver. 4
 
     write(*,        fmt="(A)") " Partition the network using METIS 4.0.0 ..."
     write(FileInfo, fmt="(A)") " Partition the network using METIS 4.0.0 ..."
@@ -685,13 +684,10 @@ write(FileInfo,*) " Analyzing the partitioned network ... "
   end do
 
 
-
-
 ! no. of cells on each rank, saved in col 4.
 chunk(:,4) = chunk(:,2) + chunk(:,3)
-print*,chunk(:,4)
+print*,chunk(:,4) ! <delete>
 
-print*, "ReachPartition"
   do i_reach = 1_Lng, Geometry%Base_Geometry%NoReaches
     write(*,fmt="(5I4)")i_reach, this%ReachPartition(i_reach,1), this%ReachPartition(i_reach,2),this%ReachPartition(i_reach,3), this%ReachPartition(i_reach,4)
   end do
@@ -701,6 +697,13 @@ print*, "ReachPartition"
 !  while (Balanced_load) do
 !    Balanced_load = .false.
 !  end do
+
+
+
+
+
+
+
 
 TotalCellCounter = 0_Lng
 ! - printing out the partitioned data -------------------------------------------------------------
