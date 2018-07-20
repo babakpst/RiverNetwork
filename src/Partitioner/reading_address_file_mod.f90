@@ -15,10 +15,11 @@
 ! V2.00: 04/17/2018 - Partitioner
 ! V2.10: 05/15/2018 - Separating the input from model
 ! V2.20: 05/30/2018 - Initializing types
+! V2.30: 07/18/2018 - submodule
 !
 ! File version $Id $
 !
-! Last update: 05/30/2018
+! Last update: 07/18/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! Input_Address_sub: Reads file name and directories from the address file.
@@ -89,13 +90,13 @@ contains
 !
 !##################################################################################################
 
-Subroutine Input_Address_sub(this)
+
+subroutine Input_Address_sub(this)
 
 ! Libraries =======================================================================================
 use ifport
 
 ! User defined modules ============================================================================
-
 Implicit None
 
 ! Global Variables ================================================================================
@@ -111,9 +112,6 @@ integer(kind=Smll) :: ERR_Alloc, ERR_DeAlloc ! Allocating and DeAllocating error
 
 ! - Logical Variables -----------------------------------------------------------------------------
 Logical (kind=Shrt)  :: Directory
-
-! code ============================================================================================
-
 write(*,       *)
 write(*,       *) " Subroutine < Input_Address_sub >: "
 !write(FileInfo,*)
@@ -139,7 +137,7 @@ read(FileAdr,*) this%NumberOfAnalyses; !write(*,*) this%NumberOfAnalyses
 
 ! Allocating
 allocate(this%AnalysesNames(this%NumberOfAnalyses),  stat=ERR_Alloc)
-if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
+if (ERR_Alloc /= 0_smll) call error_in_allocation(ERR_Alloc)
 
 read(FileAdr,*)
 read(FileAdr,*)
@@ -190,6 +188,8 @@ Return
 ! Close statement Errors
 1002 call error_in_closing_a_file(UnFile, IO_File)
 
-End Subroutine Input_Address_sub
+end subroutine Input_Address_sub
+
+
 
 end module Input_mod

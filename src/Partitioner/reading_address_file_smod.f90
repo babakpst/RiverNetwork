@@ -1,9 +1,19 @@
 
+<<<<<<< HEAD
 submodule (Input_mod) Input_smod
+=======
+submodule (Input_mod) Input_submod
+
+implicit none
+>>>>>>> network_partitioner_v4
 
 contains
 
 module procedure Input_Address_sub
+<<<<<<< HEAD
+=======
+!module subroutine Input_Address_sub(this)
+>>>>>>> network_partitioner_v4
 
 write(*,       *)
 write(*,       *) " Subroutine < Input_Address_sub >: "
@@ -81,6 +91,13 @@ Return
 ! Close statement Errors
 1002 call error_in_closing_a_file(UnFile, IO_File)
 
+<<<<<<< HEAD
 end procedure Input_Address_sub
 
 end submodule Input_smod
+=======
+!end subroutine Input_Address_sub
+end procedure Input_Address_sub
+
+end submodule Input_submod
+>>>>>>> network_partitioner_v4
