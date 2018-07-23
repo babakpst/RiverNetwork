@@ -349,9 +349,6 @@ logical :: Balanced_load
 type(NodeConncetivityArray_tp), allocatable, dimension(:) :: NodeConnectivity ! Linked list
 type(NodeConncetivity_tp), pointer :: Temp ! This is a temporary type to create the linked list
 
-
-
-
 ! code ============================================================================================
 write(*,        fmt="(A)") " subroutine < Network_Partitioner_Sub >: "
 write(FileInfo, fmt="(A)") " subroutine < Network_Partitioner_Sub >: "
@@ -476,13 +473,6 @@ this%part(:)          = -1_Shrt
         stop
       end if
 
-
-    if (counter /= 2_Lng *  Geometry%Base_Geometry%NoReaches) then
-      write(*,*) " Something is wrong with the adjacency finder"
-      write(*,*) counter, 2_Lng*Geometry%Base_Geometry%NoReaches-1_Lng
-      stop
-    end if
-
   else if (Geometry%Base_Geometry%METIS_version == 0_Tiny) then ! Partitioning using METIS ver. 4
     !----------------------------------------------------------------------------------------------
     ! fortran style (numbering and arrays are all started from 1)
@@ -502,7 +492,7 @@ this%part(:)          = -1_Shrt
       end do
 
     this%xadj_target(i_node) = NodeLocation
-    this%adjncy_target(:) = this%adjncy_target(:)  ! Fortran style
+    this%adjncy_target(:) = this%adjncy_target(:) ! Fortran style
 
       if (counter /= 2_Lng *  Geometry%Base_Geometry%NoReaches) then
         write(*,*) " Something is wrong with the adjacency finder"
@@ -514,6 +504,7 @@ this%part(:)          = -1_Shrt
 
 NumberOfRanks  = Geometry%Base_Geometry%size
 NumberOfNodes  = Geometry%Base_Geometry%NoNodes
+
 ! <delete> after debugging
 !print*, "xadj",     this%xadj_target ! <delete> after debugging
 !print*, "adjncy:",  this%adjncy_target  ! <delete> after debugging
@@ -525,7 +516,8 @@ NumberOfNodes  = Geometry%Base_Geometry%NoNodes
 write(*,        fmt="(A)") " -Graph partitioning using METIS_PartGraphKway... "
 write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
 
-  if (Geometry%Base_Geometry%METIS_version == 1_Tiny .and. NumberOfRanks /= 1_Shrt) then ! Partitioning using METIS version 5
+  ! Partitioning using METIS version 5
+  if (Geometry%Base_Geometry%METIS_version == 1_Tiny .and. NumberOfRanks /= 1_Shrt) then
 
     write(*,        fmt="(A)") " Partition the network using METIS 5.1.0 ..."
     write(FileInfo, fmt="(A)") " Partition the network using METIS 5.1.0 ..."
@@ -547,7 +539,9 @@ write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
     !print*, " options5: ", this%options5
 
     this%METIS5%nvtxs  => NumberOfNodes ! Setting the number of vertices
-    this%ncon          = 1 ! Do not change- This should be equal to 1, even though in some locations in the manual, it is said that we can put it equal to NULL.
+    this%ncon          = 1 ! Do not change
+                         ! This should be equal to 1, even though in some locations in the manual,
+                         ! it is said that we can set it equal to NULL.
     this%METIS5%ncon   =>  this%ncon
 
     this%METIS5%xadj   => this%xadj_target
@@ -567,23 +561,10 @@ write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
     !this%METIS5%options= this%options5
     this%METIS5%part   = this%part
 
-    !this%METIS5%ncon   => this%ncon
-    this%METIS5%ncon   => null()
-    this%METIS5%xadj   => this%xadj_target
-    this%METIS5%adjncy => this%adjncy_target
-    this%METIS5%adjwgt => this%adjwgt_target
-
-
-    print*, " xadj-   pointers", this%METIS5%xadj
-    print*, " xadj-   pointers", this%METIS5%xadj(-1), this%METIS5%xadj(0), this%METIS5%xadj(1), this%METIS5%xadj(2)
-    print*, " adjncy- pointers", this%METIS5%adjncy
-    print*, " adjncy- pointers", this%METIS5%adjncy(-1), this%METIS5%adjncy(0), this%METIS5%adjncy(1), this%METIS5%adjncy(2)
-    print*, " adjwgt- pointers", this%METIS5%adjwgt(-1), this%METIS5%adjwgt(0), this%METIS5%adjwgt(1), this%METIS5%adjwgt(2)
-    print*, this%METIS5%nparts
-
     write(*,        fmt="(A)") " Calling METIS partitioner ... "
     write(FileInfo, fmt="(A)") " Calling METIS partitioner ... "
 
+    ! All attempts to make this subroutine to work, failed.
     !call METIS_PartGraphKway(this%METIS5%nvtxs,   &
     !                         this%METIS5%ncon,    &
     !                         this%METIS5%xadj,    &
@@ -601,7 +582,9 @@ write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
     write(*,        fmt="(A)") " Done with METIS!!! "
     write(FileInfo, fmt="(A)") " Done with METIS!!!  "
     stop
-  else if (Geometry%Base_Geometry%METIS_version == 0_Tiny  .and. NumberOfRanks /= 1_Shrt) then ! Partitioning using METIS ver. 4
+
+  ! Partitioning using METIS ver. 4
+  else if (Geometry%Base_Geometry%METIS_version == 0_Tiny  .and. NumberOfRanks /= 1_Shrt) then
 
     write(*,        fmt="(A)") " Partition the network using METIS 4.0.0 ..."
     write(FileInfo, fmt="(A)") " Partition the network using METIS 4.0.0 ..."
@@ -643,10 +626,6 @@ write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
 ! <delete>
 print*," edgecut after:   ",  this%METIS4%edgecut
 print*," partitions after: "
-! do i = 1, this%METIS4%n
-!  write(*,fmt="(2I2)")i, this%METIS4%part(i)
-! end do
-
  do i = 1, NumberOfNodes
   write(*,fmt="(2I2)")i, this%part(i)
  end do
@@ -710,13 +689,6 @@ print*,chunk(:,4) ! <delete>
 !  while (Balanced_load) do
 !    Balanced_load = .false.
 !  end do
-
-
-
-
-
-
-
 
 TotalCellCounter = 0_Lng
 ! - printing out the partitioned data -------------------------------------------------------------
