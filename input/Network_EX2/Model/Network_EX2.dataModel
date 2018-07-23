@@ -7,7 +7,7 @@ Total number of nodes in the network:
 16
 
 Number of partitions:
-4
+1
 
 Partitioner type (0 for metis no 4, 1 for metis 5)
 0

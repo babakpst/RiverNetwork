@@ -19,10 +19,11 @@
 ! V0.00: 04/15/2018 - File initiated.
 ! V2.00: 04/17/2018 - Debugged successfully.
 ! V3.00: 06/25/2018 - Modifying the partitioner module to partition a network.
+! V3.10: 07/23/2018 - Adding one rank partitioner
 !
 ! File version $Id: $
 !
-! Last update: 07/17/2018
+! Last update: 07/23/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! Network_Partitioner_Sub: Creates the input files for various processes.
@@ -353,6 +354,12 @@ type(NodeConncetivity_tp), pointer :: Temp ! This is a temporary type to create 
 write(*,        fmt="(A)") " subroutine < Network_Partitioner_Sub >: "
 write(FileInfo, fmt="(A)") " subroutine < Network_Partitioner_Sub >: "
 
+
+! If the number of partitions are more than one, we use METIS to partition the network, otherwise,
+! if there are only one partition, we directly write the information.
+
+if (Geometry%Base_Geometry%size > 1_Shrt) then
+
 ! Computing the chunk of each process
 write(*,        fmt="(A)") " calculating the average number of cells on each rank ... "
 write(FileInfo, fmt="(A)") " calculating the average number of cells on each rank ... "
@@ -632,7 +639,6 @@ print*," partitions after: "
 
 
 ! - analyzing the partitioned graph
-
 ! We loop over the reaches and we see the ranks the two nodes of the reach are belong to.
 ! If both nodes of a reach belong to one rank, then we devote the entire cells in this reach, to
 ! this rank. But, if the two nodes of the reach belong to two different ranks, then, initially, we
@@ -681,7 +687,8 @@ chunk(:,4) = chunk(:,2) + chunk(:,3)
 print*,chunk(:,4) ! <delete>
 
   do i_reach = 1_Lng, Geometry%Base_Geometry%NoReaches
-    write(*,fmt="(5I4)")i_reach, this%ReachPartition(i_reach,1), this%ReachPartition(i_reach,2),this%ReachPartition(i_reach,3), this%ReachPartition(i_reach,4)
+    write(*,fmt="(5I4)")i_reach, this%ReachPartition(i_reach,1), this%ReachPartition(i_reach,2), &
+                                 this%ReachPartition(i_reach,3), this%ReachPartition(i_reach,4)
   end do
 
 ! We develop an optimization problem here to equalize the no. of cells on each rank.
@@ -694,8 +701,8 @@ TotalCellCounter = 0_Lng
 ! - printing out the partitioned data -------------------------------------------------------------
   On_Partitions: do i_rank = 1_Shrt, Geometry%Base_Geometry%size
     write(*,*)
-    write(*,        fmt="(A,I10)") " Partitioning for process no.: ", i_rank-1_Shrt
-    write(FileInfo, fmt="(A,I10)") " Partitioning for process no.: ", i_rank-1_Shrt
+    write(*,        fmt="(A,I10)") " Creating the input file for process no.: ", i_rank-1_Shrt
+    write(FileInfo, fmt="(A,I10)") " Creating the input file for process no.: ", i_rank-1_Shrt
 
     ! Opening the output files.
     write(*,       *) " Creating input files ..."
@@ -715,8 +722,8 @@ TotalCellCounter = 0_Lng
 
     ! Writing the total number of cells in each partition
     UnFile = FilePartition
-    write(unit=UnFile, fmt="(I23)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) chunk(i_rank,4)
-    !write(unit=UnFile, fmt="(I23)") chunk(i_rank,4)
+    write(unit=UnFile, fmt="(I23)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
+                                                                                    chunk(i_rank,4)
 
     CellCounter = 0_Lng ! To make sure that we count all the cell numbers in each rank
     ReachCounter= 0_Lng
@@ -777,7 +784,6 @@ TotalCellCounter = 0_Lng
               Discretization%DiscretizedReach(i_reach)%ReachWidthCell, &
               Discretization%DiscretizedReach(i_reach)%CellPorjectionLength
 
-          print*," Ranges: ", RangeCell_I, RangeCell_II
           do i_cells = RangeCell_I, RangeCell_II
 
             CellCounter = CellCounter + 1_Lng
@@ -786,9 +792,9 @@ TotalCellCounter = 0_Lng
                   Discretization%DiscretizedReach(i_reach)%LengthCell    (i_cells),  &
                   Discretization%DiscretizedReach(i_reach)%CellSlope     (i_cells),  &
                   Discretization%DiscretizedReach(i_reach)%InterfaceSlope(i_cells),  &
-                  Discretization%DiscretizedReach(i_reach)%ZCell      (i_cells),     &
-                  Discretization%DiscretizedReach(i_reach)%YCell      (i_cells),     &
-                  Discretization%DiscretizedReach(i_reach)%XCell      (i_cells)
+                  Discretization%DiscretizedReach(i_reach)%ZCell         (i_cells),  &
+                  Discretization%DiscretizedReach(i_reach)%YCell         (i_cells),  &
+                  Discretization%DiscretizedReach(i_reach)%XCell         (i_cells)
           end do
         write(unit=UnFile, fmt="(F35.20)", &
               advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
@@ -796,7 +802,6 @@ TotalCellCounter = 0_Lng
       end do
 
     TotalCellCounter = TotalCellCounter + CellCounter
-    print *, "cells on the rank", i_rank, " is:", CellCounter
 
     ! - Closing the input file for this partition -------------------------------------------------
     write(*,        *) " Closing the input file ... "
@@ -815,6 +820,86 @@ TotalCellCounter = 0_Lng
     write(*, Fmt_FL); write(FileInfo, Fmt_FL);
     write(*, Fmt_end); read(*,*); stop;
   end if
+
+
+! writing the network for the case that we have only one partition (for debugging purposes).
+else if (Geometry%Base_Geometry%size == 1_Shrt) then
+
+write(*,*)
+write(*,        fmt="(A,I10)") " Creating the input file for process no.: ", 0_Shrt
+write(FileInfo, fmt="(A,I10)") " Creating the input file for process no.: ", 0_Shrt
+
+! Directories for the input files <modify>
+! open file for this partition
+write(IndexRank, *) 0_Shrt ! Converts Rank to Character format for the file Name
+
+UnFile = FilePartition
+open(unit=UnFile, &
+     file=trim(ModelInfo%ModelName)//'_s'//&
+     trim(adjustL(Geometry%Base_Geometry%IndexSize))//'_p'//trim(adjustL(IndexRank))//'.par', &
+     Err=1001, iostat=IO_File, access='sequential', action='write', asynchronous='no', &
+     blank='NULL', blocksize=0, defaultfile=trim(ModelInfo%InputDir), dispose='keep', &
+     form='formatted', position='asis', status='replace')
+
+! Writing the total number of cells in each partition
+UnFile = FilePartition
+write(unit=UnFile, fmt="(I23)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
+                                                                              Discretization%NCells
+
+CellCounter = 0_Lng ! To make sure that we count all the cell numbers in each rank
+ReachCounter= 0_Lng
+UnFile = FilePartition
+  do i_reach = 1_Lng, Geometry%Base_Geometry%NoReaches
+
+    ! The rank which the first node of this reach belongs to
+    RankNodeI  = Geometry%network(i_reach)%ReachNodes(1)
+
+    ! The rank which the second node of this reach belongs to
+    RankNodeII = Geometry%network(i_reach)%ReachNodes(2)
+
+    RangeCell_I   = 1_Lng
+    RangeCell_II  = Discretization%DiscretizedReach(i_reach)%NCells_reach
+    Communication = -1_Tiny
+    CommRank      = -1_Tiny
+    BCNodeI       = Geometry%BoundaryCondition(RankNodeI)
+    BCNodeII      = Geometry%BoundaryCondition(RankNodeII)
+
+    ReachCounter= ReachCounter + 1_Lng
+
+    write(unit=UnFile, fmt="(6I12, 3F35.20)", advance='yes', asynchronous='no', &
+          iostat=IO_write, err=1006) &
+          i_reach, ReachCounter, Communication, CommRank, BCNodeI, BCNodeII, &
+          Discretization%DiscretizedReach(i_reach)%ReachManning, &
+          Discretization%DiscretizedReach(i_reach)%ReachWidthCell, &
+          Discretization%DiscretizedReach(i_reach)%CellPorjectionLength
+
+      do i_cells = RangeCell_I, RangeCell_II
+
+        CellCounter = CellCounter + 1_Lng
+        write(unit=UnFile, fmt="(6F35.20)", &
+              advance='yes', asynchronous='no', iostat=IO_write, err=1006)       &
+              Discretization%DiscretizedReach(i_reach)%LengthCell    (i_cells),  &
+              Discretization%DiscretizedReach(i_reach)%CellSlope     (i_cells),  &
+              Discretization%DiscretizedReach(i_reach)%InterfaceSlope(i_cells),  &
+              Discretization%DiscretizedReach(i_reach)%ZCell         (i_cells),  &
+              Discretization%DiscretizedReach(i_reach)%YCell         (i_cells),  &
+              Discretization%DiscretizedReach(i_reach)%XCell         (i_cells)
+      end do
+    write(unit=UnFile, fmt="(F35.20)", &
+          advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
+          Discretization%DiscretizedReach(i_reach)%InterfaceSlope(i_cells+1_Lng)
+  end do
+
+TotalCellCounter = TotalCellCounter + CellCounter
+
+! - Closing the input file for this partition -------------------------------------------------
+write(*,        *) " Closing the input file ... "
+write(FileInfo, *) " Closing the input file ... "
+
+UnFile =  FilePartition
+close(unit=UnFile, status="keep", err=1002, iostat=IO_File)
+
+end if
 
 write(*,       *) " Partitioning conducted successfully."
 write(FileInfo,*) " Partitioning conducted successfully."
