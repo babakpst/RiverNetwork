@@ -1,3 +1,4 @@
+
 !##################################################################################################
 ! Purpose: This module partitions the network and creates the input file for each process/rank.
 !          To partition the network, we are using METIS graph partitioner. At the time of
@@ -60,7 +61,6 @@ type NodeConncetivityArray_tp
   integer :: counter = 0
   type(NodeConncetivity_tp), pointer :: head => null()
 end type NodeConncetivityArray_tp
-
 
 ! This type contains all the variables required to partition a graph using METIS version 4.0.0
 ! We define the required variables as pointers, because it is described in the METIS manual. Using
@@ -191,30 +191,12 @@ type partitioner_tp(edges, nodes)
   integer(kind=Shrt), len :: edges  ! number of edges in the network
   integer(kind=Shrt), len :: nodes  ! number of nodes in the network
 
-<<<<<<< HEAD
-  integer                   :: ncon          ! Temp variable for graph partitioning.
-  !integer(kind=Lng)        :: ncon          ! Temp variable for graph partitioning.
-  integer                   :: wgtflag
-  integer                   :: numflag
-<<<<<<< HEAD
-
-  !integer, dimension(0:nodes-1_Lng) :: part
-  integer, dimension(nodes) :: part
-=======
-  integer, dimension(0:nodes-1_Lng) :: part
->>>>>>> b416e060eefbdb9decd1977cdac1fbb28e7cc80a
-  integer, dimension(0:5)   :: options4
-  !integer, dimension(METIS_NOPTIONS) :: options5
-  integer, dimension(0:40) :: options5
-  type(c_ptr):: options55
-=======
   integer :: ncon    = 1_shrt ! Temp variable for graph partitioning.
   integer :: wgtflag = 1_shrt ! Weights on the edges only (vwgts = NULL)
   integer :: numflag = 1_shrt ! Fortran style numbering is assumed that starts from 1
 
   !integer, dimension(0:nodes-1_Lng) :: part
   integer, dimension(nodes) :: part
->>>>>>> network_partitioner_v3
 
   integer, dimension(1:5)   :: options4 = 0_Shrt
 
@@ -494,14 +476,13 @@ this%part(:)          = -1_Shrt
         stop
       end if
 
-<<<<<<< HEAD
-  if (counter /= 2_Lng *  Geometry%Base_Geometry%NoReaches) then
-    write(*,*) " Something is wrong with the adjacency finder"
-    write(*,*) counter, 2_Lng*Geometry%Base_Geometry%NoReaches-1_Lng
-    stop
-  end if
-<<<<<<< HEAD
-=======
+
+    if (counter /= 2_Lng *  Geometry%Base_Geometry%NoReaches) then
+      write(*,*) " Something is wrong with the adjacency finder"
+      write(*,*) counter, 2_Lng*Geometry%Base_Geometry%NoReaches-1_Lng
+      stop
+    end if
+
   else if (Geometry%Base_Geometry%METIS_version == 0_Tiny) then ! Partitioning using METIS ver. 4
     !----------------------------------------------------------------------------------------------
     ! fortran style (numbering and arrays are all started from 1)
@@ -519,7 +500,6 @@ this%part(:)          = -1_Shrt
             Temp => Temp%next
           end do
       end do
->>>>>>> network_partitioner_v3
 
     this%xadj_target(i_node) = NodeLocation
     this%adjncy_target(:) = this%adjncy_target(:)  ! Fortran style
@@ -541,14 +521,6 @@ NumberOfNodes  = Geometry%Base_Geometry%NoNodes
 !print*, "vwgt:",    this%vwgt_target
 !print*, "partitions", NumberOfRanks
 
-=======
-print*,"checkpoint 003"
-print*, "adjncy:",  this%adjncy_target  ! <delete> after debugging
-print*, "adjwgt:", this%adjwgt_target ! <delete> after debugging
-print*, "xadj", this%xadj_target ! <delete> after debugging
-print*, Geometry%Base_Geometry%size
-print*,"checkpoint 004"
->>>>>>> b416e060eefbdb9decd1977cdac1fbb28e7cc80a
 ! - partitioning using METIS ----------------------------------------------------------------------
 write(*,        fmt="(A)") " -Graph partitioning using METIS_PartGraphKway... "
 write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
@@ -558,34 +530,15 @@ write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
     write(*,        fmt="(A)") " Partition the network using METIS 5.1.0 ..."
     write(FileInfo, fmt="(A)") " Partition the network using METIS 5.1.0 ..."
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-    print*, " options5: ", this%options5
-    call METIS_SetDefaultOptions(this%options5)
-=======
-
-    print*, " options5: ", this%options5
-    call METIS_SetDefaultOptions(this%options5)
-    print*, " options5: ", this%options5
+    !call METIS_SetDefaultOptions(this%options5)
 
     NumberOfNodes = Geometry%Base_Geometry%NoNodes
     this%METIS5%nvtxs => NumberOfNodes ! Setting the number of vertices
-
-    ! setting the number of balancing constraints.
-    this%ncon = 0  ! <modify> The other option is to nullify the pointer. Check both cases.
->>>>>>> b416e060eefbdb9decd1977cdac1fbb28e7cc80a
-=======
 
     !print*, " options5: ", this%options5
     !call METIS_SetDefaultOptions(this%options5)   ! <modify> using preprocessor derivative
     !call METIS_SetDefaultOptions(this%METIS5%options)   ! <modify> using preprocessor derivative
 
-<<<<<<< HEAD
-    print*, "checkpoint 001"
-
->>>>>>> network_partitioner_v3
-=======
->>>>>>> network_partitioner_v4
     !this%options5(METIS_OPTION_OBJTYPE) = METIS_OBJTYPE_CUT
     !this%options5(METIS_OPTION_NCUTS)   = ?
     !this%options5(METIS_OPTION_NUMBERING) = 1
@@ -614,22 +567,12 @@ write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
     !this%METIS5%options= this%options5
     this%METIS5%part   = this%part
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
     !this%METIS5%ncon   => this%ncon
     this%METIS5%ncon   => null()
     this%METIS5%xadj   => this%xadj_target
     this%METIS5%adjncy => this%adjncy_target
     this%METIS5%adjwgt => this%adjwgt_target
 
->>>>>>> b416e060eefbdb9decd1977cdac1fbb28e7cc80a
-=======
-    !allocate( this%tpwgts(this%ncon*NumberOfRanks), this%METIS5%ubvec(this%ncon) )
-    !this%tpwgts = 1.0_sgl / NumberOfRanks
->>>>>>> network_partitioner_v3
-
-    print*, "checkpoint 010"
 
     print*, " xadj-   pointers", this%METIS5%xadj
     print*, " xadj-   pointers", this%METIS5%xadj(-1), this%METIS5%xadj(0), this%METIS5%xadj(1), this%METIS5%xadj(2)
