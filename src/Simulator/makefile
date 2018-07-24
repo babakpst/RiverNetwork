@@ -31,7 +31,7 @@ SOURCESF=	Parameters_mod.f90 \
 					reading_partitioned_model_mod.f90 \
 					Inf_mod.f90 \
 					Results_mod.f90 \
-					Solver_mod.f90 \
+					solve_network_mod.f90 \
 					Driver_Simulation.f90
 
 OBJSF=$(SOURCESF:%.F90=%.o)

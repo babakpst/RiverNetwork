@@ -65,10 +65,6 @@ type Input_Data_tp
     procedure:: visualizer => Python_Visualizer_sub
 end type Input_Data_tp
 
-
-
-
-
 ! Contains all information about the domain, required
 type AnalysisData_tp
   integer(kind=Smll) :: AnalysisType=2_smll ! Analysis Type      -1:1D Lax-Wendroff
@@ -186,9 +182,8 @@ this%AnalysisDir=trim(AdjustL(this%InputDir))//'/'// &
 this%InputDir   =trim(AdjustL(this%InputDir))//'/'// &
                       trim(AdjustL(this%ModelName))//'/'//'Model'
 
-
 write(*, fmt="(2A)")" The model directory is: ", this%InputDir
-write(*, fmt="(2A)")" The analysis name is: ", this%AnalysisDir
+write(*, fmt="(2A)")" The analysis name is: ",   this%AnalysisDir
 write(*, fmt="(2A)")" The input file name is: ", this%ModelName
 
 ! Create the results folder
@@ -208,7 +203,6 @@ write(*,fmt="(2A)")" The output directory is: ", this%OutputDir
 ! Modifying the model name for parallel simulation
 this%ModelNameParallel = trim(AdjustL(this%ModelName))//'_s'// &
                          trim(adjustL(this%IndexSize))//'_p'//trim(adjustL(this%IndexRank))
-
 
 write(*,fmt='(" The name of the model file is: ",2A)') this%ModelNameParallel
 

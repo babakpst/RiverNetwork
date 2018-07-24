@@ -1,5 +1,5 @@
 Input file name:
-EX3_Limiter
+Network_EX2
 
 Input directory:
 "/h1/babak/Documents/Goofy/input"

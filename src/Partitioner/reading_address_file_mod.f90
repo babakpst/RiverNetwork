@@ -43,13 +43,11 @@ private
 
 ! Holds info. (name, dir. output dir.) of the model, initialized by subroutine Input_Address_sub.
 type Input_Data_tp
-  character (kind = 1, Len = 30 ) :: ModelName=" "     ! Name of the model input file
-  character (kind = 1, Len = 150) :: InputDir=" "      ! Directory of the input file.
-  character (kind = 1, Len = 150) :: AnalysisDir=" "   ! Directory of Analysis input file.
-  character (kind = 1, Len = 150) :: OutputDir=" "     ! Directory of output files (Results)
-  character (kind = 1, Len = 150) :: AnalysisOutputDir=" "! Dir. of output file for each analysis
-  character (kind = 1, Len = 150), dimension(:), allocatable :: AnalysesNames! Holds the names of
-                                                                        ! the analysis input files
+  character (kind = 1, Len = 30 ) :: ModelName         =" " ! Name of the model input file
+  character (kind = 1, Len = 150) :: InputDir          =" " ! Directory of the input file.
+  character (kind = 1, Len = 150) :: AnalysisDir       =" " ! Directory of Analysis input file.
+  character (kind = 1, Len = 150) :: OutputDir         =" " ! Directory of output files (Results)
+
   !integer(kind=Smll):: OutputType        ! Output Type: 1: ordinary-2: HDF5
   integer(kind=Smll) :: NumberOfAnalyses=0_smll  ! Number of analysis
 
@@ -135,23 +133,13 @@ read(FileAdr,*)
 read(FileAdr,*)
 read(FileAdr,*) this%NumberOfAnalyses; !write(*,*) this%NumberOfAnalyses
 
-! Allocating
-allocate(this%AnalysesNames(this%NumberOfAnalyses),  stat=ERR_Alloc)
-if (ERR_Alloc /= 0_smll) call error_in_allocation(ERR_Alloc)
-
-read(FileAdr,*)
-read(FileAdr,*)
-  do i_analyses = 1, this%NumberOfAnalyses
-    read(FileAdr,*) this%AnalysesNames(i_analyses)
-  end do
-
 this%AnalysisDir=trim(AdjustL(this%InputDir))//'/'// &
                       trim(AdjustL(this%ModelName))//'/'//'Analysis'
 this%InputDir   =trim(AdjustL(this%InputDir))//'/'// &
                       trim(AdjustL(this%ModelName))//'/'//'Model'
 
 write(*, fmt="(2A)")" The model directory is: ", this%InputDir
-write(*, fmt="(2A)")" The analysis name is: ", this%AnalysisDir
+write(*, fmt="(2A)")" The analysis name is: ",   this%AnalysisDir
 write(*, fmt="(2A)")" The input file name is: ", this%ModelName
 
 ! Create the results folder

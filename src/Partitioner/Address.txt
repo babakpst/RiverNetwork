@@ -7,10 +7,4 @@ Input directory:
 Output directory:
 "/h1/babak/Documents/Goofy/output"
 
-Number of Analysis:
-1
-
-Names of the analysis files:
-Case1
-
 
