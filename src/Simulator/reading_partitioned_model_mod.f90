@@ -13,10 +13,11 @@
 ! V0.10: 03/08/2018 - Initiated: Compiled without error.
 ! V1.00: 04/20/2018 - Major modifications
 ! V2.00: 05/15/2018 - Separating model from the input
+! V3.00: 07/24/2018 - Modifying the input subroutine to read a partitioned network
 !
 ! File version $Id $
 !
-! Last update: 05/15/2018
+! Last update: 07/24/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! Input_Address_sub: Reads file name and directories from the address file.
@@ -42,18 +43,21 @@ private
 
 ! Contains all information after discretization
 type model_tp
-  integer (kind=Lng)  :: NCells=0_lng ! Total number of cells in the domain
+  integer (kind=Lng) :: NCells = 0_lng ! Total number of cells in the domain
 
-  real(kind=DBL), allocatable, dimension(:) :: CellSlope  ! the slope of each cell at the center
-  real(kind=DBL), allocatable, dimension(:) :: InterfaceSlope ! the slope of each cell at the center
-  real(kind=DBL), allocatable, dimension(:) :: ZCell      ! bottom elev. at the center of each cell
+  real(kind=DBL), allocatable, dimension(:) :: CellSlope     ! the slope of each cell at the center
+  real(kind=DBL), allocatable, dimension(:) :: InterfaceSlope! the slope at the interfaces of cells
+  real(kind=DBL), allocatable, dimension(:) :: ZCell         ! bottom elev. at the center of cells
 
-  real(kind=DBL), allocatable, dimension(:) :: ManningCell! the Manning's number of each cell
-  real(kind=DBL), allocatable, dimension(:) :: WidthCell  ! the Manning's number of each cell
-  real(kind=DBL), allocatable, dimension(:) :: XCell     ! the coordinates of the cell center
-  real(kind=DBL), allocatable, dimension(:,:) :: LengthCell ! the length of each cell
-            ! note: the first col holds the actual cell length (length of the control volume), and
-            !       the second col holds the projection(x)
+  real(kind=DBL), allocatable, dimension(:) :: ManningCell   ! the Manning's number of each cell
+  real(kind=DBL), allocatable, dimension(:) :: WidthCell     ! the Manning's number of each cell
+  real(kind=DBL), allocatable, dimension(:) :: XCell         ! the coordinates of the cell center
+
+  ! note: the first col holds the actual cell length (length of the control volume), and
+  !       the second col holds the projection(x)
+  ! the length of each cell
+  real(kind=DBL), allocatable, dimension(:,:) :: LengthCell
+
 
   contains
     procedure:: Input => Input_sub
@@ -79,10 +83,11 @@ contains
 ! V1.0: 04/10/2018 - Minor modifications in the class.
 ! V2.0: 04/20/2018 - Parallel.
 ! V2.1: 05/24/2018 - Parallel with MPI
+! V3.0: 07/24/2018 - reading the partitioned network
 !
 ! File version $Id $
 !
-! Last update: 05/24/2018
+! Last update: 07/24/2018
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
 ! (Refer to the main code to see the list of imported variables)
@@ -102,18 +107,17 @@ Implicit None
 
 ! - types -----------------------------------------------------------------------------------------
 type(Input_Data_tp), intent(In) :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
-class(model_tp),  intent(inout) :: this ! Holds the model
+class(model_tp),  intent(inout) :: this       ! Holds the entire model
 
 ! Local Variables =================================================================================
 ! - integer Variables -----------------------------------------------------------------------------
 integer(kind=Smll) :: ERR_Alloc, ERR_DeAlloc ! Allocating and DeAllocating errors
-integer(kind=Smll) :: UnFile   ! Holds Unit of a file for error message
-integer(kind=Smll) :: IO_File  ! For IOSTAT: Input Output status in OPEN command
-integer(kind=Smll) :: IO_read  ! Holds error of read statements
-integer(kind=Smll) :: IO_write ! Used for IOSTAT - Input Output Status - in the write command
-integer(kind=Smll) :: i_reach  ! loop index on the number of reaches
-
-integer(kind=Lng)  :: i_cells  ! loop index on the number of reaches
+integer(kind=Smll) :: UnFile                 ! Holds Unit of a file for error message
+integer(kind=Smll) :: IO_File                ! For IOSTAT: Input Output status in OPEN command
+integer(kind=Smll) :: IO_read                ! Holds error of read statements
+integer(kind=Smll) :: IO_write               ! Used for IOSTAT in the write statement:In/Out Status
+integer(kind=Smll) :: i_reach                ! loop index on the number of reaches
+integer(kind=Lng)  :: i_cells                ! loop index on the number of reaches
 
 ! code ============================================================================================
 write(*,       *)

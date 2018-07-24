@@ -13,10 +13,11 @@
 ! V0.10: 03/08/2018 - Initiated: Compiled without error.
 ! V1.00: 04/20/2018 - Major modifications
 ! V2.00: 05/15/2018 - Separating model from the input
+! V2.01: 07/24/2018 - Modifications on the style
 !
 ! File version $Id $
 !
-! Last update: 05/15/2018
+! Last update: 07/24/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! Input_Address_sub: Reads file name and directories from the address file.
@@ -48,8 +49,10 @@ type Input_Data_tp
   character (kind = 1, Len = 150) :: OutputDir     ! Directory of output files (Results)
   character (kind = 1, Len = 150) :: AnalysisOutputDir ! Dir of output file for each analysis
   character (kind = 1, Len = 150) :: VisualizerDir ! Dir of output file for visualizer(python)
-  character (kind = 1, Len = 150), dimension(:), allocatable :: AnalysesNames! Holds the names of
-                                                                        ! the analysis input files
+
+  ! Holds the names of the analysis input files
+  character (kind = 1, Len = 150), dimension(:), allocatable :: AnalysesNames
+
   ! rank and size of MPI
   Character(kind = 1, len = 20) :: IndexRank !Rank no in the Char. fmt to add to input file Name
   Character(kind = 1, len = 20) :: IndexSize !Size no in the Char. fmt to add to input file Name
@@ -61,24 +64,24 @@ type Input_Data_tp
   real(kind=SGL) :: Version               ! Holds the version of the code.
 
   contains
-    procedure :: Input => Input_Address_sub
-    procedure:: visualizer => Python_Visualizer_sub
+    procedure :: Input      => Input_Address_sub
+    procedure :: visualizer => Python_Visualizer_sub
 end type Input_Data_tp
 
 ! Contains all information about the domain, required
 type AnalysisData_tp
-  integer(kind=Smll) :: AnalysisType=2_smll ! Analysis Type      -1:1D Lax-Wendroff
-                                            !                    -2:1D Lax-Wendroff with limiter
-  integer(kind=Smll) :: limiter=1_smll      ! limiter type
+  integer(kind=Smll):: AnalysisType=2_smll! Analysis Type -1:1D Lax-Wendroff
+                                          !               -2:1D Lax-Wendroff with limiter
+  integer(kind=Smll):: limiter  = 1_smll  ! limiter type
 
-  integer(kind=Lng)   :: Plot_Inc=500_Lng   ! Increment to record the results for visualization
+  integer(kind=Lng) :: Plot_Inc = 500_Lng ! Increment to record the results for visualization
 
-  real(kind=DBL):: TotalTime=0.0_dbl    ! Total simulation time (in seconds)
-  real(kind=DBL):: TimeStep=0.0_dbl     ! Time Step
-  real(kind=DBL):: Q_Up=0.0_dbl         ! Upstream boundary condition, constant flow (m^3/s)
-  real(kind=DBL):: h_dw=0.0_dbl         ! Downstream water depth (in meters)
-  real(kind=DBL):: CntrlV=0.0_dbl       ! Initial control volume
-  real(kind=DBL):: CntrlV_ratio=0.0_dbl ! Initial control volume ration, used to initialize data
+  real(kind=DBL):: TotalTime    = 0.0_dbl ! Total simulation time (in seconds)
+  real(kind=DBL):: TimeStep     = 0.0_dbl ! Time Step
+  real(kind=DBL):: Q_Up         = 0.0_dbl ! Upstream boundary condition, constant flow (m^3/s)
+  real(kind=DBL):: h_dw         = 0.0_dbl ! Downstream water depth (in meters)
+  real(kind=DBL):: CntrlV       = 0.0_dbl ! Initial control volume
+  real(kind=DBL):: CntrlV_ratio = 0.0_dbl ! Initial control volume ration, used to initialize data
 
   contains
     procedure:: Analysis => Input_Analysis_sub
@@ -173,9 +176,9 @@ read(FileAdr,*)
   end do
 
 
+! Comment: we read the rank and size directly in the main code, by calling MIP routines
 write(this%IndexRank, *) this%rank ! Converts Rank to Character format for the file Name
 write(this%IndexSize, *) this%size ! Converts Size to Character format for the file Name
-
 
 this%AnalysisDir=trim(AdjustL(this%InputDir))//'/'// &
                       trim(AdjustL(this%ModelName))//'/'//'Analysis'
