@@ -41,7 +41,7 @@ use messages_and_errors_mod
 implicit none
 private
 
-! Contains all information after discretization
+! Contains all information about the network
 type model_tp
   integer (kind=Lng) :: NCells = 0_lng ! Total number of cells in the domain
 
@@ -63,6 +63,15 @@ type model_tp
     procedure:: Input => Input_sub
 
 end type model_tp
+
+
+
+
+
+
+
+
+
 
 public:: model_tp
 

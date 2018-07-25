@@ -48,7 +48,7 @@ use messages_and_errors_mod
 implicit none
 private
 
-! contains all information after discretization
+! contains all information about individual reaches after discretization
 type DiscretizedReach_tp
   integer (kind=Lng)  :: NCells_reach=0_Lng ! number of cells in the reach
 
