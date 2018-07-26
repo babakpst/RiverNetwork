@@ -637,7 +637,6 @@ print*," partitions after: "
   write(*,fmt="(2I2)")i, this%part(i)
  end do
 
-
 ! - analyzing the partitioned graph
 ! We loop over the reaches and we see the ranks the two nodes of the reach are belong to.
 ! If both nodes of a reach belong to one rank, then we devote the entire cells in this reach, to
@@ -648,6 +647,7 @@ print*," partitions after: "
 ! we calculated in the beginning of this subroutine, saved in the "chunk" array.
 ! At the end of this loop, we have a rough estimation of the partitioning and the no. of cells on
 ! each rank. In the next step, we try to equalize the no. of cells on each reach.
+
 write(*,       *) " Analyzing the partitioned network ... "
 write(FileInfo,*) " Analyzing the partitioned network ... "
   do i_reach = 1_Lng, Geometry%Base_Geometry%NoReaches
@@ -657,10 +657,13 @@ write(FileInfo,*) " Analyzing the partitioned network ... "
     this%ReachPartition(i_reach,1) = this%part(NodeI)
     this%ReachPartition(i_reach,2) = this%part(NodeII)
 
+    ! The case that both nodes are on the same rank, i.e. the entire reach is one rank
     if (this%ReachPartition(i_reach,1) == this%ReachPartition(i_reach,2)) then
       this%ReachPartition(i_reach,3) = Discretization%DiscretizedReach(i_reach)%NCells_reach
       this%ReachPartition(i_reach,4) = 0
       chunk(this%part(NodeI),2) = chunk(this%part(NodeI),2) + this%ReachPartition(i_reach,3)
+
+    ! The case that the reach seats on two different ranks
     else
 
       if (mod(Discretization%DiscretizedReach(i_reach)%NCells_reach,2)==0 ) then
@@ -684,7 +687,6 @@ write(FileInfo,*) " Analyzing the partitioned network ... "
 
 ! no. of cells on each rank, saved in col 4.
 chunk(:,4) = chunk(:,2) + chunk(:,3)
-print*,chunk(:,4) ! <delete>
 
   do i_reach = 1_Lng, Geometry%Base_Geometry%NoReaches
     write(*,fmt="(5I4)")i_reach, this%ReachPartition(i_reach,1), this%ReachPartition(i_reach,2), &
@@ -724,6 +726,10 @@ TotalCellCounter = 0_Lng
     UnFile = FilePartition
     write(unit=UnFile, fmt="(I23)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
                                                                                     chunk(i_rank,4)
+
+
+
+
 
     CellCounter = 0_Lng ! To make sure that we count all the cell numbers in each rank
     ReachCounter= 0_Lng
