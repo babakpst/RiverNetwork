@@ -48,9 +48,6 @@ type Input_Data_tp
   character (kind = 1, Len = 150) :: AnalysisDir       =" " ! Directory of Analysis input file.
   character (kind = 1, Len = 150) :: OutputDir         =" " ! Directory of output files (Results)
 
-  !integer(kind=Smll):: OutputType        ! Output Type: 1: ordinary-2: HDF5
-  integer(kind=Smll) :: NumberOfAnalyses=0_smll  ! Number of analysis
-
   real(kind=SGL) :: Version=0.0               ! Holds the version of the code.
 
   contains
@@ -129,9 +126,6 @@ read(FileAdr,*) this%InputDir; !write(*,*) this%InputDir
 read(FileAdr,*)
 read(FileAdr,*)
 read(FileAdr,*) this%OutputDir; !write(*,*) this%OutputDir
-read(FileAdr,*)
-read(FileAdr,*)
-read(FileAdr,*) this%NumberOfAnalyses; !write(*,*) this%NumberOfAnalyses
 
 this%AnalysisDir=trim(AdjustL(this%InputDir))//'/'// &
                       trim(AdjustL(this%ModelName))//'/'//'Analysis'

@@ -169,7 +169,7 @@ contains
 !
 !##################################################################################################
 
-pure subroutine Solver_1D_with_Limiter_sub(this, TotalTime)
+subroutine Solver_1D_with_Limiter_sub(this, TotalTime)
 
 ! Libraries =======================================================================================
 !$ use omp_lib
@@ -736,7 +736,7 @@ end subroutine Impose_BC_1D_dw_sub
 !
 !##################################################################################################
 
-pure subroutine Limiters_sub(this)
+subroutine Limiters_sub(this)
 
 
 ! Libraries =======================================================================================
@@ -810,7 +810,7 @@ end subroutine Limiters_sub
 !
 !##################################################################################################
 
-pure subroutine Jacobian_sub(this)
+subroutine Jacobian_sub(this)
 
 
 ! Libraries =======================================================================================

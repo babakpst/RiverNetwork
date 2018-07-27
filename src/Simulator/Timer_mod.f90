@@ -86,7 +86,7 @@ contains
 !
 !##################################################################################################
 
-pure subroutine startTimer(this)
+subroutine startTimer(this)
 
 implicit none
 class(Timer_tp) :: this
@@ -119,7 +119,7 @@ end subroutine startTimer
 !
 !##################################################################################################
 
-pure subroutine stopTimer(this)
+subroutine stopTimer(this)
 
 implicit none
 class(Timer_tp) :: this
@@ -151,7 +151,7 @@ end subroutine stopTimer
 !
 !##################################################################################################
 
-pure function elapsedTime(this,units)
+function elapsedTime(this,units)
 
 implicit none
 
