@@ -20,10 +20,11 @@
 ! V2.00: 04/17/2018 - Debugged successfully.
 ! V3.00: 06/25/2018 - Modifying the partitioner module to partition a network.
 ! V3.10: 07/23/2018 - Adding one rank partitioner
+! V3.10: 07/26/2018 - modification on the paritioning to find total number of reaches on each rank
 !
 ! File version $Id: $
 !
-! Last update: 07/23/2018
+! Last update: 07/26/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! Network_Partitioner_Sub: Creates the input files for various processes.
@@ -341,6 +342,10 @@ integer(kind=Lng), dimension (Geometry%Base_Geometry%size,4) :: chunk
                          ! col 3: unsure cells, from ranks with two nodes on two different ranks
                          ! col 4: summation of cols 2 and 3, the actual no. of cells on this ranks
 
+! Indicates how many reaches exist on each rank, we need this for allocating memory in the
+! simulator code.
+integer(kind=Lng), dimension (Geometry%Base_Geometry%size) :: NReachOnRanks
+
 ! - character variables ---------------------------------------------------------------------------
 Character(kind = 1, len = 20) :: IndexRank ! Rank no in the Char. fmt to add to the input file Name
 
@@ -638,6 +643,8 @@ print*," partitions after: "
  end do
 
 ! - analyzing the partitioned graph
+! In the following loop, we analyze the partitioning to see how many cells sits on each rank.
+! Additionally, we count the number of reaches on each rank.
 ! We loop over the reaches and we see the ranks the two nodes of the reach are belong to.
 ! If both nodes of a reach belong to one rank, then we devote the entire cells in this reach, to
 ! this rank. But, if the two nodes of the reach belong to two different ranks, then, initially, we
@@ -648,9 +655,12 @@ print*," partitions after: "
 ! At the end of this loop, we have a rough estimation of the partitioning and the no. of cells on
 ! each rank. In the next step, we try to equalize the no. of cells on each reach.
 
+
+NReachOnRanks(:) = 0_Lng ! initialize, we set the number of reaches on each rank equal to zero.
 write(*,       *) " Analyzing the partitioned network ... "
 write(FileInfo,*) " Analyzing the partitioned network ... "
   do i_reach = 1_Lng, Geometry%Base_Geometry%NoReaches
+
     NodeI = Geometry%network(i_reach)%ReachNodes(1)
     NodeII= Geometry%network(i_reach)%ReachNodes(2)
 
@@ -659,6 +669,9 @@ write(FileInfo,*) " Analyzing the partitioned network ... "
 
     ! The case that both nodes are on the same rank, i.e. the entire reach is one rank
     if (this%ReachPartition(i_reach,1) == this%ReachPartition(i_reach,2)) then
+
+      NReachOnRanks(this%ReachPartition(i_reach,1)) = this%ReachPartition(i_reach,1) + 1_Lng
+
       this%ReachPartition(i_reach,3) = Discretization%DiscretizedReach(i_reach)%NCells_reach
       this%ReachPartition(i_reach,4) = 0
       chunk(this%part(NodeI),2) = chunk(this%part(NodeI),2) + this%ReachPartition(i_reach,3)
@@ -666,24 +679,26 @@ write(FileInfo,*) " Analyzing the partitioned network ... "
     ! The case that the reach seats on two different ranks
     else
 
-      if (mod(Discretization%DiscretizedReach(i_reach)%NCells_reach,2)==0 ) then
-        ! even no. of cells in this reach:
-        tempCell = Discretization%DiscretizedReach(i_reach)%NCells_reach /2_Lng
-        this%ReachPartition(i_reach,3) = tempCell
-        this%ReachPartition(i_reach,4) = tempCell
-        chunk(this%part(NodeI), 3) = chunk(this%part(NodeI), 3) + tempCell
-        chunk(this%part(NodeII),3) = chunk(this%part(NodeII),3) + tempCell
-      else
-        ! odd no. of cells in this reach
-        tempCell = (Discretization%DiscretizedReach(i_reach)%NCells_reach -1_Lng)/2_Lng
-        this%ReachPartition(i_reach,3) = tempCell
-        this%ReachPartition(i_reach,4) = tempCell+1_Lng
-        chunk(this%part(NodeI),3)  = chunk(this%part(NodeI), 3) + tempCell
-        chunk(this%part(NodeII),3) = chunk(this%part(NodeII),3) + tempCell+1_Lng
-      end if
+      NReachOnRanks(this%ReachPartition(i_reach,1)) = this%ReachPartition(i_reach,1) + 1_Lng
+      NReachOnRanks(this%ReachPartition(i_reach,2)) = this%ReachPartition(i_reach,2) + 1_Lng
+
+        if (mod(Discretization%DiscretizedReach(i_reach)%NCells_reach,2)==0 ) then
+          ! even no. of cells in this reach:
+          tempCell = Discretization%DiscretizedReach(i_reach)%NCells_reach /2_Lng
+          this%ReachPartition(i_reach,3) = tempCell
+          this%ReachPartition(i_reach,4) = tempCell
+          chunk(this%part(NodeI), 3) = chunk(this%part(NodeI), 3) + tempCell
+          chunk(this%part(NodeII),3) = chunk(this%part(NodeII),3) + tempCell
+        else
+          ! odd no. of cells in this reach
+          tempCell = (Discretization%DiscretizedReach(i_reach)%NCells_reach -1_Lng)/2_Lng
+          this%ReachPartition(i_reach,3) = tempCell
+          this%ReachPartition(i_reach,4) = tempCell+1_Lng
+          chunk(this%part(NodeI),3)  = chunk(this%part(NodeI), 3) + tempCell
+          chunk(this%part(NodeII),3) = chunk(this%part(NodeII),3) + tempCell+1_Lng
+        end if
     end if
   end do
-
 
 ! no. of cells on each rank, saved in col 4.
 chunk(:,4) = chunk(:,2) + chunk(:,3)
@@ -724,11 +739,8 @@ TotalCellCounter = 0_Lng
 
     ! Writing the total number of cells in each partition
     UnFile = FilePartition
-    write(unit=UnFile, fmt="(I23)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
-                                                                                    chunk(i_rank,4)
-
-
-
+    write(unit=UnFile, fmt="(2I23)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
+                                                            chunk(i_rank,4), NReachOnRanks(i_rank)
 
 
     CellCounter = 0_Lng ! To make sure that we count all the cell numbers in each rank
