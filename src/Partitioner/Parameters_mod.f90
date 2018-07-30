@@ -51,33 +51,55 @@ character(27), Parameter, Public:: Fmt_End="(' PRESS ENTER TO END ...')"
 
 character(84), Parameter, Public:: Fmt_ERR1_OPEN="( 'ERROR IN THE OPEN STATEMENT. Unit NUMBER=', &
                                                     I3, '   ERROR NUMBER IS=', I4  )"
+
 character(95), Parameter, Public:: Fmt_ERR2_OPEN="('End-OF-FILE ERROR IN THE OPEN STATEMENT. &
                                                     Unit NUMBER=',I3, ' ERROR NUMBER IS=',I4)"
+
 character(84), Parameter, Public:: Fmt_ERR1_Close="( 'ERROR IN THE Close STATEMENT. Unit NUMBER=',&
                                                       I3,'   ERROR NUMBER IS=', I4  )"
+
 character(163),Parameter, Public:: Fmt_NM="(' FILE Name : ',A20,//,' Directories :',/,&
                             'INPUT FILE DIRECTORY   : ',A100,/,'OUTPUT FILES DIRECTORY  : ',A100)"
+
 character(41), Parameter, Public:: Fmt_SUC="('CONGRATULATIONS! DONE SUCCESSFULLY. ')"
+
 character(39), Parameter, Public:: Fmt_FL="('OOPS!!!  FAIL TO OPERATE PROPERLY.')"
+
 character(78), Parameter, Public:: Fmt_ALLCT="('ERROR IN ALLOCATING Arrays. ERROR NUMBER IS :',&
                                                I4, '   LOCATION: ??????.')"
+
 character(80), Parameter, Public:: Fmt_DEALLCT="('ERROR IN DEALLOCATING Arrays. ERROR NUMBER IS :'&
+
                                                 , I4, '   LOCATION: ??????.')"
 character(23), Parameter, Public:: Fmt_RUNTIME="(A,F50.2,'   SECONDS')"
+
 character(70), Parameter, Public:: Fmt_READ1="('ERROR IN READ STATEMENT. Unit IS : ',I5,&
                                                ' ERROR NUMBER IS : ', I5 )"
+
 character(76), Parameter, Public:: Fmt_READ2="('End OF FILE IN READ STATEMENT. Unit IS : ',I5,&
                                                ' ERROR NUMBER IS : ', I5 )"
+
 character(78), Parameter, Public:: Fmt_READ3="('End OF RECORD IN READ STATEMENT. Unit IS : '&
                                                ,I5,' ERROR NUMBER IS : ', I5 )"
+
 character(71), Parameter, Public:: Fmt_write1="('ERROR IN write STATEMENT. Unit IS : ',I5,&
                                                 ' ERROR NUMBER IS : ', I5 )"
-character(143),Parameter, Public:: Fmt_Element1="('Error in the element type. Either there is a &
-   mistake in the input file for element type or element type in not available in the code yet.')"
-character(144),Parameter, Public:: Fmt_Element2="('Error in the element type. This element number'&
-   ,I3,'is not available in the list of this code. Check the input file for element number',I19)"
 
-character(60), Parameter, Public:: Fmt_METIS="(' ERROR IN THE METIS VERSION. CHECK THE .DATAMODEL FILE.')"
+character(143),Parameter, Public:: Fmt_Element1="('Error in the element type. Either there is a &
+                                                   mistake in the input file for element type or &
+                                                  element type in not available in the code yet.')"
+
+character(144),Parameter, Public:: Fmt_Element2="('Error in the element type. This element number'&
+                                                  ,I3,'is not available in the list of this code. &
+                                                  Check the input file for element number',I19)"
+
+character(60), Parameter, Public:: Fmt_METIS="(' Error in the Metis version. Check the .datamodel &
+                                                 file.')"
+
+character(114), Parameter, Public:: Fmt_Reach="(' There is a mismatch between the total number of &
+                                                  reaches and the sum of all reaches distributed  &
+                                                  between the ranks.')"
+
 
 ! Unit NUMBERS OF EXTERNAL FILES ==================================================================
 

@@ -207,9 +207,6 @@ integer(kind=Smll) :: i_analyses     ! loop index to read the analyses files
 class(Input_Data_tp) :: this
 type(AnalysisData_tp) :: AnalysisInfo
 
-
-
-
 end subroutine Python_Visualizer_sub
 
 end interface

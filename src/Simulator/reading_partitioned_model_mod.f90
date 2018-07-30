@@ -13,16 +13,14 @@
 ! V0.10: 03/08/2018 - Initiated: Compiled without error.
 ! V1.00: 04/20/2018 - Major modifications
 ! V2.00: 05/15/2018 - Separating model from the input
-! V3.00: 07/24/2018 - Modifying the input subroutine to read a partitioned network
+! V3.00: 07/30/2018 - Modifying the input subroutine to read a partitioned network
 !
 ! File version $Id $
 !
-! Last update: 07/24/2018
+! Last update: 07/30/2018
 !
 ! ================================ S U B R O U T I N E ============================================
-! Input_Address_sub: Reads file name and directories from the address file.
-! reading_network_geometry_sub
-! Input_Analysis_sub
+! reading_partitioned_network
 !
 ! ================================ F U N C T I O N ================================================
 !
@@ -32,7 +30,7 @@
 !
 !##################################################################################################
 
-module Model_mod
+module reading_network_mod
 
 use Parameters_mod
 use Input_mod
@@ -41,44 +39,69 @@ use messages_and_errors_mod
 implicit none
 private
 
-! Contains all information about the network
-type model_tp
-  integer (kind=Lng) :: NCells = 0_lng ! Total number of cells in the domain
+! contains all information about individual reaches after discretization and partitioning
+type DiscretizedReach_tp
+  integer (kind=Lng)  :: NCells_reach = 0_Lng ! number of cells in the reach
+  integer (kind=Lng)  :: ReachNumber  = 0_Lng ! The reach no. in the unpartitioned network
 
-  real(kind=DBL), allocatable, dimension(:) :: CellSlope     ! the slope of each cell at the center
-  real(kind=DBL), allocatable, dimension(:) :: InterfaceSlope! the slope at the interfaces of cells
-  real(kind=DBL), allocatable, dimension(:) :: ZCell         ! bottom elev. at the center of cells
+  integer (kind=Shrt) :: Communication= 0_Lng ! if this reach communicates with other ranks
+                                              ! -1: the entire rank is on one rank-no communication
+                                              ! 1: indicates that we need to communicate with the
+                                              !    rank that holds the lower part of the rank.
+                                              ! 2: indicates that we need to communicate with the
+                                              !    rank that holds the upper part of the rank.
 
-  real(kind=DBL), allocatable, dimension(:) :: ManningCell   ! the Manning's number of each cell
-  real(kind=DBL), allocatable, dimension(:) :: WidthCell     ! the Manning's number of each cell
-  real(kind=DBL), allocatable, dimension(:) :: XCell         ! the coordinates of the cell center
+  integer(kind=Shrt)  :: CommRank =-1_Shrt    ! indicates the rank number that a reach needs to
+                                              ! communicate with, i.e., if the reach is divided
+                                              ! between two ranks.
 
-  ! note: the first col holds the actual cell length (length of the control volume), and
-  !       the second col holds the projection(x)
-  ! the length of each cell
-  real(kind=DBL), allocatable, dimension(:,:) :: LengthCell
+  integer(kind=tiny) :: BCNodeI   = -1_Shrt   ! the BC of the upstream node of the reach,
+  integer(kind=tiny) :: BCNodeII  = -1_Shrt   ! the BC of the downstream node of the reach,
+                                              ! -1 not on this rank, 0 BC,
+                                              !  1 connected to other nodes, 2 outlet
 
+  real(kind=DBL) :: ReachManning         = 0.0_dbl ! the Manning's number of each cell
+  real(kind=DBL) :: ReachWidthCell       = 0.0_dbl ! the Manning's number of each cell
+  real(kind=DBL) :: CellPorjectionLength = 0.0_dbl ! the length of each cell in the horizontal dir.
+
+  real(kind=DBL), allocatable, dimension(:) :: LengthCell     ! the length of each cell
+  real(kind=DBL), allocatable, dimension(:) :: CellSlope      ! slope of each cell at the center
+  real(kind=DBL), allocatable, dimension(:) :: InterfaceSlope ! slope of each cell at the center
+
+  ! coordinate
+  real(kind=DBL), allocatable, dimension(:) :: ZCell     ! bottom elev. at the center of each cell
+  real(kind=DBL), allocatable, dimension(:) :: YCell     ! the coordinates of the cell center
+  real(kind=DBL), allocatable, dimension(:) :: XCell     ! the coordinates of the cell center
+
+  !real(kind=DBL), allocatable, dimension(:) :: ZFull    ! bottom elevation at cells and interfaces
+  !real(kind=DBL), allocatable, dimension(:) :: YFull    ! coordinates at cells and interfaces
+  !real(kind=DBL), allocatable, dimension(:) :: XFull    ! coordinates at cells and interfaces
+end type DiscretizedReach_tp
+
+
+! contains the information about the entire network, separated by reaches
+type network_tp
+
+  ! Total number of cells from the network on this rank
+  integer(kind=Lng) :: TotalNumOfCellsOnThisRank = 0_Lng
+
+  ! Total number of ranks from the network on this rank
+  integer(kind=Lng) :: TotalNumOfReachesOnThisRank = 0_Lng
+
+  ! To hold the discretization of each reach. The size of this type is equal to the no of reaches.
+  type(DiscretizedReach_tp), allocatable, dimension(:) :: DiscretizedReach
 
   contains
-    procedure:: Input => Input_sub
+    procedure read => reading_partitioned_network
+end type network_tp
 
-end type model_tp
-
-
-
-
-
-
-
-
-
-
-public:: model_tp
+public:: network_tp
 
 contains
 
 !##################################################################################################
-! Purpose: This subroutine reads the partitioned data created by the partitioner.
+! Purpose: This subroutine reads the partitioned data created by the partitioner. All the types and
+! the variables are based on the partitioner code.
 !
 ! Developed by: Babak Poursartip
 ! Supervised by: Clint Dawson
@@ -92,11 +115,11 @@ contains
 ! V1.0: 04/10/2018 - Minor modifications in the class.
 ! V2.0: 04/20/2018 - Parallel.
 ! V2.1: 05/24/2018 - Parallel with MPI
-! V3.0: 07/24/2018 - reading the partitioned network
+! V3.0: 07/30/2018 - reading the partitioned network
 !
 ! File version $Id $
 !
-! Last update: 07/24/2018
+! Last update: 07/30/2018
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
 ! (Refer to the main code to see the list of imported variables)
@@ -104,7 +127,7 @@ contains
 !
 !##################################################################################################
 
-Subroutine Input_sub(this, ModelInfo)
+Subroutine reading_partitioned_network(this, ModelInfo)
 
 ! Libraries =======================================================================================
 
@@ -138,13 +161,21 @@ write(FileInfo,*) " Subroutine < Input_sub >: "
 write(*,        fmt="(A)") " -Opening the input file ..."
 
 write(FileInfo, fmt="(A)") " -Opening the input file ..."
+
 ! Open the input file for arrays
 UnFile = FilePartition
-
 open(Unit=UnFile, file=trim(ModelInfo%ModelNameParallel)//'.par', &
      err=1001, iostat=IO_File, access='sequential', action='read', asynchronous='no', &
      blank='null', blocksize=0, defaultfile=trim(ModelInfo%InputDir), DisPOSE='keep', &
      form='formatted', position='asis', status='old')
+
+
+
+
+
+
+
+! Up to here
 
 UnFile = FilePartition
 read(unit=UnFile, fmt="(I23)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
@@ -213,6 +244,6 @@ Return
 ! - write statement error -------------------------------------------------------------------------
 1006 call error_in_writing(UnFile, IO_write)
 
-end Subroutine Input_sub
+end Subroutine reading_partitioned_network
 
-end module Model_mod
+end module reading_network_mod

@@ -24,10 +24,11 @@
 ! V2.00: 04/18/2018  - Parallelization using OMP
 ! V2.10: 04/23/2018  - Time module
 ! V3.00: 05/16/2018  - MPI parallelization
+! V3.10: 07/30/2018  - accommodating the simulator with the network partitioner
 !
 ! File version $Id $
 !
-! Last update: 05/16/2018
+! Last update: 07/30/2018
 !
 ! ================================ Global   V A R I A B L E S =====================================
 !  . . . . . . . . . . . . . . . . Variables . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -45,7 +46,7 @@ use Parameters_mod
 use Timer_mod
 use Information_mod
 use Input_mod
-use Model_mod,  only: model_tp
+use reading_network_mod,  only: network_tp
 use Solver_mod, only: SolverWithLimiter_tp
 use messages_and_errors_mod
 
@@ -113,10 +114,6 @@ call InputTime%start()
 ! Reading model data from the partitioned file ====================================================
 write(*,        fmt="(A)") " -Reading the input file ..."
 write(FileInfo, fmt="(A)") " -Reading the input file ..."
-
-! Initialization
-Model = model_tp(CellSlope=null(), InterfaceSlope=null(), ZCell=null(), ManningCell=null(), &
-                 WidthCell=null(), XCell=null(), LengthCell=null() )
 
 ! Filling the Model object
 call Model%Input(ModelInfo)

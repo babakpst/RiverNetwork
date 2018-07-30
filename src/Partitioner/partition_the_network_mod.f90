@@ -655,7 +655,6 @@ print*," partitions after: "
 ! At the end of this loop, we have a rough estimation of the partitioning and the no. of cells on
 ! each rank. In the next step, we try to equalize the no. of cells on each reach.
 
-
 NReachOnRanks(:) = 0_Lng ! initialize, we set the number of reaches on each rank equal to zero.
 write(*,       *) " Analyzing the partitioned network ... "
 write(FileInfo,*) " Analyzing the partitioned network ... "
@@ -703,6 +702,11 @@ write(FileInfo,*) " Analyzing the partitioned network ... "
 ! no. of cells on each rank, saved in col 4.
 chunk(:,4) = chunk(:,2) + chunk(:,3)
 
+! Checks
+  if ( sum(NReachOnRanks) /= Geometry%Base_Geometry%NoReaches ) then
+    call errorMessage(Geometry%Base_Geometry%NoReaches, sum(NReachOnRanks))
+  end if
+
   do i_reach = 1_Lng, Geometry%Base_Geometry%NoReaches
     write(*,fmt="(5I4)")i_reach, this%ReachPartition(i_reach,1), this%ReachPartition(i_reach,2), &
                                  this%ReachPartition(i_reach,3), this%ReachPartition(i_reach,4)
@@ -742,7 +746,6 @@ TotalCellCounter = 0_Lng
     write(unit=UnFile, fmt="(2I23)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
                                                             chunk(i_rank,4), NReachOnRanks(i_rank)
 
-
     CellCounter = 0_Lng ! To make sure that we count all the cell numbers in each rank
     ReachCounter= 0_Lng
     UnFile = FilePartition
@@ -763,8 +766,8 @@ TotalCellCounter = 0_Lng
 
             RangeCell_I   = 1_Lng
             RangeCell_II  = this%ReachPartition(i_reach,3)
-            Communication = -1_Tiny
-            CommRank      = -1_Tiny
+            Communication = -1_Tiny ! no communication with other ranks. The entire rank sits on one rank.
+            CommRank      = -1_Tiny ! The rank number that this reach will communicate.
             BCNodeI       = Geometry%BoundaryCondition(RankNodeI)
             BCNodeII      = Geometry%BoundaryCondition(RankNodeII)
 
@@ -795,11 +798,12 @@ TotalCellCounter = 0_Lng
 
         ReachCounter= ReachCounter + 1_Lng
 
-        write(unit=UnFile, fmt="(6I12, 3F35.20)", advance='yes', asynchronous='no', &
-              iostat=IO_write, err=1006) &
-              i_reach, ReachCounter, Communication, CommRank, BCNodeI, BCNodeII, &
-              Discretization%DiscretizedReach(i_reach)%ReachManning, &
-              Discretization%DiscretizedReach(i_reach)%ReachWidthCell, &
+        write(unit=UnFile, fmt="(7I12, 3F35.20)", advance='yes', asynchronous='no', &
+              iostat=IO_write, err=1006)                                            &
+              i_reach, ReachCounter, Communication, CommRank, BCNodeI, BCNodeII,    &
+              (RangeCell_II - RangeCell_I + 1_Lng),                             & !total no. cells
+              Discretization%DiscretizedReach(i_reach)%ReachManning,                &
+              Discretization%DiscretizedReach(i_reach)%ReachWidthCell,              &
               Discretization%DiscretizedReach(i_reach)%CellPorjectionLength
 
           do i_cells = RangeCell_I, RangeCell_II
@@ -861,8 +865,8 @@ open(unit=UnFile, &
 
 ! Writing the total number of cells in each partition
 UnFile = FilePartition
-write(unit=UnFile, fmt="(I23)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
-                                                                              Discretization%NCells
+write(unit=UnFile, fmt="(2I23)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
+                                            Discretization%NCells, Geometry%Base_Geometry%NoReaches
 
 CellCounter = 0_Lng ! To make sure that we count all the cell numbers in each rank
 ReachCounter= 0_Lng
