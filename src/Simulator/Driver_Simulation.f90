@@ -116,7 +116,7 @@ write(*,        fmt="(A)") " -Reading the input file ..."
 write(FileInfo, fmt="(A)") " -Reading the input file ..."
 
 ! Filling the Model object
-call Model%Input(ModelInfo)
+call Model%network(ModelInfo)
 
 call InputTime%stop()
 

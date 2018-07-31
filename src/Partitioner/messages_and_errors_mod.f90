@@ -399,10 +399,13 @@ subroutine error_in_reach_partitioning(TotalReach, SumOfReachs)
 
 implicit none
 
-integer(kind=Lng), intent(in) ::TotalReach, SumOfReachs
+integer(kind=Lng), intent(in) :: TotalReach, SumOfReachs
 
-write(*,        Fmt_Reach)
-write(FileInfo, Fmt_Reach)
+write(*,        Fmt_Reach1)
+write(FileInfo, Fmt_Reach1)
+
+write(*,        Fmt_Reach2) TotalReach, SumOfReachs
+write(FileInfo, Fmt_Reach2) TotalReach, SumOfReachs
 
 write(*,        Fmt_FL)
 write(FileInfo, Fmt_FL)
@@ -414,50 +417,51 @@ stop
 return
 end subroutine error_in_reach_partitioning
 
+!##################################################################################################
+! Purpose: This subroutine writes down the error message if there is a mistake/mismatch in the
+!          partitioning module
+!
+! Developed by: Babak Poursartip
+!
+! The Institute for Computational Engineering and Sciences (ICES)
+! The University of Texas at Austin
+!
+! ================================ V E R S I O N ==================================================
+! V0.01: 07/31/2018 - Initiated: Compiled without error for the first time.
+! V1.01: 07/31/2018 - Initiated: Compiled without error for the first time.
+!
+! File version $Id $
+!
+! Last update: 07/31/2018
+!
+! ================================ L O C A L   V A R I A B L E S ==================================
+! (Refer to the main code to see the list of imported variables)
+!  . . . . . . . . . . . . . . . . Variables . . . . . . . . . . . . . . . . . . . . . . . . . . .
+!
+!##################################################################################################
+
+subroutine error_in_reaches_on_each_rank(ReachOnFile, SumOfReachs)
+
+implicit none
+
+integer(kind=Lng), intent(in) :: ReachOnFile, SumOfReachs
+
+write(*,        Fmt_ReachOnRank1)
+write(FileInfo, Fmt_ReachOnRank1)
+
+write(*,        Fmt_ReachOnRank2) ReachOnFile, SumOfReachs
+write(FileInfo, Fmt_ReachOnRank2) ReachOnFile, SumOfReachs
+
+write(*,        Fmt_FL)
+write(FileInfo, Fmt_FL)
+
+write(*, Fmt_End)
+read(*,*)
+stop
+
+return
+end subroutine error_in_reaches_on_each_rank
 
 
 end module messages_and_errors_mod
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

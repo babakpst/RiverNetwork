@@ -13,11 +13,11 @@
 ! V0.10: 03/08/2018 - Initiated: Compiled without error.
 ! V1.00: 04/20/2018 - Major modifications
 ! V2.00: 05/15/2018 - Separating model from the input
-! V3.00: 07/30/2018 - Modifying the input subroutine to read a partitioned network
+! V3.00: 07/31/2018 - Modifying the input subroutine to read a partitioned network
 !
 ! File version $Id $
 !
-! Last update: 07/30/2018
+! Last update: 07/31/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! reading_partitioned_network
@@ -41,24 +41,24 @@ private
 
 ! contains all information about individual reaches after discretization and partitioning
 type DiscretizedReach_tp
-  integer (kind=Lng)  :: NCells_reach = 0_Lng ! number of cells in the reach
-  integer (kind=Lng)  :: ReachNumber  = 0_Lng ! The reach no. in the unpartitioned network
+  integer(kind=Lng)  :: NCells_reach = 0_Lng ! number of cells in the reach
+  integer(kind=Lng)  :: ReachNumber  = 0_Lng ! The reach no. in the unpartitioned network
 
-  integer (kind=Shrt) :: Communication= 0_Lng ! if this reach communicates with other ranks
-                                              ! -1: the entire rank is on one rank-no communication
-                                              ! 1: indicates that we need to communicate with the
-                                              !    rank that holds the lower part of the rank.
-                                              ! 2: indicates that we need to communicate with the
-                                              !    rank that holds the upper part of the rank.
+  integer(kind=Shrt) :: Communication= 0_Lng ! if this reach communicates with other ranks
+                                             ! -1: the entire rank is on one rank-no communication
+                                             ! 1: indicates that we need to communicate with the
+                                             !    rank that holds the lower part of the rank.
+                                             ! 2: indicates that we need to communicate with the
+                                             !    rank that holds the upper part of the rank.
 
-  integer(kind=Shrt)  :: CommRank =-1_Shrt    ! indicates the rank number that a reach needs to
-                                              ! communicate with, i.e., if the reach is divided
-                                              ! between two ranks.
+  integer(kind=Shrt) :: CommRank =-1_Shrt    ! indicates the rank number that a reach needs to
+                                             ! communicate with, i.e., if the reach is divided
+                                             ! between two ranks.
 
-  integer(kind=tiny) :: BCNodeI   = -1_Shrt   ! the BC of the upstream node of the reach,
-  integer(kind=tiny) :: BCNodeII  = -1_Shrt   ! the BC of the downstream node of the reach,
-                                              ! -1 not on this rank, 0 BC,
-                                              !  1 connected to other nodes, 2 outlet
+  integer(kind=tiny) :: BCNodeI  = -1_Shrt   ! the BC of the upstream node of the reach,
+  integer(kind=tiny) :: BCNodeII = -1_Shrt   ! the BC of the downstream node of the reach,
+                                             ! -1 not on this rank, 0 BC,
+                                             !  1 connected to other nodes, 2 outlet
 
   real(kind=DBL) :: ReachManning         = 0.0_dbl ! the Manning's number of each cell
   real(kind=DBL) :: ReachWidthCell       = 0.0_dbl ! the Manning's number of each cell
@@ -92,7 +92,7 @@ type network_tp
   type(DiscretizedReach_tp), allocatable, dimension(:) :: DiscretizedReach
 
   contains
-    procedure read => reading_partitioned_network
+    procedure network => reading_partitioned_network
 end type network_tp
 
 public:: network_tp
@@ -115,11 +115,11 @@ contains
 ! V1.0: 04/10/2018 - Minor modifications in the class.
 ! V2.0: 04/20/2018 - Parallel.
 ! V2.1: 05/24/2018 - Parallel with MPI
-! V3.0: 07/30/2018 - reading the partitioned network
+! V3.0: 07/31/2018 - reading the partitioned network
 !
 ! File version $Id $
 !
-! Last update: 07/30/2018
+! Last update: 07/31/2018
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
 ! (Refer to the main code to see the list of imported variables)
@@ -139,7 +139,7 @@ Implicit None
 
 ! - types -----------------------------------------------------------------------------------------
 type(Input_Data_tp), intent(In) :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
-class(model_tp),  intent(inout) :: this       ! Holds the entire model
+class(network_tp),  intent(inout) :: this       ! Holds the entire model
 
 ! Local Variables =================================================================================
 ! - integer Variables -----------------------------------------------------------------------------
@@ -169,51 +169,57 @@ open(Unit=UnFile, file=trim(ModelInfo%ModelNameParallel)//'.par', &
      blank='null', blocksize=0, defaultfile=trim(ModelInfo%InputDir), DisPOSE='keep', &
      form='formatted', position='asis', status='old')
 
-
-
-
-
-
-
-! Up to here
-
 UnFile = FilePartition
-read(unit=UnFile, fmt="(I23)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
-     end=1004) this%NCells
+read(unit=UnFile, fmt="(2I23)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
+     end=1004) this%TotalNumOfCellsOnThisRank, TotalNumOfReachesOnThisRank
 
-write(*,        fmt="(A)") " -Allocating discretization ..."
-write(FileInfo, fmt="(A)") " -Allocating discretization ..."
+write(*,        fmt="(A)") " -Allocating arrays for the discretized network ..."
+write(FileInfo, fmt="(A)") " -Allocating arrays for the discretized network ..."
 
-allocate(this%LengthCell(this%NCells,2),            &
-         this%CellSlope(this%NCells),               &
-         this%InterfaceSlope(this%NCells+1),        &
-         this%ZCell(this%NCells),                   &
-         this%ManningCell(this%NCells),             &
-         this%WidthCell(this%NCells),               &
-         this%XCell(this%NCells),                   &
-         stat=ERR_Alloc)
-         !this%XFull(this%NCells*2_Lng + 1_Lng),    &
-         !this%ZFull(this%NCells*2_Lng + 1_Lng),     &
+allocate(this%DiscretizedReach( this%TotalNumOfReachesOnThisRank), stat=ERR_Alloc)
 if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
-UnFile = FilePartition
-  do i_cells = 1_Lng, this%NCells
-    read(unit=UnFile, fmt="(8F35.20)", advance='yes', asynchronous='no', iostat=IO_read, &
-    err=1003, end=1004) &
-    this%LengthCell (i_cells,1),                       &
-    this%LengthCell (i_cells,2),                       &
-    this%CellSlope  (i_cells),                         &
-    this%ZCell      (i_cells),                         &
-    this%ManningCell(i_cells),                         &
-    this%WidthCell  (i_cells),                         &
-    this%XCell     (i_cells),                          &
-    this%InterfaceSlope (i_cells)
-  end do
-!read(unit=UnFile, fmt="(F35.20)", advance='yes', asynchronous='no', iostat=IO_read, &
-!    err=1003, end=1004) this%InterfaceSlope(i_cells)
+  On_Reaches: do i_reach = 1, this%TotalNumOfCellsOnThisRank
 
-read(unit=UnFile, fmt="(F35.20)", advance='yes', asynchronous='no', iostat=IO_read, &
-    err=1003, end=1004) this%InterfaceSlope(this%NCells+1)
+    read(unit=UnFile, fmt="(2I23)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
+         end=1004) &
+         this%DiscretizedReach(i_reach)%ReachNumber,    &!reach number in the unpartitioned network
+         this%DiscretizedReach(i_reach)%Communication,  &
+         this%DiscretizedReach(i_reach)%CommRank ,      &
+         this%DiscretizedReach(i_reach)%BCNodeI ,       &
+         this%DiscretizedReach(i_reach)%BCNodeII ,      &
+         this%DiscretizedReach(i_reach)%NCells_reach,   &
+         this%DiscretizedReach(i_reach)%ReachManning,   &
+         this%DiscretizedReach(i_reach)%ReachWidthCell, &
+         this%DiscretizedReach(i_reach)%CellPorjectionLength
+
+    ! allocating the arrays within each descretized reach
+    allocate(                                                                                     &
+    this%DiscretizedReach(i_reach)%LengthCell(this%DiscretizedReach(i_reach)%NCells_reach,2),     &
+    this%DiscretizedReach(i_reach)%CellSlope(this%DiscretizedReach(i_reach)%NCells_reach),        &
+    this%DiscretizedReach(i_reach)%InterfaceSlope(this%DiscretizedReach(i_reach)%NCells_reach+1), &
+
+    this%DiscretizedReach(i_reach)%ZCell(this%DiscretizedReach(i_reach)%NCells_reach),            &
+    this%DiscretizedReach(i_reach)%YCell(this%DiscretizedReach(i_reach)%NCells_reach),            &
+    this%DiscretizedReach(i_reach)%XCell(this%DiscretizedReach(i_reach)%NCells_reach),            &
+    stat=ERR_Alloc)
+
+    if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
+
+    UnFile = FilePartition
+      do i_cells = 1_Lng, this%DiscretizedReach(i_reach)%NCells_reach
+        read(unit=UnFile, fmt="(6F35.20)", advance='yes', asynchronous='no', iostat=IO_read, &
+        err=1003, end=1004) &
+        this%DiscretizedReach(i_reach)%LengthCell    (i_cells),  &
+        this%DiscretizedReach(i_reach)%CellSlope     (i_cells),  &
+        this%DiscretizedReach(i_reach)%InterfaceSlope(i_cells),  &
+        this%DiscretizedReach(i_reach)%ZCell         (i_cells),  &
+        this%DiscretizedReach(i_reach)%YCell         (i_cells),  &
+        this%DiscretizedReach(i_reach)%XCell         (i_cells)
+      end do
+    read(unit=UnFile, fmt="(F35.20)", advance='yes', asynchronous='no', iostat=IO_read, &
+         err=1003, end=1004) this%DiscretizedReach(i_reach)%InterfaceSlope(i_cells+1_Lng)
+  end do
 
 ! - Closing the input file ------------------------------------------------------------------------
 write(*,        fmt="(A)") " -Closing the input file"

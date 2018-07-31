@@ -20,6 +20,6 @@ type(Input_Data_tp)   :: ModelInfo  ! Holds info. (name, dir, output dir) of the
 type(AnalysisData_tp) :: AnalysisInfo ! Holds initial data required for array allocation
 
 ! Holds the entire information required of the Model
-type(DiscretizedNetwork_tp) :: Model
+type(network_tp) :: Model
 type(SolverWithLimiter_tp)  :: Experiment_TypeII !info to solve shallow water equation with limiter
 

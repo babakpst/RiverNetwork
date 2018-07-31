@@ -796,11 +796,11 @@ TotalCellCounter = 0_Lng
             end if
           end if
 
-        ReachCounter= ReachCounter + 1_Lng
+        ReachCounter = ReachCounter + 1_Lng
 
         write(unit=UnFile, fmt="(7I12, 3F35.20)", advance='yes', asynchronous='no', &
               iostat=IO_write, err=1006)                                            &
-              i_reach, ReachCounter, Communication, CommRank, BCNodeI, BCNodeII,    &
+              i_reach, Communication, CommRank, BCNodeI, BCNodeII,    &
               (RangeCell_II - RangeCell_I + 1_Lng),                             & !total no. cells
               Discretization%DiscretizedReach(i_reach)%ReachManning,                &
               Discretization%DiscretizedReach(i_reach)%ReachWidthCell,              &
@@ -824,6 +824,11 @@ TotalCellCounter = 0_Lng
       end do
 
     TotalCellCounter = TotalCellCounter + CellCounter
+
+    ! checks
+      if (ReachCounter /= NReachOnRanks(i_rank)) then
+        call error_in_reaches_on_each_rank(ReachCounter, NReachOnRanks(i_rank))
+      end if
 
     ! - Closing the input file for this partition -------------------------------------------------
     write(*,        *) " Closing the input file ... "
@@ -890,7 +895,8 @@ UnFile = FilePartition
 
     write(unit=UnFile, fmt="(6I12, 3F35.20)", advance='yes', asynchronous='no', &
           iostat=IO_write, err=1006) &
-          i_reach, ReachCounter, Communication, CommRank, BCNodeI, BCNodeII, &
+          i_reach, Communication, CommRank, BCNodeI, BCNodeII, &
+          RangeCell_II, &
           Discretization%DiscretizedReach(i_reach)%ReachManning, &
           Discretization%DiscretizedReach(i_reach)%ReachWidthCell, &
           Discretization%DiscretizedReach(i_reach)%CellPorjectionLength
