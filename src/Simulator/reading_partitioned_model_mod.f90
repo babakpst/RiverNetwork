@@ -171,7 +171,7 @@ open(Unit=UnFile, file=trim(ModelInfo%ModelNameParallel)//'.par', &
 
 UnFile = FilePartition
 read(unit=UnFile, fmt="(2I23)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
-     end=1004) this%TotalNumOfCellsOnThisRank, TotalNumOfReachesOnThisRank
+     end=1004) this%TotalNumOfCellsOnThisRank, this%TotalNumOfReachesOnThisRank
 
 write(*,        fmt="(A)") " -Allocating arrays for the discretized network ..."
 write(FileInfo, fmt="(A)") " -Allocating arrays for the discretized network ..."
@@ -195,7 +195,7 @@ if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
     ! allocating the arrays within each descretized reach
     allocate(                                                                                     &
-    this%DiscretizedReach(i_reach)%LengthCell(this%DiscretizedReach(i_reach)%NCells_reach,2),     &
+    this%DiscretizedReach(i_reach)%LengthCell(this%DiscretizedReach(i_reach)%NCells_reach),     &
     this%DiscretizedReach(i_reach)%CellSlope(this%DiscretizedReach(i_reach)%NCells_reach),        &
     this%DiscretizedReach(i_reach)%InterfaceSlope(this%DiscretizedReach(i_reach)%NCells_reach+1), &
 
@@ -219,7 +219,7 @@ if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
       end do
     read(unit=UnFile, fmt="(F35.20)", advance='yes', asynchronous='no', iostat=IO_read, &
          err=1003, end=1004) this%DiscretizedReach(i_reach)%InterfaceSlope(i_cells+1_Lng)
-  end do
+  end do On_Reaches
 
 ! - Closing the input file ------------------------------------------------------------------------
 write(*,        fmt="(A)") " -Closing the input file"

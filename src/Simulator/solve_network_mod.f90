@@ -49,7 +49,7 @@ module Solver_mod
 use Parameters_mod
 use Results_mod, only: Plot_Results_1D_limiter_tp
 use Input_mod
-use Model_mod,  only: model_tp
+use reading_network_mod,  only: network_tp
 use Timer_mod
 use messages_and_errors_mod
 
@@ -130,7 +130,7 @@ end type SoureceTerms_tp
 
 ! Contains the parameters for the solution
 type:: SolverWithLimiter_tp
-  type(model_tp)        :: Model         ! Contains the model
+  type(network_tp)        :: Model         ! Contains the model
   type(AnalysisData_tp) :: AnalysisInfo  ! Holds information for the analysis
   type(Input_Data_tp)   :: ModelInfo     ! Holds information for the model
 
