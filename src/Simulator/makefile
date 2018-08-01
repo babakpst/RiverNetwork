@@ -30,6 +30,7 @@ SOURCESF=	Parameters_mod.f90 \
 					reading_address_file_mod.f90 \
 					reading_address_file_smod.f90 \
 					reading_partitioned_model_mod.f90 \
+					reading_partitioned_model_smod.f90 \
 					Inf_mod.f90 \
 					Results_mod.f90 \
 					solve_network_mod.f90 \

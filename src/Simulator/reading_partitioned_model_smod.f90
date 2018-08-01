@@ -8,19 +8,9 @@ contains
 !##################################################################################################
 !##################################################################################################
 
-Subroutine reading_partitioned_network(this, ModelInfo)
-
-! Libraries =======================================================================================
-
-! User defined modules ============================================================================
+module procedure reading_partitioned_network
 
 Implicit None
-
-! Global Variables ================================================================================
-
-! - types -----------------------------------------------------------------------------------------
-type(Input_Data_tp), intent(In) :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
-class(network_tp),  intent(inout) :: this       ! Holds the entire model
 
 ! Local Variables =================================================================================
 ! - integer Variables -----------------------------------------------------------------------------
@@ -131,6 +121,6 @@ Return
 ! - write statement error -------------------------------------------------------------------------
 1006 call error_in_writing(UnFile, IO_write)
 
-end Subroutine reading_partitioned_network
+end procedure reading_partitioned_network
 
-end module reading_network_mod
+end submodule reading_network_submod
