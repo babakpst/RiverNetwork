@@ -20,10 +20,11 @@
 ! V3.00: 05/16/2018 - MPI Parallel
 ! V3.10: 05/25/2018 - Modifications
 ! V3.20: 05/29/2018 - Modifications
+! V4.00: 08/01/2018 - Solving network
 !
 ! File version $Id $
 !
-! Last update: 05/29/2018
+! Last update: 08/01/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! - Solver_1D_with_Limiter_sub: Solves the 1D shallow water equation, with limiter.
@@ -128,6 +129,7 @@ end type SoureceTerms_tp
 !    procedure BC => Impose_Boundary_Condition_1D_sub
 !end type SolverWithLimiter
 
+
 ! Contains the parameters for the solution
 type:: SolverWithLimiter_tp
   type(network_tp)        :: Model         ! Contains the model
@@ -158,10 +160,11 @@ contains
 ! V1.01: 04/24/2018 - Parallel
 ! V2.00: 05/09/2018 - Performance
 ! V3.00: 05/16/2018 - MPI
+! V4.00: 08/01/2018 - Solving the network
 !
 ! File version $Id $
 !
-! Last update: 05/16/2018
+! Last update: 08/01/2018
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
 ! (Refer to the main code to see the list of imported variables)
@@ -169,7 +172,7 @@ contains
 !
 !##################################################################################################
 
-subroutine Solver_1D_with_Limiter_sub(this, TotalTime)
+subroutine solve_the_network_sub(this, TotalTime)
 
 ! Libraries =======================================================================================
 !$ use omp_lib
@@ -225,7 +228,11 @@ type(vector) :: TempSolution
 type(Jacobian_tp)      :: Jacobian          ! Contains the Jacobian and all related items.
 type(Jacobian_tp)      :: Jacobian_neighbor ! Contains the Jacobian and all related items.
 type(LimiterFunc_tp)   :: LimiterFunc ! Contains the values of the limiter
+
+
 type(Plot_Results_1D_limiter_tp) :: Results ! in each time step/ all cells
+
+
 type(SoureceTerms_tp) :: SourceTerms
 
 type(vector) :: alpha                 ! alpha = R^-1 (U_i- U_i-1) See notes for detail.
@@ -244,21 +251,21 @@ type(vector), dimension(-1_Lng:this%Model%NCells+2_Lng) ::UU, UN ! solution at n
 type(vector), dimension(4) :: sent, recv
 
 ! code ============================================================================================
-write(*,       *) " subroutine < Solver_1D_with_Limiter_sub >: "
-write(FileInfo,*) " subroutine < Solver_1D_with_Limiter_sub >: "
-
-write(*,       *) " -Solving the shallow water equation with a limiter ..."
-write(FileInfo,*) " -Solving the shallow water equation with a limiter ..."
+write(*,       *) " subroutine < solve_the_network_sub >: "
+write(FileInfo,*) " subroutine < solve_the_network_sub >: "
 
 ! Applying initial conditions:
 write(*,       *) " -Applying initial conditions ..."
 write(FileInfo,*) " -Applying initial conditions ..."
 
-!allocate(Plot_Results_1D_limiter_tp(NCells = this%Model%NCells) :: Results)
-allocate(Results%U(-1:this%Model%NCells+2),     stat=ERR_Alloc)
-if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
+!!!allocate(Plot_Results_1D_limiter_tp(NCells = this%Model%NCells) :: Results)
+!!allocate(Results%U(-1:this%Model%NCells+2),     stat=ERR_Alloc)
+!!if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
+!Results%NCells = this%Model%NCells
 
-Results%NCells = this%Model%NCells
+
+
+
 
 ! Initialization:
 NSteps = this%AnalysisInfo%TotalTime/this%AnalysisInfo%TimeStep
@@ -618,11 +625,11 @@ Results%ModelInfo = this%ModelInfo
 deallocate(Results%U, stat=ERR_DeAlloc)
 if (ERR_DeAlloc /= 0) call error_in_deallocation(ERR_DeAlloc)
 
-write(*,       *) " end subroutine < Solver_1D_with_Limiter_sub >"
-write(FileInfo,*) " end subroutine < Solver_1D_with_Limiter_sub >"
+write(*,       *) " end subroutine < solve_the_network_sub >"
+write(FileInfo,*) " end subroutine < solve_the_network_sub >"
 return
 
-end subroutine Solver_1D_with_Limiter_sub
+end subroutine solve_the_network_sub
 
 
 !##################################################################################################

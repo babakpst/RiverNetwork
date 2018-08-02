@@ -30,7 +30,6 @@ write(FileInfo,*) " Subroutine < Input_sub >: "
 
 ! Open required Files -----------------------------------------------------------------------------
 write(*,        fmt="(A)") " -Opening the input file ..."
-
 write(FileInfo, fmt="(A)") " -Opening the input file ..."
 
 ! Open the input file for arrays
@@ -41,8 +40,12 @@ open(Unit=UnFile, file=trim(ModelInfo%ModelNameParallel)//'.par', &
      form='formatted', position='asis', status='old')
 
 UnFile = FilePartition
-read(unit=UnFile, fmt="(2I23)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
-     end=1004) this%TotalNumOfCellsOnThisRank, this%TotalNumOfReachesOnThisRank
+read(unit=UnFile, fmt="(4I23)", advance='yes', asynchronous='no', iostat=IO_read, err=1003,
+     end=1004) &
+     this%TotalNumOfCellsOnThisRank, this%TotalNumOfReachesOnThisRank, &
+     TotalNumOfCellsInTheNetwork, TotalNumOfReachesInTheNetwork
+
+
 
 write(*,        fmt="(A)") " -Allocating arrays for the discretized network ..."
 write(FileInfo, fmt="(A)") " -Allocating arrays for the discretized network ..."

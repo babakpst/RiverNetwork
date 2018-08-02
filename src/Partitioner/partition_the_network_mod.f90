@@ -744,7 +744,8 @@ TotalCellCounter = 0_Lng
     ! Writing the total number of cells in each partition
     UnFile = FilePartition
     write(unit=UnFile, fmt="(2I23)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
-                                                            chunk(i_rank,4), NReachOnRanks(i_rank)
+                   chunk(i_rank,4), NReachOnRanks(i_rank),  &
+                   Geometry%Base_Geometry%NoReaches, Geometry%Base_Geometry%NoNodes
 
     CellCounter = 0_Lng ! To make sure that we count all the cell numbers in each rank
     ReachCounter= 0_Lng
@@ -800,7 +801,7 @@ TotalCellCounter = 0_Lng
 
         write(unit=UnFile, fmt="(7I12, 3F35.20)", advance='yes', asynchronous='no', &
               iostat=IO_write, err=1006)                                            &
-              i_reach, Communication, CommRank, BCNodeI, BCNodeII,    &
+              i_reach, Communication, CommRank, BCNodeI, BCNodeII,                  &
               (RangeCell_II - RangeCell_I + 1_Lng),                             & !total no. cells
               Discretization%DiscretizedReach(i_reach)%ReachManning,                &
               Discretization%DiscretizedReach(i_reach)%ReachWidthCell,              &
@@ -871,7 +872,8 @@ open(unit=UnFile, &
 ! Writing the total number of cells in each partition
 UnFile = FilePartition
 write(unit=UnFile, fmt="(2I23)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
-                                            Discretization%NCells, Geometry%Base_Geometry%NoReaches
+                                  Discretization%NCells, Geometry%Base_Geometry%NoReaches, &
+                                  Geometry%Base_Geometry%NoReaches, Geometry%Base_Geometry%NoNodes
 
 CellCounter = 0_Lng ! To make sure that we count all the cell numbers in each rank
 ReachCounter= 0_Lng

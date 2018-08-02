@@ -100,14 +100,15 @@ character(142), Parameter, Public:: Fmt_Reach1="(' Mismatch between the total nu
                                                   reaches and the sum of all reaches distributed  &
                                                   between the ranks.')"
 
-character(90), Parameter, Public:: Fmt_Reach2="(' The unpartitioned network has ', I23, &
+character(250), Parameter, Public:: Fmt_Reach2="(' The unpartitioned network has ', I23, &
                                                ' reaches, while the partitioned network has', I23)"
 
-character(121), Parameter, Public:: Fmt_ReachOnRank1="(' Mismatch between the number of reaches &
+character(221), Parameter, Public:: Fmt_ReachOnRank1="(' Mismatch between the number of reaches &
                 on this rank and the reaches on the file. Refer to the partitioning subroutine. ')"
 
-character(85), Parameter, Public:: Fmt_ReachOnRank1="(' The number of reaches on this rank is ', &
-                                                        I23, and the reaches on the file is ' I23)"
+character(250), Parameter, Public:: Fmt_ReachOnRank2="('The number of reaches on this rank is: ', &
+                                                  I23, ' and the reaches on the file is: ', I23)"
+
 
 ! Unit NUMBERS OF EXTERNAL FILES ==================================================================
 

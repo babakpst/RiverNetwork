@@ -70,19 +70,24 @@ type Input_Data_tp
 end type Input_Data_tp
 
 ! Contains all information about the domain, required
-type AnalysisData_tp
-  integer(kind=Smll):: AnalysisType=2_smll! Analysis Type -1:1D Lax-Wendroff
-                                          !               -2:1D Lax-Wendroff with limiter
-  integer(kind=Smll):: limiter  = 1_smll  ! limiter type
+type AnalysisData_tp(TotalNNodes, TotalNReaches)
+  integer(kind=Lng), len :: TotalNNodes
+  integer(kind=Lng), len :: TotalNReaches
 
-  integer(kind=Lng) :: Plot_Inc = 500_Lng ! Increment to record the results for visualization
+  integer(kind=Smll) :: AnalysisType=2_smll! Analysis Type -1:1D Lax-Wendroff
+                                           !               -2:1D Lax-Wendroff with limiter
+  integer(kind=Smll) :: limiter  = 1_smll  ! limiter type
+  integer(kind=Lng)  :: Plot_Inc = 500_Lng ! Increment to record the results for visualization
 
-  real(kind=DBL):: TotalTime    = 0.0_dbl ! Total simulation time (in seconds)
-  real(kind=DBL):: TimeStep     = 0.0_dbl ! Time Step
-  real(kind=DBL):: Q_Up         = 0.0_dbl ! Upstream boundary condition, constant flow (m^3/s)
-  real(kind=DBL):: h_dw         = 0.0_dbl ! Downstream water depth (in meters)
-  real(kind=DBL):: CntrlV       = 0.0_dbl ! Initial control volume
-  real(kind=DBL):: CntrlV_ratio = 0.0_dbl ! Initial control volume ration, used to initialize data
+
+  real(kind=DBL) :: TotalTime    = 0.0_dbl ! Total simulation time (in seconds)
+  real(kind=DBL) :: TimeStep     = 0.0_dbl ! Time Step
+
+  real(kind=DBL) :: h_dw         = 0.0_dbl ! Downstream water depth (in meters)
+  real(kind=DBL), dimension(TotalNNodes)   :: Q_Up         = 0.0_dbl ! Upstream boundary condition, constant flow (m^3/s)
+
+  real(kind=DBL), dimension(TotalNReaches) :: CntrlV       = 0.0_dbl ! Initial control volume
+  real(kind=DBL), dimension(TotalNReaches) :: CntrlV_ratio = 0.0_dbl ! Initial control volume ration, used to initialize data
 
   contains
     procedure:: Analysis => Input_Analysis_sub

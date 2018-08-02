@@ -395,17 +395,17 @@ end subroutine error_in_the_requested_option
 !
 !##################################################################################################
 
-subroutine error_in_reach_partitioning(TotalReach, SumOfReachs)
+subroutine error_in_reach_partitioning(TotalReach, SumOfReaches)
 
 implicit none
 
-integer(kind=Lng), intent(in) :: TotalReach, SumOfReachs
+integer(kind=Lng), intent(in) :: TotalReach, SumOfReaches
 
 write(*,        Fmt_Reach1)
 write(FileInfo, Fmt_Reach1)
 
-write(*,        Fmt_Reach2) TotalReach, SumOfReachs
-write(FileInfo, Fmt_Reach2) TotalReach, SumOfReachs
+write(*,        Fmt_Reach2) TotalReach, SumOfReaches
+write(FileInfo, Fmt_Reach2) TotalReach, SumOfReaches
 
 write(*,        Fmt_FL)
 write(FileInfo, Fmt_FL)
@@ -440,17 +440,17 @@ end subroutine error_in_reach_partitioning
 !
 !##################################################################################################
 
-subroutine error_in_reaches_on_each_rank(ReachOnFile, SumOfReachs)
+subroutine error_in_reaches_on_each_rank(ReachOnFile, SumOfReaches)
 
 implicit none
 
-integer(kind=Lng), intent(in) :: ReachOnFile, SumOfReachs
+integer(kind=Lng), intent(in) :: ReachOnFile, SumOfReaches
 
 write(*,        Fmt_ReachOnRank1)
 write(FileInfo, Fmt_ReachOnRank1)
 
-write(*,        Fmt_ReachOnRank2) ReachOnFile, SumOfReachs
-write(FileInfo, Fmt_ReachOnRank2) ReachOnFile, SumOfReachs
+write(*,        Fmt_ReachOnRank2) ReachOnFile, SumOfReaches
+write(FileInfo, Fmt_ReachOnRank2) ReachOnFile, SumOfReaches
 
 write(*,        Fmt_FL)
 write(FileInfo, Fmt_FL)

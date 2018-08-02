@@ -108,7 +108,6 @@ Open(Unit=UnFile, File=trim(ModelInfo%ModelNameParallel)//'.infM', &
 
 ! Writing down the simulation time
 Call Info(TimeDate, ModelInfo)
-
 call InputTime%start()
 
 ! Reading model data from the partitioned file ====================================================
@@ -117,7 +116,6 @@ write(FileInfo, fmt="(A)") " -Reading the input file ..."
 
 ! Filling the Model object
 call Model%network(ModelInfo)
-
 call InputTime%stop()
 
 ! Simulations =====================================================================================
@@ -125,6 +123,13 @@ call InputTime%stop()
 
     write(*,        fmt="(A,I10)") " -Analyse no.", i_analyses
     write(FileInfo, fmt="(A,I10)") " -Analyse no.", i_analyses
+
+
+    allocate( &
+    type(AnalysisData_tp(TotalNNodes= Model%TotalNumOfNodesInTheNetwork, &
+                         TotalNReaches= Model%TotalNumOfReachesInTheNetwork )) :: AnalysisInfo, &
+      stat = ERR_Alloc)
+    if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
     ! Getting the required data for this specific analysis
     call AnalysisInfo%Analysis(i_analyses, ModelInfo)
@@ -162,6 +167,10 @@ call InputTime%stop()
     write(*,"(' Model Name: ',A30,'Analysis Name: ', A30)") &
               ModelInfo%ModelName, ModelInfo%AnalysesNames(i_analyses)
     write(*,*)
+
+
+    DEallocate(,      stat = ERR_DeAlloc )
+    if (ERR_DeAlloc /= 0) call error_in_deallocation(ERR_DeAlloc)
 
   end do
 

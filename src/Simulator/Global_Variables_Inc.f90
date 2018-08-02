@@ -17,7 +17,9 @@ type(Timer_tp)    :: InputTime, SimulationTime, TotalTime ! Holds the running ti
 
 type(ArgCommands)     :: Arguments  ! Holds the entered arguments from the command line
 type(Input_Data_tp)   :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
-type(AnalysisData_tp) :: AnalysisInfo ! Holds initial data required for array allocation
+
+! Holds initial data required for array allocation
+type(AnalysisData_tp(TotalNNodes=:, TotalNReaches=:)), allocatable :: AnalysisInfo
 
 ! Holds the entire information required of the Model
 type(network_tp) :: Model

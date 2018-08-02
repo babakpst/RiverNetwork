@@ -85,8 +85,14 @@ type network_tp
   ! Total number of cells from the network on this rank
   integer(kind=Lng) :: TotalNumOfCellsOnThisRank = 0_Lng
 
-  ! Total number of ranks from the network on this rank
+  ! Total number of reaches from the network on this rank
   integer(kind=Lng) :: TotalNumOfReachesOnThisRank = 0_Lng
+
+  ! Total number of nodes in the network
+  integer(kind=Lng) :: TotalNumOfNodesInTheNetwork = 0_Lng
+
+  ! Total number of reaches  in the network
+  integer(kind=Lng) :: TotalNumOfReachesInTheNetwork = 0_Lng
 
   ! To hold the discretization of each reach. The size of this type is equal to the no of reaches.
   type(DiscretizedReach_tp), allocatable, dimension(:) :: DiscretizedReach

@@ -25,7 +25,6 @@ integer(kind=Smll) :: ERR_Alloc, ERR_DeAlloc ! Allocating and DeAllocating error
 Logical (kind=Shrt)  :: Directory
 
 ! code ============================================================================================
-
 write(*,       *)
 write(*,       *) " Subroutine < Input_Address_sub >: "
 !write(FileInfo,*)
@@ -131,10 +130,18 @@ Implicit None
 
 ! Local Variables =================================================================================
 ! - integer Variables -----------------------------------------------------------------------------
-integer(kind=Smll) :: UnFile        ! Holds Unit of a file for error message
-integer(kind=Smll) :: IO_File       ! For IOSTAT: Input Output status in OPEN command
+integer(kind=Smll) :: UnFile   ! Holds Unit of a file for error message
+integer(kind=Smll) :: IO_File  ! For IOSTAT: Input Output status in OPEN command
 integer(kind=Smll) :: IO_read  ! Holds error of read statements
 integer(kind=Smll) :: IO_write ! Used for IOSTAT - Input Output Status - in the write command.
+
+integer(kind=Lng) :: i_nodes   ! loop index over the total number of nodes in the network
+integer(kind=Lng) :: i_reaches ! loop index over the total number of reaches in the network
+
+integer(kind=Lng) :: T_Node    ! temp variable to read the node number
+integer(kind=Lng) :: T_Reach   ! temp variable to read the reach number
+
+
 
 ! - Logical Variables -----------------------------------------------------------------------------
 logical(kind=Shrt)  :: Directory
@@ -144,7 +151,6 @@ write(*,       *)
 write(*,       *) " Subroutine < Input_Analysis_sub >: "
 write(FileInfo,*)
 write(FileInfo,*) " Subroutine < Input_Analysis_sub >: "
-
 
 ! Opening the input file for this specific simulation
 write(*,        fmt="(A)") " -Opening the analysis file ..."
@@ -212,22 +218,27 @@ write(unit=*,      fmt="(' The time step is: ', F23.10, ' s')") this%TimeStep
 UnFile = UnInptAna
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
-                  end=1004) this%Q_Up
-UnFile = FileInfo
-write(unit=UnFile, fmt="(' Flow rate at the upstream is: ', F23.10, ' m/s3')", advance='yes', &
-                   asynchronous='no', iostat=IO_write, err=1006) this%Q_Up
-write(unit=*,      fmt="(' Flow rate at the upstream is: ', F23.10, ' m/s3')") this%Q_Up
-
-UnFile = UnInptAna
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, &
                   err=1003, end=1004) this%h_dw
 UnFile = FileInfo
 write(unit=UnFile, fmt="(' Downstream water depth is: ', F23.10, ' m')", advance='yes', &
                    asynchronous='no', iostat=IO_write, err=1006) this%h_dw
 write(unit=*,      fmt="(' Downstream water depth is: ', F23.10, ' m')") this%h_dw
+
+
+UnFile = UnInptAna
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+  do i_nodes = 1, this%TotalNNodes
+    UnFile = UnInptAna
+    read(unit=UnFile, fmt="(I23,F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
+                      end=1004) T_Node, this%Q_Up(T_Node)
+    UnFile = FileInfo
+    write(unit=UnFile, fmt="(' Flow rate at the upstream in the node', I23,' is: ', F23.10, &
+    ' m/s3')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)T_Node,this%Q_Up(T_Node)
+    write(unit=*     , fmt="(' Flow rate at the upstream in the node', I23,' is: ', F23.10, &
+    ' m/s3')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)T_Node,this%Q_Up(T_Node)
+  end
 
 UnFile = UnInptAna
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
