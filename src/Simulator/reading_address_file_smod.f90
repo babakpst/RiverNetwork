@@ -100,7 +100,6 @@ write(*,        fmt="(A)") " -Closing the address file"
 UnFile =  FileAdr
 Close(unit = UnFile, status = 'keep', ERR =  1002, IOSTAT = IO_File)
 
-
 write(*,       *) ' End Subroutine < Input_Address_sub >'
 write(*,       *)
 !write(FileInfo,*) ' End Subroutine < Input_Address_sub >'
@@ -225,43 +224,6 @@ write(unit=UnFile, fmt="(' Downstream water depth is: ', F23.10, ' m')", advance
                    asynchronous='no', iostat=IO_write, err=1006) this%h_dw
 write(unit=*,      fmt="(' Downstream water depth is: ', F23.10, ' m')") this%h_dw
 
-
-UnFile = UnInptAna
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-  do i_nodes = 1, this%TotalNNodes
-    UnFile = UnInptAna
-    read(unit=UnFile, fmt="(I23,F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
-                      end=1004) T_Node, this%Q_Up(T_Node)
-    UnFile = FileInfo
-    write(unit=UnFile, fmt="(' Flow rate at the upstream in the node', I23,' is: ', F23.10, &
-    ' m/s3')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)T_Node,this%Q_Up(T_Node)
-    write(unit=*     , fmt="(' Flow rate at the upstream in the node', I23,' is: ', F23.10, &
-    ' m/s3')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)T_Node,this%Q_Up(T_Node)
-  end
-
-UnFile = UnInptAna
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, &
-                  err=1003, end=1004) this%CntrlV
-
-UnFile = FileInfo
-write(unit=UnFile, fmt="(' Control Volume is: ', F23.10, ' m^3')", advance='yes', &
-                   asynchronous='no', iostat=IO_write, err=1006) this%CntrlV
-write(unit=*,      fmt="(' Control Volume is: ', F23.10, ' m^3')") this%CntrlV
-
-UnFile = UnInptAna
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, &
-                  err=1003, end=1004) this%CntrlV_ratio
-
-UnFile = FileInfo
-write(unit=UnFile, fmt="(' The ratio of control volume is: ', F23.10)", advance='yes', &
-                   asynchronous='no', iostat=IO_write, err=1006) this%CntrlV_ratio
-write(unit=*,      fmt="(' The ratio of control volume is: ', F23.10)") this%CntrlV_ratio
-
 UnFile = UnInptAna
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
@@ -273,7 +235,6 @@ write(unit=UnFile, fmt="(' The limiter is: ', I10)", advance='yes', asynchronous
                    iostat=IO_write, err=1006) this%limiter
 write(unit=*,      fmt="(' The limiter is: ', I10)") this%limiter
 
-
 UnFile = UnInptAna
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
@@ -284,6 +245,57 @@ UnFile = FileInfo
 write(unit=UnFile, fmt="(' The limiter is: ', I10)", advance='yes', asynchronous='no', &
                    iostat=IO_write, err=1006) this%Plot_Inc
 write(unit=*,      fmt="(' The limiter is: ', I10)") this%Plot_Inc
+
+UnFile = UnInptAna
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+  do i_nodes = 1, this%TotalNNodes
+    UnFile = UnInptAna
+    read(unit=UnFile, fmt="(I23,F23.10)", advance='yes', asynchronous='no', iostat=IO_read, &
+                       err=1003, end=1004) T_Node, this%Q_Up(T_Node)
+    UnFile = FileInfo
+    write(unit=UnFile, fmt="(' Flow rate at the upstream in the node', I23,' is: ', F23.10, &
+    ' m/s3')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)T_Node,this%Q_Up(T_Node)
+    write(unit=*     , fmt="(' Flow rate at the upstream in the node', I23,' is: ', F23.10, &
+    ' m/s3')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)T_Node,this%Q_Up(T_Node)
+  end
+
+UnFile = UnInptAna
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+  do i_reaches = 1, this%TotalNReaches
+    UnFile = UnInptAna
+    read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
+                      end=1004) T_Reach, this%CntrlV(T_Reach)
+
+    UnFile = FileInfo
+    write(unit=UnFile,
+          fmt="(' The control Volume of the reach no.: ', I23,' is: ', F23.10,' m^3')",&
+          advance='yes', asynchronous='no', iostat=IO_write, err=1006) T_Reach,this%CntrlV(T_Reach)
+
+    write(unit=*,
+          fmt="(' The control Volume of the reach no.: ', I23,' is: ', F23.10,' m^3')",&
+          advance='yes', asynchronous='no', iostat=IO_write, err=1006) T_Reach,this%CntrlV(T_Reach)
+  end do
+
+UnFile = UnInptAna
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+  do i_reaches = 1, this%TotalNReaches
+    UnFile = UnInptAna
+    read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
+                      end=1004) T_Reach, this%CntrlV_ratio(T_Reach)
+
+    UnFile = FileInfo
+    write(unit=UnFile,
+          fmt="(' The control Volume of the reach no.: ', I23,' is: ', F23.10,' m^3')",&
+          advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
+                                                                 T_Reach,this%CntrlV_ratio(T_Reach)
+    write(unit=*,
+          fmt="(' The control Volume of the reach no.: ', I23,' is: ', F23.10,' m^3')",&
+          advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
+                                                                 T_Reach,this%CntrlV_ratio(T_Reach)
+  end do
 
 write(*,       *) " End Subroutine < Input_Analysis_sub >"
 write(*,       *)
