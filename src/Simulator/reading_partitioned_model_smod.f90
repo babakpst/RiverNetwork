@@ -40,10 +40,10 @@ open(Unit=UnFile, file=trim(ModelInfo%ModelNameParallel)//'.par', &
      form='formatted', position='asis', status='old')
 
 UnFile = FilePartition
-read(unit=UnFile, fmt="(4I23)", advance='yes', asynchronous='no', iostat=IO_read, err=1003,
+read(unit=UnFile, fmt="(4I23)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
      end=1004) &
      this%TotalNumOfCellsOnThisRank, this%TotalNumOfReachesOnThisRank, &
-     TotalNumOfCellsInTheNetwork, TotalNumOfReachesInTheNetwork
+     this%TotalNumOfCellsInTheNetwork, this%TotalNumOfReachesInTheNetwork
 
 
 

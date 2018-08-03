@@ -89,7 +89,7 @@ type network_tp
   integer(kind=Lng) :: TotalNumOfReachesOnThisRank = 0_Lng
 
   ! Total number of nodes in the network
-  integer(kind=Lng) :: TotalNumOfNodesInTheNetwork = 0_Lng
+  integer(kind=Lng) :: TotalNumOfCellsInTheNetwork = 0_Lng
 
   ! Total number of reaches  in the network
   integer(kind=Lng) :: TotalNumOfReachesInTheNetwork = 0_Lng

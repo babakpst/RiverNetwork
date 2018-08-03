@@ -127,7 +127,7 @@ call InputTime%stop()
 
     allocate( &
     type(AnalysisData_tp(TotalNNodes= Model%TotalNumOfNodesInTheNetwork, &
-                         TotalNReaches= Model%TotalNumOfReachesInTheNetwork )) :: AnalysisInfo, &
+                         TotalNReaches= Model%TotalNumOfReachesInTheNetwork)) :: AnalysisInfo, &
       stat = ERR_Alloc)
     if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
