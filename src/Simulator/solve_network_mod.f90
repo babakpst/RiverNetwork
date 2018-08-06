@@ -24,7 +24,7 @@
 !
 ! File version $Id $
 !
-! Last update: 08/01/2018
+! Last update: 08/06/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! - Solver_1D_with_Limiter_sub: Solves the 1D shallow water equation, with limiter.
@@ -95,6 +95,13 @@ type Jacobian_tp
     procedure Jacobian => Jacobian_sub
 end type Jacobian_tp
 
+
+! Solution on this rank
+type solution
+  type(vector) :: UU, UN
+end type solution
+
+
 ! Contains the parameters for considering the source term within the solution.
 type SoureceTerms_tp
   real(kind=Dbl)  :: S_f=0.0_dbl           ! friction slope
@@ -132,8 +139,8 @@ end type SoureceTerms_tp
 
 ! Contains the parameters for the solution
 type:: SolverWithLimiter_tp
-  type(network_tp)        :: Model         ! Contains the model
-  !type(AnalysisData_tp) :: AnalysisInfo  ! Holds information for the analysis
+  type(network_tp)      :: Model         ! Contains the model
+  !type(AnalysisData_tp):: AnalysisInfo  ! Holds information for the analysis
   type(Input_Data_tp)   :: ModelInfo     ! Holds information for the model
 
   contains
@@ -164,7 +171,7 @@ contains
 !
 ! File version $Id $
 !
-! Last update: 08/01/2018
+! Last update: 08/06/2018
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
 ! (Refer to the main code to see the list of imported variables)
@@ -226,14 +233,12 @@ real(kind=Dbl)     :: velocity_interface ! velocity of water at the current inte
 logical   :: PrintResults
 
 ! - type ------------------------------------------------------------------------------------------
-type(vector) :: TempSolution
-type(Jacobian_tp)      :: Jacobian          ! Contains the Jacobian and all related items.
-type(Jacobian_tp)      :: Jacobian_neighbor ! Contains the Jacobian and all related items.
-type(LimiterFunc_tp)   :: LimiterFunc ! Contains the values of the limiter
-
+type(vector)         :: TempSolution
+type(Jacobian_tp)    :: Jacobian          ! Contains the Jacobian and all related items.
+type(Jacobian_tp)    :: Jacobian_neighbor ! Contains the Jacobian and all related items.
+type(LimiterFunc_tp) :: LimiterFunc       ! Contains the values of the limiter
 
 type(Plot_Results_1D_limiter_tp) :: Results ! in each time step/ all cells
-
 
 type(SoureceTerms_tp) :: SourceTerms
 
@@ -249,8 +254,14 @@ type(vector) :: F_L ! Contribution of low-resolution method (Upwind) in the solu
 type(vector) :: F_H ! Contribution of high-resolution method (Lax-Wendroff) in the solution.
 
 type(vector) :: Delta_U           ! holds (U_i- U_i-1)
+type(vector), dimension(4) :: sent, recv ! Items for MPI send and receive messages
+
+
+
+
+
 type(vector), dimension(-1_Lng:this%Model%NCells+2_Lng) ::UU, UN ! solution at n and n+1
-type(vector), dimension(4) :: sent, recv
+
 
 ! code ============================================================================================
 write(*,       *) " subroutine < solve_the_network_sub >: "
@@ -283,6 +294,7 @@ PrintResults = .false.
 !SourceTerms%Identity(:,:) = 0.0_Dbl
 SourceTerms%Identity(1,1) = 1.0_Dbl
 SourceTerms%Identity(2,2) = 1.0_Dbl
+
 
 ! <modify>
 UU(1:this%Model%NCells)%U(1) = this%AnalysisInfo%CntrlV -    this%Model%ZCell(:)
@@ -359,7 +371,7 @@ UU(:)%U(2) = 0.0_Dbl
 
 Results%ModelInfo = this%ModelInfo
 
-!!$OMP PARALLEL default(private) SHARED(UN,UU,S, dt, dx, dtdx)                                                                                                 firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution,i_steps, NSteps)
+!!$OMP PARALLEL default(private) SHARED(UN,UU,S, dt, dx, dtdx)                                                                                                          firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution,i_steps, NSteps)
 !$OMP PARALLEL default(none)  SHARED(UN,UU, dt, dx, dtdx) private(i_Cell,its,mts,height,velocity,Coefficient,height_interface, velocity_interface, speed, PrintResults) firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution,i_steps, NSteps, Results)
 
 !$ ITS = OMP_GET_THREAD_NUM()
@@ -453,7 +465,7 @@ Results%ModelInfo = this%ModelInfo
 
             SourceTerms%S_interface%U(1) = 0.0_Dbl
             SourceTerms%S_interface%U(2) =-Gravity*height_interface &
-                      *(this%Model%InterfaceSlope(i_Cell+i_Interface-1_Tiny)-SourceTerms%S_f_interface)
+                  *(this%Model%InterfaceSlope(i_Cell+i_Interface-1_Tiny)-SourceTerms%S_f_interface)
 
             SourceTerms%Source_2%U(:) = SourceTerms%Source_2%U(:) + 0.5_Dbl * (dt**2) / dx &
                              * ( Coefficient * matmul(Jacobian%A, SourceTerms%S_interface%U(:)))
