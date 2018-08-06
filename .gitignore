@@ -4,6 +4,7 @@
 #*.layout
 *.o
 *.mod
+*.smod
 src/Simulator/.nfs*
 src/Partitioner/.nfs*
 input/EX3_Limiter/Analysis/.nfs*

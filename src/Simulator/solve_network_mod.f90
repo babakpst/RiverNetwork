@@ -133,7 +133,7 @@ end type SoureceTerms_tp
 ! Contains the parameters for the solution
 type:: SolverWithLimiter_tp
   type(network_tp)        :: Model         ! Contains the model
-  type(AnalysisData_tp) :: AnalysisInfo  ! Holds information for the analysis
+  !type(AnalysisData_tp) :: AnalysisInfo  ! Holds information for the analysis
   type(Input_Data_tp)   :: ModelInfo     ! Holds information for the model
 
   contains
@@ -172,7 +172,7 @@ contains
 !
 !##################################################################################################
 
-subroutine solve_the_network_sub(this, TotalTime)
+subroutine solve_the_network_sub(this, TotalTime, AnalysisInfo)
 
 ! Libraries =======================================================================================
 !$ use omp_lib
@@ -187,6 +187,8 @@ implicit none
 ! - types -----------------------------------------------------------------------------------------
 class(SolverWithLimiter_tp) :: this
 type(Timer_tp):: TotalTime
+! Holds information for the analysis
+type(AnalysisData_tp(TotalNNodes=*, TotalNReaches=*)) :: AnalysisInfo
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
@@ -262,9 +264,6 @@ write(FileInfo,*) " -Applying initial conditions ..."
 !!allocate(Results%U(-1:this%Model%NCells+2),     stat=ERR_Alloc)
 !!if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 !Results%NCells = this%Model%NCells
-
-
-
 
 
 ! Initialization:

@@ -49,12 +49,14 @@
 		<Unit filename="src/Simulator/Inf_mod.f90" />
 		<Unit filename="src/Simulator/Parameters_mod.f90" />
 		<Unit filename="src/Simulator/Results_mod.f90" />
-		<Unit filename="src/Simulator/Solver_mod.f90" />
 		<Unit filename="src/Simulator/Timer_mod.f90" />
 		<Unit filename="src/Simulator/makefile" />
 		<Unit filename="src/Simulator/messages_and_errors_mod.f90" />
 		<Unit filename="src/Simulator/reading_address_file_mod.f90" />
+		<Unit filename="src/Simulator/reading_address_file_smod.f90" />
 		<Unit filename="src/Simulator/reading_partitioned_model_mod.f90" />
+		<Unit filename="src/Simulator/reading_partitioned_model_smod.f90" />
+		<Unit filename="src/Simulator/solve_network_mod.f90" />
 		<Extensions>
 			<envvars />
 			<code_completion />

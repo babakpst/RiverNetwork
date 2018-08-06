@@ -124,7 +124,6 @@ call InputTime%stop()
     write(*,        fmt="(A,I10)") " -Analyse no.", i_analyses
     write(FileInfo, fmt="(A,I10)") " -Analyse no.", i_analyses
 
-
     allocate( &
     type(AnalysisData_tp(TotalNNodes= Model%TotalNumOfNodesInTheNetwork, &
                          TotalNReaches= Model%TotalNumOfReachesInTheNetwork)) :: AnalysisInfo, &
@@ -143,11 +142,11 @@ call InputTime%stop()
         case(AnalysisType_1D_Limiter) !#2: Lax-Wendroff with limiter in combination with upwind
 
           Experiment_TypeII%ModelInfo = ModelInfo
-          Experiment_TypeII%AnalysisInfo = AnalysisInfo
+          !Experiment_TypeII%AnalysisInfo = AnalysisInfo
           Experiment_TypeII%Model = Model
 
           call SimulationTime%start()
-          call Experiment_TypeII%Solve(TotalTime)
+          call Experiment_TypeII%Solve(TotalTime, AnalysisInfo)
           call SimulationTime%stop()
 
         ! Error in analysis numbering
