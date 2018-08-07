@@ -44,12 +44,14 @@ type DiscretizedReach_tp
   integer(kind=Lng)  :: NCells_reach = 0_Lng ! number of cells in the reach
   integer(kind=Lng)  :: ReachNumber  = 0_Lng ! The reach no. in the unpartitioned network
 
-  integer(kind=Shrt) :: Communication= 0_Lng ! if this reach communicates with other ranks
-                                             ! -1: the entire rank is on one rank-no communication
+  integer(kind=Tiny) :: Communication=-1_Tiny! if this reach communicates with other ranks
+                                             !-1: the entire rank is on one rank-no communication
                                              ! 1: indicates that we need to communicate with the
-                                             !    rank that holds the lower part of the rank.
+                                             !    rank that holds the lower part of the reach
+                                             !    (the downstream).
                                              ! 2: indicates that we need to communicate with the
-                                             !    rank that holds the upper part of the rank.
+                                             !    rank that holds the upper part of the reach
+                                             !    (the upstream).
 
   integer(kind=Shrt) :: CommRank =-1_Shrt    ! indicates the rank number that a reach needs to
                                              ! communicate with, i.e., if the reach is divided

@@ -295,6 +295,7 @@ class(partitioner_tp(edges=*, nodes=*)), intent(inout), target :: this
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
 integer(kind=tiny) :: Communication ! indicates if a reach needs to communicate with other ranks
+                                    ! i.e. if the entire reach is on one rank or not.
 integer(kind=tiny) :: BCNodeI       ! the BC of the upstream node of the reach,
 integer(kind=tiny) :: BCNodeII      ! the BC of the downstream node of the reach,
                                     ! -1 not on this rank, 0 BC,
@@ -302,6 +303,8 @@ integer(kind=tiny) :: BCNodeII      ! the BC of the downstream node of the reach
 
 integer(kind=Shrt) :: CommRank      ! indicates the rank number that a reach needs to communicate
                                     ! with, i.e., if the reach is divided between two ranks.
+                                    ! Important note: Based on the method that we partition the
+                                    !                 network, a reach is either on one rank or two
 
 integer(kind=Lng)  :: CellCounter   ! Counter for cells on each partition
 integer(kind=Lng)  :: TotalCellCounter ! Counter for the total number of cells
@@ -781,7 +784,7 @@ TotalCellCounter = 0_Lng
               RangeCell_I  = 1_Lng
               RangeCell_II = this%ReachPartition(i_reach,3)
               Communication = 1_Tiny ! indicates that we need to communicate with the rank that
-                                     ! holds the lower part of the rank.
+                                     ! holds the lower part of the reach (downstream).
               CommRank = RankNodeII
               BCNodeI       = Geometry%BoundaryCondition(RankNodeI)
               BCNodeII      = -1_Tiny
@@ -790,7 +793,7 @@ TotalCellCounter = 0_Lng
               RangeCell_I  = this%ReachPartition(i_reach,3) + 1_Lng
               RangeCell_II = this%ReachPartition(i_reach,3)+this%ReachPartition(i_reach,4)
               Communication = 2_Tiny ! indicates that we need to communicate with the rank that
-                                     ! holds the upper part of the rank.
+                                     ! holds the upper part of the reach (upstream).
               CommRank = RankNodeI
               BCNodeI       = -1_Tiny
               BCNodeII      = Geometry%BoundaryCondition(RankNodeII)

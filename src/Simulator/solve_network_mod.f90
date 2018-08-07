@@ -97,9 +97,9 @@ end type Jacobian_tp
 
 
 ! Solution on this rank
-type solution
-  type(vector) :: UU, UN
-end type solution
+type solutionAtTimeSteps
+  type(vector), allocatable, dimension(:) :: UU, UN
+end type solutionAtTimeSteps
 
 
 ! Contains the parameters for considering the source term within the solution.
@@ -210,6 +210,7 @@ integer :: request_sent(2), request_recv(2)
 integer(kind=Lng)  :: i_Cell    ! loop index over the Cells
 integer(kind=Lng)  :: i_steps   ! loop index over the number steps
 integer(kind=Lng)  :: NSteps    ! Total number of steps for time marching
+integer(kind=Lng)  :: i_reach   ! loop index over the reaches
 
 integer(kind=Smll) :: ERR_Alloc, ERR_DeAlloc ! Allocating and DeAllocating errors
 
@@ -256,12 +257,8 @@ type(vector) :: F_H ! Contribution of high-resolution method (Lax-Wendroff) in t
 type(vector) :: Delta_U           ! holds (U_i- U_i-1)
 type(vector), dimension(4) :: sent, recv ! Items for MPI send and receive messages
 
-
-
-
-
-type(vector), dimension(-1_Lng:this%Model%NCells+2_Lng) ::UU, UN ! solution at n and n+1
-
+! solution at time steps n and n+1
+type(solutionAtTimeSteps), dimension(this%Model%TotalNumOfReachesOnThisRank) :: Solution
 
 ! code ============================================================================================
 write(*,       *) " subroutine < solve_the_network_sub >: "
@@ -271,11 +268,11 @@ write(FileInfo,*) " subroutine < solve_the_network_sub >: "
 write(*,       *) " -Applying initial conditions ..."
 write(FileInfo,*) " -Applying initial conditions ..."
 
+! <modify>
 !!!allocate(Plot_Results_1D_limiter_tp(NCells = this%Model%NCells) :: Results)
 !!allocate(Results%U(-1:this%Model%NCells+2),     stat=ERR_Alloc)
 !!if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 !Results%NCells = this%Model%NCells
-
 
 ! Initialization:
 NSteps = this%AnalysisInfo%TotalTime/this%AnalysisInfo%TimeStep
@@ -295,65 +292,102 @@ PrintResults = .false.
 SourceTerms%Identity(1,1) = 1.0_Dbl
 SourceTerms%Identity(2,2) = 1.0_Dbl
 
+! allocating the solution in each rank
+  do i_reach =1, this%Model%TotalNumOfReachesOnThisRank
+    allocate(Solution%UU(-1_Lng:this%Model%DiscretizedReach(i_reach)%NCells_reach)+2_Lng), &
+             Solution%UN(-1_Lng:this%Model%DiscretizedReach(i_reach)%NCells_reach)+2_Lng), &
+                                                                                    stat=ERR_Alloc)
+    if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
+  end do
 
 ! <modify>
-UU(1:this%Model%NCells)%U(1) = this%AnalysisInfo%CntrlV -    this%Model%ZCell(:)
 
-!if ( this%ModelInfo%rank == 0 .or. this%ModelInfo%rank == 1) then
-!UU(1:this%Model%NCells)%U(1) = this%AnalysisInfo%CntrlV
-!else if ( this%ModelInfo%rank == 2 .or. this%ModelInfo%rank == 3) then
-!UU(1:this%Model%NCells)%U(1) = this%AnalysisInfo%h_dw
-!end if
+  do i_reach =1, this%Model%TotalNumOfReachesOnThisRank
+    ! initialize height at time-step 0
+    Solution%UU(1:this%Model%DiscretizedReach(i_reach)%NCells_reach)%U(1) = AnalysisInfo%CntrlV
+                                                                             !-this%Model%ZCell(:)
+    ! initialize velocity (uh) at time-step 0
+    Solution%UU(:)%U(2) = 0.0_Dbl
+
+      if ( this%Model%DiscretizedReach(i_reach)%Communication == -1_Tiny ) then
+        ! no communication with other ranks, the entire reach is on this rank.
+
+      else if ( this%Model%DiscretizedReach(i_reach)%Communication == 1_Tiny ) then
+        ! communicate with the rank that holds the downstream of this reach,
+        ! the upstream of this reach is on this rank.
+
+      else if ( this%Model%DiscretizedReach(i_reach)%Communication == 2_Tiny ) then
+        ! communicate with the rank that holds the upstream of this reach,
+        ! the downstream of this reach is on this rank.
 
 
-UU(:)%U(2) = 0.0_Dbl
-  ! message communication in MPI
-  if (this%ModelInfo%rank==0) then
-    UU(0)% U(1) = UU(1)%U(1)
-    UU(-1)%U(1) = UU(1)%U(1)
-  end if
+      end if
 
-  if (.not. this%ModelInfo%rank==0) then
-    sent(1)%U(:) = UU(1)%U(:)
-    sent(2)%U(:) = UU(2)%U(:)
-    call MPI_ISEND(sent(1:2),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank-1, tag_sent(1), &
-                   MPI_COMM_WORLD, request_sent(1), MPI_err)
-    call MPI_IRECV(recv(1:2),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank-1, tag_recv(1), &
-                   MPI_COMM_WORLD, request_recv(1), MPI_err)
-  end if
-  if (.not. this%ModelInfo%rank== this%ModelInfo%size-1) then
-    sent(3)%U(:) = UU( this%Model%NCells )%U(:)
-    sent(4)%U(:) = UU( this%Model%NCells-1_Lng )%U(:)
-    call MPI_ISEND(sent(3:4),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank+1, tag_sent(2), &
-                   MPI_COMM_WORLD, request_sent(2), MPI_err)
-    call MPI_IRECV(recv(3:4),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank+1, tag_recv(2), &
-                   MPI_COMM_WORLD, request_recv(2), MPI_err)
-  end if
+       !---------------------------------------------------
+        ! message communication in MPI
+        if (this%ModelInfo%rank==0) then
 
-  if (this%ModelInfo%rank== this%ModelInfo%size-1) then
-    UU(this%Model%NCells+1)%U(1) = UU(this%Model%NCells)%U(1)
-    UU(this%Model%NCells+2)%U(1) = UU(this%Model%NCells)%U(1)
-  end if
 
-  if (.not. this%ModelInfo%rank==0) then
-    call MPI_WAIT(request_sent(1), status , MPI_err)
-    call MPI_WAIT(request_recv(1), status , MPI_err)
-  end if
+          ! if the node corresponding to the upstream of this rank is not connected anywhere, i.e.
+          ! the boundary condition
 
-  if (.not. this%ModelInfo%rank== this%ModelInfo%size-1) then
-    call MPI_WAIT(request_sent(2), status , MPI_err)
-    call MPI_WAIT(request_recv(2), status , MPI_err)
-  end if
+          UU(0)% U(1) = UU(1)%U(1)
+          UU(-1)%U(1) = UU(1)%U(1)
+        end if
 
-  if (.not. this%ModelInfo%rank==0) then
-    UU(0)%U(:) = recv(1)%U(:)
-    UU(-1)%U(:) = recv(2)%U(:)
-  end if
 
-  if (.not. this%ModelInfo%rank== this%ModelInfo%size-1) then
-    UU(this%Model%NCells+1_Lng )%U(:) = recv(3)%U(:)
-    UU(this%Model%NCells+2_Lng)%U(:)  = recv(4)%U(:)
-  end if
+
+
+
+        if (.not. this%ModelInfo%rank==0) then
+
+          ! The upstream of this rank is on another rank
+          sent(1)%U(:) = UU(1)%U(:)
+          sent(2)%U(:) = UU(2)%U(:)
+          call MPI_ISEND(sent(1:2),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank-1, tag_sent(1), &
+                         MPI_COMM_WORLD, request_sent(1), MPI_err)
+          call MPI_IRECV(recv(1:2),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank-1, tag_recv(1), &
+                         MPI_COMM_WORLD, request_recv(1), MPI_err)
+        end if
+        if (.not. this%ModelInfo%rank== this%ModelInfo%size-1) then
+
+          ! The downstream of this rank is on another rank
+          sent(3)%U(:) = UU( this%Model%NCells )%U(:)
+          sent(4)%U(:) = UU( this%Model%NCells-1_Lng )%U(:)
+          call MPI_ISEND(sent(3:4),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank+1, tag_sent(2), &
+                         MPI_COMM_WORLD, request_sent(2), MPI_err)
+          call MPI_IRECV(recv(3:4),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank+1, tag_recv(2), &
+                         MPI_COMM_WORLD, request_recv(2), MPI_err)
+        end if
+
+        if (this%ModelInfo%rank== this%ModelInfo%size-1) then
+          UU(this%Model%NCells+1)%U(1) = UU(this%Model%NCells)%U(1)
+          UU(this%Model%NCells+2)%U(1) = UU(this%Model%NCells)%U(1)
+        end if
+
+        if (.not. this%ModelInfo%rank==0) then
+          call MPI_WAIT(request_sent(1), status , MPI_err)
+          call MPI_WAIT(request_recv(1), status , MPI_err)
+        end if
+
+        if (.not. this%ModelInfo%rank== this%ModelInfo%size-1) then
+          call MPI_WAIT(request_sent(2), status , MPI_err)
+          call MPI_WAIT(request_recv(2), status , MPI_err)
+        end if
+
+        if (.not. this%ModelInfo%rank==0) then
+          UU(0)%U(:) = recv(1)%U(:)
+          UU(-1)%U(:) = recv(2)%U(:)
+        end if
+
+        if (.not. this%ModelInfo%rank== this%ModelInfo%size-1) then
+          UU(this%Model%NCells+1_Lng )%U(:) = recv(3)%U(:)
+          UU(this%Model%NCells+2_Lng)%U(:)  = recv(4)%U(:)
+        end if
+      !---------------------------------------------------
+
+
+
 
 
 ! imposing boundary condition: at this moment, they are only at rank 0 and size-1
@@ -368,6 +402,14 @@ UU(:)%U(2) = 0.0_Dbl
                              UU(this%Model%NCells+1_Lng), &
                              UU(this%Model%NCells+2_Lng))
   end if
+
+
+  end do
+
+
+
+
+
 
 Results%ModelInfo = this%ModelInfo
 
