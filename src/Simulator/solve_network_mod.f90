@@ -309,34 +309,66 @@ SourceTerms%Identity(2,2) = 1.0_Dbl
     ! initialize velocity (uh) at time-step 0
     Solution%UU(:)%U(2) = 0.0_Dbl
 
-      if ( this%Model%DiscretizedReach(i_reach)%Communication == -1_Tiny ) then
-        ! no communication with other ranks, the entire reach is on this rank.
 
-      else if ( this%Model%DiscretizedReach(i_reach)%Communication == 1_Tiny ) then
+
+      if (this%Model%DiscretizedReach(i_reach)%Communication == -1_Tiny) then
+        ! no communication with other ranks, the entire reach is on this rank.
+        ! There are 2 ghost cells at each ends of this reach, where the nodes are located. All of
+        ! the ghost cells are located on this node.
+        ! The ghost cells are located at the junctions, or the upstream node, or at the downstream
+        ! node.
+
+        ! upstream node
+          ! if the upstream node is a boundary condition/inlet
+
+          ! if the upstream node is a junction
+
+        ! downstream node
+          ! if the downstream node is a boundary condition/outlet
+
+          ! if the downstream node is a junction
+
+      else if (this%Model%DiscretizedReach(i_reach)%Communication == 1_Tiny) then ! upstream half
         ! communicate with the rank that holds the downstream of this reach,
         ! the upstream of this reach is on this rank.
+        ! The ghost cells at the upstream are at the junction, which is located on this rank
+        ! There is no ghost cell at the down stream.
 
-      else if ( this%Model%DiscretizedReach(i_reach)%Communication == 2_Tiny ) then
+        ! upstream node
+          ! if the upstream node is a boundary condition/inlet
+
+          ! if the upstream node is a is at a junction
+
+        ! downstream node
+          ! get the solution from the rank that has the downstream
+
+
+      else if (this%Model%DiscretizedReach(i_reach)%Communication == 2_Tiny) then ! downstream half
         ! communicate with the rank that holds the upstream of this reach,
         ! the downstream of this reach is on this rank.
+        ! The ghost cells are located at the downstream node, and no ghost cells on this rank for
+        ! the upstream node.
 
+
+        ! upstream node
+          ! get the solution from the rank that has the upstream
+
+        ! downstream node
+          ! if the downstream node is a boundary condition/outlet
+
+          ! if the downstream node is a junction
 
       end if
 
        !---------------------------------------------------
         ! message communication in MPI
         if (this%ModelInfo%rank==0) then
-
-
           ! if the node corresponding to the upstream of this rank is not connected anywhere, i.e.
           ! the boundary condition
 
           UU(0)% U(1) = UU(1)%U(1)
           UU(-1)%U(1) = UU(1)%U(1)
         end if
-
-
-
 
 
         if (.not. this%ModelInfo%rank==0) then
@@ -386,22 +418,18 @@ SourceTerms%Identity(2,2) = 1.0_Dbl
         end if
       !---------------------------------------------------
 
+      ! imposing boundary condition: at this moment, they are only at rank 0 and size-1
+        if (this%ModelInfo%rank == 0) then ! applying boundary conditions at the upstream
+          call Impose_BC_1D_up_sub(UU(1)%U(1), this%Model%NCells, this%AnalysisInfo%Q_Up, &
+                                   this%Model%WidthCell(1),UU(-1_Lng), UU( 0_Lng) )
+        end if
 
-
-
-
-! imposing boundary condition: at this moment, they are only at rank 0 and size-1
-  if (this%ModelInfo%rank == 0) then ! applying boundary conditions at the upstream
-    call Impose_BC_1D_up_sub(UU(1)%U(1), this%Model%NCells, this%AnalysisInfo%Q_Up, &
-                             this%Model%WidthCell(1),UU(-1_Lng), UU( 0_Lng) )
-  end if
-
-  if (this%ModelInfo%rank == this%ModelInfo%size-1) then ! applying bC at the downstream
-    call Impose_BC_1D_dw_sub(UU(this%Model%NCells)%U(2), &
-                             this%AnalysisInfo%h_dw, &
-                             UU(this%Model%NCells+1_Lng), &
-                             UU(this%Model%NCells+2_Lng))
-  end if
+        if (this%ModelInfo%rank == this%ModelInfo%size-1) then ! applying bC at the downstream
+          call Impose_BC_1D_dw_sub(UU(this%Model%NCells)%U(2), &
+                                   this%AnalysisInfo%h_dw, &
+                                   UU(this%Model%NCells+1_Lng), &
+                                   UU(this%Model%NCells+2_Lng))
+        end if
 
 
   end do

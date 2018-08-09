@@ -17,7 +17,7 @@
 !
 ! File version $Id $
 !
-! Last update: 07/26/2018
+! Last update: 08/09/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! Input_Address_sub: Reads file name and directories from the address file.
@@ -77,6 +77,7 @@ type AnalysisData_tp(TotalNNodes, TotalNReaches)
   integer(kind=Smll) :: AnalysisType=2_smll! Analysis Type -1:1D Lax-Wendroff
                                            !               -2:1D Lax-Wendroff with limiter
   integer(kind=Smll) :: limiter  = 1_smll  ! limiter type
+  integer(kind=Smll) :: junction_type  = 0_smll  ! limiter type
   integer(kind=Lng)  :: Plot_Inc = 500_Lng ! Increment to record the results for visualization
 
   real(kind=DBL) :: TotalTime    = 0.0_dbl ! Total simulation time (in seconds)
