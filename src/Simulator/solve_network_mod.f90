@@ -349,7 +349,6 @@ SourceTerms%Identity(2,2) = 1.0_Dbl
         ! The ghost cells are located at the downstream node, and no ghost cells on this rank for
         ! the upstream node.
 
-
         ! upstream node
           ! get the solution from the rank that has the upstream
 
@@ -450,255 +449,260 @@ Results%ModelInfo = this%ModelInfo
 !$ write(*,       fmt="(' I am thread ',I4,' out of ',I4,' threads.')") ITS,MTS
 !$ write(FileInfo,fmt="(' I am thread ',I4,' out of ',I4,' threads.')") ITS,MTS
 
-  ! Time marching
-  Time_Marching: do i_steps = 1_Lng, NSteps +1_Lng
+! Solving the equation for each reach
+  On_Reaches: do i_reach =1, this%Model%TotalNumOfReachesOnThisRank
 
-      ! write down data for visualization
-      if (mod(i_steps,this%AnalysisInfo%Plot_Inc)==1 .or. PrintResults) then
-        !$ if (ITS==0) then
-          if ( this%ModelInfo%rank == 0) then
-              call system_clock(TotalTime%endSys, TotalTime%clock_rate)
-              print*, "----------------Step:", i_steps, &
-                     real(TotalTime%endSys-TotalTime%startSys)/real(TotalTime%clock_rate)
-          end if
-        Results%U(:) = UU(-1:this%Model%NCells+2)
-        call Results%plot_results(i_steps)
-        !$ end if
+    ! Time marching
+    Time_Marching: do i_steps = 1_Lng, NSteps +1_Lng
+
+        ! write down data for visualization
+        if (mod(i_steps,this%AnalysisInfo%Plot_Inc)==1 .or. PrintResults) then
+          !$ if (ITS==0) then
+            if ( this%ModelInfo%rank == 0) then
+                call system_clock(TotalTime%endSys, TotalTime%clock_rate)
+                print*, "----------------Step:", i_steps, &
+                       real(TotalTime%endSys-TotalTime%startSys)/real(TotalTime%clock_rate)
+            end if
+          Results%U(:) = UU(-1:this%Model%NCells+2)
+          call Results%plot_results(i_steps)
+          !$ end if
+        end if
+
+        !$OMP DO
+        do i_Cell = 1_Lng, this%Model%NCells  ! Loop over cells except the boundary cells
+
+          !print*, "=============Cell:", i_Cell, ITS
+          !print*, "=============Cell:", i_Cell
+
+          ! Initialize fluxes
+          F_L%U(:) = 0.0_Dbl ! upwind flux (not exactly, see notes)
+          F_H%U(:) = 0.0_Dbl ! lax-Wendroff flux (not exactly, see notes)
+
+          SourceTerms%Source_1%U(:)  = 0.0_Dbl
+          SourceTerms%Source_2%U(:)  = 0.0_Dbl
+
+          ! Solution at this cell
+          height   = UU(i_Cell)%U(1)
+          velocity = UU(i_Cell)%U(2)/height
+
+          ! Find the B matrix for this cell
+          SourceTerms%S_f = (this%Model%ManningCell(i_Cell)**2.0) * velocity &
+                            * dabs(velocity) /(height**(4.0_Dbl/3.0_Dbl))
+
+          SourceTerms%B(1,1) = 0.0_Dbl
+          SourceTerms%B(2,1) =  &
+          - Gravity * (this%Model%CellSlope(i_Cell) + (7.0_Dbl/3.0_Dbl) * SourceTerms%S_f)
+
+          SourceTerms%B(1,2) = 0.0_Dbl
+          SourceTerms%B(2,2) = (2.0_Dbl*this%Model%ManningCell(i_Cell)**2.0) &
+                                *dabs(velocity)/(height**(4.0_Dbl/3.0_Dbl))
+
+          ! Find the BI
+          SourceTerms%BI(:,:) = SourceTerms%Identity - 0.5_Dbl * dt * SourceTerms%B(:,:)
+
+          call Inverse(SourceTerms%BI(:,:), SourceTerms%BI(:,:)) ! the inverse
+
+          ! Source terms at the current cell/time
+          SourceTerms%S%U(1) = 0.0_Dbl
+          SourceTerms%S%U(2) =-Gravity*height*(this%Model%CellSlope(i_Cell)-SourceTerms%S_f)
+
+          ! The first contribution of the source term in the solution
+          SourceTerms%Source_1%U(:) = &
+               dt * (SourceTerms%S%U(:) - 0.5_Dbl * matmul(SourceTerms%B(:,:), UU(i_Cell)%U(:)))
+
+
+            ON_Interface:  do i_Interface = 1, 2  ! first one is on i-1/2, the second one is on i+1/2
+
+              ! Compute the jump (U_i- U_i-1)
+              Delta_U%U(:) = UU(i_Cell+(i_Interface-1_Lng))%U(:)-UU(i_Cell+(i_Interface-2_Lng))%U(:)
+
+              ! Computing the Jacobian and all other items at the upstream
+              Jacobian%U_up%U(:) = UU(i_Cell+(i_Interface-2_Lng))%U(:)
+              Jacobian%U_dw%U(:) = UU(i_Cell+(i_Interface-1_Lng))%U(:)
+
+              call Jacobian%Jacobian()
+
+              ! Compute alpha(= RI*(U_i - U_(i-1))
+              alpha%U(:) = matmul(Jacobian%L, Delta_U%U(:))
+
+              Coefficient = (-1.0_Dbl) ** i_Interface
+
+              height_interface = 0.5_Dbl * (Jacobian%U_up%U(1) +Jacobian%U_dw%U(1) )
+
+              velocity_interface = &
+              0.5_Dbl*(Jacobian%U_up%U(2)/Jacobian%U_up%U(1)+Jacobian%U_dw%U(2)/Jacobian%U_dw%U(1))
+
+              SourceTerms%S_f_interface =this%Model%ManningCell(i_Cell)*velocity_interface &
+               *dabs(velocity_interface) /( height_interface**(4.0_Dbl/3.0_Dbl))
+
+              SourceTerms%S_interface%U(1) = 0.0_Dbl
+              SourceTerms%S_interface%U(2) =-Gravity*height_interface &
+                    *(this%Model%InterfaceSlope(i_Cell+i_Interface-1_Tiny)-SourceTerms%S_f_interface)
+
+              SourceTerms%Source_2%U(:) = SourceTerms%Source_2%U(:) + 0.5_Dbl * (dt**2) / dx &
+                               * ( Coefficient * matmul(Jacobian%A, SourceTerms%S_interface%U(:)))
+
+              if ( alpha%U(1) ==0.0_Dbl .and. alpha%U(2) ==0.0_Dbl) cycle
+
+                ON_Eigenvalues: do i_eigen = 1_Tiny, 2_Tiny
+
+                  Wave%U(:) = alpha%U(i_eigen) * Jacobian%R(:,i_eigen)
+
+                    ! We use positive eigenvalues on the upstream interface
+                    if (i_Interface == 1_Tiny) then
+                      speed = Jacobian%Lambda_plus%U(i_eigen)
+                      Coefficient = -1.0_Dbl !take care of the sign of flux in high-resolution part
+                    ! We use negative eigenvalues on the downstream interface
+                    else if (i_Interface == 2_Tiny) then
+                      speed = Jacobian%Lambda_minus%U(i_eigen)
+                      Coefficient = +1.0_Dbl !take care of the sign of flux in high-resolution part
+                    end if
+
+                  ! The upwind part
+                  F_L%U(:) = F_L%U(:) + speed * Wave%U(:)
+
+                    ! This if condition computes the W_(I-1/2)
+                    if  (Jacobian%Lambda%U(i_eigen)  > 0.0_Dbl ) then
+
+                      ! Compute the jump (U_i- U_i-1)
+                      Delta_U%U(:) = UU(i_Cell+i_Interface-2_Tiny)%U(:) &
+                                    -UU(i_Cell+i_Interface-3_Tiny )%U(:)
+
+                      ! Computing the Jacobian and all other items at the upstream
+                      Jacobian_neighbor%U_up%U(:) = UU( i_Cell+i_Interface-3_Tiny  )%U(:)
+                      Jacobian_neighbor%U_dw%U(:) = UU( i_Cell+i_Interface-2_Tiny  )%U(:)
+
+                      call Jacobian_neighbor%Jacobian()
+
+                      ! Compute alpha(= RI*(U_i - U_(i-1))
+                      alpha_neighbor%U(:) = matmul(Jacobian_neighbor%L(:,:), Delta_U%U(:))
+                      Wave_neighbor%U(:) = alpha_neighbor%U(i_eigen)*Jacobian_neighbor%R(:, i_eigen)
+
+                    else if  (Jacobian%Lambda%U(i_eigen) < 0.0_Dbl) then
+
+                      ! Compute the jump (U_i- U_i-1)
+                      Delta_U%U(:) = UU(i_Cell+i_Interface)%U(:)-UU(i_Cell+i_Interface-1_Tiny)%U(:)
+
+                      ! Computing the Jacobian and all other items at the upstream
+                      Jacobian_neighbor%U_up%U(:) = UU(i_Cell+i_Interface-1_Tiny )%U(:)
+                      Jacobian_neighbor%U_dw%U(:) = UU(i_Cell+i_Interface        )%U(:)
+
+                      call Jacobian_neighbor%Jacobian()
+
+                      ! Compute alpha(= RI*(U_i - U_(i-1))
+                      alpha_neighbor%U(:) = matmul(Jacobian_neighbor%L(:,:), Delta_U%U(:))
+                      Wave_neighbor%U(:)  = alpha_neighbor%U(i_eigen)* Jacobian_neighbor%R(:,i_eigen)
+
+                    else
+                      write(*,*)" Something is wrong. Check the limiter subroutine."
+                      write(*,*)" The eigenvalue is wrong (most probably NaN): " , &
+                                  i_eigen, Jacobian%Lambda%U(i_eigen)
+                      stop
+                    end if
+
+                    if ( dot_product(Wave%U(:), Wave%U(:) ) /= 0.0_Dbl ) then
+                      LimiterFunc%theta = (dot_product(Wave_neighbor%U(:),Wave%U(:))) &
+                                          /(dot_product(Wave%U(:), Wave%U(:) )  )
+                    else
+                      LimiterFunc%theta = 0.0_Dbl
+                    end if
+
+                  ! The limiter function
+                  call LimiterFunc%LimiterValue()
+
+                  !LimiterFunc%phi =0.0
+                  alpha_tilda%U(:) =  LimiterFunc%phi * alpha%U(:)
+
+                  !theta (2*(i_Cell-1)+i_Interface)%U(i_eigen) = LimiterFunc%theta
+                  !phi   (2*(i_Cell-1)+i_Interface)%U(i_eigen) = LimiterFunc%phi
+
+                  Wave_tilda%U(:) = alpha_tilda%U(i_eigen) * Jacobian%R(:,i_eigen)
+
+                  ! The high-resolution (Lax-Wendroff) part
+                  F_H%U(:) = F_H%U(:) + Coefficient * 0.5_Dbl * dabs(Jacobian%Lambda%U(i_eigen) ) &
+                             * (1.0_Dbl-dtdx*dabs(Jacobian%Lambda%U(i_eigen)))*Wave_tilda%U(:)
+
+                end do ON_Eigenvalues
+            end do ON_Interface
+
+          ! Final update the results
+          TempSolution%U(:) = UU(i_cell)%U(:) - dtdx * F_L%U(:) - dtdx * F_H%U(:) &
+                              + SourceTerms%Source_1%U(:) - SourceTerms%Source_2%U(:)
+
+          UN(i_cell)%U(:) = matmul(SourceTerms%BI(:,:), TempSolution%U(:))
+
+        end do
+        !$OMP END DO
+
+        !!$OMP END PARALLEL DO
+        !$OMP DO
+        do i_Cell = 1_Lng, this%Model%NCells  ! Loop over cells except the boundary cells
+          UU(i_Cell) = UN(i_Cell)
+        end do
+        !$OMP END DO
+
+
+      !$OMP single
+      !UU(:) = UN(:)
+      ! apply boundary condition
+
+      ! imposing boundary condition: at this moment, they are only at rank 0 and size-1
+      if (this%ModelInfo%rank == 0) then ! applying boundary conditions at the upstream
+        call Impose_BC_1D_up_sub(UU(1)%U(1), this%Model%NCells, this%AnalysisInfo%Q_Up, &
+                                 this%Model%WidthCell(1), UU(-1_Lng), UU( 0_Lng))
       end if
 
-      !$OMP DO
-      do i_Cell = 1_Lng, this%Model%NCells  ! Loop over cells except the boundary cells
+      if (this%ModelInfo%rank == this%ModelInfo%size-1) then ! applying bc at the downstream
+        call Impose_BC_1D_dw_sub(UU(this%Model%NCells)%U(2), &
+                                this%AnalysisInfo%h_dw, &
+                                UU(this%Model%NCells+1_Lng), &
+                                UU(this%Model%NCells+2_Lng))
+      end if
 
-        !print*, "=============Cell:", i_Cell, ITS
-        !print*, "=============Cell:", i_Cell
+      ! message communication in MPI
+      if (.not. this%ModelInfo%rank==0) then
+        sent(1)%U(:) = UU(1)%U(:)
+        sent(2)%U(:) = UU(2)%U(:)
+        call MPI_ISEND(sent(1:2),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank-1, tag_sent(1), &
+                       MPI_COMM_WORLD, request_sent(1), MPI_err)
+        call MPI_IRECV(recv(1:2),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank-1, tag_recv(1), &
+                       MPI_COMM_WORLD, request_recv(1), MPI_err)
+      end if
 
-        ! Initialize fluxes
-        F_L%U(:) = 0.0_Dbl ! upwind flux (not exactly, see notes)
-        F_H%U(:) = 0.0_Dbl ! lax-Wendroff flux (not exactly, see notes)
+      if (.not. this%ModelInfo%rank== this%ModelInfo%size-1) then
+        sent(3)%U(:) = UU( this%Model%NCells )%U(:)
+        sent(4)%U(:) = UU( this%Model%NCells-1_Lng )%U(:)
 
-        SourceTerms%Source_1%U(:)  = 0.0_Dbl
-        SourceTerms%Source_2%U(:)  = 0.0_Dbl
+        call MPI_ISEND(sent(3:4),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank+1, tag_sent(2), &
+                       MPI_COMM_WORLD, request_sent(2), MPI_err)
+        call MPI_IRECV(recv(3:4),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank+1, tag_recv(2), &
+                       MPI_COMM_WORLD, request_recv(2), MPI_err)
+      end if
 
-        ! Solution at this cell
-        height   = UU(i_Cell)%U(1)
-        velocity = UU(i_Cell)%U(2)/height
+      if (.not. this%ModelInfo%rank==0) then
+        call MPI_WAIT(request_sent(1), status , MPI_err)
+        call MPI_WAIT(request_recv(1), status , MPI_err)
+      end if
 
-        ! Find the B matrix for this cell
-        SourceTerms%S_f = (this%Model%ManningCell(i_Cell)**2.0) * velocity &
-                          * dabs(velocity) /(height**(4.0_Dbl/3.0_Dbl))
+      if (.not. this%ModelInfo%rank== this%ModelInfo%size-1) then
+        call MPI_WAIT(request_sent(2), status , MPI_err)
+        call MPI_WAIT(request_recv(2), status , MPI_err)
+      end if
 
-        SourceTerms%B(1,1) = 0.0_Dbl
-        SourceTerms%B(2,1) =  &
-        - Gravity * (this%Model%CellSlope(i_Cell) + (7.0_Dbl/3.0_Dbl) * SourceTerms%S_f)
+      if (.not. this%ModelInfo%rank==0) then
+        UU(0)%U(:) = recv(1)%U(:)
+        UU(-1)%U(:) = recv(2)%U(:)
+      end if
 
-        SourceTerms%B(1,2) = 0.0_Dbl
-        SourceTerms%B(2,2) = (2.0_Dbl*this%Model%ManningCell(i_Cell)**2.0) &
-                              *dabs(velocity)/(height**(4.0_Dbl/3.0_Dbl))
+      if (.not. this%ModelInfo%rank== this%ModelInfo%size-1) then
+        UU(this%Model%NCells+1_Lng )%U(:) = recv(3)%U(:)
+        UU(this%Model%NCells+2_Lng)%U(:)  = recv(4)%U(:)
+      end if
 
-        ! Find the BI
-        SourceTerms%BI(:,:) = SourceTerms%Identity - 0.5_Dbl * dt * SourceTerms%B(:,:)
+      !$OMP end single
+    end do Time_Marching
+  end do On_Reach
 
-        call Inverse(SourceTerms%BI(:,:), SourceTerms%BI(:,:)) ! the inverse
-
-        ! Source terms at the current cell/time
-        SourceTerms%S%U(1) = 0.0_Dbl
-        SourceTerms%S%U(2) =-Gravity*height*(this%Model%CellSlope(i_Cell)-SourceTerms%S_f)
-
-        ! The first contribution of the source term in the solution
-        SourceTerms%Source_1%U(:) = &
-             dt * (SourceTerms%S%U(:) - 0.5_Dbl * matmul(SourceTerms%B(:,:), UU(i_Cell)%U(:)))
-
-
-          ON_Interface:  do i_Interface = 1, 2  ! first one is on i-1/2, the second one is on i+1/2
-
-            ! Compute the jump (U_i- U_i-1)
-            Delta_U%U(:) = UU(i_Cell+(i_Interface-1_Lng))%U(:)-UU(i_Cell+(i_Interface-2_Lng))%U(:)
-
-            ! Computing the Jacobian and all other items at the upstream
-            Jacobian%U_up%U(:) = UU(i_Cell+(i_Interface-2_Lng))%U(:)
-            Jacobian%U_dw%U(:) = UU(i_Cell+(i_Interface-1_Lng))%U(:)
-
-            call Jacobian%Jacobian()
-
-            ! Compute alpha(= RI*(U_i - U_(i-1))
-            alpha%U(:) = matmul(Jacobian%L, Delta_U%U(:))
-
-            Coefficient = (-1.0_Dbl) ** i_Interface
-
-            height_interface = 0.5_Dbl * (Jacobian%U_up%U(1) +Jacobian%U_dw%U(1) )
-
-            velocity_interface = &
-            0.5_Dbl*(Jacobian%U_up%U(2)/Jacobian%U_up%U(1)+Jacobian%U_dw%U(2)/Jacobian%U_dw%U(1))
-
-            SourceTerms%S_f_interface =this%Model%ManningCell(i_Cell)*velocity_interface &
-             *dabs(velocity_interface) /( height_interface**(4.0_Dbl/3.0_Dbl))
-
-            SourceTerms%S_interface%U(1) = 0.0_Dbl
-            SourceTerms%S_interface%U(2) =-Gravity*height_interface &
-                  *(this%Model%InterfaceSlope(i_Cell+i_Interface-1_Tiny)-SourceTerms%S_f_interface)
-
-            SourceTerms%Source_2%U(:) = SourceTerms%Source_2%U(:) + 0.5_Dbl * (dt**2) / dx &
-                             * ( Coefficient * matmul(Jacobian%A, SourceTerms%S_interface%U(:)))
-
-            if ( alpha%U(1) ==0.0_Dbl .and. alpha%U(2) ==0.0_Dbl) cycle
-
-              ON_Eigenvalues: do i_eigen = 1_Tiny, 2_Tiny
-
-                Wave%U(:) = alpha%U(i_eigen) * Jacobian%R(:,i_eigen)
-
-                  ! We use positive eigenvalues on the upstream interface
-                  if (i_Interface == 1_Tiny) then
-                    speed = Jacobian%Lambda_plus%U(i_eigen)
-                    Coefficient = -1.0_Dbl !take care of the sign of flux in high-resolution part
-                  ! We use negative eigenvalues on the downstream interface
-                  else if (i_Interface == 2_Tiny) then
-                    speed = Jacobian%Lambda_minus%U(i_eigen)
-                    Coefficient = +1.0_Dbl !take care of the sign of flux in high-resolution part
-                  end if
-
-                ! The upwind part
-                F_L%U(:) = F_L%U(:) + speed * Wave%U(:)
-
-                  ! This if condition computes the W_(I-1/2)
-                  if  (Jacobian%Lambda%U(i_eigen)  > 0.0_Dbl ) then
-
-                    ! Compute the jump (U_i- U_i-1)
-                    Delta_U%U(:) = UU(i_Cell+i_Interface-2_Tiny)%U(:) &
-                                  -UU(i_Cell+i_Interface-3_Tiny )%U(:)
-
-                    ! Computing the Jacobian and all other items at the upstream
-                    Jacobian_neighbor%U_up%U(:) = UU( i_Cell+i_Interface-3_Tiny  )%U(:)
-                    Jacobian_neighbor%U_dw%U(:) = UU( i_Cell+i_Interface-2_Tiny  )%U(:)
-
-                    call Jacobian_neighbor%Jacobian()
-
-                    ! Compute alpha(= RI*(U_i - U_(i-1))
-                    alpha_neighbor%U(:) = matmul(Jacobian_neighbor%L(:,:), Delta_U%U(:))
-                    Wave_neighbor%U(:) = alpha_neighbor%U(i_eigen)*Jacobian_neighbor%R(:, i_eigen)
-
-                  else if  (Jacobian%Lambda%U(i_eigen) < 0.0_Dbl) then
-
-                    ! Compute the jump (U_i- U_i-1)
-                    Delta_U%U(:) = UU(i_Cell+i_Interface)%U(:)-UU(i_Cell+i_Interface-1_Tiny)%U(:)
-
-                    ! Computing the Jacobian and all other items at the upstream
-                    Jacobian_neighbor%U_up%U(:) = UU(i_Cell+i_Interface-1_Tiny )%U(:)
-                    Jacobian_neighbor%U_dw%U(:) = UU(i_Cell+i_Interface        )%U(:)
-
-                    call Jacobian_neighbor%Jacobian()
-
-                    ! Compute alpha(= RI*(U_i - U_(i-1))
-                    alpha_neighbor%U(:) = matmul(Jacobian_neighbor%L(:,:), Delta_U%U(:))
-                    Wave_neighbor%U(:)  = alpha_neighbor%U(i_eigen)* Jacobian_neighbor%R(:,i_eigen)
-
-                  else
-                    write(*,*)" Something is wrong. Check the limiter subroutine."
-                    write(*,*)" The eigenvalue is wrong (most probably NaN): " , &
-                                i_eigen, Jacobian%Lambda%U(i_eigen)
-                    stop
-                  end if
-
-                  if ( dot_product(Wave%U(:), Wave%U(:) ) /= 0.0_Dbl ) then
-                    LimiterFunc%theta = (dot_product(Wave_neighbor%U(:),Wave%U(:))) &
-                                        /(dot_product(Wave%U(:), Wave%U(:) )  )
-                  else
-                    LimiterFunc%theta = 0.0_Dbl
-                  end if
-
-                ! The limiter function
-                call LimiterFunc%LimiterValue()
-
-                !LimiterFunc%phi =0.0
-                alpha_tilda%U(:) =  LimiterFunc%phi * alpha%U(:)
-
-                !theta (2*(i_Cell-1)+i_Interface)%U(i_eigen) = LimiterFunc%theta
-                !phi   (2*(i_Cell-1)+i_Interface)%U(i_eigen) = LimiterFunc%phi
-
-                Wave_tilda%U(:) = alpha_tilda%U(i_eigen) * Jacobian%R(:,i_eigen)
-
-                ! The high-resolution (Lax-Wendroff) part
-                F_H%U(:) = F_H%U(:) + Coefficient * 0.5_Dbl * dabs(Jacobian%Lambda%U(i_eigen) ) &
-                           * (1.0_Dbl-dtdx*dabs(Jacobian%Lambda%U(i_eigen)))*Wave_tilda%U(:)
-
-              end do ON_Eigenvalues
-          end do ON_Interface
-
-        ! Final update the results
-        TempSolution%U(:) = UU(i_cell)%U(:) - dtdx * F_L%U(:) - dtdx * F_H%U(:) &
-                            + SourceTerms%Source_1%U(:) - SourceTerms%Source_2%U(:)
-
-        UN(i_cell)%U(:) = matmul(SourceTerms%BI(:,:), TempSolution%U(:))
-
-      end do
-      !$OMP END DO
-
-      !!$OMP END PARALLEL DO
-      !$OMP DO
-      do i_Cell = 1_Lng, this%Model%NCells  ! Loop over cells except the boundary cells
-        UU(i_Cell) = UN(i_Cell)
-      end do
-      !$OMP END DO
-
-
-    !$OMP single
-    !UU(:) = UN(:)
-    ! apply boundary condition
-
-    ! imposing boundary condition: at this moment, they are only at rank 0 and size-1
-    if (this%ModelInfo%rank == 0) then ! applying boundary conditions at the upstream
-      call Impose_BC_1D_up_sub(UU(1)%U(1), this%Model%NCells, this%AnalysisInfo%Q_Up, &
-                               this%Model%WidthCell(1), UU(-1_Lng), UU( 0_Lng))
-    end if
-
-    if (this%ModelInfo%rank == this%ModelInfo%size-1) then ! applying bc at the downstream
-      call Impose_BC_1D_dw_sub(UU(this%Model%NCells)%U(2), &
-                              this%AnalysisInfo%h_dw, &
-                              UU(this%Model%NCells+1_Lng), &
-                              UU(this%Model%NCells+2_Lng))
-    end if
-
-    ! message communication in MPI
-    if (.not. this%ModelInfo%rank==0) then
-      sent(1)%U(:) = UU(1)%U(:)
-      sent(2)%U(:) = UU(2)%U(:)
-      call MPI_ISEND(sent(1:2),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank-1, tag_sent(1), &
-                     MPI_COMM_WORLD, request_sent(1), MPI_err)
-      call MPI_IRECV(recv(1:2),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank-1, tag_recv(1), &
-                     MPI_COMM_WORLD, request_recv(1), MPI_err)
-    end if
-
-    if (.not. this%ModelInfo%rank== this%ModelInfo%size-1) then
-      sent(3)%U(:) = UU( this%Model%NCells )%U(:)
-      sent(4)%U(:) = UU( this%Model%NCells-1_Lng )%U(:)
-
-      call MPI_ISEND(sent(3:4),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank+1, tag_sent(2), &
-                     MPI_COMM_WORLD, request_sent(2), MPI_err)
-      call MPI_IRECV(recv(3:4),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank+1, tag_recv(2), &
-                     MPI_COMM_WORLD, request_recv(2), MPI_err)
-    end if
-
-    if (.not. this%ModelInfo%rank==0) then
-      call MPI_WAIT(request_sent(1), status , MPI_err)
-      call MPI_WAIT(request_recv(1), status , MPI_err)
-    end if
-
-    if (.not. this%ModelInfo%rank== this%ModelInfo%size-1) then
-      call MPI_WAIT(request_sent(2), status , MPI_err)
-      call MPI_WAIT(request_recv(2), status , MPI_err)
-    end if
-
-    if (.not. this%ModelInfo%rank==0) then
-      UU(0)%U(:) = recv(1)%U(:)
-      UU(-1)%U(:) = recv(2)%U(:)
-    end if
-
-    if (.not. this%ModelInfo%rank== this%ModelInfo%size-1) then
-      UU(this%Model%NCells+1_Lng )%U(:) = recv(3)%U(:)
-      UU(this%Model%NCells+2_Lng)%U(:)  = recv(4)%U(:)
-    end if
-
-    !$OMP end single
-  end do Time_Marching
 
   !$OMP END PARALLEL
 
