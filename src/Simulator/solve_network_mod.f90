@@ -300,17 +300,15 @@ SourceTerms%Identity(2,2) = 1.0_Dbl
     if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
   end do
 
-! <modify>
-
   do i_reach =1, this%Model%TotalNumOfReachesOnThisRank
+
     ! initialize height at time-step 0
     Solution%UU(1:this%Model%DiscretizedReach(i_reach)%NCells_reach)%U(1) = AnalysisInfo%CntrlV
                                                                              !-this%Model%ZCell(:)
     ! initialize velocity (uh) at time-step 0
     Solution%UU(:)%U(2) = 0.0_Dbl
 
-
-
+      ! working on the ghost cells, or on the junction cells
       if (this%Model%DiscretizedReach(i_reach)%Communication == -1_Tiny) then
         ! no communication with other ranks, the entire reach is on this rank.
         ! There are 2 ghost cells at each ends of this reach, where the nodes are located. All of
@@ -368,6 +366,7 @@ SourceTerms%Identity(2,2) = 1.0_Dbl
           UU(0)% U(1) = UU(1)%U(1)
           UU(-1)%U(1) = UU(1)%U(1)
         end if
+
 
 
         if (.not. this%ModelInfo%rank==0) then
@@ -702,7 +701,6 @@ Results%ModelInfo = this%ModelInfo
       !$OMP end single
     end do Time_Marching
   end do On_Reach
-
 
   !$OMP END PARALLEL
 
