@@ -645,6 +645,86 @@ Results%ModelInfo = this%ModelInfo
       !UU(:) = UN(:)
       ! apply boundary condition
 
+
+
+! modify-delete
+
+        ! message communication in MPI
+        if (this%ModelInfo%rank==0) then
+          ! if the node corresponding to the upstream of this rank is not connected anywhere, i.e.
+          ! the boundary condition
+
+          UU(0)% U(1) = UU(1)%U(1)
+          UU(-1)%U(1) = UU(1)%U(1)
+        end if
+
+
+
+        if (.not. this%ModelInfo%rank==0) then
+
+          ! The upstream of this rank is on another rank
+          sent(1)%U(:) = UU(1)%U(:)
+          sent(2)%U(:) = UU(2)%U(:)
+          call MPI_ISEND(sent(1:2),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank-1, tag_sent(1), &
+                         MPI_COMM_WORLD, request_sent(1), MPI_err)
+          call MPI_IRECV(recv(1:2),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank-1, tag_recv(1), &
+                         MPI_COMM_WORLD, request_recv(1), MPI_err)
+        end if
+        if (.not. this%ModelInfo%rank== this%ModelInfo%size-1) then
+
+          ! The downstream of this rank is on another rank
+          sent(3)%U(:) = UU( this%Model%NCells )%U(:)
+          sent(4)%U(:) = UU( this%Model%NCells-1_Lng )%U(:)
+          call MPI_ISEND(sent(3:4),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank+1, tag_sent(2), &
+                         MPI_COMM_WORLD, request_sent(2), MPI_err)
+          call MPI_IRECV(recv(3:4),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank+1, tag_recv(2), &
+                         MPI_COMM_WORLD, request_recv(2), MPI_err)
+        end if
+
+        if (this%ModelInfo%rank== this%ModelInfo%size-1) then
+          UU(this%Model%NCells+1)%U(1) = UU(this%Model%NCells)%U(1)
+          UU(this%Model%NCells+2)%U(1) = UU(this%Model%NCells)%U(1)
+        end if
+
+        if (.not. this%ModelInfo%rank==0) then
+          call MPI_WAIT(request_sent(1), status , MPI_err)
+          call MPI_WAIT(request_recv(1), status , MPI_err)
+        end if
+
+        if (.not. this%ModelInfo%rank== this%ModelInfo%size-1) then
+          call MPI_WAIT(request_sent(2), status , MPI_err)
+          call MPI_WAIT(request_recv(2), status , MPI_err)
+        end if
+
+        if (.not. this%ModelInfo%rank==0) then
+          UU(0)%U(:) = recv(1)%U(:)
+          UU(-1)%U(:) = recv(2)%U(:)
+        end if
+
+        if (.not. this%ModelInfo%rank== this%ModelInfo%size-1) then
+          UU(this%Model%NCells+1_Lng )%U(:) = recv(3)%U(:)
+          UU(this%Model%NCells+2_Lng)%U(:)  = recv(4)%U(:)
+        end if
+      !---------------------------------------------------
+
+      ! imposing boundary condition: at this moment, they are only at rank 0 and size-1
+        if (this%ModelInfo%rank == 0) then ! applying boundary conditions at the upstream
+          call Impose_BC_1D_up_sub(UU(1)%U(1), this%Model%NCells, this%AnalysisInfo%Q_Up, &
+                                   this%Model%WidthCell(1),UU(-1_Lng), UU( 0_Lng) )
+        end if
+
+        if (this%ModelInfo%rank == this%ModelInfo%size-1) then ! applying bC at the downstream
+          call Impose_BC_1D_dw_sub(UU(this%Model%NCells)%U(2), &
+                                   this%AnalysisInfo%h_dw, &
+                                   UU(this%Model%NCells+1_Lng), &
+                                   UU(this%Model%NCells+2_Lng))
+        end if
+
+
+! modify-delete
+
+
+
       ! imposing boundary condition: at this moment, they are only at rank 0 and size-1
       if (this%ModelInfo%rank == 0) then ! applying boundary conditions at the upstream
         call Impose_BC_1D_up_sub(UU(1)%U(1), this%Model%NCells, this%AnalysisInfo%Q_Up, &
