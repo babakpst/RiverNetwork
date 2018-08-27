@@ -59,8 +59,8 @@ type DiscretizedReach_tp
 
   integer(kind=tiny) :: BCNodeI  = -1_Shrt   ! the BC of the upstream node of the reach,
   integer(kind=tiny) :: BCNodeII = -1_Shrt   ! the BC of the downstream node of the reach,
-                                             ! -1 not on this rank, 0 BC,
-                                             !  1 connected to other nodes, 2 outlet
+                                             ! -1 not on this rank, 0 connected to other nodes,
+                                             !  1 inlet BC, 2 outlet BC
 
   real(kind=DBL) :: ReachManning         = 0.0_dbl ! the Manning's number of each cell
   real(kind=DBL) :: ReachWidthCell       = 0.0_dbl ! the Manning's number of each cell

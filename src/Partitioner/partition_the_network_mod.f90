@@ -298,8 +298,8 @@ integer(kind=tiny) :: Communication ! indicates if a reach needs to communicate 
                                     ! i.e. if the entire reach is on one rank or not.
 integer(kind=tiny) :: BCNodeI       ! the BC of the upstream node of the reach,
 integer(kind=tiny) :: BCNodeII      ! the BC of the downstream node of the reach,
-                                    ! -1 not on this rank, 0 BC,
-                                    !  1 connected to other nodes, 2 outlet
+                                    ! -1 not on this rank, 0 connected to other nodes,
+                                    !  1 inlet BC, 2 outlet BC
 
 integer(kind=Shrt) :: CommRank      ! indicates the rank number that a reach needs to communicate
                                     ! with, i.e., if the reach is divided between two ranks.

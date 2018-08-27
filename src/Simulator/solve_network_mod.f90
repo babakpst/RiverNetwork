@@ -24,7 +24,7 @@
 !
 ! File version $Id $
 !
-! Last update: 08/06/2018
+! Last update: 08/27/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! - Solver_1D_with_Limiter_sub: Solves the 1D shallow water equation, with limiter.
@@ -300,60 +300,139 @@ SourceTerms%Identity(2,2) = 1.0_Dbl
     if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
   end do
 
+! initializing the solution (height+velocity), at time step 0, including the ghost/junction cells.
+! The ghost cells are located at the junctions, or the upstream node, or at the downstream node.
   do i_reach =1, this%Model%TotalNumOfReachesOnThisRank
 
-    ! initialize height at time-step 0
+    ! initialize the height part of the solution at time-step 0/ except the ghost cells.
+    ! This needs to be <modify>ied, if we have a different strategy
     Solution%UU(1:this%Model%DiscretizedReach(i_reach)%NCells_reach)%U(1) = AnalysisInfo%CntrlV
                                                                              !-this%Model%ZCell(:)
-    ! initialize velocity (uh) at time-step 0
+    ! initialize the velocity (uh) part of the solution at time-step 0/ except the ghost cells.
     Solution%UU(:)%U(2) = 0.0_Dbl
 
-      ! working on the ghost cells, or on the junction cells
+      ! working on the ghost cells, or on the junction cells, for each reach
       if (this%Model%DiscretizedReach(i_reach)%Communication == -1_Tiny) then
         ! no communication with other ranks, the entire reach is on this rank.
-        ! There are 2 ghost cells at each ends of this reach, where the nodes are located. All of
-        ! the ghost cells are located on this node.
-        ! The ghost cells are located at the junctions, or the upstream node, or at the downstream
-        ! node.
+        ! There are 2 ghost cells at each ends of this reach, where the nodes are located.
 
-        ! upstream node
-          ! if the upstream node is a boundary condition/inlet
+        ! upstream node --
+          if (this%Model%DiscretizedReach(i_reach)%BCNodeI == -1_tiny) then
+            ! check the correctness of the boundary condition- since the communication is -1, which
+            ! means no communication, this upstream and downstream node should be on this rank. As
+            ! a result BCNodeI should not be -1.
+            write(*,*) " This number should not be equal to -1. Double check the partitioner code."
+            write(*,*) " Failed to proceed successfully. Check the solver subroutine!"
+            stop
+          else if (this%Model%DiscretizedReach(i_reach)%BCNodeI == 0_tiny) then
+            ! if the upstream node is a junction, no BC. In this case, we need to decide about the
+            ! node based on the junction modeling.
+            junction()
+          else if (this%Model%DiscretizedReach(i_reach)%BCNodeI == 1_tiny) then
+            ! if the upstream node is a boundary condition/inlet
 
-          ! if the upstream node is a junction
+          else if (this%Model%DiscretizedReach(i_reach)%BCNodeI == 2_tiny) then
+            ! if the upstream node is a boundary condition/outlet
+
+          end if
 
         ! downstream node
-          ! if the downstream node is a boundary condition/outlet
+           if (this%Model%DiscretizedReach(i_reach)%BCNodeII == -1_tiny) then
+            ! check the correctness of the boundary condition- since the communication is -1, which
+            ! means no communication, this upstream and downstream node should be on this rank. As
+            ! a result BCNodeI should not be -1.
+            write(*,*) " This number should not be equal to -1. Double check the partitioner code."
+            write(*,*) " Failed to proceed successfully. Check the solver subroutine!"
+            stop
+          else if (this%Model%DiscretizedReach(i_reach)%BCNodeII == 0_tiny) then
+            ! if the upstream node is a junction, no BC. In this case, we need to decide about the
+            ! node based on the junction modeling.
+            junction()
+          else if (this%Model%DiscretizedReach(i_reach)%BCNodeII == 1_tiny) then
+            ! if the upstream node is a boundary condition/inlet
 
-          ! if the downstream node is a junction
+          else if (this%Model%DiscretizedReach(i_reach)%BCNodeII == 2_tiny) then
+            ! if the upstream node is a boundary condition/outlet
+
+          end if
 
       else if (this%Model%DiscretizedReach(i_reach)%Communication == 1_Tiny) then ! upstream half
-        ! communicate with the rank that holds the downstream of this reach,
+        ! We need to communicate with the rank that holds the downstream of this reach,
         ! the upstream of this reach is on this rank.
-        ! The ghost cells at the upstream are at the junction, which is located on this rank
-        ! There is no ghost cell at the down stream.
+        ! The ghost cells at the upstream are at the junction, which is located on this rank.
+        ! There is no ghost cell at the downstream, but, we need to communicate with the rank that
+        ! holds the downstream of this reach to get the cells information at the bottom.
 
         ! upstream node
-          ! if the upstream node is a boundary condition/inlet
+          if (this%Model%DiscretizedReach(i_reach)%BCNodeI == -1_tiny) then
+            ! check the correctness of the boundary condition- since the communication is 1, which
+            ! means the upstream of this reach is on this rank, thus, the upstream node should be
+            ! on this rank. As a result, BCNodeI should not be -1.
+            write(*,*) " This number should not be equal to -1. Double check the partitioner code."
+            write(*,*) " Failed to proceed successfully. Check the solver subroutine!"
+            stop
+          else if (this%Model%DiscretizedReach(i_reach)%BCNodeI == 0_tiny) then
+            ! if the upstream node is a junction, no BC. In this case, we need to decide about the
+            ! node based on the junction modeling.
+            junction()
+          else if (this%Model%DiscretizedReach(i_reach)%BCNodeI == 1_tiny) then
+            ! if the upstream node is a boundary condition/inlet
 
-          ! if the upstream node is a is at a junction
+          else if (this%Model%DiscretizedReach(i_reach)%BCNodeI == 2_tiny) then
+            ! if the upstream node is a boundary condition/outlet
 
-        ! downstream node
+          end if
+
+        ! downstream cells
           ! get the solution from the rank that has the downstream
-
+          if (this%Model%DiscretizedReach(i_reach)%BCNodeII /= -1_tiny) then
+            ! check the correctness of the boundary condition- since the communication is 1, which
+            ! means the upstream of this reach is on this rank, thus, this downstream node
+            ! should not be on this rank. As a result, BCNodeII should be -1.
+            write(*,*) " This number should be equal to -1. Double check the partitioner code."
+            write(*,*) " Failed to proceed successfully. Check the solver subroutine!"
+            stop
+          end if
 
       else if (this%Model%DiscretizedReach(i_reach)%Communication == 2_Tiny) then ! downstream half
-        ! communicate with the rank that holds the upstream of this reach,
+        ! We need to communicate with the rank that holds the upstream of this reach,
         ! the downstream of this reach is on this rank.
         ! The ghost cells are located at the downstream node, and no ghost cells on this rank for
         ! the upstream node.
+        ! There is no ghost cell at the upstream, but, we need to communicate with the rank that
+        ! holds the upstream of this reach to get the cells information.
 
-        ! upstream node
-          ! get the solution from the rank that has the upstream
+
+        ! upstream cells
+        ! get the solution from the rank that has the upstream
+          if (this%Model%DiscretizedReach(i_reach)%BCNodeI /= -1_tiny) then
+            ! check the correctness of the boundary condition- since the communication is 2, which
+            ! means the downstream of this reach is on this rank, thus, this upstream node
+            ! should not be on this rank. As a result, BCNodeII should be -1.
+            write(*,*) " This number should be equal to -1. Double check the partitioner code."
+            write(*,*) " Failed to proceed successfully. Check the solver subroutine!"
+            stop
+          end if
 
         ! downstream node
-          ! if the downstream node is a boundary condition/outlet
+          if (this%Model%DiscretizedReach(i_reach)%BCNodeII == -1_tiny) then
+            ! check the correctness of the boundary condition- since the communication is 2, which
+            ! means that the downstream of this reach is on this rank, thus, this downstream node
+            ! should be on this rank. As a result, BCNodeII should not be -1.
+            write(*,*) " This number should not be equal to -1. Double check the partitioner code."
+            write(*,*) " Failed to proceed successfully. Check the solver subroutine!"
+            stop
+          else if (this%Model%DiscretizedReach(i_reach)%BCNodeII == 0_tiny) then
+            ! if the upstream node is a junction, no BC. In this case, we need to decide about the
+            ! node based on the junction modeling.
+            junction()
+          else if (this%Model%DiscretizedReach(i_reach)%BCNodeII == 1_tiny) then
+            ! if the upstream node is a boundary condition/inlet
 
-          ! if the downstream node is a junction
+          else if (this%Model%DiscretizedReach(i_reach)%BCNodeII == 2_tiny) then
+            ! if the upstream node is a boundary condition/outlet
+
+          end if
 
       end if
 
@@ -647,81 +726,6 @@ Results%ModelInfo = this%ModelInfo
 
 
 
-! modify-delete
-
-        ! message communication in MPI
-        if (this%ModelInfo%rank==0) then
-          ! if the node corresponding to the upstream of this rank is not connected anywhere, i.e.
-          ! the boundary condition
-
-          UU(0)% U(1) = UU(1)%U(1)
-          UU(-1)%U(1) = UU(1)%U(1)
-        end if
-
-
-
-        if (.not. this%ModelInfo%rank==0) then
-
-          ! The upstream of this rank is on another rank
-          sent(1)%U(:) = UU(1)%U(:)
-          sent(2)%U(:) = UU(2)%U(:)
-          call MPI_ISEND(sent(1:2),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank-1, tag_sent(1), &
-                         MPI_COMM_WORLD, request_sent(1), MPI_err)
-          call MPI_IRECV(recv(1:2),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank-1, tag_recv(1), &
-                         MPI_COMM_WORLD, request_recv(1), MPI_err)
-        end if
-        if (.not. this%ModelInfo%rank== this%ModelInfo%size-1) then
-
-          ! The downstream of this rank is on another rank
-          sent(3)%U(:) = UU( this%Model%NCells )%U(:)
-          sent(4)%U(:) = UU( this%Model%NCells-1_Lng )%U(:)
-          call MPI_ISEND(sent(3:4),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank+1, tag_sent(2), &
-                         MPI_COMM_WORLD, request_sent(2), MPI_err)
-          call MPI_IRECV(recv(3:4),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank+1, tag_recv(2), &
-                         MPI_COMM_WORLD, request_recv(2), MPI_err)
-        end if
-
-        if (this%ModelInfo%rank== this%ModelInfo%size-1) then
-          UU(this%Model%NCells+1)%U(1) = UU(this%Model%NCells)%U(1)
-          UU(this%Model%NCells+2)%U(1) = UU(this%Model%NCells)%U(1)
-        end if
-
-        if (.not. this%ModelInfo%rank==0) then
-          call MPI_WAIT(request_sent(1), status , MPI_err)
-          call MPI_WAIT(request_recv(1), status , MPI_err)
-        end if
-
-        if (.not. this%ModelInfo%rank== this%ModelInfo%size-1) then
-          call MPI_WAIT(request_sent(2), status , MPI_err)
-          call MPI_WAIT(request_recv(2), status , MPI_err)
-        end if
-
-        if (.not. this%ModelInfo%rank==0) then
-          UU(0)%U(:) = recv(1)%U(:)
-          UU(-1)%U(:) = recv(2)%U(:)
-        end if
-
-        if (.not. this%ModelInfo%rank== this%ModelInfo%size-1) then
-          UU(this%Model%NCells+1_Lng )%U(:) = recv(3)%U(:)
-          UU(this%Model%NCells+2_Lng)%U(:)  = recv(4)%U(:)
-        end if
-      !---------------------------------------------------
-
-      ! imposing boundary condition: at this moment, they are only at rank 0 and size-1
-        if (this%ModelInfo%rank == 0) then ! applying boundary conditions at the upstream
-          call Impose_BC_1D_up_sub(UU(1)%U(1), this%Model%NCells, this%AnalysisInfo%Q_Up, &
-                                   this%Model%WidthCell(1),UU(-1_Lng), UU( 0_Lng) )
-        end if
-
-        if (this%ModelInfo%rank == this%ModelInfo%size-1) then ! applying bC at the downstream
-          call Impose_BC_1D_dw_sub(UU(this%Model%NCells)%U(2), &
-                                   this%AnalysisInfo%h_dw, &
-                                   UU(this%Model%NCells+1_Lng), &
-                                   UU(this%Model%NCells+2_Lng))
-        end if
-
-
-! modify-delete
 
 
 
