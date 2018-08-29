@@ -61,7 +61,7 @@ type LimiterFunc_tp ! contains all variable to compute the limiter value
   integer(kind=Smll) :: limiter_Type=1_smll ! Indicates the type of limiter function
 
   real(kind=Dbl)     :: phi = 0.0_dbl    ! the value of limiter
-  real(kind=Dbl)     :: theta  = 0.0_dbl ! the argument of the limiter
+  real(kind=Dbl)     :: theta = 0.0_dbl  ! the argument of the limiter
 
   contains
     procedure LimiterValue => Limiters_sub
@@ -294,8 +294,9 @@ SourceTerms%Identity(2,2) = 1.0_Dbl
 
 ! allocating the solution in each rank
   do i_reach =1, this%Model%TotalNumOfReachesOnThisRank
-    allocate(Solution%UU(-1_Lng:this%Model%DiscretizedReach(i_reach)%NCells_reach)+2_Lng), &
-             Solution%UN(-1_Lng:this%Model%DiscretizedReach(i_reach)%NCells_reach)+2_Lng), &
+    allocate(
+      Solution(i_reach)%UU(-1_Lng:this%Model%DiscretizedReach(i_reach)%NCells_reach)+2_Lng), &
+      Solution(i_reach)%UN(-1_Lng:this%Model%DiscretizedReach(i_reach)%NCells_reach)+2_Lng), &
                                                                                     stat=ERR_Alloc)
     if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
   end do
@@ -327,13 +328,17 @@ SourceTerms%Identity(2,2) = 1.0_Dbl
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeI == 0_tiny) then
             ! if the upstream node is a junction, no BC. In this case, we need to decide about the
             ! node based on the junction modeling.
-            junction()
+            junction() ! <modify>
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeI == 1_tiny) then
             ! if the upstream node is a boundary condition/inlet
+            ! <modify>
+            Solution(i_reach)%UU()
 
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeI == 2_tiny) then
-            ! if the upstream node is a boundary condition/outlet
-
+            ! if the upstream node cannot be an outlet boundary condition.
+            write(*,*) " This number should not be equal to 2. Double check the partitioner code."
+            write(*,*) " Failed to proceed successfully. Check the solver subroutine!"
+            stop
           end if
 
         ! downstream node
@@ -347,13 +352,17 @@ SourceTerms%Identity(2,2) = 1.0_Dbl
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeII == 0_tiny) then
             ! if the upstream node is a junction, no BC. In this case, we need to decide about the
             ! node based on the junction modeling.
-            junction()
+            junction() ! <modify>
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeII == 1_tiny) then
-            ! if the upstream node is a boundary condition/inlet
-
+            ! if the downstream node cannot be an inlet boundary condition
+            ! <modify>
+            write(*,*) " This number should not be equal to 1. Double check the partitioner code."
+            write(*,*) " Failed to proceed successfully. Check the solver subroutine!"
+            stop
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeII == 2_tiny) then
             ! if the upstream node is a boundary condition/outlet
-
+            ! <modify>
+            call Impose_BC_1D_dw_sub()
           end if
 
       else if (this%Model%DiscretizedReach(i_reach)%Communication == 1_Tiny) then ! upstream half
@@ -374,13 +383,15 @@ SourceTerms%Identity(2,2) = 1.0_Dbl
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeI == 0_tiny) then
             ! if the upstream node is a junction, no BC. In this case, we need to decide about the
             ! node based on the junction modeling.
-            junction()
+            junction()  ! <modify>
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeI == 1_tiny) then
             ! if the upstream node is a boundary condition/inlet
-
+            ! <modify>
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeI == 2_tiny) then
-            ! if the upstream node is a boundary condition/outlet
-
+            ! if the upstream node cannot be an outlet boundary condition
+            write(*,*) " This number should not be equal to 2. Double check the partitioner code."
+            write(*,*) " Failed to proceed successfully. Check the solver subroutine!"
+            stop
           end if
 
         ! downstream cells
@@ -393,6 +404,10 @@ SourceTerms%Identity(2,2) = 1.0_Dbl
             write(*,*) " Failed to proceed successfully. Check the solver subroutine!"
             stop
           end if
+
+          ! <modify> communicate with the node that has the downstream part of this reach.
+          ! Sending/Receiving cell info
+
 
       else if (this%Model%DiscretizedReach(i_reach)%Communication == 2_Tiny) then ! downstream half
         ! We need to communicate with the rank that holds the upstream of this reach,
@@ -414,6 +429,10 @@ SourceTerms%Identity(2,2) = 1.0_Dbl
             stop
           end if
 
+          ! <modify> communicate with the node that has the upstream part of this reach.
+          ! Sending/Receiving cell info
+
+
         ! downstream node
           if (this%Model%DiscretizedReach(i_reach)%BCNodeII == -1_tiny) then
             ! check the correctness of the boundary condition- since the communication is 2, which
@@ -425,12 +444,16 @@ SourceTerms%Identity(2,2) = 1.0_Dbl
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeII == 0_tiny) then
             ! if the upstream node is a junction, no BC. In this case, we need to decide about the
             ! node based on the junction modeling.
-            junction()
+            junction()             ! <modify>
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeII == 1_tiny) then
-            ! if the upstream node is a boundary condition/inlet
-
+            ! if the downstream node cannot be an inlet boundary condition
+            ! <modify>
+            write(*,*) " This number should not be equal to 1. Double check the partitioner code."
+            write(*,*) " Failed to proceed successfully. Check the solver subroutine!"
+            stop
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeII == 2_tiny) then
             ! if the upstream node is a boundary condition/outlet
+            ! <modify>
 
           end if
 
@@ -1316,6 +1339,33 @@ Matrix_out(:,:) = Matrix_out(:,:) / determinant
 !write(FileInfo,*) " end subroutine < Inverse >"
 return
 end subroutine Inverse
+
+
+
+
+!##################################################################################################
+! Purpose: This subroutine simulates the junction behavior.
+!
+! Developed by: Babak Poursartip
+!
+! Supervised by: Clint Dawson
+! The Institute for Computational Engineering and Sciences (ICES)
+! The University of Texas at Austin
+!
+! ================================ V E R S I O N ==================================================
+! V0.00: 08/28/2018 - File initiated.
+!
+! File version $Id $
+!
+! Last update: 08/28/2018
+!
+! ================================ L O C A L   V A R I A B L E S ==================================
+! (Refer to the main code to see the list of imported variables)
+!  . . . . . . . . . . . . . . . . Variables . . . . . . . . . . . . . . . . . . . . . . . . . . .
+!
+!##################################################################################################
+
+
 
 
 end module Solver_mod
