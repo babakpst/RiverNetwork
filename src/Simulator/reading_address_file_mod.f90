@@ -44,7 +44,7 @@ private
 type Input_Data_tp
   character (kind = 1, Len = 150) :: ModelName     ! Name of the model input file
   character (kind = 1, Len = 150) :: ModelNameParallel ! Name of the model input file with info
-                                                      ! about Parallel simulation
+                                                       ! about Parallel simulation
   character (kind = 1, Len = 150) :: InputDir      ! Directory of the input file.
   character (kind = 1, Len = 150) :: AnalysisDir   ! Directory of Analysis input file.
   character (kind = 1, Len = 150) :: OutputDir     ! Directory of output files (Results)

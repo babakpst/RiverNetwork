@@ -69,7 +69,7 @@ if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
     ! allocating the arrays within each descretized reach
     allocate(                                                                                     &
-    this%DiscretizedReach(i_reach)%LengthCell(this%DiscretizedReach(i_reach)%NCells_reach),     &
+    this%DiscretizedReach(i_reach)%LengthCell(this%DiscretizedReach(i_reach)%NCells_reach),       &
     this%DiscretizedReach(i_reach)%CellSlope(this%DiscretizedReach(i_reach)%NCells_reach),        &
     this%DiscretizedReach(i_reach)%InterfaceSlope(this%DiscretizedReach(i_reach)%NCells_reach+1), &
 
