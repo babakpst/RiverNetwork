@@ -296,6 +296,12 @@ class(partitioner_tp(edges=*, nodes=*)), intent(inout), target :: this
 ! - integer variables -----------------------------------------------------------------------------
 integer(kind=tiny) :: Communication ! indicates if a reach needs to communicate with other ranks
                                     ! i.e. if the entire reach is on one rank or not.
+                                    ! -1: no communication- the entire reach is on one partition
+                                    !  1: communicate with the rank that holds the lower part of
+                                    !     the reach (downstream).
+                                    !  2: communicate with the rank that holds the upper part of
+                                    !     the reach (upstream).
+
 integer(kind=tiny) :: BCNodeI       ! the BC of the upstream node of the reach,
 integer(kind=tiny) :: BCNodeII      ! the BC of the downstream node of the reach,
                                     ! -1 not on this rank, 0 connected to other nodes,

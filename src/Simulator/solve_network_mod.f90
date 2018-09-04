@@ -317,6 +317,8 @@ SourceTerms%Identity(2,2) = 1.0_Dbl
         ! no communication with other ranks, the entire reach is on this rank.
         ! There are 2 ghost cells at each ends of this reach, where the nodes are located.
 
+
+
           ! upstream node --
           if (this%Model%DiscretizedReach(i_reach)%BCNodeI == -1_tiny) then
             ! check the correctness of the boundary condition- since the communication is -1, which
@@ -342,6 +344,8 @@ SourceTerms%Identity(2,2) = 1.0_Dbl
             write(*,*) " Failed to proceed successfully. Check the solver subroutine!"
             stop
           end if
+
+
 
           ! downstream node
           if (this%Model%DiscretizedReach(i_reach)%BCNodeII == -1_tiny) then
@@ -415,7 +419,13 @@ SourceTerms%Identity(2,2) = 1.0_Dbl
 
           ! <modify> communicate with the node that has the downstream part of this reach.
           ! Sending/Receiving cell info
-
+          ! The downstream of this reach is on another rank
+          sent(3)%U(:) = Solution(i_reach)%UU(this%Model%NCells)%U(:)
+          sent(4)%U(:) = Solution(i_reach)%UU(this%Model%NCells-1_Lng)%U(:)
+          call MPI_ISEND(sent(3:4),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank+1, tag_sent(2), &
+                         MPI_COMM_WORLD, request_sent(2), MPI_err)
+          call MPI_IRECV(recv(3:4),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank+1, tag_recv(2), &
+                         MPI_COMM_WORLD, request_recv(2), MPI_err)
 
       else if (this%Model%DiscretizedReach(i_reach)%Communication == 2_Tiny) then ! downstream half
         ! We need to communicate with the rank that holds the upstream of this reach,
@@ -439,6 +449,13 @@ SourceTerms%Identity(2,2) = 1.0_Dbl
 
           ! <modify> communicate with the node that has the upstream part of this reach.
           ! Sending/Receiving cell info
+          ! The upstream of this reach is on another rank
+          sent(1)%U(:) = Solution(i_reach)%UU(1)%U(:)
+          sent(2)%U(:) = Solution(i_reach)%UU(2)%U(:)
+          call MPI_ISEND(sent(1:2),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank-1, tag_sent(1), &
+                         MPI_COMM_WORLD, request_sent(1), MPI_err)
+          call MPI_IRECV(recv(1:2),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank-1, tag_recv(1), &
+                         MPI_COMM_WORLD, request_recv(1), MPI_err)
 
 
         ! downstream node
@@ -469,7 +486,7 @@ SourceTerms%Identity(2,2) = 1.0_Dbl
 
       end if
 
-       !---------------------------------------------------
+      !---------------------------------------------------
         ! message communication in MPI
         if (.not. this%ModelInfo%rank==0) then
 
@@ -491,6 +508,8 @@ SourceTerms%Identity(2,2) = 1.0_Dbl
           call MPI_IRECV(recv(3:4),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank+1, tag_recv(2), &
                          MPI_COMM_WORLD, request_recv(2), MPI_err)
         end if
+
+
 
         if (this%ModelInfo%rank== this%ModelInfo%size-1) then
           UU(this%Model%NCells+1)%U(1) = UU(this%Model%NCells)%U(1)
@@ -517,20 +536,6 @@ SourceTerms%Identity(2,2) = 1.0_Dbl
           UU(this%Model%NCells+2_Lng)%U(:)  = recv(4)%U(:)
         end if
       !---------------------------------------------------
-
-      ! imposing boundary condition: at this moment, they are only at rank 0 and size-1
-        if (this%ModelInfo%rank == 0) then ! applying boundary conditions at the upstream
-          call Impose_BC_1D_up_sub(UU(1)%U(1), this%Model%NCells, this%AnalysisInfo%Q_Up, &
-                                   this%Model%WidthCell(1),UU(-1_Lng), UU( 0_Lng) )
-        end if
-
-        if (this%ModelInfo%rank == this%ModelInfo%size-1) then ! applying bC at the downstream
-          call Impose_BC_1D_dw_sub(UU(this%Model%NCells)%U(2), &
-                                   this%AnalysisInfo%h_dw, &
-                                   UU(this%Model%NCells+1_Lng), &
-                                   UU(this%Model%NCells+2_Lng))
-        end if
-
 
   end do
 
