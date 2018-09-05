@@ -57,6 +57,7 @@ type DiscretizedReach_tp
                                              ! communicate with, i.e., if the reach is divided
                                              ! between two ranks.
 
+
   integer(kind=tiny) :: BCNodeI  = -1_Shrt   ! the BC of the upstream node of the reach,
   integer(kind=tiny) :: BCNodeII = -1_Shrt   ! the BC of the downstream node of the reach,
                                              ! -1 not on this rank, 0 connected to other nodes,
@@ -89,6 +90,9 @@ type network_tp
 
   ! Total number of reaches from the network on this rank
   integer(kind=Lng) :: TotalNumOfReachesOnThisRank = 0_Lng
+
+  ! Holds number of reaches on this rank that have been cut, we need this info for MPI send/receive
+  integer(kind=Lng) :: NCutsOnRanks
 
   ! Total number of nodes in the network
   integer(kind=Lng) :: TotalNumOfCellsInTheNetwork = 0_Lng

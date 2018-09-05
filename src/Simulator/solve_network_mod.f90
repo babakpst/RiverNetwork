@@ -204,13 +204,16 @@ type(AnalysisData_tp(TotalNNodes=*, TotalNReaches=*)) :: AnalysisInfo
 ! MPI parameters
 integer :: MPI_err ! <MPI>
 integer :: status(MPI_STATUS_SIZE)
-integer :: tag_sent(2), tag_recv(2)
-integer :: request_sent(2), request_recv(2)
+
+integer, dimension(this%Model%NCutsOnRanks) :: tag_sent, tag_recv
+integer, dimension(this%Model%NCutsOnRanks) :: request_sent, request_recv
 
 integer(kind=Lng)  :: i_Cell    ! loop index over the Cells
 integer(kind=Lng)  :: i_steps   ! loop index over the number steps
 integer(kind=Lng)  :: NSteps    ! Total number of steps for time marching
 integer(kind=Lng)  :: i_reach   ! loop index over the reaches
+integer(kind=Lng)  :: Couter_ReachCut ! We use this var to manage send/receive requests
+
 
 integer(kind=Smll) :: ERR_Alloc, ERR_DeAlloc ! Allocating and DeAllocating errors
 
@@ -255,7 +258,10 @@ type(vector) :: F_L ! Contribution of low-resolution method (Upwind) in the solu
 type(vector) :: F_H ! Contribution of high-resolution method (Lax-Wendroff) in the solution.
 
 type(vector) :: Delta_U           ! holds (U_i- U_i-1)
-type(vector), dimension(4) :: sent, recv ! Items for MPI send and receive messages
+
+! Items for MPI send and receive messages- for each reach that has been cut, we send/receive the
+! solution for two cells
+type(vector), dimension(2*this%Model%NCutsOnRanks) :: sent, recv
 
 ! solution at time steps n and n+1
 type(solutionAtTimeSteps), dimension(this%Model%TotalNumOfReachesOnThisRank) :: Solution
@@ -301,6 +307,8 @@ SourceTerms%Identity(2,2) = 1.0_Dbl
     if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
   end do
 
+Couter_ReachCut = 0_Lng
+
 ! initializing the solution (height+velocity), at time step 0, including the ghost/junction cells.
 ! The ghost cells are located at the junctions, or the upstream node, or at the downstream node.
   do i_reach =1, this%Model%TotalNumOfReachesOnThisRank
@@ -316,8 +324,6 @@ SourceTerms%Identity(2,2) = 1.0_Dbl
       if (this%Model%DiscretizedReach(i_reach)%Communication == -1_Tiny) then
         ! no communication with other ranks, the entire reach is on this rank.
         ! There are 2 ghost cells at each ends of this reach, where the nodes are located.
-
-
 
           ! upstream node --
           if (this%Model%DiscretizedReach(i_reach)%BCNodeI == -1_tiny) then
@@ -344,8 +350,6 @@ SourceTerms%Identity(2,2) = 1.0_Dbl
             write(*,*) " Failed to proceed successfully. Check the solver subroutine!"
             stop
           end if
-
-
 
           ! downstream node
           if (this%Model%DiscretizedReach(i_reach)%BCNodeII == -1_tiny) then
@@ -374,6 +378,7 @@ SourceTerms%Identity(2,2) = 1.0_Dbl
           end if
 
       else if (this%Model%DiscretizedReach(i_reach)%Communication == 1_Tiny) then ! upstream half
+                                                                   ! of this reach is on the rank
         ! We need to communicate with the rank that holds the downstream of this reach,
         ! the upstream of this reach is on this rank.
         ! The ghost cells at the upstream are at the junction, which is located on this rank.
@@ -417,15 +422,20 @@ SourceTerms%Identity(2,2) = 1.0_Dbl
             stop
           end if
 
-          ! <modify> communicate with the node that has the downstream part of this reach.
+
+          Couter_ReachCut = Couter_ReachCut + 1_Lng
+
+          ! communicate with the node that has the downstream part of this reach.
           ! Sending/Receiving cell info
           ! The downstream of this reach is on another rank
-          sent(3)%U(:) = Solution(i_reach)%UU(this%Model%NCells)%U(:)
-          sent(4)%U(:) = Solution(i_reach)%UU(this%Model%NCells-1_Lng)%U(:)
-          call MPI_ISEND(sent(3:4),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank+1, tag_sent(2), &
-                         MPI_COMM_WORLD, request_sent(2), MPI_err)
-          call MPI_IRECV(recv(3:4),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank+1, tag_recv(2), &
-                         MPI_COMM_WORLD, request_recv(2), MPI_err)
+          sent(1+ 2_Lng*(Couter_ReachCut - 1_Lng))%U(:) = Solution(i_reach)%UU(this%Model%NCells)%U(:)
+          sent(2+ 2_Lng*(Couter_ReachCut - 1_Lng))%U(:) = Solution(i_reach)%UU(this%Model%NCells-1_Lng)%U(:)
+          call MPI_ISEND(sent(1+ 2_Lng*(Couter_ReachCut - 1_Lng):2+ 2_Lng*(Couter_ReachCut - 1_Lng)), 4, MPI_DOUBLE_PRECISION, &
+                         this%Model%DiscretizedReach(i_reach)%CommRank, tag_sent(Couter_ReachCut), &
+                         MPI_COMM_WORLD, request_sent(Couter_ReachCut), MPI_err)
+          call MPI_IRECV(recv(1+ 2_Lng*(Couter_ReachCut - 1_Lng):2+ 2_Lng*(Couter_ReachCut - 1_Lng)), 4, MPI_DOUBLE_PRECISION, &
+                         this%Model%DiscretizedReach(i_reach)%CommRank,  tag_recv(Couter_ReachCut), &
+                         MPI_COMM_WORLD, request_recv(Couter_ReachCut), MPI_err)
 
       else if (this%Model%DiscretizedReach(i_reach)%Communication == 2_Tiny) then ! downstream half
         ! We need to communicate with the rank that holds the upstream of this reach,
@@ -447,15 +457,19 @@ SourceTerms%Identity(2,2) = 1.0_Dbl
             stop
           end if
 
-          ! <modify> communicate with the node that has the upstream part of this reach.
+          Couter_ReachCut = Couter_ReachCut + 1_Lng
+
+          ! communicate with the node that has the upstream part of this reach.
           ! Sending/Receiving cell info
           ! The upstream of this reach is on another rank
-          sent(1)%U(:) = Solution(i_reach)%UU(1)%U(:)
-          sent(2)%U(:) = Solution(i_reach)%UU(2)%U(:)
-          call MPI_ISEND(sent(1:2),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank-1, tag_sent(1), &
-                         MPI_COMM_WORLD, request_sent(1), MPI_err)
-          call MPI_IRECV(recv(1:2),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank-1, tag_recv(1), &
-                         MPI_COMM_WORLD, request_recv(1), MPI_err)
+          sent(1+ 2_Lng*(Couter_ReachCut - 1_Lng))%U(:) = Solution(i_reach)%UU(1)%U(:)
+          sent(2+ 2_Lng*(Couter_ReachCut - 1_Lng))%U(:) = Solution(i_reach)%UU(2)%U(:)
+          call MPI_ISEND(sent(1+ 2_Lng*(Couter_ReachCut - 1_Lng):2+ 2_Lng*(Couter_ReachCut - 1_Lng)), 4, MPI_DOUBLE_PRECISION, &
+                         this%Model%DiscretizedReach(i_reach)%CommRank, tag_sent(Couter_ReachCut), &
+                         MPI_COMM_WORLD, request_sent(Couter_ReachCut), MPI_err)
+          call MPI_IRECV(recv(1+ 2_Lng*(Couter_ReachCut - 1_Lng):2+ 2_Lng*(Couter_ReachCut - 1_Lng)), 4, MPI_DOUBLE_PRECISION, &
+                         this%Model%DiscretizedReach(i_reach)%CommRank,  tag_recv(Couter_ReachCut), &
+                         MPI_COMM_WORLD, request_recv(Couter_ReachCut), MPI_err)
 
 
         ! downstream node
@@ -486,58 +500,39 @@ SourceTerms%Identity(2,2) = 1.0_Dbl
 
       end if
 
-      !---------------------------------------------------
-        ! message communication in MPI
-        if (.not. this%ModelInfo%rank==0) then
-
-          ! The upstream of this rank is on another rank
-          sent(1)%U(:) = UU(1)%U(:)
-          sent(2)%U(:) = UU(2)%U(:)
-          call MPI_ISEND(sent(1:2),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank-1, tag_sent(1), &
-                         MPI_COMM_WORLD, request_sent(1), MPI_err)
-          call MPI_IRECV(recv(1:2),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank-1, tag_recv(1), &
-                         MPI_COMM_WORLD, request_recv(1), MPI_err)
-        end if
-        if (.not. this%ModelInfo%rank== this%ModelInfo%size-1) then
-
-          ! The downstream of this rank is on another rank
-          sent(3)%U(:) = UU( this%Model%NCells )%U(:)
-          sent(4)%U(:) = UU( this%Model%NCells-1_Lng )%U(:)
-          call MPI_ISEND(sent(3:4),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank+1, tag_sent(2), &
-                         MPI_COMM_WORLD, request_sent(2), MPI_err)
-          call MPI_IRECV(recv(3:4),4, MPI_DOUBLE_PRECISION, this%ModelInfo%rank+1, tag_recv(2), &
-                         MPI_COMM_WORLD, request_recv(2), MPI_err)
-        end if
+  end do
 
 
 
-        if (this%ModelInfo%rank== this%ModelInfo%size-1) then
-          UU(this%Model%NCells+1)%U(1) = UU(this%Model%NCells)%U(1)
-          UU(this%Model%NCells+2)%U(1) = UU(this%Model%NCells)%U(1)
-        end if
+Couter_ReachCut = 0_Lng
+  do i_reach =1, this%Model%TotalNumOfReachesOnThisRank
 
-        if (.not. this%ModelInfo%rank==0) then
-          call MPI_WAIT(request_sent(1), status , MPI_err)
-          call MPI_WAIT(request_recv(1), status , MPI_err)
-        end if
+      if (this%Model%DiscretizedReach(i_reach)%Communication == 1_Tiny) then ! upstream half
+                                                                   ! of this reach is on the rank
 
-        if (.not. this%ModelInfo%rank== this%ModelInfo%size-1) then
-          call MPI_WAIT(request_sent(2), status , MPI_err)
-          call MPI_WAIT(request_recv(2), status , MPI_err)
-        end if
+        Couter_ReachCut = Couter_ReachCut + 1_Lng
+        call MPI_WAIT(request_sent(Couter_ReachCut), status , MPI_err)
+        call MPI_WAIT(request_recv(Couter_ReachCut), status , MPI_err)
 
-        if (.not. this%ModelInfo%rank==0) then
-          UU(0)%U(:) = recv(1)%U(:)
-          UU(-1)%U(:) = recv(2)%U(:)
-        end if
+        Solution(i_reach)%UU(this%Model%NCells+1_Lng)%U(:) = recv( )%U(:)
+        Solution(i_reach)%UU(this%Model%NCells+2_Lng)%U(:)  = recv(  )%U(:)
 
-        if (.not. this%ModelInfo%rank== this%ModelInfo%size-1) then
-          UU(this%Model%NCells+1_Lng )%U(:) = recv(3)%U(:)
-          UU(this%Model%NCells+2_Lng)%U(:)  = recv(4)%U(:)
-        end if
-      !---------------------------------------------------
+      else if (this%Model%DiscretizedReach(i_reach)%Communication == 2_Tiny) then ! downstream half
+
+        Couter_ReachCut = Couter_ReachCut + 1_Lng
+        call MPI_WAIT(request_sent(Couter_ReachCut), status , MPI_err)
+        call MPI_WAIT(request_recv(Couter_ReachCut), status , MPI_err)
+        Solution(i_reach)%UU(0)%U(:) = recv(         )%U(:)
+        Solution(i_reach)%UU(-1)%U(:) = recv(        )%U(:)
+
+      end if
 
   end do
+
+
+
+
+
 
 Results%ModelInfo = this%ModelInfo
 
@@ -550,11 +545,15 @@ Results%ModelInfo = this%ModelInfo
 !$ write(*,       fmt="(' I am thread ',I4,' out of ',I4,' threads.')") ITS,MTS
 !$ write(FileInfo,fmt="(' I am thread ',I4,' out of ',I4,' threads.')") ITS,MTS
 
-! Solving the equation for each reach
-  On_Reaches: do i_reach =1, this%Model%TotalNumOfReachesOnThisRank
 
-    ! Time marching
-    Time_Marching: do i_steps = 1_Lng, NSteps +1_Lng
+  ! Time marching
+  Time_Marching: do i_steps = 1_Lng, NSteps +1_Lng
+
+    Couter_ReachCut = 0_Lng
+    ! Solving the equation for each reach
+      On_Reaches: do i_reach =1, this%Model%TotalNumOfReachesOnThisRank
+
+
 
         ! write down data for visualization
         if (mod(i_steps,this%AnalysisInfo%Plot_Inc)==1 .or. PrintResults) then
@@ -612,10 +611,10 @@ Results%ModelInfo = this%ModelInfo
                dt * (SourceTerms%S%U(:) - 0.5_Dbl * matmul(SourceTerms%B(:,:), UU(i_Cell)%U(:)))
 
 
-            ON_Interface:  do i_Interface = 1, 2  ! first one is on i-1/2, the second one is on i+1/2
+            ON_Interface:  do i_Interface = 1, 2 !first one is on i-1/2, the second one is on i+1/2
 
               ! Compute the jump (U_i- U_i-1)
-              Delta_U%U(:) = UU(i_Cell+(i_Interface-1_Lng))%U(:)-UU(i_Cell+(i_Interface-2_Lng))%U(:)
+              Delta_U%U(:) =UU(i_Cell+(i_Interface-1_Lng))%U(:)-UU(i_Cell+(i_Interface-2_Lng))%U(:)
 
               ! Computing the Jacobian and all other items at the upstream
               Jacobian%U_up%U(:) = UU(i_Cell+(i_Interface-2_Lng))%U(:)
@@ -638,7 +637,7 @@ Results%ModelInfo = this%ModelInfo
 
               SourceTerms%S_interface%U(1) = 0.0_Dbl
               SourceTerms%S_interface%U(2) =-Gravity*height_interface &
-                    *(this%Model%InterfaceSlope(i_Cell+i_Interface-1_Tiny)-SourceTerms%S_f_interface)
+                  *(this%Model%InterfaceSlope(i_Cell+i_Interface-1_Tiny)-SourceTerms%S_f_interface)
 
               SourceTerms%Source_2%U(:) = SourceTerms%Source_2%U(:) + 0.5_Dbl * (dt**2) / dx &
                                * ( Coefficient * matmul(Jacobian%A, SourceTerms%S_interface%U(:)))

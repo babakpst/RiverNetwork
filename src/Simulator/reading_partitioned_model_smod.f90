@@ -53,19 +53,27 @@ write(FileInfo, fmt="(A)") " -Allocating arrays for the discretized network ..."
 allocate(this%DiscretizedReach( this%TotalNumOfReachesOnThisRank), stat=ERR_Alloc)
 if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
+this%NCutsOnRanks = 0_Lng  ! Initializing number of reach cuts
+
   On_Reaches: do i_reach = 1, this%TotalNumOfCellsOnThisRank
 
     read(unit=UnFile, fmt="(2I23)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
          end=1004) &
          this%DiscretizedReach(i_reach)%ReachNumber,    &!reach number in the unpartitioned network
          this%DiscretizedReach(i_reach)%Communication,  &
-         this%DiscretizedReach(i_reach)%CommRank ,      &
-         this%DiscretizedReach(i_reach)%BCNodeI ,       &
-         this%DiscretizedReach(i_reach)%BCNodeII ,      &
+         this%DiscretizedReach(i_reach)%CommRank,       &
+         this%DiscretizedReach(i_reach)%BCNodeI,        &
+         this%DiscretizedReach(i_reach)%BCNodeII,       &
          this%DiscretizedReach(i_reach)%NCells_reach,   &
          this%DiscretizedReach(i_reach)%ReachManning,   &
          this%DiscretizedReach(i_reach)%ReachWidthCell, &
          this%DiscretizedReach(i_reach)%CellPorjectionLength
+
+    ! compute the number of reach cuts on this rank-if communication is -1, means that the entire
+    ! reach is on one rank, thus, there is no cut. But if communication is not -1, means that
+    ! this reach has been cut.
+    if (this%DiscretizedReach(i_reach)%Communication /=-1_lng)  &
+                                                      this%NCutsOnRanks = this%NCutsOnRanks + 1_Lng
 
     ! allocating the arrays within each descretized reach
     allocate(                                                                                     &

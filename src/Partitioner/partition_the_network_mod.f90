@@ -340,8 +340,8 @@ integer(kind=Lng)  :: tempCell      ! Temp var to hold no. of cells of each rank
 integer(kind=Lng)  :: Weights       ! Weight of each edge (= no. cells in the edge= reach)
 integer(kind=Lng)  :: NodeLocation  ! Temp var to hold the location of adjacent nodes in the graph
 
-integer, target :: NumberOfNodes ! saves total number of nodes
-integer, target :: NumberOfRanks ! saves total number of ranks
+integer, target    :: NumberOfNodes ! saves total number of nodes
+integer, target    :: NumberOfRanks ! saves total number of ranks
 
 ! - integer Arrays --------------------------------------------------------------------------------
 integer(kind=Lng), dimension (Geometry%Base_Geometry%size,4) :: chunk
@@ -354,6 +354,8 @@ integer(kind=Lng), dimension (Geometry%Base_Geometry%size,4) :: chunk
 ! Indicates how many reaches exist on each rank, we need this for allocating memory in the
 ! simulator code.
 integer(kind=Lng), dimension (Geometry%Base_Geometry%size) :: NReachOnRanks
+
+
 
 ! - character variables ---------------------------------------------------------------------------
 Character(kind = 1, len = 20) :: IndexRank ! Rank no in the Char. fmt to add to the input file Name
@@ -665,8 +667,10 @@ print*," partitions after: "
 ! each rank. In the next step, we try to equalize the no. of cells on each reach.
 
 NReachOnRanks(:) = 0_Lng ! initialize, we set the number of reaches on each rank equal to zero.
+
 write(*,       *) " Analyzing the partitioned network ... "
 write(FileInfo,*) " Analyzing the partitioned network ... "
+
   do i_reach = 1_Lng, Geometry%Base_Geometry%NoReaches
 
     NodeI = Geometry%network(i_reach)%ReachNodes(1)
@@ -753,12 +757,21 @@ TotalCellCounter = 0_Lng
     ! Writing the total number of cells in each partition
     UnFile = FilePartition
     write(unit=UnFile, fmt="(2I23)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
-                   chunk(i_rank,4), NReachOnRanks(i_rank),  &
-                   Geometry%Base_Geometry%NoReaches, Geometry%Base_Geometry%NoNodes
+                   chunk(i_rank,4),        &   ! Total number of cells on this rank
+                   NReachOnRanks(i_rank),  &   ! Total number of reaches on this rank
+                   Geometry%Base_Geometry%NoReaches, &  ! Total Num Of Cells In The Network
+                   Geometry%Base_Geometry%NoNodes    &  ! Total Num Of Reaches In The Network
+                   ! why should we write total number of nodes in the network for each rank? bcs,
+                   ! we want to change the boundary condition, without redoing the partitioning.
+                   ! Thus, it is easier that each rank read the entire boundary condition file,
+                   ! even though a rank may not use all of them.
+                   ! <modify> see if there is a better algorithm.
+
 
     CellCounter = 0_Lng ! To make sure that we count all the cell numbers in each rank
     ReachCounter= 0_Lng
     UnFile = FilePartition
+
       do i_reach = 1_Lng, Geometry%Base_Geometry%NoReaches
 
         ! The rank which the first node of this reach belongs to
@@ -768,7 +781,7 @@ TotalCellCounter = 0_Lng
         RankNodeII = this%ReachPartition(i_reach,2)
 
           ! check whether if any nodes on the reach belongs to this partition.
-          if ( INT4(RankNodeI) /= i_rank .and. INT4(RankNodeII) /= i_rank) cycle
+          if (INT4(RankNodeI) /= i_rank .and. INT4(RankNodeII) /= i_rank) cycle
 
           if (RankNodeI == RankNodeII) then
           ! In this case, both nodes of the reach belong to the same rank, thus, we dedicate all
@@ -787,8 +800,8 @@ TotalCellCounter = 0_Lng
 
           ! Next, we need to find out which part of this reach belongs to this rank
             if ( INT4(RankNodeI) == i_rank) then
-              RangeCell_I  = 1_Lng
-              RangeCell_II = this%ReachPartition(i_reach,3)
+              RangeCell_I   = 1_Lng
+              RangeCell_II  = this%ReachPartition(i_reach,3)
               Communication = 1_Tiny ! indicates that we need to communicate with the rank that
                                      ! holds the lower part of the reach (downstream).
               CommRank = RankNodeII
@@ -796,11 +809,11 @@ TotalCellCounter = 0_Lng
               BCNodeII      = -1_Tiny
 
             else if ( INT4(RankNodeII) == i_rank) then
-              RangeCell_I  = this%ReachPartition(i_reach,3) + 1_Lng
-              RangeCell_II = this%ReachPartition(i_reach,3)+this%ReachPartition(i_reach,4)
+              RangeCell_I   = this%ReachPartition(i_reach,3) + 1_Lng
+              RangeCell_II  = this%ReachPartition(i_reach,3)+this%ReachPartition(i_reach,4)
               Communication = 2_Tiny ! indicates that we need to communicate with the rank that
                                      ! holds the upper part of the reach (upstream).
-              CommRank = RankNodeI
+              CommRank      = RankNodeI
               BCNodeI       = -1_Tiny
               BCNodeII      = Geometry%BoundaryCondition(RankNodeII)
             end if
