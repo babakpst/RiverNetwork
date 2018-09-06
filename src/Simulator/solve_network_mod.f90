@@ -503,7 +503,6 @@ Couter_ReachCut = 0_Lng
   end do
 
 
-
 Couter_ReachCut = 0_Lng
   do i_reach =1, this%Model%TotalNumOfReachesOnThisRank
 
@@ -514,15 +513,22 @@ Couter_ReachCut = 0_Lng
         call MPI_WAIT(request_sent(Couter_ReachCut), status , MPI_err)
         call MPI_WAIT(request_recv(Couter_ReachCut), status , MPI_err)
 
-        Solution(i_reach)%UU(this%Model%NCells+1_Lng)%U(:) = recv( )%U(:)
-        Solution(i_reach)%UU(this%Model%NCells+2_Lng)%U(:)  = recv(  )%U(:)
+        Solution(i_reach)%UU(this%Model%NCells+1_Lng)%U(:) = recv(  )%U(:) = recv(1+ 2_Lng*(Couter_ReachCut - 1_Lng))%U(:)
+        Solution(i_reach)%UU(this%Model%NCells+2_Lng)%U(:) = recv(  )%U(:)
+
+
+recv(1+ 2_Lng*(Couter_ReachCut - 1_Lng))
+
+recv(2+ 2_Lng*(Couter_ReachCut - 1_Lng))
+
+
 
       else if (this%Model%DiscretizedReach(i_reach)%Communication == 2_Tiny) then ! downstream half
-
+                                                                    ! of this reach is on the rank
         Couter_ReachCut = Couter_ReachCut + 1_Lng
         call MPI_WAIT(request_sent(Couter_ReachCut), status , MPI_err)
         call MPI_WAIT(request_recv(Couter_ReachCut), status , MPI_err)
-        Solution(i_reach)%UU(0)%U(:) = recv(         )%U(:)
+        Solution(i_reach)%UU(0)%U(:)  = recv(        )%U(:)
         Solution(i_reach)%UU(-1)%U(:) = recv(        )%U(:)
 
       end if
