@@ -24,7 +24,7 @@
 !
 ! File version $Id $
 !
-! Last update: 08/27/2018
+! Last update: 09/06/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! - Solver_1D_with_Limiter_sub: Solves the 1D shallow water equation, with limiter.
@@ -66,7 +66,6 @@ type LimiterFunc_tp ! contains all variable to compute the limiter value
   contains
     procedure LimiterValue => Limiters_sub
 end type LimiterFunc_tp
-
 
 ! This type consists of all variables/arrays regarding the Jacobian, used to apply the limiter.
 type Jacobian_tp
@@ -110,8 +109,9 @@ type SoureceTerms_tp
   type(vector)  :: S=vector(U=0.0_dbl)            ! source term
   type(vector)  :: S_interface=vector(U=0.0_dbl)  ! source term at the interface
 
-  type(vector) :: Source_1=vector(U=0.0_dbl) !contribution of the source term in updating the solution (see manual)
-  type(vector) :: Source_2=vector(U=0.0_dbl) !contribution of the source term in updating the solution (see manual)
+  ! contribution of the source term in updating the solution (see manual)
+  type(vector) :: Source_1=vector(U=0.0_dbl)
+  type(vector) :: Source_2=vector(U=0.0_dbl)
 
   real(kind=Dbl), dimension(2,2) :: B=0.0_dbl        ! This is in fact dS / dU
   real(kind=Dbl), dimension(2,2) :: BI=0.0_dbl       ! B inverse, see notes
@@ -371,8 +371,8 @@ Couter_ReachCut = 0_Lng
             stop
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeII == 2_tiny) then
             ! if the upstream node is a boundary condition/outlet
-            call Impose_BC_1D_dw_sub(Solution(i_reach)%UU(this%Model%NCells)%U(2), &
-                                     this%AnalysisInfo%h_dw, &
+            call Impose_BC_1D_dw_sub(Solution(i_reach)%UU(this%Model%NCells)%U(2),  &
+                                     this%AnalysisInfo%h_dw,                        &
                                      Solution(i_reach)%UU(this%Model%NCells+1_Lng), &
                                      Solution(i_reach)%UU(this%Model%NCells+2_Lng))
           end if
@@ -428,23 +428,28 @@ Couter_ReachCut = 0_Lng
           ! communicate with the node that has the downstream part of this reach.
           ! Sending/Receiving cell info
           ! The downstream of this reach is on another rank
-          sent(1+ 2_Lng*(Couter_ReachCut - 1_Lng))%U(:) = Solution(i_reach)%UU(this%Model%NCells)%U(:)
-          sent(2+ 2_Lng*(Couter_ReachCut - 1_Lng))%U(:) = Solution(i_reach)%UU(this%Model%NCells-1_Lng)%U(:)
-          call MPI_ISEND(sent(1+ 2_Lng*(Couter_ReachCut - 1_Lng):2+ 2_Lng*(Couter_ReachCut - 1_Lng)), 4, MPI_DOUBLE_PRECISION, &
-                         this%Model%DiscretizedReach(i_reach)%CommRank, tag_sent(Couter_ReachCut), &
-                         MPI_COMM_WORLD, request_sent(Couter_ReachCut), MPI_err)
-          call MPI_IRECV(recv(1+ 2_Lng*(Couter_ReachCut - 1_Lng):2+ 2_Lng*(Couter_ReachCut - 1_Lng)), 4, MPI_DOUBLE_PRECISION, &
-                         this%Model%DiscretizedReach(i_reach)%CommRank,  tag_recv(Couter_ReachCut), &
-                         MPI_COMM_WORLD, request_recv(Couter_ReachCut), MPI_err)
+          sent(1+ 2_Lng*(Couter_ReachCut - 1_Lng))%U(:) =
+                                                 Solution(i_reach)%UU(this%Model%NCells)%U(:)
+          sent(2+ 2_Lng*(Couter_ReachCut - 1_Lng))%U(:) =
+                                                 Solution(i_reach)%UU(this%Model%NCells-1_Lng)%U(:)
+
+          call MPI_ISEND(sent(1+2_Lng*(Couter_ReachCut-1_Lng):2+2_Lng*(Couter_ReachCut-1_Lng)), 4,&
+                         MPI_DOUBLE_PRECISION, this%Model%DiscretizedReach(i_reach)%CommRank,     &
+                         tag_sent(Couter_ReachCut), MPI_COMM_WORLD, request_sent(Couter_ReachCut),&
+                         MPI_err)
+          call MPI_IRECV(recv(1+2_Lng*(Couter_ReachCut-1_Lng):2+2_Lng*(Couter_ReachCut-1_Lng)), 4,&
+                         MPI_DOUBLE_PRECISION, this%Model%DiscretizedReach(i_reach)%CommRank,     &
+                         tag_recv(Couter_ReachCut), MPI_COMM_WORLD, request_recv(Couter_ReachCut),&
+                         MPI_err)
 
       else if (this%Model%DiscretizedReach(i_reach)%Communication == 2_Tiny) then ! downstream half
+                                                                  ! of this reach is on the rank
         ! We need to communicate with the rank that holds the upstream of this reach,
         ! the downstream of this reach is on this rank.
         ! The ghost cells are located at the downstream node, and no ghost cells on this rank for
         ! the upstream node.
         ! There is no ghost cell at the upstream, but, we need to communicate with the rank that
         ! holds the upstream of this reach to get the cells information.
-
 
         ! upstream cells
         ! get the solution from the rank that has the upstream
@@ -464,13 +469,14 @@ Couter_ReachCut = 0_Lng
           ! The upstream of this reach is on another rank
           sent(1+ 2_Lng*(Couter_ReachCut - 1_Lng))%U(:) = Solution(i_reach)%UU(1)%U(:)
           sent(2+ 2_Lng*(Couter_ReachCut - 1_Lng))%U(:) = Solution(i_reach)%UU(2)%U(:)
-          call MPI_ISEND(sent(1+ 2_Lng*(Couter_ReachCut - 1_Lng):2+ 2_Lng*(Couter_ReachCut - 1_Lng)), 4, MPI_DOUBLE_PRECISION, &
-                         this%Model%DiscretizedReach(i_reach)%CommRank, tag_sent(Couter_ReachCut), &
-                         MPI_COMM_WORLD, request_sent(Couter_ReachCut), MPI_err)
-          call MPI_IRECV(recv(1+ 2_Lng*(Couter_ReachCut - 1_Lng):2+ 2_Lng*(Couter_ReachCut - 1_Lng)), 4, MPI_DOUBLE_PRECISION, &
-                         this%Model%DiscretizedReach(i_reach)%CommRank,  tag_recv(Couter_ReachCut), &
-                         MPI_COMM_WORLD, request_recv(Couter_ReachCut), MPI_err)
-
+          call MPI_ISEND(sent(1+2_Lng*(Couter_ReachCut-1_Lng):2+2_Lng*(Couter_ReachCut-1_Lng)), 4,&
+                         MPI_DOUBLE_PRECISION, this%Model%DiscretizedReach(i_reach)%CommRank,     &
+                         tag_sent(Couter_ReachCut), MPI_COMM_WORLD, request_sent(Couter_ReachCut),&
+                         MPI_err)
+          call MPI_IRECV(recv(1+2_Lng*(Couter_ReachCut-1_Lng):2+2_Lng*(Couter_ReachCut-1_Lng)), 4,&
+                         MPI_DOUBLE_PRECISION, this%Model%DiscretizedReach(i_reach)%CommRank,     &
+                         tag_recv(Couter_ReachCut), MPI_COMM_WORLD, request_recv(Couter_ReachCut),&
+                         MPI_err)
 
         ! downstream node
           if (this%Model%DiscretizedReach(i_reach)%BCNodeII == -1_tiny) then
@@ -492,8 +498,8 @@ Couter_ReachCut = 0_Lng
             stop
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeII == 2_tiny) then
             ! if the upstream node is a boundary condition/outlet
-            call Impose_BC_1D_dw_sub(Solution(i_reach)%UU(this%Model%NCells)%U(2), &
-                                     this%AnalysisInfo%h_dw, &
+            call Impose_BC_1D_dw_sub(Solution(i_reach)%UU(this%Model%NCells)%U(2),  &
+                                     this%AnalysisInfo%h_dw,                        &
                                      Solution(i_reach)%UU(this%Model%NCells+1_Lng), &
                                      Solution(i_reach)%UU(this%Model%NCells+2_Lng))
           end if
@@ -503,42 +509,33 @@ Couter_ReachCut = 0_Lng
   end do
 
 
+! substituting the sent messages to the solution
 Couter_ReachCut = 0_Lng
   do i_reach =1, this%Model%TotalNumOfReachesOnThisRank
 
       if (this%Model%DiscretizedReach(i_reach)%Communication == 1_Tiny) then ! upstream half
                                                                    ! of this reach is on the rank
-
         Couter_ReachCut = Couter_ReachCut + 1_Lng
         call MPI_WAIT(request_sent(Couter_ReachCut), status , MPI_err)
         call MPI_WAIT(request_recv(Couter_ReachCut), status , MPI_err)
 
-        Solution(i_reach)%UU(this%Model%NCells+1_Lng)%U(:) = recv(  )%U(:) = recv(1+ 2_Lng*(Couter_ReachCut - 1_Lng))%U(:)
-        Solution(i_reach)%UU(this%Model%NCells+2_Lng)%U(:) = recv(  )%U(:)
-
-
-recv(1+ 2_Lng*(Couter_ReachCut - 1_Lng))
-
-recv(2+ 2_Lng*(Couter_ReachCut - 1_Lng))
-
-
+        ! Substituting the received data in the solution array
+        Solution(i_reach)%UU(this%Model%NCells+1_Lng)%U(:) = recv(1+2_Lng*(Couter_ReachCut-1_Lng))%U(:)
+        Solution(i_reach)%UU(this%Model%NCells+2_Lng)%U(:) = recv(2+2_Lng*(Couter_ReachCut-1_Lng))%U(:)
 
       else if (this%Model%DiscretizedReach(i_reach)%Communication == 2_Tiny) then ! downstream half
                                                                     ! of this reach is on the rank
         Couter_ReachCut = Couter_ReachCut + 1_Lng
         call MPI_WAIT(request_sent(Couter_ReachCut), status , MPI_err)
         call MPI_WAIT(request_recv(Couter_ReachCut), status , MPI_err)
-        Solution(i_reach)%UU(0)%U(:)  = recv(        )%U(:)
-        Solution(i_reach)%UU(-1)%U(:) = recv(        )%U(:)
+
+        ! Substituting the received data in the solution array
+        Solution(i_reach)%UU(0)%U(:)  = recv(1+ 2_Lng*(Couter_ReachCut - 1_Lng))%U(:)
+        Solution(i_reach)%UU(-1)%U(:) = recv(2+ 2_Lng*(Couter_ReachCut - 1_Lng))%U(:)
 
       end if
 
   end do
-
-
-
-
-
 
 Results%ModelInfo = this%ModelInfo
 
@@ -551,15 +548,12 @@ Results%ModelInfo = this%ModelInfo
 !$ write(*,       fmt="(' I am thread ',I4,' out of ',I4,' threads.')") ITS,MTS
 !$ write(FileInfo,fmt="(' I am thread ',I4,' out of ',I4,' threads.')") ITS,MTS
 
-
   ! Time marching
   Time_Marching: do i_steps = 1_Lng, NSteps +1_Lng
 
     Couter_ReachCut = 0_Lng
     ! Solving the equation for each reach
       On_Reaches: do i_reach =1, this%Model%TotalNumOfReachesOnThisRank
-
-
 
         ! write down data for visualization
         if (mod(i_steps,this%AnalysisInfo%Plot_Inc)==1 .or. PrintResults) then
@@ -569,8 +563,11 @@ Results%ModelInfo = this%ModelInfo
                 print*, "----------------Step:", i_steps, &
                        real(TotalTime%endSys-TotalTime%startSys)/real(TotalTime%clock_rate)
             end if
-          Results%U(:) = UU(-1:this%Model%NCells+2)
-          call Results%plot_results(i_steps)
+
+
+          ! <modify> check the allocation
+          Results%U(:) = Solution(i_reach)%UU(-1:this%Model%NCells+2)
+          !call Results%plot_results(i_steps)
           !$ end if
         end if
 
@@ -588,8 +585,8 @@ Results%ModelInfo = this%ModelInfo
           SourceTerms%Source_2%U(:)  = 0.0_Dbl
 
           ! Solution at this cell
-          height   = UU(i_Cell)%U(1)
-          velocity = UU(i_Cell)%U(2)/height
+          height   = Solution(i_reach)%UU(i_Cell)%U(1)
+          velocity = Solution(i_reach)%UU(i_Cell)%U(2)/height
 
           ! Find the B matrix for this cell
           SourceTerms%S_f = (this%Model%ManningCell(i_Cell)**2.0) * velocity &
@@ -597,7 +594,7 @@ Results%ModelInfo = this%ModelInfo
 
           SourceTerms%B(1,1) = 0.0_Dbl
           SourceTerms%B(2,1) =  &
-          - Gravity * (this%Model%CellSlope(i_Cell) + (7.0_Dbl/3.0_Dbl) * SourceTerms%S_f)
+                   - Gravity * (this%Model%CellSlope(i_Cell) + (7.0_Dbl/3.0_Dbl) * SourceTerms%S_f)
 
           SourceTerms%B(1,2) = 0.0_Dbl
           SourceTerms%B(2,2) = (2.0_Dbl*this%Model%ManningCell(i_Cell)**2.0) &
@@ -614,17 +611,16 @@ Results%ModelInfo = this%ModelInfo
 
           ! The first contribution of the source term in the solution
           SourceTerms%Source_1%U(:) = &
-               dt * (SourceTerms%S%U(:) - 0.5_Dbl * matmul(SourceTerms%B(:,:), UU(i_Cell)%U(:)))
-
+               dt * (SourceTerms%S%U(:) - 0.5_Dbl * matmul(SourceTerms%B(:,:), Solution(i_reach)%UU(i_Cell)%U(:)))
 
             ON_Interface:  do i_Interface = 1, 2 !first one is on i-1/2, the second one is on i+1/2
 
               ! Compute the jump (U_i- U_i-1)
-              Delta_U%U(:) =UU(i_Cell+(i_Interface-1_Lng))%U(:)-UU(i_Cell+(i_Interface-2_Lng))%U(:)
+              Delta_U%U(:) =Solution(i_reach)%UU(i_Cell+(i_Interface-1_Lng))%U(:)-Solution(i_reach)%UU(i_Cell+(i_Interface-2_Lng))%U(:)
 
               ! Computing the Jacobian and all other items at the upstream
-              Jacobian%U_up%U(:) = UU(i_Cell+(i_Interface-2_Lng))%U(:)
-              Jacobian%U_dw%U(:) = UU(i_Cell+(i_Interface-1_Lng))%U(:)
+              Jacobian%U_up%U(:) = Solution(i_reach)%UU(i_Cell+(i_Interface-2_Lng))%U(:)
+              Jacobian%U_dw%U(:) = Solution(i_reach)%UU(i_Cell+(i_Interface-1_Lng))%U(:)
 
               call Jacobian%Jacobian()
 
@@ -671,12 +667,12 @@ Results%ModelInfo = this%ModelInfo
                     if  (Jacobian%Lambda%U(i_eigen)  > 0.0_Dbl ) then
 
                       ! Compute the jump (U_i- U_i-1)
-                      Delta_U%U(:) = UU(i_Cell+i_Interface-2_Tiny)%U(:) &
-                                    -UU(i_Cell+i_Interface-3_Tiny )%U(:)
+                      Delta_U%U(:) = Solution(i_reach)%UU(i_Cell+i_Interface-2_Tiny)%U(:) &
+                                    -Solution(i_reach)%UU(i_Cell+i_Interface-3_Tiny )%U(:)
 
                       ! Computing the Jacobian and all other items at the upstream
-                      Jacobian_neighbor%U_up%U(:) = UU( i_Cell+i_Interface-3_Tiny  )%U(:)
-                      Jacobian_neighbor%U_dw%U(:) = UU( i_Cell+i_Interface-2_Tiny  )%U(:)
+                      Jacobian_neighbor%U_up%U(:) = Solution(i_reach)%UU(i_Cell+i_Interface-3_Tiny)%U(:)
+                      Jacobian_neighbor%U_dw%U(:) = Solution(i_reach)%UU(i_Cell+i_Interface-2_Tiny)%U(:)
 
                       call Jacobian_neighbor%Jacobian()
 
@@ -687,11 +683,11 @@ Results%ModelInfo = this%ModelInfo
                     else if  (Jacobian%Lambda%U(i_eigen) < 0.0_Dbl) then
 
                       ! Compute the jump (U_i- U_i-1)
-                      Delta_U%U(:) = UU(i_Cell+i_Interface)%U(:)-UU(i_Cell+i_Interface-1_Tiny)%U(:)
+                      Delta_U%U(:) = Solution(i_reach)%UU(i_Cell+i_Interface)%U(:)-Solution(i_reach)%UU(i_Cell+i_Interface-1_Tiny)%U(:)
 
                       ! Computing the Jacobian and all other items at the upstream
-                      Jacobian_neighbor%U_up%U(:) = UU(i_Cell+i_Interface-1_Tiny )%U(:)
-                      Jacobian_neighbor%U_dw%U(:) = UU(i_Cell+i_Interface        )%U(:)
+                      Jacobian_neighbor%U_up%U(:) = Solution(i_reach)%UU(i_Cell+i_Interface-1_Tiny)%U(:)
+                      Jacobian_neighbor%U_dw%U(:) = Solution(i_reach)%UU(i_Cell+i_Interface       )%U(:)
 
                       call Jacobian_neighbor%Jacobian()
 
@@ -732,10 +728,10 @@ Results%ModelInfo = this%ModelInfo
             end do ON_Interface
 
           ! Final update the results
-          TempSolution%U(:) = UU(i_cell)%U(:) - dtdx * F_L%U(:) - dtdx * F_H%U(:) &
+          TempSolution%U(:) = Solution(i_reach)%UU(i_cell)%U(:) - dtdx * F_L%U(:) - dtdx * F_H%U(:) &
                               + SourceTerms%Source_1%U(:) - SourceTerms%Source_2%U(:)
 
-          UN(i_cell)%U(:) = matmul(SourceTerms%BI(:,:), TempSolution%U(:))
+          Solution(i_reach)%UN(i_cell)%U(:) = matmul(SourceTerms%BI(:,:), TempSolution%U(:))
 
         end do
         !$OMP END DO
@@ -743,7 +739,7 @@ Results%ModelInfo = this%ModelInfo
         !!$OMP END PARALLEL DO
         !$OMP DO
         do i_Cell = 1_Lng, this%Model%NCells  ! Loop over cells except the boundary cells
-          UU(i_Cell) = UN(i_Cell)
+          Solution(i_reach)%UU(i_Cell) = Solution(i_reach)%UN(i_Cell)
         end do
         !$OMP END DO
 
@@ -752,6 +748,8 @@ Results%ModelInfo = this%ModelInfo
       !UU(:) = UN(:)
       ! apply boundary condition
 
+
+!-------------------------------------------- here
       ! imposing boundary condition: at this moment, they are only at rank 0 and size-1
       if (this%ModelInfo%rank == 0) then ! applying boundary conditions at the upstream
         call Impose_BC_1D_up_sub(UU(1)%U(1), this%Model%NCells, this%AnalysisInfo%Q_Up, &
