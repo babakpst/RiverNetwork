@@ -960,7 +960,7 @@ UU_0%U(1)  = h_upstream ! h at the upstream
 
 ! Boundary conditions on the discharge
 UU_N1%U(2) = Q_Up / Width ! uh at the upstream
-UU_0%U(2) = Q_Up / Width  ! uh at the upstream
+UU_0%U(2)  = Q_Up / Width  ! uh at the upstream
 
 !write(*,       *) " end subroutine < Impose_BC_1D_up_sub >"
 !write(FileInfo,*) " end subroutine < Impose_BC_1D_up_sub >"
@@ -1434,7 +1434,18 @@ end subroutine Inverse
 
 
 !##################################################################################################
-! Purpose: This subroutine simulates the junction behavior.
+! Purpose: This subroutine simulates the junction.
+!          As of now this function simulates the flow combination. In fact, this function, computes
+!          the h and uh for the two required ghost cells for each reach.
+!
+!  flow combination
+!  Left Reach  Right Reach
+!          \    /
+!           \  /
+!            \/
+!            |
+!            |
+!        bottom Reach
 !
 ! Developed by: Babak Poursartip
 !
@@ -1443,11 +1454,11 @@ end subroutine Inverse
 ! The University of Texas at Austin
 !
 ! ================================ V E R S I O N ==================================================
-! V0.00: 08/28/2018 - File initiated.
+! V0.00: 09/12/2018 - File initiated.
 !
 ! File version $Id $
 !
-! Last update: 08/28/2018
+! Last update: 09/12/2018
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
 ! (Refer to the main code to see the list of imported variables)
@@ -1455,8 +1466,60 @@ end subroutine Inverse
 !
 !##################################################################################################
 
+subroutine Junction()
+
+! Libraries =======================================================================================
+
+! User defined modules ============================================================================
 
 
+implicit none
+
+! Global variables ================================================================================
+
+! - integer variables -----------------------------------------------------------------------------
+! - real variables --------------------------------------------------------------------------------
+! - complex variables -----------------------------------------------------------------------------
+! - integer Arrays --------------------------------------------------------------------------------
+! - real Arrays -----------------------------------------------------------------------------------
+real(kind=Dbl),  intent(in),  dimension (:,:)  ::
+real(kind=Dbl),  intent(out), dimension (:,:)  ::
+
+! Local variables =================================================================================
+! - integer variables -----------------------------------------------------------------------------
+! - real variables --------------------------------------------------------------------------------
+real(kind=Dbl) ::
+! - real Arrays ------------------------------
+
+
+
+
+
+
+
+LeftReach%UU(n+1)%U(1)
+LeftReach%UU(n+1)%U(2)
+
+LeftReach%UU(n+2)%U(1)
+LeftReach%UU(n+2)%U(2)
+
+RightReach%UU(n+1)%U(1)
+RightReach%UU(n+1)%U(2)
+
+RightReach%UU(n+2)%U(1)
+RightReach%UU(n+2)%U(2)
+
+RightReach%UU(n+1)%U(1)
+RightReach%UU(n+1)%U(2)
+
+RightReach%UU(n+2)%U(1)
+RightReach%UU(n+2)%U(2)
+
+
+!write(*,       *) " end subroutine < Inverse >"
+!write(FileInfo,*) " end subroutine < Inverse >"
+return
+end subroutine Junction
 
 end module Solver_mod
 
