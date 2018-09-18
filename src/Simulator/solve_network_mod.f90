@@ -1434,9 +1434,10 @@ end subroutine Inverse
 
 
 !##################################################################################################
-! Purpose: This subroutine simulates the junction.
+! Purpose: This subroutine simulates the junction in a flow combination.
 !          As of now this function simulates the flow combination. In fact, this function, computes
 !          the h and uh for the two required ghost cells for each reach.
+!          Junction simulation is based on HEC-RAS model.
 !
 !  flow combination
 !  Left Reach  Right Reach
@@ -1454,11 +1455,11 @@ end subroutine Inverse
 ! The University of Texas at Austin
 !
 ! ================================ V E R S I O N ==================================================
-! V0.00: 09/12/2018 - File initiated.
+! V0.00: 09/18/2018 - File initiated.
 !
 ! File version $Id $
 !
-! Last update: 09/12/2018
+! Last update: 09/18/2018
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
 ! (Refer to the main code to see the list of imported variables)
@@ -1466,7 +1467,7 @@ end subroutine Inverse
 !
 !##################################################################################################
 
-subroutine Junction()
+subroutine Junction_simulation_flow_combination( Junction_Model )
 
 ! Libraries =======================================================================================
 
@@ -1491,30 +1492,38 @@ real(kind=Dbl),  intent(out), dimension (:,:)  ::
 real(kind=Dbl) ::
 ! - real Arrays ------------------------------
 
+  if Junction_Model == 1 then ! energy based junction method
+  ! case 1: Subcritical flow
+  ! case 2: Supercritical flow
+  ! case 3: Mixed flow regime
+
+  else if Junction_Model == 2 then  ! Momentum based junction method
+  ! case 1: Subcritical flow
+  ! case 2: Supercritical flow
+  ! case 3: Mixed flow regime
+
+  end if
 
 
 
+! Final values for the ghost cells:
+LeftReach%UU(n+1)%U(1)  =
+LeftReach%UU(n+1)%U(2)  =
 
+LeftReach%UU(n+2)%U(1)  =
+LeftReach%UU(n+2)%U(2)  =
 
+RightReach%UU(n+1)%U(1) =
+RightReach%UU(n+1)%U(2) =
 
-LeftReach%UU(n+1)%U(1)
-LeftReach%UU(n+1)%U(2)
+RightReach%UU(n+2)%U(1) =
+RightReach%UU(n+2)%U(2) =
 
-LeftReach%UU(n+2)%U(1)
-LeftReach%UU(n+2)%U(2)
+BottomReach%UU(-1)%U(1) =
+BottomReach%UU(-1)%U(2) =
 
-RightReach%UU(n+1)%U(1)
-RightReach%UU(n+1)%U(2)
-
-RightReach%UU(n+2)%U(1)
-RightReach%UU(n+2)%U(2)
-
-RightReach%UU(n+1)%U(1)
-RightReach%UU(n+1)%U(2)
-
-RightReach%UU(n+2)%U(1)
-RightReach%UU(n+2)%U(2)
-
+BottomReach%UU(0)%U(1)  =
+BottomReach%UU(0)%U(2)  =
 
 !write(*,       *) " end subroutine < Inverse >"
 !write(FileInfo,*) " end subroutine < Inverse >"
