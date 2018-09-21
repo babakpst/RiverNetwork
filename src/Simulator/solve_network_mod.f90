@@ -1492,6 +1492,15 @@ real(kind=Dbl),  intent(out), dimension (:,:)  ::
 real(kind=Dbl) ::
 ! - real Arrays ------------------------------
 
+! input u_Left, u_Righ, u_Bottom, h_Left, h_Righ, h_Bottom
+
+
+
+FroudeLeft   = u_Left/dsqrt(Gravity*h_Left)
+FroudeRight  =
+FroudeBottom =
+
+
   if Junction_Model == 1 then ! energy based junction method
   ! case 1: Subcritical flow
   ! case 2: Supercritical flow
