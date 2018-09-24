@@ -1430,9 +1430,6 @@ Matrix_out(:,:) = Matrix_out(:,:) / determinant
 return
 end subroutine Inverse
 
-
-
-
 !##################################################################################################
 ! Purpose: This subroutine simulates the junction in a flow combination.
 !          As of now this function simulates the flow combination. In fact, this function, computes
@@ -1496,9 +1493,9 @@ real(kind=Dbl) ::
 
 
 
-FroudeLeft   = u_Left/dsqrt(Gravity*h_Left)
-FroudeRight  =
-FroudeBottom =
+FroudeLeft   = u_Left   / dsqrt(Gravity*h_Left)
+FroudeRight  = u_Right  / dsqrt(Gravity*h_Right)
+FroudeBottom = u_Bottom / dsqrt(Gravity*h_Bottom)
 
 
   if Junction_Model == 1 then ! energy based junction method
