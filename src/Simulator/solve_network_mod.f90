@@ -1492,21 +1492,160 @@ real(kind=Dbl) ::
 ! input u_Left, u_Righ, u_Bottom, h_Left, h_Righ, h_Bottom
 
 
-
+! Calculating the flow regime in each reach
 FroudeLeft   = u_Left   / dsqrt(Gravity*h_Left)
 FroudeRight  = u_Right  / dsqrt(Gravity*h_Right)
 FroudeBottom = u_Bottom / dsqrt(Gravity*h_Bottom)
 
 
   if Junction_Model == 1 then ! energy based junction method
-  ! case 1: Subcritical flow
-  ! case 2: Supercritical flow
-  ! case 3: Mixed flow regime
+
+
+    ! Indicating the flow regime based on the Froude number
+    if (FroudeLeft < 1.0_dbl) .and. (FroudeRight < 1.0_dbl) .and. (FroudeBottom < 1.0_dbl) then
+      ! case 1: Subcritical flow
+
+      ! Final values for the ghost cells:
+      LeftReach%UU(n+1)%U(1)  =
+      LeftReach%UU(n+1)%U(2)  =
+
+      LeftReach%UU(n+2)%U(1)  =
+      LeftReach%UU(n+2)%U(2)  =
+
+      RightReach%UU(n+1)%U(1) =
+      RightReach%UU(n+1)%U(2) =
+
+      RightReach%UU(n+2)%U(1) =
+      RightReach%UU(n+2)%U(2) =
+
+      BottomReach%UU(-1)%U(1) =
+      BottomReach%UU(-1)%U(2) =
+
+      BottomReach%UU(0)%U(1)  =
+      BottomReach%UU(0)%U(2)  =
+
+
+    else if (FroudeLeft > 1.0_dbl) .and. (FroudeRight > 1.0_dbl) .and. (FroudeBottom > 1.0_dbl) then
+      ! case 2: Supercritical flow
+
+      ! Final values for the ghost cells:
+      LeftReach%UU(n+1)%U(1)  =
+      LeftReach%UU(n+1)%U(2)  =
+
+      LeftReach%UU(n+2)%U(1)  =
+      LeftReach%UU(n+2)%U(2)  =
+
+      RightReach%UU(n+1)%U(1) =
+      RightReach%UU(n+1)%U(2) =
+
+      RightReach%UU(n+2)%U(1) =
+      RightReach%UU(n+2)%U(2) =
+
+      BottomReach%UU(-1)%U(1) =
+      BottomReach%UU(-1)%U(2) =
+
+      BottomReach%UU(0)%U(1)  =
+      BottomReach%UU(0)%U(2)  =
+
+
+
+    else
+      ! case 3: Mixed flow regime
+
+
+      ! Final values for the ghost cells:
+      LeftReach%UU(n+1)%U(1)  =
+      LeftReach%UU(n+1)%U(2)  =
+
+      LeftReach%UU(n+2)%U(1)  =
+      LeftReach%UU(n+2)%U(2)  =
+
+      RightReach%UU(n+1)%U(1) =
+      RightReach%UU(n+1)%U(2) =
+
+      RightReach%UU(n+2)%U(1) =
+      RightReach%UU(n+2)%U(2) =
+
+      BottomReach%UU(-1)%U(1) =
+      BottomReach%UU(-1)%U(2) =
+
+      BottomReach%UU(0)%U(1)  =
+      BottomReach%UU(0)%U(2)  =
+
+
+    end if
 
   else if Junction_Model == 2 then  ! Momentum based junction method
-  ! case 1: Subcritical flow
-  ! case 2: Supercritical flow
-  ! case 3: Mixed flow regime
+
+    ! Indicating the flow regime based on the Froude number
+    if (FroudeLeft < 1.0_dbl) .and. (FroudeRight < 1.0_dbl) .and. (FroudeBottom < 1.0_dbl) then
+      ! case 1: Subcritical flow
+
+      ! Final values for the ghost cells:
+      LeftReach%UU(n+1)%U(1)  =
+      LeftReach%UU(n+1)%U(2)  =
+
+      LeftReach%UU(n+2)%U(1)  =
+      LeftReach%UU(n+2)%U(2)  =
+
+      RightReach%UU(n+1)%U(1) =
+      RightReach%UU(n+1)%U(2) =
+
+      RightReach%UU(n+2)%U(1) =
+      RightReach%UU(n+2)%U(2) =
+
+      BottomReach%UU(-1)%U(1) =
+      BottomReach%UU(-1)%U(2) =
+
+      BottomReach%UU(0)%U(1)  =
+      BottomReach%UU(0)%U(2)  =
+
+
+    else if (FroudeLeft > 1.0_dbl) .and. (FroudeRight > 1.0_dbl) .and. (FroudeBottom > 1.0_dbl) then
+      ! case 2: Supercritical flow
+
+      ! Final values for the ghost cells:
+      LeftReach%UU(n+1)%U(1)  =
+      LeftReach%UU(n+1)%U(2)  =
+
+      LeftReach%UU(n+2)%U(1)  =
+      LeftReach%UU(n+2)%U(2)  =
+
+      RightReach%UU(n+1)%U(1) =
+      RightReach%UU(n+1)%U(2) =
+
+      RightReach%UU(n+2)%U(1) =
+      RightReach%UU(n+2)%U(2) =
+
+      BottomReach%UU(-1)%U(1) =
+      BottomReach%UU(-1)%U(2) =
+
+      BottomReach%UU(0)%U(1)  =
+      BottomReach%UU(0)%U(2)  =
+
+    else
+      ! case 3: Mixed flow regime
+
+      ! Final values for the ghost cells:
+      LeftReach%UU(n+1)%U(1)  =
+      LeftReach%UU(n+1)%U(2)  =
+
+      LeftReach%UU(n+2)%U(1)  =
+      LeftReach%UU(n+2)%U(2)  =
+
+      RightReach%UU(n+1)%U(1) =
+      RightReach%UU(n+1)%U(2) =
+
+      RightReach%UU(n+2)%U(1) =
+      RightReach%UU(n+2)%U(2) =
+
+      BottomReach%UU(-1)%U(1) =
+      BottomReach%UU(-1)%U(2) =
+
+      BottomReach%UU(0)%U(1)  =
+      BottomReach%UU(0)%U(2)  =
+
+    end if
 
   end if
 
