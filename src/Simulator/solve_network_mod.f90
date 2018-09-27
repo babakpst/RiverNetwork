@@ -508,7 +508,6 @@ Couter_ReachCut = 0_Lng
 
   end do
 
-
 ! substituting the sent messages to the solution
 Couter_ReachCut = 0_Lng
   do i_reach =1, this%Model%TotalNumOfReachesOnThisRank
@@ -1128,8 +1127,8 @@ real(kind=Dbl), dimension(2,2) :: A_up  ! the average discharge at the interface
 real(kind=Dbl), dimension(2,2) :: A_dw  ! the average discharge at the interface
 
 ! code ============================================================================================
-!write(*,       *) " subroutine < Jacobian_sub >: "
-!write(FileInfo,*) " subroutine < Jacobian_sub >: "
+!write(*,       *) " subroutine <Jacobian_sub>: "
+!write(FileInfo,*) " subroutine <Jacobian_sub>: "
 
   ! Find the average solution at the interface and then compute the Jacobian
   if (this%option == 1 ) then
@@ -1474,8 +1473,10 @@ subroutine Junction_simulation_flow_combination( Junction_Model )
 implicit none
 
 ! Global variables ================================================================================
-
 ! - integer variables -----------------------------------------------------------------------------
+integer(kind=Lng)  :: Junction_Model ! 1 energy based junction method
+                                     ! 2 momentum based junction method
+
 ! - real variables --------------------------------------------------------------------------------
 ! - complex variables -----------------------------------------------------------------------------
 ! - integer Arrays --------------------------------------------------------------------------------
@@ -1486,22 +1487,44 @@ real(kind=Dbl),  intent(out), dimension (:,:)  ::
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
 ! - real variables --------------------------------------------------------------------------------
-real(kind=Dbl) ::
+real(kind=Dbl) :: u_Left, h_Left   ! velocity and height at the bottom cell of the Left reach
+                                   ! -upstream, used to calculate the Froude number
+
+real(kind=Dbl) :: u_Right, h_Right ! velocity and height at the bottom cell of the Right reach
+                                   ! -upstream, used to calculate the Froude number
+
+real(kind=Dbl) :: u_Bottom, h_Bottom ! velocity and height at the top cell of the bottom reach
+                                     ! -downstream, used to calculate the Froude number
+
+real(kind=Dbl) :: FroudeLeft   ! Froude number at the bottom cell of the Left reach-upstream
+real(kind=Dbl) :: FroudeRight  ! Froude number at the bottom cell of the Right reach-upstream
+real(kind=Dbl) :: FroudeBottom ! Froude number at the top cell of the bottom reach-downstream
+
 ! - real Arrays ------------------------------
 
-! input u_Left, u_Righ, u_Bottom, h_Left, h_Righ, h_Bottom
+! computing the velocity and height at the target cells
+u_Left =
+h_Left =
+
+u_Right =
+h_Right =
+
+u_Bottom =
+h_Bottom =
 
 
-! Calculating the flow regime in each reach
+! Calculating the flow regime in each reach based on the Froude number
+!   if Fr no. in all reaches < 1: sub-critical flow
+!   if Fr no. in all reaches > 1: super-critical flow
+!   if Fr no. are diff in each reach: mixed regime
 FroudeLeft   = u_Left   / dsqrt(Gravity*h_Left)
 FroudeRight  = u_Right  / dsqrt(Gravity*h_Right)
 FroudeBottom = u_Bottom / dsqrt(Gravity*h_Bottom)
 
-
   if Junction_Model == 1 then ! energy based junction method
 
 
-    ! Indicating the flow regime based on the Froude number
+    ! Indicating the flow regime based on the Froude number- all less than one, sub-critical flow
     if (FroudeLeft < 1.0_dbl) .and. (FroudeRight < 1.0_dbl) .and. (FroudeBottom < 1.0_dbl) then
       ! case 1: Subcritical flow
 
@@ -1524,7 +1547,7 @@ FroudeBottom = u_Bottom / dsqrt(Gravity*h_Bottom)
       BottomReach%UU(0)%U(1)  =
       BottomReach%UU(0)%U(2)  =
 
-
+    ! Indicating the flow regime based on the Froude number- all Fr > 1, super-critical flow
     else if (FroudeLeft > 1.0_dbl) .and. (FroudeRight > 1.0_dbl) .and. (FroudeBottom > 1.0_dbl) then
       ! case 2: Supercritical flow
 
@@ -1577,7 +1600,7 @@ FroudeBottom = u_Bottom / dsqrt(Gravity*h_Bottom)
 
   else if Junction_Model == 2 then  ! Momentum based junction method
 
-    ! Indicating the flow regime based on the Froude number
+    ! Indicating the flow regime based on the Froude number- all less than one, sub-critical flow
     if (FroudeLeft < 1.0_dbl) .and. (FroudeRight < 1.0_dbl) .and. (FroudeBottom < 1.0_dbl) then
       ! case 1: Subcritical flow
 
@@ -1600,7 +1623,7 @@ FroudeBottom = u_Bottom / dsqrt(Gravity*h_Bottom)
       BottomReach%UU(0)%U(1)  =
       BottomReach%UU(0)%U(2)  =
 
-
+    ! Indicating the flow regime based on the Froude number- all Fr > 1, super-critical flow
     else if (FroudeLeft > 1.0_dbl) .and. (FroudeRight > 1.0_dbl) .and. (FroudeBottom > 1.0_dbl) then
       ! case 2: Supercritical flow
 
