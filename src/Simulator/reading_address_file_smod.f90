@@ -249,6 +249,18 @@ write(unit=*,      fmt="(' The limiter is: ', I10)") this%Plot_Inc
 UnFile = UnInptAna
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, &
+                  err=1003, end=1004) this%Junction_model
+
+UnFile = FileInfo
+write(unit=UnFile, fmt="(' The junction model type is: ', I10)", advance='yes', asynchronous='no',&
+                   iostat=IO_write, err=1006) this%Junction_model
+write(unit=*,      fmt="(' The junction model type is: ', I10)") this%Junction_model
+
+
+UnFile = UnInptAna
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
   do i_nodes = 1, this%TotalNNodes
     UnFile = UnInptAna
     read(unit=UnFile, fmt="(I23,F23.10)", advance='yes', asynchronous='no', iostat=IO_read, &

@@ -18,6 +18,9 @@ Limiter type
 Plot results Increments (Plot_Inc)
 2000
 
+Junction type simulation 1: Energy based method, 2: Momentum based method
+1
+
 Upstream boundary condition, constant flow (m^3/s) for each node (put zero if not a BC):
 1   0.0
 2   0.0

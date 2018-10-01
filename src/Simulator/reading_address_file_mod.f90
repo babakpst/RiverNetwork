@@ -77,7 +77,9 @@ type AnalysisData_tp(TotalNNodes, TotalNReaches)
   integer(kind=Smll) :: AnalysisType=2_smll! Analysis Type -1:1D Lax-Wendroff
                                            !               -2:1D Lax-Wendroff with limiter
   integer(kind=Smll) :: limiter  = 1_smll  ! limiter type
-  integer(kind=Smll) :: junction_type  = 0_smll  ! limiter type
+  integer(kind=Smll) :: Junction_Model ! 1 energy based junction method
+                                       ! 2 momentum based junction method
+
   integer(kind=Lng)  :: Plot_Inc = 500_Lng ! Increment to record the results for visualization
 
   real(kind=DBL) :: TotalTime    = 0.0_dbl ! Total simulation time (in seconds)

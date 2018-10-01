@@ -24,7 +24,7 @@
 !
 ! File version $Id $
 !
-! Last update: 09/06/2018
+! Last update: 10/01/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! - Solver_1D_with_Limiter_sub: Solves the 1D shallow water equation, with limiter.
@@ -281,17 +281,14 @@ write(FileInfo,*) " -Applying initial conditions ..."
 !Results%NCells = this%Model%NCells
 
 ! Initialization:
-NSteps = this%AnalysisInfo%TotalTime/this%AnalysisInfo%TimeStep
-dt     = this%AnalysisInfo%TimeStep
-dx     = this%Model%LengthCell(1,2)
-
-dtdx = dt / dx
+NSteps = AnalysisInfo%TotalTime/AnalysisInfo%TimeStep
+dt     = AnalysisInfo%TimeStep
 
 ! <modify>
 !Jacobian%option = 1
 !Jacobian_neighbor%option = 1
 
-LimiterFunc%limiter_Type = this%AnalysisInfo%limiter ! Define what limiter to use in the algorithm
+LimiterFunc%limiter_Type = AnalysisInfo%limiter ! Define what limiter to use in the algorithm
 !PrintResults = .true.
 PrintResults = .false.
 !SourceTerms%Identity(:,:) = 0.0_Dbl
@@ -336,7 +333,16 @@ Couter_ReachCut = 0_Lng
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeI == 0_tiny) then
             ! if the upstream node is a junction, no BC. In this case, we need to decide about the
             ! node based on the junction modeling.
-            junction() ! <modify>
+            junction(AnalysisInfo%Junction_Model, &
+                    Width_LeftReach, Width_LeftReach, Width_BottomReach, &
+                    LeftReach%UU(n), RightReach%UU(n), BottomReach%UU(1), &
+                    LeftReach%UU(n+1), LeftReach%UU(n+2),    RightReach%UU(n+1), RightReach%UU(n+2),    BottomReach%UU(0), BottomReach%UU(-1))
+
+
+this%Model%DiscretizedReach(i_reach)%LengthCell
+
+
+
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeI == 1_tiny) then
             ! if the upstream node is a boundary condition/inlet
             call Impose_BC_1D_up_sub(Solution(i_reach)%UU(1)%U(1), this%Model%NCells,      &
@@ -372,7 +378,7 @@ Couter_ReachCut = 0_Lng
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeII == 2_tiny) then
             ! if the upstream node is a boundary condition/outlet
             call Impose_BC_1D_dw_sub(Solution(i_reach)%UU(this%Model%NCells)%U(2),  &
-                                     this%AnalysisInfo%h_dw,                        &
+                                     AnalysisInfo%h_dw,                        &
                                      Solution(i_reach)%UU(this%Model%NCells+1_Lng), &
                                      Solution(i_reach)%UU(this%Model%NCells+2_Lng))
           end if
@@ -499,7 +505,7 @@ Couter_ReachCut = 0_Lng
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeII == 2_tiny) then
             ! if the upstream node is a boundary condition/outlet
             call Impose_BC_1D_dw_sub(Solution(i_reach)%UU(this%Model%NCells)%U(2),  &
-                                     this%AnalysisInfo%h_dw,                        &
+                                     AnalysisInfo%h_dw,                        &
                                      Solution(i_reach)%UU(this%Model%NCells+1_Lng), &
                                      Solution(i_reach)%UU(this%Model%NCells+2_Lng))
           end if
@@ -554,8 +560,11 @@ Results%ModelInfo = this%ModelInfo
     ! Solving the equation for each reach
       On_Reaches: do i_reach =1, this%Model%TotalNumOfReachesOnThisRank
 
+        dx     = this%Model%DiscretizedReach(i_reach)%LengthCell
+        dtdx = dt / dx
+
         ! write down data for visualization
-        if (mod(i_steps,this%AnalysisInfo%Plot_Inc)==1 .or. PrintResults) then
+        if (mod(i_steps,AnalysisInfo%Plot_Inc)==1 .or. PrintResults) then
           !$ if (ITS==0) then
             if ( this%ModelInfo%rank == 0) then
                 call system_clock(TotalTime%endSys, TotalTime%clock_rate)
@@ -773,7 +782,7 @@ Results%ModelInfo = this%ModelInfo
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeII == 2_tiny) then
             ! if the upstream node is a boundary condition/outlet
             call Impose_BC_1D_dw_sub(Solution(i_reach)%UU(this%Model%NCells)%U(2),  &
-                                     this%AnalysisInfo%h_dw,                        &
+                                     AnalysisInfo%h_dw,                        &
                                      Solution(i_reach)%UU(this%Model%NCells+1_Lng), &
                                      Solution(i_reach)%UU(this%Model%NCells+2_Lng))
           end if
@@ -857,7 +866,7 @@ Results%ModelInfo = this%ModelInfo
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeII == 2_tiny) then
             ! if the upstream node is a boundary condition/outlet
             call Impose_BC_1D_dw_sub(Solution(i_reach)%UU(this%Model%NCells)%U(2),  &
-                                     this%AnalysisInfo%h_dw,                        &
+                                     AnalysisInfo%h_dw,                        &
                                      Solution(i_reach)%UU(this%Model%NCells+1_Lng), &
                                      Solution(i_reach)%UU(this%Model%NCells+2_Lng))
           end if
@@ -1465,15 +1474,11 @@ end subroutine Inverse
 
 subroutine Junction_simulation_flow_combination( &
              Junction_Model, &
-             W_Left, W_Right, W_Bottom, &
+             Width_LeftReach, Width_LeftReach, Width_BottomReach, &
              ReachLeft_Cell_n, ReachRight_Cell_n, ReachBottom_Cell_1, &
              ReachLeft_Cell_np1, ReachLeft_Cell_np2,   &
              ReachRight_Cell_np1, ReachRight_Cell_np2, &
              ReachBottom_Cell_0, ReachBottom_Cell_n1)
-
-! call
-LeftReach%UU(n), RightReach%UU(n), BottomReach%UU(1),
-LeftReach%UU(n+1), LeftReach%UU(n+2),    RightReach%UU(n+1), RightReach%UU(n+2),    BottomReach%UU(0), BottomReach%UU(-1),
 
 ! Libraries =======================================================================================
 
@@ -1484,13 +1489,13 @@ implicit none
 
 ! Global variables ================================================================================
 ! - integer variables -----------------------------------------------------------------------------
-integer(kind=Lng)  :: Junction_Model ! 1 energy based junction method
+integer(kind=Smll)  :: Junction_Model ! 1 energy based junction method
                                      ! 2 momentum based junction method
-real(kind=Dbl) :: W_Left           ! The width of the left upstream reach
+real(kind=Dbl) :: Width_LeftReach           ! The width of the left upstream reach
 
-real(kind=Dbl) :: W_Right          ! The width of the left upstream reach
+real(kind=Dbl) :: W_RightReach          ! The width of the left upstream reach
 
-real(kind=Dbl) :: W_Bottom           ! The width of the left upstream reach
+real(kind=Dbl) :: Width_BottomReach           ! The width of the left upstream reach
 
 ! - complex variables -----------------------------------------------------------------------------
 ! - integer Arrays --------------------------------------------------------------------------------
@@ -1584,10 +1589,10 @@ FroudeBottom = u_Bottom / dsqrt(Gravity*h_Bottom)
 
     ! ghost cells for the bottom downstream reach
     ReachBottom_Cell_n1%U(1) = h_Bottom      ! height
-    ReachBottom_Cell_n1%U(2) = (W_Left*u_Left*h_Left + W_Right*u_Right*h_Right)/W_Bottom  ! uh
+    ReachBottom_Cell_n1%U(2) = (Width_LeftReach*u_Left*h_Left + W_RightReach*u_Right*h_Right)/Width_BottomReach  ! uh
 
     ReachBottom_Cell_0%U(1)  = h_Bottom      ! height
-    ReachBottom_Cell_0%U(2)  = (W_Left*u_Left*h_Left + W_Right*u_Right*h_Right)/W_Bottom  ! uh
+    ReachBottom_Cell_0%U(2)  = (Width_LeftReach*u_Left*h_Left + W_RightReach*u_Right*h_Right)/Width_BottomReach  ! uh
 
 !    ! Indicating the flow regime based on the Froude number- all less than one, sub-critical flow
     if (FroudeLeft < 1.0_dbl) .and. (FroudeRight < 1.0_dbl) .and. (FroudeBottom < 1.0_dbl) then

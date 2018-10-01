@@ -355,7 +355,9 @@ integer(kind=Lng), dimension (Geometry%Base_Geometry%size,4) :: chunk
 ! simulator code.
 integer(kind=Lng), dimension (Geometry%Base_Geometry%size) :: NReachOnRanks
 
-
+! Upstream_Reaches holds the upstream reaches, of a node, for each reach. We need this for
+! junction simulations. As of now, we assume there are only two reaches at the upstream. <modify>
+integer(kind=Lng), dimension (2) :: Upstream_Reaches
 
 ! - character variables ---------------------------------------------------------------------------
 Character(kind = 1, len = 20) :: IndexRank ! Rank no in the Char. fmt to add to the input file Name
@@ -767,7 +769,6 @@ TotalCellCounter = 0_Lng
                    ! even though a rank may not use all of them.
                    ! <modify> see if there is a better algorithm.
 
-
     CellCounter = 0_Lng ! To make sure that we count all the cell numbers in each rank
     ReachCounter= 0_Lng
     UnFile = FilePartition
@@ -818,6 +819,15 @@ TotalCellCounter = 0_Lng
               BCNodeII      = Geometry%BoundaryCondition(RankNodeII)
             end if
           end if
+
+          ! The upstream BC of the reach is a node if BCNodeI = 0. We find the upstream reaches in
+          ! this case. The upstream reaches are need for junction simulation
+          Upstream_Reaches(1:2) = -1_Lng
+            if (BCNodeI == 0) then
+              Upstream_Reaches(1) =
+            end if
+
+
 
         ReachCounter = ReachCounter + 1_Lng
 
