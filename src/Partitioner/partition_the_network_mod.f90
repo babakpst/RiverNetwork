@@ -360,9 +360,13 @@ integer(kind=Lng), dimension (Geometry%Base_Geometry%size) :: NReachOnRanks
 integer(kind=Lng), dimension (2) :: Upstream_Reaches
 integer(kind=Lng), dimension (1) :: Downstream_Reaches
 
-! This array holds all the reach numbers attached to each nodes. The assumption is that at most 4
-! reaches are attached. This needs to be modified. <modify>
-integer(kind=Lng), dimension (Geometry%Base_Geometry%NoNodes,4) :: ReachAttachedToNode
+! This array holds all the reach numbers attached to each nodes. The assumption is that at most,
+! there are 4 upstream and 4 downstream reaches attached to this node. The first col is used to
+! record the number of upstream reaches attached to the node, the second col is used to record the
+! number of downstream reaches attached to this node. The next 4 cols keep record of the upstream
+! reaches, and the last 4 cols keep record of the downstream reach no.
+! This needs to be modified. <modify>
+integer(kind=Lng), dimension (Geometry%Base_Geometry%NoNodes,10) :: ReachAttachedToNode
 
 ! - character variables ---------------------------------------------------------------------------
 Character(kind = 1, len = 20) :: IndexRank ! Rank no in the Char. fmt to add to the input file Name
@@ -673,6 +677,9 @@ print*," partitions after: "
 ! each rank. In the next step, we try to equalize the no. of cells on each reach.
 
 NReachOnRanks(:) = 0_Lng ! initialize, we set the number of reaches on each rank equal to zero.
+ReachAttachedToNode(:,2:) = -1_Lng  ! initialize
+ReachAttachedToNode(:,1)  = 0_Lng   ! initialize, the first col will be used to count the number of
+                                    ! reaches attached to this node.
 
 write(*,       *) " Analyzing the partitioned network ... "
 write(FileInfo,*) " Analyzing the partitioned network ... "
@@ -684,6 +691,14 @@ write(FileInfo,*) " Analyzing the partitioned network ... "
 
     this%ReachPartition(i_reach,1) = this%part(NodeI)
     this%ReachPartition(i_reach,2) = this%part(NodeII)
+
+    ! Figuring out the reach number attached to a each node- reach on the downstream of this node
+    ReachAttachedToNode(NodeI, 1) = ReachAttachedToNode(NodeI, 1 ) + 1_Lng
+    ReachAttachedToNode(NodeI, ReachAttachedToNode(NodeI, 1) + 1_Lng)  = i_reach
+
+    ! Figuring out the reach number attached to a each node- reach on the upstream of this node
+    ReachAttachedToNode(NodeII, 1) = ReachAttachedToNode(NodeII, 1 ) + 1_Lng
+    ReachAttachedToNode(NodeII, ReachAttachedToNode(NodeII, 1) + 1_Lng)  = i_reach
 
     ! The case that both nodes are on the same rank, i.e. the entire reach is one rank
     if (this%ReachPartition(i_reach,1) == this%ReachPartition(i_reach,2)) then
@@ -779,6 +794,9 @@ TotalCellCounter = 0_Lng
 
       do i_reach = 1_Lng, Geometry%Base_Geometry%NoReaches
 
+        NodeI = Geometry%network(i_reach)%ReachNodes(1) ! upstream node number for this reach
+        NodeII= Geometry%network(i_reach)%ReachNodes(2) ! downstream node number for this reach
+
         ! The rank which the first node of this reach belongs to
         RankNodeI  = this%ReachPartition(i_reach,1)
 
@@ -827,9 +845,14 @@ TotalCellCounter = 0_Lng
         ! The upstream BC of the reach is a node if BCNodeI = 0. We find the upstream reaches in
         ! this case. The upstream reaches are need for junction simulation
         Upstream_Reaches(1:2) = -1_Lng
-        Upstream_Reaches(1  ) = -1_Lng
+        Downstream_Reaches(1) = -1_Lng
           if (BCNodeI == 0) then
-            Upstream_Reaches(1) =
+              ! loop over the total number of reaches attached the upstream node
+              do ii = 1, ReachAttachedToNode(NodeI, 1)
+                if (ReachAttachedToNode(NodeI, ii+1) /= i_reach)  Upstream_Reaches(counter) = ReachAttachedToNode(NodeI, ii+1)
+              end do
+
+            Upstream_Reaches(1) = ReachAttachedToNode(NodeI,    )
             Upstream_Reaches(2) =
           end if
 
