@@ -358,6 +358,11 @@ integer(kind=Lng), dimension (Geometry%Base_Geometry%size) :: NReachOnRanks
 ! Upstream_Reaches holds the upstream reaches, of a node, for each reach. We need this for
 ! junction simulations. As of now, we assume there are only two reaches at the upstream. <modify>
 integer(kind=Lng), dimension (2) :: Upstream_Reaches
+integer(kind=Lng), dimension (1) :: Downstream_Reaches
+
+! This array holds all the reach numbers attached to each nodes. The assumption is that at most 4
+! reaches are attached. This needs to be modified. <modify>
+integer(kind=Lng), dimension (Geometry%Base_Geometry%NoNodes,4) :: ReachAttachedToNode
 
 ! - character variables ---------------------------------------------------------------------------
 Character(kind = 1, len = 20) :: IndexRank ! Rank no in the Char. fmt to add to the input file Name
@@ -372,7 +377,6 @@ type(NodeConncetivity_tp), pointer :: Temp ! This is a temporary type to create 
 write(*,        fmt="(A)") " subroutine < Network_Partitioner_Sub >: "
 write(FileInfo, fmt="(A)") " subroutine < Network_Partitioner_Sub >: "
 
-
 ! If the number of partitions are more than one, we use METIS to partition the network, otherwise,
 ! if there are only one partition, we directly write the information.
 
@@ -383,8 +387,8 @@ write(*,        fmt="(A)") " calculating the average number of cells on each ran
 write(FileInfo, fmt="(A)") " calculating the average number of cells on each rank ... "
 
 chunk(:,:) = 0_Lng
-remainder = mod(Discretization%NCells, Geometry%Base_Geometry%size)
-chunk(:,1)  = (Discretization%NCells - remainder)/Geometry%Base_Geometry%size
+remainder  = mod(Discretization%NCells, Geometry%Base_Geometry%size)
+chunk(:,1) = (Discretization%NCells - remainder)/Geometry%Base_Geometry%size
 
   do i = 1_Shrt, remainder
     chunk(i,1) = chunk(i,1) + 1
@@ -416,8 +420,8 @@ write(FileInfo, fmt="(A)") " Reach connectivities ... "
 
   ! This loop figures out all connectivities between nodes
   do i_reach = 1_Lng, Geometry%Base_Geometry%NoReaches
-    NodeI = Geometry%network(i_reach)%ReachNodes(1)
-    NodeII= Geometry%network(i_reach)%ReachNodes(2)
+    NodeI   = Geometry%network(i_reach)%ReachNodes(1)
+    NodeII  = Geometry%network(i_reach)%ReachNodes(2)
     Weights = Geometry%network(i_reach)%NCells_Reach
 
     allocate(Temp)
@@ -471,7 +475,7 @@ this%part(:)          = -1_Shrt
     !  end if
 
     !----------------------------------------------------------------------------------------------
-    ! C style with fortran arrays ----
+    ! C style with Fortran arrays ----
     NodeLocation = 0
     counter      = 0_Lng ! We go with the C style numbering- Arrays start from zero.
       do i_node = 1_Lng, Geometry%Base_Geometry%NoNodes
@@ -509,7 +513,7 @@ this%part(:)          = -1_Shrt
         Temp => NodeConnectivity(i_node)%head
           do
             if (.not.associated(Temp)) exit
-           counter = counter+1_Lng
+            counter = counter+1_Lng
             this%adjncy_target(counter) = Temp%nodes
             this%adjwgt_target(counter) = Temp%cells
             Temp => Temp%next
@@ -820,14 +824,18 @@ TotalCellCounter = 0_Lng
             end if
           end if
 
-          ! The upstream BC of the reach is a node if BCNodeI = 0. We find the upstream reaches in
-          ! this case. The upstream reaches are need for junction simulation
-          Upstream_Reaches(1:2) = -1_Lng
-            if (BCNodeI == 0) then
-              Upstream_Reaches(1) =
-            end if
+        ! The upstream BC of the reach is a node if BCNodeI = 0. We find the upstream reaches in
+        ! this case. The upstream reaches are need for junction simulation
+        Upstream_Reaches(1:2) = -1_Lng
+        Upstream_Reaches(1  ) = -1_Lng
+          if (BCNodeI == 0) then
+            Upstream_Reaches(1) =
+            Upstream_Reaches(2) =
+          end if
 
-
+          if (BCNodeI == 0) then
+            Downstream_Reaches(1) =
+          end if
 
         ReachCounter = ReachCounter + 1_Lng
 
