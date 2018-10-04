@@ -190,8 +190,8 @@ type METIS_var5_tp
 end type METIS_var5_tp
 
 type partitioner_tp(edges, nodes)
-  integer(kind=Shrt), len :: edges  ! number of edges in the network
-  integer(kind=Shrt), len :: nodes  ! number of nodes in the network
+  integer(kind=Shrt), len :: edges  ! number of edges in the network - reaches
+  integer(kind=Shrt), len :: nodes  ! number of nodes in the network - junction
 
   integer :: ncon    = 1_shrt ! Temp variable for graph partitioning.
   integer :: wgtflag = 1_shrt ! Weights on the edges only (vwgts = NULL)
@@ -210,8 +210,10 @@ type partitioner_tp(edges, nodes)
   ! This reach holds information about each reach after partitioning. For each reach, the first and
   ! the second col, holds the rank in which the first and the second node of this reach belongs to,
   ! respectively. The third and fourth col, holds the total number of cells corresponding to each
-  ! node. For example, (to be continued) <modify>
-  integer(kind=Lng), dimension(edges,4) :: ReachPartition
+  ! node. The 5th and 6th cols indicate the local reach number on the rank. If both node are on the
+  ! same rank, then we have a local number in the 5th col only, but if the reach is shared between
+  ! For example, ... (to be continued) <modify>
+  integer(kind=Lng), dimension(edges,6) :: ReachPartition
 
   ! We go with the C style numbering- Arrays start from zero.
   !integer, dimension(0:nodes-1)    :: vwgt_target   ! Read METIS manual for details.
@@ -311,6 +313,14 @@ integer(kind=Shrt) :: CommRank      ! indicates the rank number that a reach nee
                                     ! with, i.e., if the reach is divided between two ranks.
                                     ! Important note: Based on the method that we partition the
                                     !                 network, a reach is either on one rank or two
+
+! The assumption is that there are at most three reaches at each junction. Thus, there are two
+! upstream reaches (ReachLeft and ReachRight) and one downstream reach (ReachBottom). In order to
+! define the local reach numbering for these three reaches at each junction, we define the
+! following variables.
+integer(kind=Lng)  :: ReachLeft     ! The local reach number on the rank for one of the upstream reaches at the junction
+integer(kind=Lng)  :: ReachRight    ! The local reach number on the rank for the other the upstream reaches at the junction
+integer(kind=Lng)  :: ReachBottom   ! The local reach number on the rank for downstream reach at the junction
 
 integer(kind=Lng)  :: CellCounter   ! Counter for cells on each partition
 integer(kind=Lng)  :: TotalCellCounter ! Counter for the total number of cells
@@ -700,8 +710,14 @@ write(FileInfo,*) " Analyzing the partitioned network ... "
 
       NReachOnRanks(this%ReachPartition(i_reach,1)) = this%ReachPartition(i_reach,1) + 1_Lng
 
+      ! no cells from this reach on this rank (the entire reach on one rank)
       this%ReachPartition(i_reach,3) = Discretization%DiscretizedReach(i_reach)%NCells_reach
       this%ReachPartition(i_reach,4) = 0
+
+      ! Local reach numbering on the rank which the reach belongs to.
+      this%ReachPartition(i_reach,5) = NReachOnRanks(this%ReachPartition(i_reach,1))
+      this%ReachPartition(i_reach,6) = NReachOnRanks(this%ReachPartition(i_reach,1))
+
       chunk(this%part(NodeI),2) = chunk(this%part(NodeI),2) + this%ReachPartition(i_reach,3)
 
     ! The case that the reach seats on two different ranks
@@ -710,18 +726,28 @@ write(FileInfo,*) " Analyzing the partitioned network ... "
       NReachOnRanks(this%ReachPartition(i_reach,1)) = this%ReachPartition(i_reach,1) + 1_Lng
       NReachOnRanks(this%ReachPartition(i_reach,2)) = this%ReachPartition(i_reach,2) + 1_Lng
 
+      ! Local reach numberings on the ranks which the reach belongs to.
+      this%ReachPartition(i_reach,5) = NReachOnRanks(this%ReachPartition(i_reach,1))
+      this%ReachPartition(i_reach,6) = NReachOnRanks(this%ReachPartition(i_reach,2))
+
         if (mod(Discretization%DiscretizedReach(i_reach)%NCells_reach,2)==0 ) then
           ! even no. of cells in this reach:
           tempCell = Discretization%DiscretizedReach(i_reach)%NCells_reach /2_Lng
+
+          ! no. of cells from this reach on this rank(upstream is on one rank and downstream is on another)
           this%ReachPartition(i_reach,3) = tempCell
           this%ReachPartition(i_reach,4) = tempCell
+
           chunk(this%part(NodeI), 3) = chunk(this%part(NodeI), 3) + tempCell
           chunk(this%part(NodeII),3) = chunk(this%part(NodeII),3) + tempCell
         else
           ! odd no. of cells in this reach
           tempCell = (Discretization%DiscretizedReach(i_reach)%NCells_reach -1_Lng)/2_Lng
+
+          ! no. of cells from this reach on this rank(upstream is on one rank and downstream is on another)
           this%ReachPartition(i_reach,3) = tempCell
           this%ReachPartition(i_reach,4) = tempCell+1_Lng
+
           chunk(this%part(NodeI),3)  = chunk(this%part(NodeI), 3) + tempCell
           chunk(this%part(NodeII),3) = chunk(this%part(NodeII),3) + tempCell+1_Lng
         end if
@@ -854,12 +880,33 @@ TotalCellCounter = 0_Lng
 
         ReachCounter = ReachCounter + 1_Lng
 
-        write(unit=UnFile, fmt="(7I12, 3F35.20)", advance='yes', asynchronous='no', &
+        ! figuring out the local reach number for the upstream reaches and the downstream reaches of each reach
+        ! upstream reach number 1 (ReachLeft)
+        if (ReachAttachedToNode(NodeI, 7) = -1_Lng) then  ! There is no upstream reach for this node (a boundary condition node)
+          ReachLeft = -1_Lng
+        else  ! There is an upstream reach for this junction.
+          ReachLeft   = this%ReachPartition(ReachAttachedToNode(NodeI,  7), 6)
+        end if
+        ! upstream reach number 2 (ReachRight)
+        if (ReachAttachedToNode(NodeI, 8) = -1_Lng) then  ! There is no upstream reach for this node (a boundary condition node)
+          ReachRight = -1_Lng
+        else  ! There is an upstream reach for this junction.
+          ReachRight = this%ReachPartition(ReachAttachedToNode(NodeI,  8), 6)
+        end if
+        ! downstream reach (ReachBottom)
+        if (ReachAttachedToNode(NodeII, 3) = -1_Lng) then  ! There is no downstream reach for this node (a boundary condition node)
+          ReachBottom = -1_Lng
+        else  ! There is an upstream reach for this junction.
+          ReachBottom = this%ReachPartition(ReachAttachedToNode(NodeI,  3), 5)
+        end if
+
+        write(unit=UnFile, fmt="(12I12, 3F35.20)", advance='yes', asynchronous='no', &
               iostat=IO_write, err=1006)                                            &
               i_reach, Communication, CommRank, BCNodeI, BCNodeII,                  &
               RangeCell_II - RangeCell_I + 1_Lng,                                   & !total no. cells
-              ReachAttachedToNode(NodeI,  3), ReachAttachedToNode(NodeI, 4),        &
-              ReachAttachedToNode(NodeII, 7),                                       &
+              ReachAttachedToNode(NodeI,  7), ReachAttachedToNode(NodeI, 8),        & ! the upstream reaches, global numbering
+              ReachAttachedToNode(NodeII, 3),                                       & ! the downstream reach, global numbering
+              ReachLeft, ReachRight, ReachBottom,                                   & ! local reach numbering of upstream and downstream reaches of this particular reach.
               Discretization%DiscretizedReach(i_reach)%ReachManning,                &
               Discretization%DiscretizedReach(i_reach)%ReachWidthCell,              &
               Discretization%DiscretizedReach(i_reach)%CellPorjectionLength
