@@ -77,7 +77,7 @@ type DiscretizedReach_tp
                                              !  1 inlet BC, 2 outlet BC
 
   real(kind=DBL) :: ReachManning         = 0.0_dbl ! the Manning's number of each cell
-  real(kind=DBL) :: ReachWidthCell       = 0.0_dbl ! the Manning's number of each cell
+  real(kind=DBL) :: ReachWidthCell       = 0.0_dbl ! the Width a the reach, the assumption is that the width of the reach is constant
   real(kind=DBL) :: CellPorjectionLength = 0.0_dbl ! the length of each cell in the horizontal dir.
 
   real(kind=DBL), allocatable, dimension(:) :: LengthCell     ! the length of each cell

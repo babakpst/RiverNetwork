@@ -213,6 +213,9 @@ integer(kind=Lng)  :: i_steps   ! loop index over the number steps
 integer(kind=Lng)  :: NSteps    ! Total number of steps for time marching
 integer(kind=Lng)  :: i_reach   ! loop index over the reaches
 integer(kind=Lng)  :: Couter_ReachCut ! We use this var to manage send/receive requests
+integer(kind=Lng)  :: UpstreamReachNumLeft ! The local reach number of the upstream reach attached to the current reach, left
+integer(kind=Lng)  :: UpstreamReachNumRight ! The local reach number of the upstream reach attached to the current reach, right
+integer(kind=Lng)  :: DownstreamReachNum ! The local reach number of the downstream reach attached to the current reach
 
 
 integer(kind=Smll) :: ERR_Alloc, ERR_DeAlloc ! Allocating and DeAllocating errors
@@ -310,12 +313,20 @@ Couter_ReachCut = 0_Lng
 ! The ghost cells are located at the junctions, or the upstream node, or at the downstream node.
   do i_reach =1, this%Model%TotalNumOfReachesOnThisRank
 
+
+    NCellsOnTheReach = this%Model%DiscretizedReach(i_reach)%NCells_reach
+
     ! initialize the height part of the solution at time-step 0/ except the ghost cells.
     ! This needs to be <modify>ied, if we have a different strategy
-    Solution%UU(1:this%Model%DiscretizedReach(i_reach)%NCells_reach)%U(1) = AnalysisInfo%CntrlV
+    Solution(i_reach)%UU(1:NCellsOnTheReach)%U(1) = AnalysisInfo%CntrlV
                                                                              !-this%Model%ZCell(:)
     ! initialize the velocity (uh) part of the solution at time-step 0/ except the ghost cells.
-    Solution%UU(:)%U(2) = 0.0_Dbl
+    Solution(i_reach)%UU(:)%U(2) = 0.0_Dbl
+
+
+    UpstreamReachNumLeft   = this%Model%DiscretizedReach(i_reach)%UpstreamReaches(1,2)
+    UpstreamReachNumRight  = this%Model%DiscretizedReach(i_reach)%UpstreamReaches(2,2)
+    DownstreamReachNum     = this%Model%DiscretizedReach(i_reach)%DownstreamReaches(1,2)
 
       ! working on the ghost cells, or on the junction nodes, for each reach
       if (this%Model%DiscretizedReach(i_reach)%Communication == -1_Tiny) then
@@ -333,35 +344,18 @@ Couter_ReachCut = 0_Lng
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeI == 0_tiny) then
             ! if the upstream node is a junction, no BC. In this case, we need to decide about the
             ! node based on the junction modeling.
-            junction(AnalysisInfo%Junction_Model, &
+            Junction_simulation_flow_combination_upstream(AnalysisInfo%Junction_Model,          &
 
-                    Width_LeftReach, Width_LeftReach, Width_BottomReach, &
-                    LeftReach%UU(n), RightReach%UU(n), BottomReach%UU(1), &
-                    LeftReach%UU(n+1), LeftReach%UU(n+2),
-                    RightReach%UU(n+1), RightReach%UU(n+2),
-                    BottomReach%UU(0), BottomReach%UU(-1))
+                    this%Model%DiscretizedReach(UpstreamReachNumLeft)%ReachWidthCell,  &
+                    this%Model%DiscretizedReach(UpstreamReachNumRight)%ReachWidthCell, &
+                    this%Model%DiscretizedReach(i_reach)%ReachWidthCell,    &
 
+                    Solution(UpstreamReachNumLeft)%UU(this%Model%DiscretizedReach(UpstreamReachNumLeft)%NCells_reach),               &
+                    Solution(UpstreamReachNumRight)%UU(this%Model%DiscretizedReach(UpstreamReachNumRight)%NCells_reach),              &
+                    Solution(i_reach)%UU(1),                                &
 
-                    this%Model%DiscretizedReach(i_reach)%LengthCell
-
-
-
-
-
-subroutine Junction_simulation_flow_combination( &   ! <delete>
-             Junction_Model, &
-             Width_LeftReach, Width_LeftReach, Width_BottomReach, &
-             ReachLeft_Cell_n, ReachRight_Cell_n, ReachBottom_Cell_1, &
-             ReachLeft_Cell_np1, ReachLeft_Cell_np2,   &
-             ReachRight_Cell_np1, ReachRight_Cell_np2, &
-             ReachBottom_Cell_0, ReachBottom_Cell_n1)
-
-
-
-
-
-
-
+                    Solution(i_reach)%UU(0),                                &
+                    Solution(i_reach)%UU(-1))
 
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeI == 1_tiny) then
             ! if the upstream node is a boundary condition/inlet
@@ -388,7 +382,17 @@ subroutine Junction_simulation_flow_combination( &   ! <delete>
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeII == 0_tiny) then
             ! if the upstream node is a junction, no BC. In this case, we need to decide about the
             ! node based on the junction modeling.
-            junction() ! <modify>
+            Junction_simulation_flow_combination_upstream(AnalysisInfo%Junction_Model,   &
+                    this%Model%DiscretizedReach(i_reach)%ReachWidthCell,                 &
+                    this%Model%DiscretizedReach(DownstreamReachNum)%ReachWidthCell,      &
+
+                    Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach),               &
+                    Solution(DownstreamReachNum)%UU(1),                                &
+                    Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach+1),               &
+                    Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach+2))
+
+
+
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeII == 1_tiny) then
             ! if the downstream node cannot be an inlet boundary condition
             ! <modify>
@@ -1492,12 +1496,10 @@ end subroutine Inverse
 !
 !##################################################################################################
 
-subroutine Junction_simulation_flow_combination( &
+subroutine Junction_simulation_flow_combination_upstream( &
              Junction_Model, &
-             Width_LeftReach, Width_LeftReach, Width_BottomReach, &
+             Width_LeftReach, Width_RightReach, Width_BottomReach, &
              ReachLeft_Cell_n, ReachRight_Cell_n, ReachBottom_Cell_1, &
-             ReachLeft_Cell_np1, ReachLeft_Cell_np2,   &
-             ReachRight_Cell_np1, ReachRight_Cell_np2, &
              ReachBottom_Cell_0, ReachBottom_Cell_n1)
 
 ! Libraries =======================================================================================
@@ -1513,7 +1515,7 @@ integer(kind=Smll)  :: Junction_Model ! 1 energy based junction method
                                      ! 2 momentum based junction method
 real(kind=Dbl) :: Width_LeftReach           ! The width of the left upstream reach
 
-real(kind=Dbl) :: W_RightReach          ! The width of the left upstream reach
+real(kind=Dbl) :: Width_RightReach          ! The width of the left upstream reach
 
 real(kind=Dbl) :: Width_BottomReach           ! The width of the left upstream reach
 
@@ -1528,13 +1530,6 @@ type(vector), intent(in) :: ReachLeft_Cell_n  ! Cell n of upstream left reach
 type(vector), intent(in) :: ReachRight_Cell_n !Cell n of upstream right reach
 type(vector), intent(in) :: ReachBottom_Cell_1  !Cell 1 of downstream bottom reach
 
-
-type(vector), intent(out) :: ReachLeft_Cell_np1  ! Cell n+1 of upstream left reach - output
-type(vector), intent(out) :: ReachLeft_Cell_np2  ! Cell n+2 of upstream left reach - output
-
-type(vector), intent(out) :: ReachRight_Cell_np1 !Cell n+1 of upstream right reach - output
-type(vector), intent(out) :: ReachRight_Cell_np2 !Cell n+2 of upstream right reach - output
-
 type(vector), intent(out) :: ReachBottom_Cell_0  !Cell 0 of downstream bottom reach - output
 type(vector), intent(out) :: ReachBottom_Cell_n1 !Cell -1 of downstream bottom reach - output
 
@@ -1544,17 +1539,12 @@ type(vector), intent(out) :: ReachBottom_Cell_n1 !Cell -1 of downstream bottom r
 ! - real variables --------------------------------------------------------------------------------
 real(kind=Dbl) :: u_Left, h_Left   ! velocity and height at the bottom cell of the Left reach
                                    ! -upstream, used to calculate the Froude number
+
 real(kind=Dbl) :: u_Right, h_Right ! velocity and height at the bottom cell of the Right reach
                                    ! -upstream, used to calculate the Froude number
 
 real(kind=Dbl) :: u_Bottom, h_Bottom ! velocity and height at the top cell of the bottom reach
                                      ! -downstream, used to calculate the Froude number
-
-real(kind=Dbl) :: h_upstream_Left  ! the estimated height of the water at the left upstream reach
-                                   ! based on energy/momentum equation.
-
-real(kind=Dbl) :: h_upstream_Right ! the estimated height of the water at the right upstream reach
-                                   ! based on energy/momentum equation.
 
 real(kind=Dbl) :: FroudeLeft   ! Froude number at the bottom cell of the Left reach-upstream
 real(kind=Dbl) :: FroudeRight  ! Froude number at the bottom cell of the Right reach-upstream
@@ -1586,28 +1576,8 @@ FroudeBottom = u_Bottom / dsqrt(Gravity*h_Bottom)
 
     ! As of know we only have the sub-critical option
 
-    ! computing the height of water at the left upstream reach based on the conservation of energy
-    h_upstream_Left = h_Bottom + u_Bottom**2./(2.0_Dbl*Gravity) - u_Left**2./(2.0_Dbl*Gravity)
-
-    ! computing the height of water at the right upstream reach based on the conservation of energy
-    h_upstream_Right = h_Bottom + u_Bottom**2./(2.0_Dbl*Gravity) - u_Right**2./(2.0_Dbl*Gravity)
-
     ! Final values for the ghost cells:
-    ! ghost cells for the left upstream reach
-    ReachLeft_Cell_np1%U(1)  = h_upstream_Left          ! h height
-    ReachLeft_Cell_np1%U(2)  = ReachLeft_Cell_n%U(2)    ! uh
-
-    ReachLeft_Cell_np2%U(1)  = h_upstream_Left          ! height
-    ReachLeft_Cell_np2%U(2)  = ReachLeft_Cell_n%U(2)    ! uh
-
-    ! ghost cells for the right upstream reach
-    ReachRight_Cell_np1%U(1) = h_upstream_Right         ! height
-    ReachRight_Cell_np1%U(2) = ReachRight_Cell_n%U(2)   ! uh
-
-    ReachRight_Cell_np2%U(1) = h_upstream_Right         ! height
-    ReachRight_Cell_np2%U(2) = ReachRight_Cell_n%U(2)   ! uh
-
-    ! ghost cells for the bottom downstream reach
+    ! ghost cells
     ReachBottom_Cell_n1%U(1) = h_Bottom      ! height
     ReachBottom_Cell_n1%U(2) = (Width_LeftReach*u_Left*h_Left + W_RightReach*u_Right*h_Right)/Width_BottomReach  ! uh
 
@@ -1769,7 +1739,254 @@ FroudeBottom = u_Bottom / dsqrt(Gravity*h_Bottom)
 !write(*,       *) " end subroutine < Inverse >"
 !write(FileInfo,*) " end subroutine < Inverse >"
 return
-end subroutine Junction_simulation_flow_combination
+end subroutine Junction_simulation_flow_combination_upstream
+
+
+subroutine Junction_simulation_flow_combination_downstream( &
+             Junction_Model, &
+             Width_LeftReach, Width_BottomReach, &
+             ReachLeft_Cell_n, ReachBottom_Cell_1, &
+             ReachLeft_Cell_np1, ReachLeft_Cell_np2)
+
+! Libraries =======================================================================================
+
+! User defined modules ============================================================================
+
+
+implicit none
+
+! Global variables ================================================================================
+! - integer variables -----------------------------------------------------------------------------
+integer(kind=Smll)  :: Junction_Model ! 1 energy based junction method
+                                     ! 2 momentum based junction method
+real(kind=Dbl) :: Width_LeftReach           ! The width of the left upstream reach
+
+real(kind=Dbl) :: Width_BottomReach           ! The width of the left upstream reach
+
+! - complex variables -----------------------------------------------------------------------------
+! - integer Arrays --------------------------------------------------------------------------------
+! - real Arrays -----------------------------------------------------------------------------------
+real(kind=Dbl),  intent(in),  dimension (:,:)  ::
+real(kind=Dbl),  intent(out), dimension (:,:)  ::
+
+! - types -----------------------------------------------------------------------------------------
+type(vector), intent(in) :: ReachLeft_Cell_n  ! Cell n of upstream left reach
+type(vector), intent(in) :: ReachBottom_Cell_1  !Cell 1 of downstream bottom reach
+
+type(vector), intent(out) :: ReachLeft_Cell_np1  ! Cell n+1 of upstream left reach - output
+type(vector), intent(out) :: ReachLeft_Cell_np2  ! Cell n+2 of upstream left reach - output
+
+type(vector), intent(out) :: ReachBottom_Cell_0  !Cell 0 of downstream bottom reach - output
+type(vector), intent(out) :: ReachBottom_Cell_n1 !Cell -1 of downstream bottom reach - output
+
+! Local variables =================================================================================
+! - integer variables -----------------------------------------------------------------------------
+! - real variables --------------------------------------------------------------------------------
+! - real variables --------------------------------------------------------------------------------
+real(kind=Dbl) :: u_Left, h_Left   ! velocity and height at the bottom cell of the Left reach
+                                   ! -upstream, used to calculate the Froude number
+real(kind=Dbl) :: u_Bottom, h_Bottom ! velocity and height at the top cell of the bottom reach
+                                     ! -downstream, used to calculate the Froude number
+
+real(kind=Dbl) :: h_upstream_Left  ! the estimated height of the water at the left upstream reach
+                                   ! based on energy/momentum equation.
+
+real(kind=Dbl) :: FroudeLeft   ! Froude number at the bottom cell of the Left reach-upstream
+real(kind=Dbl) :: FroudeBottom ! Froude number at the top cell of the bottom reach-downstream
+
+! - real Arrays -----------------------------------------------------------------------------------
+
+
+! code ============================================================================================
+! defining the velocity and the height at first/last cells
+h_Left   =  ReachLeft_Cell_n%U(1)
+u_Left   =  ReachLeft_Cell_n%U(2)/ReachLeft_Cell_n%U(1)
+
+h_Bottom = ReachBottom_Cell_1%U(1)
+u_Bottom = ReachBottom_Cell_1%U(2)/ReachBottom_Cell_1%U(1)
+
+! Calculating the flow regime in each reach based on the Froude number
+!   if Fr no. in all reaches < 1: sub-critical flow
+!   if Fr no. in all reaches > 1: super-critical flow
+!   if Fr no. are diff in each reach: mixed regime
+FroudeLeft   = u_Left   / dsqrt(Gravity*h_Left)
+FroudeBottom = u_Bottom / dsqrt(Gravity*h_Bottom)
+
+  if Junction_Model == 1 then ! energy based junction method
+
+    ! As of know we only have the sub-critical option
+
+    ! computing the height of water at the left upstream reach based on the conservation of energy
+    h_upstream_Left = h_Bottom + u_Bottom**2./(2.0_Dbl*Gravity) - u_Left**2./(2.0_Dbl*Gravity)
+
+    ! computing the height of water at the right upstream reach based on the conservation of energy
+    h_upstream_Right = h_Bottom + u_Bottom**2./(2.0_Dbl*Gravity) - u_Right**2./(2.0_Dbl*Gravity)
+
+    ! Final values for the ghost cells:
+    ! ghost cells for the left upstream reach
+    ReachLeft_Cell_np1%U(1)  = h_upstream_Left          ! h height
+    ReachLeft_Cell_np1%U(2)  = ReachLeft_Cell_n%U(2)    ! uh
+
+    ReachLeft_Cell_np2%U(1)  = h_upstream_Left          ! height
+    ReachLeft_Cell_np2%U(2)  = ReachLeft_Cell_n%U(2)    ! uh
+
+!    ! Indicating the flow regime based on the Froude number- all less than one, sub-critical flow
+    if (FroudeLeft < 1.0_dbl) .and. (FroudeRight < 1.0_dbl) .and. (FroudeBottom < 1.0_dbl) then
+      ! case 1: Subcritical flow
+      print*,"sub-critical flow"
+
+
+!      ! Final values for the ghost cells:
+!      LeftReach%UU(n+1)%U(1)  =
+!      LeftReach%UU(n+1)%U(2)  =
+!
+!      LeftReach%UU(n+2)%U(1)  =
+!      LeftReach%UU(n+2)%U(2)  =
+!
+!      RightReach%UU(n+1)%U(1) =
+!      RightReach%UU(n+1)%U(2) =
+!
+!      RightReach%UU(n+2)%U(1) =
+!      RightReach%UU(n+2)%U(2) =
+!
+!      BottomReach%UU(-1)%U(1) =
+!      BottomReach%UU(-1)%U(2) =
+!
+!      BottomReach%UU(0)%U(1)  =
+!      BottomReach%UU(0)%U(2)  =
+!
+    ! Indicating the flow regime based on the Froude number- all Fr > 1, super-critical flow
+    else if (FroudeLeft > 1.0_dbl) .and. (FroudeRight > 1.0_dbl) .and. (FroudeBottom > 1.0_dbl) then
+      ! case 2: Supercritical flow
+      print*,"super-critical flow"
+
+!      ! Final values for the ghost cells:
+!      LeftReach%UU(n+1)%U(1)  =
+!      LeftReach%UU(n+1)%U(2)  =
+!
+!      LeftReach%UU(n+2)%U(1)  =
+!      LeftReach%UU(n+2)%U(2)  =
+!
+!      RightReach%UU(n+1)%U(1) =
+!      RightReach%UU(n+1)%U(2) =
+!
+!      RightReach%UU(n+2)%U(1) =
+!      RightReach%UU(n+2)%U(2) =
+!
+!      BottomReach%UU(-1)%U(1) =
+!      BottomReach%UU(-1)%U(2) =
+!
+!      BottomReach%UU(0)%U(1)  =
+!      BottomReach%UU(0)%U(2)  =
+!
+    else
+      ! case 3: Mixed flow regime
+      print*,"mixed regime flow"
+!
+!      ! Final values for the ghost cells:
+!      LeftReach%UU(n+1)%U(1)  =
+!      LeftReach%UU(n+1)%U(2)  =
+!
+!      LeftReach%UU(n+2)%U(1)  =
+!      LeftReach%UU(n+2)%U(2)  =
+!
+!      RightReach%UU(n+1)%U(1) =
+!      RightReach%UU(n+1)%U(2) =
+!
+!      RightReach%UU(n+2)%U(1) =
+!      RightReach%UU(n+2)%U(2) =
+!
+!      BottomReach%UU(-1)%U(1) =
+!      BottomReach%UU(-1)%U(2) =
+!
+!      BottomReach%UU(0)%U(1)  =
+!      BottomReach%UU(0)%U(2)  =
+!
+!
+    end if
+
+  else if Junction_Model == 2 then  ! Momentum based junction method
+
+! <modify>
+! this section later. As of now, we only have the energy based option for junction simulation
+
+!    ! Indicating the flow regime based on the Froude number- all less than one, sub-critical flow
+!    if (FroudeLeft < 1.0_dbl) .and. (FroudeRight < 1.0_dbl) .and. (FroudeBottom < 1.0_dbl) then
+!      ! case 1: Subcritical flow
+!
+!      ! Final values for the ghost cells:
+!      LeftReach%UU(n+1)%U(1)  =
+!      LeftReach%UU(n+1)%U(2)  =
+!
+!      LeftReach%UU(n+2)%U(1)  =
+!      LeftReach%UU(n+2)%U(2)  =
+!
+!      RightReach%UU(n+1)%U(1) =
+!      RightReach%UU(n+1)%U(2) =
+!
+!      RightReach%UU(n+2)%U(1) =
+!      RightReach%UU(n+2)%U(2) =
+!
+!      BottomReach%UU(-1)%U(1) =
+!      BottomReach%UU(-1)%U(2) =
+!
+!      BottomReach%UU(0)%U(1)  =
+!      BottomReach%UU(0)%U(2)  =
+!
+!    ! Indicating the flow regime based on the Froude number- all Fr > 1, super-critical flow
+!    else if (FroudeLeft > 1.0_dbl) .and. (FroudeRight > 1.0_dbl) .and. (FroudeBottom > 1.0_dbl) then
+!      ! case 2: Supercritical flow
+!
+!      ! Final values for the ghost cells:
+!      LeftReach%UU(n+1)%U(1)  =
+!      LeftReach%UU(n+1)%U(2)  =
+!
+!      LeftReach%UU(n+2)%U(1)  =
+!      LeftReach%UU(n+2)%U(2)  =
+!
+!      RightReach%UU(n+1)%U(1) =
+!      RightReach%UU(n+1)%U(2) =
+!
+!      RightReach%UU(n+2)%U(1) =
+!      RightReach%UU(n+2)%U(2) =
+!
+!      BottomReach%UU(-1)%U(1) =
+!      BottomReach%UU(-1)%U(2) =
+!
+!      BottomReach%UU(0)%U(1)  =
+!      BottomReach%UU(0)%U(2)  =
+!
+!    else
+!      ! case 3: Mixed flow regime
+!
+!      ! Final values for the ghost cells:
+!      LeftReach%UU(n+1)%U(1)  =
+!      LeftReach%UU(n+1)%U(2)  =
+!
+!      LeftReach%UU(n+2)%U(1)  =
+!      LeftReach%UU(n+2)%U(2)  =
+!
+!      RightReach%UU(n+1)%U(1) =
+!      RightReach%UU(n+1)%U(2) =
+!
+!      RightReach%UU(n+2)%U(1) =
+!      RightReach%UU(n+2)%U(2) =
+!
+!      BottomReach%UU(-1)%U(1) =
+!      BottomReach%UU(-1)%U(2) =
+!
+!      BottomReach%UU(0)%U(1)  =
+!      BottomReach%UU(0)%U(2)  =
+!
+!    end if
+
+  end if
+
+!write(*,       *) " end subroutine < Inverse >"
+!write(FileInfo,*) " end subroutine < Inverse >"
+return
+end subroutine Junction_simulation_flow_combination_downstream
+
 
 end module Solver_mod
 
