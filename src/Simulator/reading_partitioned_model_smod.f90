@@ -45,8 +45,6 @@ read(unit=UnFile, fmt="(4I23)", advance='yes', asynchronous='no', iostat=IO_read
      this%TotalNumOfCellsOnThisRank, this%TotalNumOfReachesOnThisRank, &
      this%TotalNumOfCellsInTheNetwork, this%TotalNumOfReachesInTheNetwork
 
-
-
 write(*,        fmt="(A)") " -Allocating arrays for the discretized network ..."
 write(FileInfo, fmt="(A)") " -Allocating arrays for the discretized network ..."
 
@@ -59,12 +57,21 @@ this%NCutsOnRanks = 0_Lng  ! Initializing number of reach cuts
 
     read(unit=UnFile, fmt="(2I23)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
          end=1004) &
-         this%DiscretizedReach(i_reach)%ReachNumber,    &!reach number in the unpartitioned network
+         this%DiscretizedReach(i_reach)%ReachNumber,    &!reach number in the unpartitioned network- global reach number
          this%DiscretizedReach(i_reach)%Communication,  &
          this%DiscretizedReach(i_reach)%CommRank,       &
          this%DiscretizedReach(i_reach)%BCNodeI,        &
          this%DiscretizedReach(i_reach)%BCNodeII,       &
          this%DiscretizedReach(i_reach)%NCells_reach,   &
+
+         this%DiscretizedReach(i_reach)%UpstreamReaches(1,1),   &
+         this%DiscretizedReach(i_reach)%UpstreamReaches(2,1),   &
+         this%DiscretizedReach(i_reach)%DownstreamReaches(1,1),   &
+
+         this%DiscretizedReach(i_reach)%UpstreamReaches(1,2),   &
+         this%DiscretizedReach(i_reach)%UpstreamReaches(2,2),   &
+         this%DiscretizedReach(i_reach)%DownstreamReaches(1,2),   &
+
          this%DiscretizedReach(i_reach)%ReachManning,   &
          this%DiscretizedReach(i_reach)%ReachWidthCell, &
          this%DiscretizedReach(i_reach)%CellPorjectionLength

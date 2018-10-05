@@ -24,7 +24,7 @@
 !
 ! File version $Id $
 !
-! Last update: 10/01/2018
+! Last update: 10/03/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! - Solver_1D_with_Limiter_sub: Solves the 1D shallow water equation, with limiter.
@@ -334,12 +334,32 @@ Couter_ReachCut = 0_Lng
             ! if the upstream node is a junction, no BC. In this case, we need to decide about the
             ! node based on the junction modeling.
             junction(AnalysisInfo%Junction_Model, &
+
                     Width_LeftReach, Width_LeftReach, Width_BottomReach, &
                     LeftReach%UU(n), RightReach%UU(n), BottomReach%UU(1), &
-                    LeftReach%UU(n+1), LeftReach%UU(n+2),    RightReach%UU(n+1), RightReach%UU(n+2),    BottomReach%UU(0), BottomReach%UU(-1))
+                    LeftReach%UU(n+1), LeftReach%UU(n+2),
+                    RightReach%UU(n+1), RightReach%UU(n+2),
+                    BottomReach%UU(0), BottomReach%UU(-1))
 
 
-this%Model%DiscretizedReach(i_reach)%LengthCell
+                    this%Model%DiscretizedReach(i_reach)%LengthCell
+
+
+
+
+
+subroutine Junction_simulation_flow_combination( &   ! <delete>
+             Junction_Model, &
+             Width_LeftReach, Width_LeftReach, Width_BottomReach, &
+             ReachLeft_Cell_n, ReachRight_Cell_n, ReachBottom_Cell_1, &
+             ReachLeft_Cell_np1, ReachLeft_Cell_np2,   &
+             ReachRight_Cell_np1, ReachRight_Cell_np2, &
+             ReachBottom_Cell_0, ReachBottom_Cell_n1)
+
+
+
+
+
 
 
 
@@ -1749,7 +1769,7 @@ FroudeBottom = u_Bottom / dsqrt(Gravity*h_Bottom)
 !write(*,       *) " end subroutine < Inverse >"
 !write(FileInfo,*) " end subroutine < Inverse >"
 return
-end subroutine Junction
+end subroutine Junction_simulation_flow_combination
 
 end module Solver_mod
 

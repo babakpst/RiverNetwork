@@ -57,6 +57,19 @@ type DiscretizedReach_tp
                                              ! communicate with, i.e., if the reach is divided
                                              ! between two ranks.
 
+  integer(kind=Shrt) :: UpstreamReaches (2,2) ! This array holds the upstream reach number attached
+                                              ! the upstream node of this reach. The first col
+                                              ! holds the global reach number in the unpartitioned
+                                              ! network, and the second col holds the local reach
+                                              ! number on the rank
+
+
+  integer(kind=Shrt) :: DownstreamReaches (1,2)! This array holds the downstream reach number attached
+                                              ! the downstream node of this reach. The first col
+                                              ! holds the global reach number in the unpartitioned
+                                              ! network, and the second col holds the local reach
+                                              ! number on the rank
+
 
   integer(kind=tiny) :: BCNodeI  = -1_Shrt   ! the BC of the upstream node of the reach,
   integer(kind=tiny) :: BCNodeII = -1_Shrt   ! the BC of the downstream node of the reach,

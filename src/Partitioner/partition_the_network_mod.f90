@@ -902,8 +902,11 @@ TotalCellCounter = 0_Lng
 
         write(unit=UnFile, fmt="(12I12, 3F35.20)", advance='yes', asynchronous='no', &
               iostat=IO_write, err=1006)                                            &
-              i_reach, Communication, CommRank, BCNodeI, BCNodeII,                  &
-              RangeCell_II - RangeCell_I + 1_Lng,                                   & !total no. cells
+              i_reach,          & ! global reach number, before partitioning
+              Communication,    & ! indicates whether we will communicate with other ranks for this reach or not.
+              CommRank,         & ! if there is communication with other rank for this reach, this var indicates the rank number to which we need to communicate
+              BCNodeI, BCNodeII, & ! indicates the type of the boundary conditions of the two nodes attached to this reach.
+              RangeCell_II - RangeCell_I + 1_Lng,                                   & ! total no. cells
               ReachAttachedToNode(NodeI,  7), ReachAttachedToNode(NodeI, 8),        & ! the upstream reaches, global numbering
               ReachAttachedToNode(NodeII, 3),                                       & ! the downstream reach, global numbering
               ReachLeft, ReachRight, ReachBottom,                                   & ! local reach numbering of upstream and downstream reaches of this particular reach.
