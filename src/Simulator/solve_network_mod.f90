@@ -313,7 +313,6 @@ Couter_ReachCut = 0_Lng
 ! The ghost cells are located at the junctions, or the upstream node, or at the downstream node.
   do i_reach =1, this%Model%TotalNumOfReachesOnThisRank
 
-
     NCellsOnTheReach = this%Model%DiscretizedReach(i_reach)%NCells_reach
 
     ! initialize the height part of the solution at time-step 0/ except the ghost cells.
@@ -322,7 +321,6 @@ Couter_ReachCut = 0_Lng
                                                                              !-this%Model%ZCell(:)
     ! initialize the velocity (uh) part of the solution at time-step 0/ except the ghost cells.
     Solution(i_reach)%UU(:)%U(2) = 0.0_Dbl
-
 
     UpstreamReachNumLeft   = this%Model%DiscretizedReach(i_reach)%UpstreamReaches(1,2)
     UpstreamReachNumRight  = this%Model%DiscretizedReach(i_reach)%UpstreamReaches(2,2)
@@ -344,14 +342,14 @@ Couter_ReachCut = 0_Lng
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeI == 0_tiny) then
             ! if the upstream node is a junction, no BC. In this case, we need to decide about the
             ! node based on the junction modeling.
-            Junction_simulation_flow_combination_upstream(AnalysisInfo%Junction_Model,          &
+            call Junction_simulation_flow_combination_upstream(AnalysisInfo%Junction_Model,          &
 
                     this%Model%DiscretizedReach(UpstreamReachNumLeft)%ReachWidthCell,  &
                     this%Model%DiscretizedReach(UpstreamReachNumRight)%ReachWidthCell, &
                     this%Model%DiscretizedReach(i_reach)%ReachWidthCell,    &
 
-                    Solution(UpstreamReachNumLeft)%UU(this%Model%DiscretizedReach(UpstreamReachNumLeft)%NCells_reach),               &
-                    Solution(UpstreamReachNumRight)%UU(this%Model%DiscretizedReach(UpstreamReachNumRight)%NCells_reach),              &
+                    Solution(UpstreamReachNumLeft)%UU(this%Model%DiscretizedReach(UpstreamReachNumLeft)%NCells_reach),     &
+                    Solution(UpstreamReachNumRight)%UU(this%Model%DiscretizedReach(UpstreamReachNumRight)%NCells_reach),   &
                     Solution(i_reach)%UU(1),                                &
 
                     Solution(i_reach)%UU(0),                                &
@@ -382,16 +380,16 @@ Couter_ReachCut = 0_Lng
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeII == 0_tiny) then
             ! if the upstream node is a junction, no BC. In this case, we need to decide about the
             ! node based on the junction modeling.
-            Junction_simulation_flow_combination_upstream(AnalysisInfo%Junction_Model,   &
+            call Junction_simulation_flow_combination_downstream(AnalysisInfo%Junction_Model,   &
+
                     this%Model%DiscretizedReach(i_reach)%ReachWidthCell,                 &
                     this%Model%DiscretizedReach(DownstreamReachNum)%ReachWidthCell,      &
 
-                    Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach),               &
-                    Solution(DownstreamReachNum)%UU(1),                                &
-                    Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach+1),               &
+                    Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach),    &
+                    Solution(DownstreamReachNum)%UU(1),                                         &
+
+                    Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach+1),  &
                     Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach+2))
-
-
 
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeII == 1_tiny) then
             ! if the downstream node cannot be an inlet boundary condition
@@ -424,9 +422,21 @@ Couter_ReachCut = 0_Lng
             write(*,*) " Failed to proceed successfully. Check the solver subroutine!"
             stop
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeI == 0_tiny) then
-            ! if the upstream node is a junction, no BC. In this case, we need to decide about the
+            ! if the upstream node is a junction, not a BC. In this case, we need to decide about the
             ! node based on the junction modeling.
-            junction()  ! <modify>
+            call Junction_simulation_flow_combination_upstream(AnalysisInfo%Junction_Model,          &
+
+                    this%Model%DiscretizedReach(UpstreamReachNumLeft)%ReachWidthCell,  &
+                    this%Model%DiscretizedReach(UpstreamReachNumRight)%ReachWidthCell, &
+                    this%Model%DiscretizedReach(i_reach)%ReachWidthCell,    &
+
+                    Solution(UpstreamReachNumLeft)%UU(this%Model%DiscretizedReach(UpstreamReachNumLeft)%NCells_reach),     &
+                    Solution(UpstreamReachNumRight)%UU(this%Model%DiscretizedReach(UpstreamReachNumRight)%NCells_reach),   &
+                    Solution(i_reach)%UU(1),                                &
+
+                    Solution(i_reach)%UU(0),                                &
+                    Solution(i_reach)%UU(-1))
+
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeI == 1_tiny) then
             ! if the upstream node is a boundary condition/inlet
             call Impose_BC_1D_up_sub(Solution(i_reach)%UU(1)%U(1), this%Model%NCells,      &
@@ -517,9 +527,19 @@ Couter_ReachCut = 0_Lng
             write(*,*) " Failed to proceed successfully. Check the solver subroutine!"
             stop
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeII == 0_tiny) then
-            ! if the upstream node is a junction, no BC. In this case, we need to decide about the
+            ! if the downstream node is a junction, not a BC. In this case, we need to decide about the
             ! node based on the junction modeling.
-            junction()             ! <modify>
+            call Junction_simulation_flow_combination_downstream(AnalysisInfo%Junction_Model,   &
+
+                    this%Model%DiscretizedReach(i_reach)%ReachWidthCell,                 &
+                    this%Model%DiscretizedReach(DownstreamReachNum)%ReachWidthCell,      &
+
+                    Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach),    &
+                    Solution(DownstreamReachNum)%UU(1),                                         &
+
+                    Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach+1),  &
+                    Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach+2))
+
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeII == 1_tiny) then
             ! if the downstream node cannot be an inlet boundary condition
             ! <modify>
@@ -788,7 +808,19 @@ Results%ModelInfo = this%ModelInfo
           if (this%Model%DiscretizedReach(i_reach)%BCNodeI == 0_tiny) then
             ! if the upstream node is a junction, no BC. In this case, we need to decide about the
             ! node based on the junction modeling.
-            junction() ! <modify>
+            call Junction_simulation_flow_combination_upstream(AnalysisInfo%Junction_Model,          &
+
+                    this%Model%DiscretizedReach(UpstreamReachNumLeft)%ReachWidthCell,  &
+                    this%Model%DiscretizedReach(UpstreamReachNumRight)%ReachWidthCell, &
+                    this%Model%DiscretizedReach(i_reach)%ReachWidthCell,    &
+
+                    Solution(UpstreamReachNumLeft)%UU(this%Model%DiscretizedReach(UpstreamReachNumLeft)%NCells_reach),     &
+                    Solution(UpstreamReachNumRight)%UU(this%Model%DiscretizedReach(UpstreamReachNumRight)%NCells_reach),   &
+                    Solution(i_reach)%UU(1),                                &
+
+                    Solution(i_reach)%UU(0),                                &
+                    Solution(i_reach)%UU(-1))
+
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeI == 1_tiny) then
             ! if the upstream node is a boundary condition/inlet
             call Impose_BC_1D_up_sub(Solution(i_reach)%UU(1)%U(1), this%Model%NCells,      &
@@ -799,9 +831,18 @@ Results%ModelInfo = this%ModelInfo
 
           ! downstream node
           if (this%Model%DiscretizedReach(i_reach)%BCNodeII == 0_tiny) then
-            ! if the upstream node is a junction, no BC. In this case, we need to decide about the
+            ! if the downstream node is a junction, no BC. In this case, we need to decide about the
             ! node based on the junction modeling.
-            junction() ! <modify>
+            call Junction_simulation_flow_combination_downstream(AnalysisInfo%Junction_Model,   &
+
+                    this%Model%DiscretizedReach(i_reach)%ReachWidthCell,                 &
+                    this%Model%DiscretizedReach(DownstreamReachNum)%ReachWidthCell,      &
+
+                    Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach),    &
+                    Solution(DownstreamReachNum)%UU(1),                                         &
+
+                    Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach+1),  &
+                    Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach+2))
 
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeII == 2_tiny) then
             ! if the upstream node is a boundary condition/outlet
@@ -823,7 +864,19 @@ Results%ModelInfo = this%ModelInfo
           if (this%Model%DiscretizedReach(i_reach)%BCNodeI == 0_tiny) then
             ! if the upstream node is a junction, no BC. In this case, we need to decide about the
             ! node based on the junction modeling.
-            junction()  ! <modify>
+            call Junction_simulation_flow_combination_upstream(AnalysisInfo%Junction_Model,          &
+
+                    this%Model%DiscretizedReach(UpstreamReachNumLeft)%ReachWidthCell,  &
+                    this%Model%DiscretizedReach(UpstreamReachNumRight)%ReachWidthCell, &
+                    this%Model%DiscretizedReach(i_reach)%ReachWidthCell,    &
+
+                    Solution(UpstreamReachNumLeft)%UU(this%Model%DiscretizedReach(UpstreamReachNumLeft)%NCells_reach),     &
+                    Solution(UpstreamReachNumRight)%UU(this%Model%DiscretizedReach(UpstreamReachNumRight)%NCells_reach),   &
+                    Solution(i_reach)%UU(1),                                &
+
+                    Solution(i_reach)%UU(0),                                &
+                    Solution(i_reach)%UU(-1))
+
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeI == 1_tiny) then
             ! if the upstream node is a boundary condition/inlet
             call Impose_BC_1D_up_sub(Solution(i_reach)%UU(1)%U(1), this%Model%NCells,      &
@@ -884,9 +937,18 @@ Results%ModelInfo = this%ModelInfo
 
         ! downstream node
           if (this%Model%DiscretizedReach(i_reach)%BCNodeII == 0_tiny) then
-            ! if the upstream node is a junction, no BC. In this case, we need to decide about the
+            ! if the downstream node is a junction, no BC. In this case, we need to decide about the
             ! node based on the junction modeling.
-            junction()             ! <modify>
+            call Junction_simulation_flow_combination_downstream(AnalysisInfo%Junction_Model,   &
+
+                    this%Model%DiscretizedReach(i_reach)%ReachWidthCell,                 &
+                    this%Model%DiscretizedReach(DownstreamReachNum)%ReachWidthCell,      &
+
+                    Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach),    &
+                    Solution(DownstreamReachNum)%UU(1),                                         &
+
+                    Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach+1),  &
+                    Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach+2))
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeII == 2_tiny) then
             ! if the upstream node is a boundary condition/outlet
             call Impose_BC_1D_dw_sub(Solution(i_reach)%UU(this%Model%NCells)%U(2),  &
