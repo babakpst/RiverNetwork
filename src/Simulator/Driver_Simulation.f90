@@ -168,7 +168,7 @@ call InputTime%stop()
     write(*,*)
 
 
-    DEallocate(,      stat = ERR_DeAlloc )
+    DEallocate(AnalysisInfo,      stat = ERR_DeAlloc)
     if (ERR_DeAlloc /= 0) call error_in_deallocation(ERR_DeAlloc)
 
   end do
