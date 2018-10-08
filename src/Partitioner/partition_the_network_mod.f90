@@ -757,14 +757,14 @@ write(FileInfo,*) " Analyzing the partitioned network ... "
   ! check the number of reaches attached to each node. Now, the assumption is that there are at
   ! most only two upstream reaches and one downstream reach.
   do i_node = 1, Geometry%Base_Geometry%NoNodes
-    if (NReachOnRanks(i_node, 1) > 2_Lng ) then
-      write(*,fmt=("Input error: At the time, the assumption is that there are only two upstream reaches"))
-      write(*, fmt=(" Node: ", I10, " has:", I5, " upstream reaches." )) i_node,  NReachOnRanks(i_node, 1)
+    if (ReachAttachedToNode(i_node, 1) > 2_Lng ) then
+      write(*, fmt="('Input error: At the time, the assumption is that there are only two upstream reaches')")
+      write(*, fmt="(' Node: ', I10, ' has:', I5, ' upstream reaches.' )") i_node,  ReachAttachedToNode(i_node, 1)
       stop
     end if
-    if (NReachOnRanks(i_node, 2) > 1_Lng ) then
-      write(*,fmt=("Input error: At the time, the assumption is that there are only one downstream reach."))
-      write(*, fmt=(" Node: ", I10, " has:", I5, " downstream reaches." )) i_node,  NReachOnRanks(i_node, 1)
+    if (ReachAttachedToNode(i_node, 2) > 1_Lng ) then
+      write(*, fmt="('Input error: At the time, the assumption is that there are only one downstream reach.')")
+      write(*, fmt="(' Node: ', I10, ' has:', I5, ' downstream reaches.' )") i_node,  ReachAttachedToNode(i_node, 1)
       stop
     end if
   end do
@@ -813,11 +813,11 @@ TotalCellCounter = 0_Lng
 
     ! Writing the total number of cells in each partition
     UnFile = FilePartition
-    write(unit=UnFile, fmt="(2I23)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
+    write(unit=UnFile, fmt="(4I23)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
                    chunk(i_rank,4),        &   ! Total number of cells on this rank
                    NReachOnRanks(i_rank),  &   ! Total number of reaches on this rank
                    Geometry%Base_Geometry%NoReaches, &  ! Total Num Of Cells In The Network
-                   Geometry%Base_Geometry%NoNodes    &  ! Total Num Of Reaches In The Network
+                   Geometry%Base_Geometry%NoNodes       ! Total Num Of Reaches In The Network
                    ! why should we write total number of nodes in the network for each rank? bcs,
                    ! we want to change the boundary condition, without redoing the partitioning.
                    ! Thus, it is easier that each rank read the entire boundary condition file,
@@ -882,19 +882,19 @@ TotalCellCounter = 0_Lng
 
         ! figuring out the local reach number for the upstream reaches and the downstream reaches of each reach
         ! upstream reach number 1 (ReachLeft)
-        if (ReachAttachedToNode(NodeI, 7) = -1_Lng) then  ! There is no upstream reach for this node (a boundary condition node)
+        if (ReachAttachedToNode(NodeI, 7) == -1_Lng) then  ! There is no upstream reach for this node (a boundary condition node)
           ReachLeft = -1_Lng
         else  ! There is an upstream reach for this junction.
           ReachLeft   = this%ReachPartition(ReachAttachedToNode(NodeI,  7), 6)
         end if
         ! upstream reach number 2 (ReachRight)
-        if (ReachAttachedToNode(NodeI, 8) = -1_Lng) then  ! There is no upstream reach for this node (a boundary condition node)
+        if (ReachAttachedToNode(NodeI, 8) == -1_Lng) then  ! There is no upstream reach for this node (a boundary condition node)
           ReachRight = -1_Lng
         else  ! There is an upstream reach for this junction.
           ReachRight = this%ReachPartition(ReachAttachedToNode(NodeI,  8), 6)
         end if
         ! downstream reach (ReachBottom)
-        if (ReachAttachedToNode(NodeII, 3) = -1_Lng) then  ! There is no downstream reach for this node (a boundary condition node)
+        if (ReachAttachedToNode(NodeII, 3) == -1_Lng) then  ! There is no downstream reach for this node (a boundary condition node)
           ReachBottom = -1_Lng
         else  ! There is an upstream reach for this junction.
           ReachBottom = this%ReachPartition(ReachAttachedToNode(NodeI,  3), 5)
