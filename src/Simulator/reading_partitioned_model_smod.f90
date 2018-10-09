@@ -45,8 +45,7 @@ read(unit=UnFile, fmt="(4I23)", advance='yes', asynchronous='no', iostat=IO_read
      this%TotalNumOfCellsOnThisRank, &
      this%TotalNumOfReachesOnThisRank, &
      this%TotalNumOfNodesOnThisRank, &
-     this%TotalNumOfReachesInTheNetwork, &
-     this%TotalNumOfCellsInTheNetwork, &
+     this%TotalNumOfReachesInTheNetwork
 
 write(*,        fmt="(A)") " -Allocating arrays for the discretized network ..."
 write(FileInfo, fmt="(A)") " -Allocating arrays for the discretized network ..."
@@ -63,8 +62,13 @@ this%NCutsOnRanks = 0_Lng  ! Initializing number of reach cuts
          this%DiscretizedReach(i_reach)%ReachNumber,    &!reach number in the unpartitioned network- global reach number
          this%DiscretizedReach(i_reach)%Communication,  &
          this%DiscretizedReach(i_reach)%CommRank,       &
+
+         this%DiscretizedReach(i_reach)%NodeI,          &
+         this%DiscretizedReach(i_reach)%NodeII,         &
+
          this%DiscretizedReach(i_reach)%BCNodeI,        &
          this%DiscretizedReach(i_reach)%BCNodeII,       &
+
          this%DiscretizedReach(i_reach)%NCells_reach,   &
 
          this%DiscretizedReach(i_reach)%UpstreamReaches(1,1),   &
@@ -77,7 +81,12 @@ this%NCutsOnRanks = 0_Lng  ! Initializing number of reach cuts
 
          this%DiscretizedReach(i_reach)%ReachManning,   &
          this%DiscretizedReach(i_reach)%ReachWidthCell, &
-         this%DiscretizedReach(i_reach)%CellPorjectionLength
+         this%DiscretizedReach(i_reach)%CellPorjectionLength, &
+
+         this%DiscretizedReach(i_reach)%Q_Up, &
+         this%DiscretizedReach(i_reach)%CntrlV, &
+         this%DiscretizedReach(i_reach)%CntrlV_ratio
+
 
     ! compute the number of reach cuts on this rank-if communication is -1, means that the entire
     ! reach is on one rank, thus, there is no cut. But if communication is not -1, means that

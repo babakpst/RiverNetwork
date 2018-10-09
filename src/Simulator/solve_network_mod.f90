@@ -317,7 +317,8 @@ Couter_ReachCut = 0_Lng
 
     ! initialize the height part of the solution at time-step 0/ except the ghost cells.
     ! This needs to be <modify>ied, if we have a different strategy
-    Solution(i_reach)%UU(1:NCellsOnTheReach)%U(1) = AnalysisInfo%CntrlV
+    Solution(i_reach)%UU(1:NCellsOnTheReach)%U(1) = this%Model%DiscretizedReach(i_reach)%CntrlV
+
                                                                              !-this%Model%ZCell(:)
     ! initialize the velocity (uh) part of the solution at time-step 0/ except the ghost cells.
     Solution(i_reach)%UU(:)%U(2) = 0.0_Dbl
@@ -358,7 +359,7 @@ Couter_ReachCut = 0_Lng
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeI == 1_tiny) then
             ! if the upstream node is a boundary condition/inlet
             call Impose_BC_1D_up_sub(Solution(i_reach)%UU(1)%U(1),                         &
-                                     AnalysisInfo%Q_Up(  ),                                    &
+                                     this%Model%DiscretizedReach(i_reach)%Q_Up,            &
                                      this%Model%DiscretizedReach(i_reach)%ReachWidthCell,  &
                                      Solution(i_reach)%UU(-1_Lng), Solution(i_reach)%UU(0_Lng))
 
@@ -440,7 +441,7 @@ Couter_ReachCut = 0_Lng
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeI == 1_tiny) then
             ! if the upstream node is a boundary condition/inlet
             call Impose_BC_1D_up_sub(Solution(i_reach)%UU(1)%U(1),                         &
-                                     AnalysisInfo%Q_Up,                                    &
+                                     this%Model%DiscretizedReach(i_reach)%Q_Up,            &
                                      this%Model%DiscretizedReach(i_reach)%ReachWidthCell, &
                                      Solution(i_reach)%UU(-1_Lng), Solution(i_reach)%UU(0_Lng))
 
@@ -824,7 +825,7 @@ Results%ModelInfo = this%ModelInfo
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeI == 1_tiny) then
             ! if the upstream node is a boundary condition/inlet
             call Impose_BC_1D_up_sub(Solution(i_reach)%UU(1)%U(1),                         &
-                                     AnalysisInfo%Q_Up,                                    &
+                                     this%Model%DiscretizedReach(i_reach)%Q_Up,            &
                                      this%Model%DiscretizedReach(i_reach)%ReachWidthCell,  &
                                      Solution(i_reach)%UU(-1_Lng), Solution(i_reach)%UU(0_Lng))
           end if
@@ -880,7 +881,7 @@ Results%ModelInfo = this%ModelInfo
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeI == 1_tiny) then
             ! if the upstream node is a boundary condition/inlet
             call Impose_BC_1D_up_sub(Solution(i_reach)%UU(1)%U(1),                         &
-                                     AnalysisInfo%Q_Up,                                    &
+                                     this%Model%DiscretizedReach(i_reach)%Q_Up,            &
                                      this%Model%DiscretizedReach(i_reach)%ReachWidthCell,  &
                                      Solution(i_reach)%UU(-1_Lng), Solution(i_reach)%UU(0_Lng))
           end if

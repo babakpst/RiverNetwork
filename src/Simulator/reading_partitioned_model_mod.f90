@@ -70,10 +70,8 @@ type DiscretizedReach_tp
                                               ! network, and the second col holds the local reach
                                               ! number on the rank
 
-
-
-
-
+  integer(kind=tiny) :: NodeI  = -1_Shrt      ! local node numbering of the upstream node attached to this reach
+  integer(kind=tiny) :: NodeII = -1_Shrt      ! local node numbering of the downstream node attached to this reach
 
   integer(kind=tiny) :: BCNodeI  = -1_Shrt   ! the BC of the upstream node of the reach,
   integer(kind=tiny) :: BCNodeII = -1_Shrt   ! the BC of the downstream node of the reach,
@@ -83,6 +81,10 @@ type DiscretizedReach_tp
   real(kind=DBL) :: ReachManning         = 0.0_dbl ! the Manning's number of each cell
   real(kind=DBL) :: ReachWidthCell       = 0.0_dbl ! the Width a the reach, the assumption is that the width of the reach is constant
   real(kind=DBL) :: CellPorjectionLength = 0.0_dbl ! the length of each cell in the horizontal dir.
+
+  real(kind=DBL) :: Q_Up = 0.0_dbl                 ! the input discharge at the inlet node,
+  real(kind=DBL) :: CntrlV = 0.0_dbl               ! the initial control volume of the reach
+  real(kind=DBL) :: CntrlV_ratio = 0.0_dbl         !
 
   real(kind=DBL), allocatable, dimension(:) :: LengthCell     ! the length of each cell
   real(kind=DBL), allocatable, dimension(:) :: CellSlope      ! slope of each cell at the center
