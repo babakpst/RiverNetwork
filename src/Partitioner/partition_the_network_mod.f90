@@ -364,6 +364,7 @@ integer(kind=Lng), dimension (Geometry%Base_Geometry%size,4) :: chunk
 ! Indicates how many reaches exist on each rank, we need this for allocating memory in the
 ! simulator code.
 integer(kind=Lng), dimension (Geometry%Base_Geometry%size) :: NReachOnRanks
+integer(kind=Lng), dimension (Geometry%Base_Geometry%size) :: NNodesOnRanks
 
 ! This array holds all the reach numbers attached to each nodes. The assumption is that at most,
 ! there are 4 upstream and 4 downstream reaches attached to this node. The first col is used to
@@ -371,7 +372,10 @@ integer(kind=Lng), dimension (Geometry%Base_Geometry%size) :: NReachOnRanks
 ! number of downstream reaches attached to this node. The next 4 cols keep record of the upstream
 ! reaches, and the last 4 cols keep record of the downstream reach no.
 ! This needs to be modified. <modify>
-integer(kind=Lng), dimension (Geometry%Base_Geometry%NoNodes,10) :: ReachAttachedToNode
+integer(kind=Lng), dimension (Geometry%Base_Geometry%NoNodes, 10) :: ReachAttachedToNode
+
+! This array holds local node numbering on each rank
+integer(kind=Lng), dimension (Geometry%Base_Geometry%NoNodes) :: LocalNodeNumbering
 
 ! - character variables ---------------------------------------------------------------------------
 Character(kind = 1, len = 20) :: IndexRank ! Rank no in the Char. fmt to add to the input file Name
@@ -682,6 +686,8 @@ print*," partitions after: "
 ! each rank. In the next step, we try to equalize the no. of cells on each reach.
 
 NReachOnRanks(:) = 0_Lng ! initialize, we set the number of reaches on each rank equal to zero.
+NNodesOnRanks(:) = 0_Lng ! initialize, we set the number of Nodes on each rank equal to zero.
+LocalNodeNumbering(:) = 0_Lng ! initializing local node numbering
 ReachAttachedToNode(:,3:) = -1_Lng  ! initialize
 ReachAttachedToNode(:,1:2)= 0_Lng   ! initialize, the first col will be used to count the number of
                                     ! reaches attached to this node.
@@ -692,10 +698,9 @@ write(FileInfo,*) " Analyzing the partitioned network ... "
 
 ! Calculating total number of nodes on each rank
   do i_node = 1, Geometry%Base_Geometry%NoNodes
-here
+    NNodesOnRanks(this%part(i_node)) = NNodesOnRanks(this%part(i_node)) + 1_Lng
+
   end do
-
-
 
   do i_reach = 1_Lng, Geometry%Base_Geometry%NoReaches
 
