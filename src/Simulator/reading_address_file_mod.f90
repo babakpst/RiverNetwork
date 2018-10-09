@@ -71,8 +71,6 @@ end type Input_Data_tp
 
 ! Contains all information about the domain, required
 type AnalysisData_tp
-  integer(kind=Lng), len :: TotalNNodes
-  integer(kind=Lng), len :: TotalNReaches
 
   integer(kind=Smll) :: AnalysisType=2_smll! Analysis Type -1:1D Lax-Wendroff
                                            !               -2:1D Lax-Wendroff with limiter

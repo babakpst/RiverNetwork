@@ -24,7 +24,7 @@
 !
 ! File version $Id $
 !
-! Last update: 10/03/2018
+! Last update: 10/09/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! - Solver_1D_with_Limiter_sub: Solves the 1D shallow water equation, with limiter.
@@ -144,7 +144,7 @@ type:: SolverWithLimiter_tp
   type(Input_Data_tp)   :: ModelInfo     ! Holds information for the model
 
   contains
-    procedure Solve => Solver_1D_with_Limiter_sub
+    procedure Solve => solve_the_network_sub
 end type SolverWithLimiter_tp
 
 public:: SolverWithLimiter_tp
@@ -171,7 +171,7 @@ contains
 !
 ! File version $Id $
 !
-! Last update: 08/06/2018
+! Last update: 10/09/2018
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
 ! (Refer to the main code to see the list of imported variables)
@@ -195,7 +195,7 @@ implicit none
 class(SolverWithLimiter_tp) :: this
 type(Timer_tp):: TotalTime
 ! Holds information for the analysis
-type(AnalysisData_tp(TotalNNodes=*, TotalNReaches=*)) :: AnalysisInfo
+type(AnalysisData_tp) :: AnalysisInfo
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
