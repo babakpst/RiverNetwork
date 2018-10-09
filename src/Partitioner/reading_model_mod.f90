@@ -78,6 +78,16 @@ end type reach_tp
 type Geometry_tp
   integer(kind=Tiny), allocatable, dimension(:) :: BoundaryCondition ! Holds BC: 0 for free nodes
                                                                      !           1 for junction
+
+  ! Upstream boundary condition, constant flow (m^3/s)
+  real(kind=DBL), allocatable, dimension(:) :: Q_Up
+
+  real(kind=DBL), allocatable, dimension(:) :: CntrlV       ! Initial control volume
+
+  ! Initial control volume ration, used to initialize data
+  real(kind=DBL), allocatable, dimension(:) :: CntrlV_ratio
+
+
   type(reach_tp), allocatable, dimension(:) :: network ! The size of this array is NoReaches
   type(Base_Geometry_tp)                    :: Base_Geometry
 
@@ -264,7 +274,6 @@ End Subroutine reading_initial_info_on_network_sub
 
 Subroutine reading_network_geometry_sub(this, ModelInfo)
 
-
 Implicit None
 
 ! Global Variables ================================================================================
@@ -283,6 +292,9 @@ integer(kind=Smll) :: IO_write ! Used for IOSTAT - Input Output Status - in the 
 integer(kind=Lng)  :: i_reach  ! loop index on the number of reaches
 integer(kind=Lng)  :: reach_no ! temp var to read the reach no.
 integer(kind=Lng)  :: i_Node   ! loop index on the node number in the network
+
+integer(kind=Lng)  :: T_Node    ! temp variable to read the node number
+integer(kind=Lng)  :: T_Reach   ! temp variable to read the reach number
 
 ! code ============================================================================================
 write(*,       *)
@@ -394,6 +406,57 @@ write(unit=UnFile, fmt="(' Node no. -- BC ')")
     ! writing the boundary conditions in the info file
     write(unit=UnFile, fmt="(I10, I2)") i_Node, this%BoundaryCondition(i_Node)
 
+  end do
+
+UnFile = FileDataGeo
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+  do i_Node = 1, this%Base_Geometry%NoNodes
+    UnFile = FileDataGeo
+    read(unit=UnFile, fmt="(I23,F23.10)", advance='yes', asynchronous='no', iostat=IO_read, &
+                       err=1003, end=1004) T_Node, this%Q_Up(T_Node)
+    UnFile = FileInfo
+    write(unit=UnFile, fmt="(' Flow rate at the upstream in the node', I23,' is: ', F23.10, &
+    ' m/s3')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)T_Node,this%Q_Up(T_Node)
+    write(unit=*     , fmt="(' Flow rate at the upstream in the node', I23,' is: ', F23.10, &
+    ' m/s3')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)T_Node,this%Q_Up(T_Node)
+  end do
+
+UnFile = FileDataGeo
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+  do i_reach = 1, this%Base_Geometry%NoReaches
+    UnFile = FileDataGeo
+    read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
+                      end=1004) T_Reach, this%CntrlV(T_Reach)
+
+    UnFile = FileInfo
+    write(unit=UnFile, &
+          fmt="(' The control Volume of the reach no.: ', I23,' is: ', F23.10,' m^3')",&
+          advance='yes', asynchronous='no', iostat=IO_write, err=1006) T_Reach,this%CntrlV(T_Reach)
+
+    write(unit=*,   &
+          fmt="(' The control Volume of the reach no.: ', I23,' is: ', F23.10,' m^3')",&
+          advance='yes', asynchronous='no', iostat=IO_write, err=1006) T_Reach,this%CntrlV(T_Reach)
+  end do
+
+UnFile = FileDataGeo
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+  do i_reaches = 1, this%Base_Geometry%NoReaches
+    UnFile = FileDataGeo
+    read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
+                      end=1004) T_Reach, this%CntrlV_ratio(T_Reach)
+
+    UnFile = FileInfo
+    write(unit=UnFile, &
+          fmt="(' The control Volume of the reach no.: ', I23,' is: ', F23.10,' m^3')",&
+          advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
+                                                                 T_Reach,this%CntrlV_ratio(T_Reach)
+    write(unit=*,  &
+          fmt="(' The control Volume of the reach no.: ', I23,' is: ', F23.10,' m^3')",&
+          advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
+                                                                 T_Reach,this%CntrlV_ratio(T_Reach)
   end do
 
 ! - Closing the geometry file ---------------------------------------------------------------------

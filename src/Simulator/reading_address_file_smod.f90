@@ -134,14 +134,6 @@ integer(kind=Smll) :: IO_File  ! For IOSTAT: Input Output status in OPEN command
 integer(kind=Smll) :: IO_read  ! Holds error of read statements
 integer(kind=Smll) :: IO_write ! Used for IOSTAT - Input Output Status - in the write command.
 
-integer(kind=Lng) :: i_nodes   ! loop index over the total number of nodes in the network
-integer(kind=Lng) :: i_reaches ! loop index over the total number of reaches in the network
-
-integer(kind=Lng) :: T_Node    ! temp variable to read the node number
-integer(kind=Lng) :: T_Reach   ! temp variable to read the reach number
-
-
-
 ! - Logical Variables -----------------------------------------------------------------------------
 logical(kind=Shrt)  :: Directory
 
@@ -256,58 +248,6 @@ UnFile = FileInfo
 write(unit=UnFile, fmt="(' The junction model type is: ', I10)", advance='yes', asynchronous='no',&
                    iostat=IO_write, err=1006) this%Junction_model
 write(unit=*,      fmt="(' The junction model type is: ', I10)") this%Junction_model
-
-
-UnFile = UnInptAna
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-  do i_nodes = 1, this%TotalNNodes
-    UnFile = UnInptAna
-    read(unit=UnFile, fmt="(I23,F23.10)", advance='yes', asynchronous='no', iostat=IO_read, &
-                       err=1003, end=1004) T_Node, this%Q_Up(T_Node)
-    UnFile = FileInfo
-    write(unit=UnFile, fmt="(' Flow rate at the upstream in the node', I23,' is: ', F23.10, &
-    ' m/s3')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)T_Node,this%Q_Up(T_Node)
-    write(unit=*     , fmt="(' Flow rate at the upstream in the node', I23,' is: ', F23.10, &
-    ' m/s3')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)T_Node,this%Q_Up(T_Node)
-  end do
-
-UnFile = UnInptAna
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-  do i_reaches = 1, this%TotalNReaches
-    UnFile = UnInptAna
-    read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
-                      end=1004) T_Reach, this%CntrlV(T_Reach)
-
-    UnFile = FileInfo
-    write(unit=UnFile, &
-          fmt="(' The control Volume of the reach no.: ', I23,' is: ', F23.10,' m^3')",&
-          advance='yes', asynchronous='no', iostat=IO_write, err=1006) T_Reach,this%CntrlV(T_Reach)
-
-    write(unit=*,   &
-          fmt="(' The control Volume of the reach no.: ', I23,' is: ', F23.10,' m^3')",&
-          advance='yes', asynchronous='no', iostat=IO_write, err=1006) T_Reach,this%CntrlV(T_Reach)
-  end do
-
-UnFile = UnInptAna
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-  do i_reaches = 1, this%TotalNReaches
-    UnFile = UnInptAna
-    read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
-                      end=1004) T_Reach, this%CntrlV_ratio(T_Reach)
-
-    UnFile = FileInfo
-    write(unit=UnFile, &
-          fmt="(' The control Volume of the reach no.: ', I23,' is: ', F23.10,' m^3')",&
-          advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
-                                                                 T_Reach,this%CntrlV_ratio(T_Reach)
-    write(unit=*,  &
-          fmt="(' The control Volume of the reach no.: ', I23,' is: ', F23.10,' m^3')",&
-          advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
-                                                                 T_Reach,this%CntrlV_ratio(T_Reach)
-  end do
 
 write(*,       *) " End Subroutine < Input_Analysis_sub >"
 write(*,       *)

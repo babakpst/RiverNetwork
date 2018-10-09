@@ -36,4 +36,56 @@ Boundary conditions- nnodes
 2
 0
 
+Upstream boundary condition, constant flow (m^3/s) for each node (put zero if not an inlet BC):
+1   0.0
+2   0.0
+3   0.0
+4   0.0
+5   1.0
+6   1.0
+7   1.0
+8   0.0
+9   1.0
+10  1.0
+11  1.0
+12  1.0
+13  0.0
+14  1.0
+15  0.0
+16  0.0
+
+Initial control volume for each reach: ( V = L * B * h)
+1    1.50
+2    1.50
+3    1.50
+4    1.50
+5    1.50
+6    1.50
+7    1.50
+8    1.50
+9    1.50
+10   1.50
+11   1.50
+12   1.50
+14   1.50
+15   1.50
+
+Control Volume ratio:
+1    0.0
+2    0.0
+3    0.0
+4    0.0
+5    0.0
+6    0.0
+7    0.0
+8    0.0
+9    0.0
+10   0.0
+11   0.0
+12   0.0
+13   0.0
+14   0.0
+15   0.0
+
+
 

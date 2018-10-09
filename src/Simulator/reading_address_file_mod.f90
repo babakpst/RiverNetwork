@@ -70,7 +70,7 @@ type Input_Data_tp
 end type Input_Data_tp
 
 ! Contains all information about the domain, required
-type AnalysisData_tp(TotalNNodes, TotalNReaches)
+type AnalysisData_tp
   integer(kind=Lng), len :: TotalNNodes
   integer(kind=Lng), len :: TotalNReaches
 
@@ -86,14 +86,6 @@ type AnalysisData_tp(TotalNNodes, TotalNReaches)
   real(kind=DBL) :: TimeStep     = 0.0_dbl ! Time Step
 
   real(kind=DBL) :: h_dw         = 0.0_dbl ! Downstream water depth (in meters)
-
-  ! Upstream boundary condition, constant flow (m^3/s)
-  real(kind=DBL), dimension(TotalNNodes)   :: Q_Up
-
-  real(kind=DBL), dimension(TotalNReaches) :: CntrlV       ! Initial control volume
-
-  ! Initial control volume ration, used to initialize data
-  real(kind=DBL), dimension(TotalNReaches) :: CntrlV_ratio
 
   contains
     procedure Analysis => Input_Analysis_sub
@@ -176,7 +168,7 @@ Implicit None
 integer(kind=Smll), intent(In) :: i_analyses
 
 ! - Types -----------------------------------------------------------------------------------------
-class(AnalysisData_tp(TotalNNodes=*, TotalNReaches=*)), intent(inout) :: this      ! Holds analysis information
+class(AnalysisData_tp), intent(inout) :: this      ! Holds analysis information
 type(Input_Data_tp), intent(inout) :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
 
 end subroutine Input_Analysis_sub
@@ -216,7 +208,7 @@ integer(kind=Smll) :: i_analyses     ! loop index to read the analyses files
 
 ! - types -----------------------------------------------------------------------------------------
 class(Input_Data_tp) :: this
-type(AnalysisData_tp(TotalNNodes=*, TotalNReaches=*)) :: AnalysisInfo
+type(AnalysisData_tp) :: AnalysisInfo
 
 end subroutine Python_Visualizer_sub
 

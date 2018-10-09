@@ -124,12 +124,6 @@ call InputTime%stop()
     write(*,        fmt="(A,I10)") " -Analyse no.", i_analyses
     write(FileInfo, fmt="(A,I10)") " -Analyse no.", i_analyses
 
-    allocate( &
-    type(AnalysisData_tp(TotalNNodes= Model%TotalNumOfNodesInTheNetwork, &
-                         TotalNReaches= Model%TotalNumOfReachesInTheNetwork)) :: AnalysisInfo, &
-      stat = ERR_Alloc)
-    if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
-
     ! Getting the required data for this specific analysis
     call AnalysisInfo%Analysis(i_analyses, ModelInfo)
 
