@@ -796,7 +796,7 @@ chunk(:,4) = chunk(:,2) + chunk(:,3)
                                  this%ReachPartition(i_reach,3), this%ReachPartition(i_reach,4)
   end do
 
-  if ( sum(NNodesOnRanks) /= Geometry%Base_Geometry%NNodes ) then
+  if ( sum(NNodesOnRanks) /= Geometry%Base_Geometry%NoNodes ) then
     call errorMessage(Geometry%Base_Geometry%NoReaches, sum(NNodesOnRanks))
   end if
 
@@ -923,12 +923,16 @@ TotalCellCounter = 0_Lng
               LocalNodeNumbering(NodeI), LocalNodeNumbering(NodeII), & ! Local node numbers attached to this reach
               BCNodeI, BCNodeII, & ! indicates the type of the boundary conditions of the two nodes attached to this reach.
               RangeCell_II - RangeCell_I + 1_Lng,                                   & ! total no. cells
+
               ReachAttachedToNode(NodeI,  7), ReachAttachedToNode(NodeI, 8),        & ! the upstream reaches, global numbering
               ReachAttachedToNode(NodeII, 3),                                       & ! the downstream reach, global numbering
+
               ReachLeft, ReachRight, ReachBottom,                                   & ! local reach numbering of upstream and downstream reaches of this particular reach.
+
               Discretization%DiscretizedReach(i_reach)%ReachManning,                &
               Discretization%DiscretizedReach(i_reach)%ReachWidthCell,              &
               Discretization%DiscretizedReach(i_reach)%CellPorjectionLength,        &
+
               Geometry%Q_Up(NodeI),                                                 & ! the discharge, if this upstream node is an inlet boundary condition,
               Geometry%CntrlV(i_reach),                                             & ! the initial control volume
               Geometry%CntrlV_ratio(i_reach)

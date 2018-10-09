@@ -118,9 +118,9 @@ write(FileInfo, fmt="(A)") " -Allocating the required arrays ..."
 
 allocate(Geometry%network(Geometry%Base_Geometry%NoReaches), &
          Geometry%BoundaryCondition(Geometry%Base_Geometry%NoNodes), &
-         Geometry%Q_Up(TotalNNodes), &
-         Geometry%CntrlV(TotalNReaches), &
-         Geometry%CntrlV_ratio(TotalNReaches), &
+         Geometry%Q_Up(Geometry%Base_Geometry%NoNodes), &
+         Geometry%CntrlV(Geometry%Base_Geometry%NoReaches), &
+         Geometry%CntrlV_ratio(Geometry%Base_Geometry%NoReaches), &
          stat=Err_Alloc)
   if (Err_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 

@@ -443,7 +443,7 @@ read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, e
 UnFile = FileDataGeo
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-  do i_reaches = 1, this%Base_Geometry%NoReaches
+  do i_reach = 1, this%Base_Geometry%NoReaches
     UnFile = FileDataGeo
     read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
                       end=1004) T_Reach, this%CntrlV_ratio(T_Reach)
