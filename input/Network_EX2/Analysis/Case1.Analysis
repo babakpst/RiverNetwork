@@ -21,23 +21,23 @@ Plot results Increments (Plot_Inc)
 Junction type simulation 1: Energy based method, 2: Momentum based method
 1
 
-Upstream boundary condition, constant flow (m^3/s) for each node (put zero if not a BC):
-1   0.0
-2   0.0
-3   0.0
-4   0.0
+Upstream boundary condition, constant flow (m^3/s) for each node (put -1 if not an inlet BC):
+1  -1.0
+2  -1.0
+3  -1.0
+4  -1.0
 5   1.0
 6   1.0
 7   1.0
-8   0.0
+8  -1.0
 9   1.0
 10  1.0
 11  1.0
 12  1.0
-13  0.0
+13 -1.0
 14  1.0
-15  0.0
-16  0.0
+15 -1.0
+16 -1.0
 
 Initial control volume for each reach: ( V = L * B * h)
 1    1.50

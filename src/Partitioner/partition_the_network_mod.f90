@@ -699,7 +699,7 @@ write(FileInfo,*) " Analyzing the partitioned network ... "
 ! Calculating total number of nodes on each rank
   do i_node = 1, Geometry%Base_Geometry%NoNodes
     NNodesOnRanks(this%part(i_node)) = NNodesOnRanks(this%part(i_node)) + 1_Lng
-
+    LocalNodeNumbering(i_node) = NNodesOnRanks(this%part(i_node))
   end do
 
   do i_reach = 1_Lng, Geometry%Base_Geometry%NoReaches
@@ -785,6 +785,7 @@ write(FileInfo,*) " Analyzing the partitioned network ... "
 ! no. of cells on each rank, saved in col 4.
 chunk(:,4) = chunk(:,2) + chunk(:,3)
 
+
 ! Checks
   if ( sum(NReachOnRanks) /= Geometry%Base_Geometry%NoReaches ) then
     call errorMessage(Geometry%Base_Geometry%NoReaches, sum(NReachOnRanks))
@@ -794,6 +795,11 @@ chunk(:,4) = chunk(:,2) + chunk(:,3)
     write(*,fmt="(5I4)")i_reach, this%ReachPartition(i_reach,1), this%ReachPartition(i_reach,2), &
                                  this%ReachPartition(i_reach,3), this%ReachPartition(i_reach,4)
   end do
+
+  if ( sum(NNodesOnRanks) /= Geometry%Base_Geometry%NNodes ) then
+    call errorMessage(Geometry%Base_Geometry%NoReaches, sum(NNodesOnRanks))
+  end if
+
 
 ! We develop an optimization problem here to equalize the no. of cells on each rank.
 !Balanced_load = .true.
@@ -829,13 +835,9 @@ TotalCellCounter = 0_Lng
     write(unit=UnFile, fmt="(4I23)", advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
                    chunk(i_rank,4),        &   ! Total number of cells on this rank
                    NReachOnRanks(i_rank),  &   ! Total number of reaches on this rank
-                   Geometry%Base_Geometry%NoReaches, &  ! Total Num Of Cells In The Network
-                   Geometry%Base_Geometry%NoNodes       ! Total Num Of Reaches In The Network
-                   ! why should we write total number of nodes in the network for each rank? bcs,
-                   ! we want to change the boundary condition, without redoing the partitioning.
-                   ! Thus, it is easier that each rank read the entire boundary condition file,
-                   ! even though a rank may not use all of them.
-                   ! <modify> see if there is a better algorithm.
+                   NNodesOnRanks(i_rank),  &   ! Total number of nodes on this rank
+                   Geometry%Base_Geometry%NoReaches  ! Total Num Of Cells In The Network
+
 
     CellCounter = 0_Lng ! To make sure that we count all the cell numbers in each rank
     ReachCounter= 0_Lng
@@ -893,31 +895,32 @@ TotalCellCounter = 0_Lng
 
         ReachCounter = ReachCounter + 1_Lng
 
-        ! figuring out the local reach number for the upstream reaches and the downstream reaches of each reach
-        ! upstream reach number 1 (ReachLeft)
-        if (ReachAttachedToNode(NodeI, 7) == -1_Lng) then  ! There is no upstream reach for this node (a boundary condition node)
-          ReachLeft = -1_Lng
-        else  ! There is an upstream reach for this junction.
-          ReachLeft   = this%ReachPartition(ReachAttachedToNode(NodeI,  7), 6)
-        end if
-        ! upstream reach number 2 (ReachRight)
-        if (ReachAttachedToNode(NodeI, 8) == -1_Lng) then  ! There is no upstream reach for this node (a boundary condition node)
-          ReachRight = -1_Lng
-        else  ! There is an upstream reach for this junction.
-          ReachRight = this%ReachPartition(ReachAttachedToNode(NodeI,  8), 6)
-        end if
-        ! downstream reach (ReachBottom)
-        if (ReachAttachedToNode(NodeII, 3) == -1_Lng) then  ! There is no downstream reach for this node (a boundary condition node)
-          ReachBottom = -1_Lng
-        else  ! There is an upstream reach for this junction.
-          ReachBottom = this%ReachPartition(ReachAttachedToNode(NodeI,  3), 5)
-        end if
+          ! figuring out the local reach number for the upstream reaches and the downstream reaches of each reach
+          ! upstream reach number 1 (ReachLeft)
+          if (ReachAttachedToNode(NodeI, 7) == -1_Lng) then  ! There is no upstream reach for this node (a boundary condition node)
+            ReachLeft = -1_Lng
+          else  ! There is an upstream reach for this junction.
+            ReachLeft   = this%ReachPartition(ReachAttachedToNode(NodeI,  7), 6)
+          end if
+          ! upstream reach number 2 (ReachRight)
+          if (ReachAttachedToNode(NodeI, 8) == -1_Lng) then  ! There is no upstream reach for this node (a boundary condition node)
+            ReachRight = -1_Lng
+          else  ! There is an upstream reach for this junction.
+            ReachRight = this%ReachPartition(ReachAttachedToNode(NodeI,  8), 6)
+          end if
+          ! downstream reach (ReachBottom)
+          if (ReachAttachedToNode(NodeII, 3) == -1_Lng) then  ! There is no downstream reach for this node (a boundary condition node)
+            ReachBottom = -1_Lng
+          else  ! There is an upstream reach for this junction.
+            ReachBottom = this%ReachPartition(ReachAttachedToNode(NodeI,  3), 5)
+          end if
 
         write(unit=UnFile, fmt="(12I12, 3F35.20)", advance='yes', asynchronous='no', &
               iostat=IO_write, err=1006)                                            &
               i_reach,          & ! global reach number, before partitioning
               Communication,    & ! indicates whether we will communicate with other ranks for this reach or not.
               CommRank,         & ! if there is communication with other rank for this reach, this var indicates the rank number to which we need to communicate
+              LocalNodeNumbering(NodeI), LocalNodeNumbering(NodeII), & ! Local node numbers attached to this reach
               BCNodeI, BCNodeII, & ! indicates the type of the boundary conditions of the two nodes attached to this reach.
               RangeCell_II - RangeCell_I + 1_Lng,                                   & ! total no. cells
               ReachAttachedToNode(NodeI,  7), ReachAttachedToNode(NodeI, 8),        & ! the upstream reaches, global numbering
@@ -925,7 +928,10 @@ TotalCellCounter = 0_Lng
               ReachLeft, ReachRight, ReachBottom,                                   & ! local reach numbering of upstream and downstream reaches of this particular reach.
               Discretization%DiscretizedReach(i_reach)%ReachManning,                &
               Discretization%DiscretizedReach(i_reach)%ReachWidthCell,              &
-              Discretization%DiscretizedReach(i_reach)%CellPorjectionLength
+              Discretization%DiscretizedReach(i_reach)%CellPorjectionLength,        &
+              Geometry%Q_Up(NodeI),                                                 & ! the discharge, if this upstream node is an inlet boundary condition,
+              Geometry%CntrlV(i_reach),                                             & ! the initial control volume
+              Geometry%CntrlV_ratio(i_reach)
 
           do i_cells = RangeCell_I, RangeCell_II
 
@@ -946,7 +952,7 @@ TotalCellCounter = 0_Lng
 
     TotalCellCounter = TotalCellCounter + CellCounter
 
-    ! checks
+      ! checks
       if (ReachCounter /= NReachOnRanks(i_rank)) then
         call error_in_reaches_on_each_rank(ReachCounter, NReachOnRanks(i_rank))
       end if

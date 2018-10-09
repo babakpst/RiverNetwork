@@ -42,8 +42,11 @@ open(Unit=UnFile, file=trim(ModelInfo%ModelNameParallel)//'.par', &
 UnFile = FilePartition
 read(unit=UnFile, fmt="(4I23)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
      end=1004) &
-     this%TotalNumOfCellsOnThisRank, this%TotalNumOfReachesOnThisRank, &
-     this%TotalNumOfCellsInTheNetwork, this%TotalNumOfReachesInTheNetwork
+     this%TotalNumOfCellsOnThisRank, &
+     this%TotalNumOfReachesOnThisRank, &
+     this%TotalNumOfNodesOnThisRank, &
+     this%TotalNumOfReachesInTheNetwork, &
+     this%TotalNumOfCellsInTheNetwork, &
 
 write(*,        fmt="(A)") " -Allocating arrays for the discretized network ..."
 write(FileInfo, fmt="(A)") " -Allocating arrays for the discretized network ..."
