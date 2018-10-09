@@ -689,6 +689,14 @@ ReachAttachedToNode(:,1:2)= 0_Lng   ! initialize, the first col will be used to 
 write(*,       *) " Analyzing the partitioned network ... "
 write(FileInfo,*) " Analyzing the partitioned network ... "
 
+
+! Calculating total number of nodes on each rank
+  do i_node = 1, Geometry%Base_Geometry%NoNodes
+here
+  end do
+
+
+
   do i_reach = 1_Lng, Geometry%Base_Geometry%NoReaches
 
     NodeI = Geometry%network(i_reach)%ReachNodes(1)
