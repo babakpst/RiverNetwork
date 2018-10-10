@@ -161,10 +161,6 @@ call InputTime%stop()
               ModelInfo%ModelName, ModelInfo%AnalysesNames(i_analyses)
     write(*,*)
 
-
-    DEallocate(AnalysisInfo,      stat = ERR_DeAlloc)
-    if (ERR_DeAlloc /= 0) call error_in_deallocation(ERR_DeAlloc)
-
   end do
 
 ! Deallocating arrays

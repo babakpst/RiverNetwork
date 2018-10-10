@@ -400,10 +400,10 @@ Couter_ReachCut = 0_Lng
             stop
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeII == 2_tiny) then
             ! if the upstream node is a boundary condition/outlet
-            call Impose_BC_1D_dw_sub(Solution(i_reach)%UU(this%Model%NCells)%U(2),  &
+            call Impose_BC_1D_dw_sub(Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach)%U(2),  &
                                      AnalysisInfo%h_dw,                        &
-                                     Solution(i_reach)%UU(this%Model%NCells+1_Lng), &
-                                     Solution(i_reach)%UU(this%Model%NCells+2_Lng))
+                                     Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach+1_Lng), &
+                                     Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach+2_Lng))
           end if
 
       else if (this%Model%DiscretizedReach(i_reach)%Communication == 1_Tiny) then ! upstream half
@@ -470,9 +470,9 @@ Couter_ReachCut = 0_Lng
           ! Sending/Receiving cell info
           ! The downstream of this reach is on another rank
           sent(1+ 2_Lng*(Couter_ReachCut - 1_Lng))%U(:) =  &
-                                                 Solution(i_reach)%UU(this%Model%NCells)%U(:)
+                                                 Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach)%U(:)
           sent(2+ 2_Lng*(Couter_ReachCut - 1_Lng))%U(:) =  &
-                                                 Solution(i_reach)%UU(this%Model%NCells-1_Lng)%U(:)
+                                                 Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach-1_Lng)%U(:)
 
           call MPI_ISEND(sent(1+2_Lng*(Couter_ReachCut-1_Lng):2+2_Lng*(Couter_ReachCut-1_Lng)), 4,&
                          MPI_DOUBLE_PRECISION, this%Model%DiscretizedReach(i_reach)%CommRank,     &
@@ -549,10 +549,10 @@ Couter_ReachCut = 0_Lng
             stop
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeII == 2_tiny) then
             ! if the upstream node is a boundary condition/outlet
-            call Impose_BC_1D_dw_sub(Solution(i_reach)%UU(this%Model%NCells)%U(2),  &
+            call Impose_BC_1D_dw_sub(Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach)%U(2),  &
                                      AnalysisInfo%h_dw,                        &
-                                     Solution(i_reach)%UU(this%Model%NCells+1_Lng), &
-                                     Solution(i_reach)%UU(this%Model%NCells+2_Lng))
+                                     Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach+1_Lng), &
+                                     Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach+2_Lng))
           end if
 
       end if
@@ -570,8 +570,8 @@ Couter_ReachCut = 0_Lng
         call MPI_WAIT(request_recv(Couter_ReachCut), status , MPI_err)
 
         ! Substituting the received data in the solution array
-        Solution(i_reach)%UU(this%Model%NCells+1_Lng)%U(:) = recv(1+2_Lng*(Couter_ReachCut-1_Lng))%U(:)
-        Solution(i_reach)%UU(this%Model%NCells+2_Lng)%U(:) = recv(2+2_Lng*(Couter_ReachCut-1_Lng))%U(:)
+        Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach+1_Lng)%U(:) = recv(1+2_Lng*(Couter_ReachCut-1_Lng))%U(:)
+        Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach+2_Lng)%U(:) = recv(2+2_Lng*(Couter_ReachCut-1_Lng))%U(:)
 
       else if (this%Model%DiscretizedReach(i_reach)%Communication == 2_Tiny) then ! downstream half
                                                                     ! of this reach is on the rank
@@ -605,7 +605,7 @@ Results%ModelInfo = this%ModelInfo
     ! Solving the equation for each reach
       On_Reaches: do i_reach =1, this%Model%TotalNumOfReachesOnThisRank
 
-        dx     = this%Model%DiscretizedReach(i_reach)%LengthCell
+        dx     = this%Model%DiscretizedReach(i_reach)%LengthCell(1)
         dtdx = dt / dx
 
         ! write down data for visualization
@@ -617,15 +617,14 @@ Results%ModelInfo = this%ModelInfo
                        real(TotalTime%endSys-TotalTime%startSys)/real(TotalTime%clock_rate)
             end if
 
-
           ! <modify> check the allocation
-          Results%U(:) = Solution(i_reach)%UU(-1:this%Model%NCells+2)
+          !Results%U(:) = Solution(i_reach)%UU(-1:this%Model%NCells+2)
           !call Results%plot_results(i_steps)
           !$ end if
         end if
 
         !$OMP DO
-        do i_Cell = 1_Lng, this%Model%NCells  ! Loop over cells except the boundary cells
+        do i_Cell = 1_Lng, this%Model%DiscretizedReach(i_reach)%NCells_reach  ! Loop over cells except the boundary cells
 
           !print*, "=============Cell:", i_Cell, ITS
           !print*, "=============Cell:", i_Cell
@@ -642,15 +641,15 @@ Results%ModelInfo = this%ModelInfo
           velocity = Solution(i_reach)%UU(i_Cell)%U(2)/height
 
           ! Find the B matrix for this cell
-          SourceTerms%S_f = (this%Model%ManningCell(i_Cell)**2.0) * velocity &
-                            * dabs(velocity) /(height**(4.0_Dbl/3.0_Dbl))
+          SourceTerms%S_f = (this%Model%DiscretizedReach(i_reach)%ReachManning**2.0) * velocity &
+                            * dabs(velocity)/(height**(4.0_Dbl/3.0_Dbl))
 
           SourceTerms%B(1,1) = 0.0_Dbl
           SourceTerms%B(2,1) =  &
-                   - Gravity * (this%Model%CellSlope(i_Cell) + (7.0_Dbl/3.0_Dbl) * SourceTerms%S_f)
+                   - Gravity * (this%Model%DiscretizedReach(i_reach)%CellSlope(i_Cell) + (7.0_Dbl/3.0_Dbl) * SourceTerms%S_f)
 
           SourceTerms%B(1,2) = 0.0_Dbl
-          SourceTerms%B(2,2) = (2.0_Dbl*this%Model%ManningCell(i_Cell)**2.0) &
+          SourceTerms%B(2,2) = (2.0_Dbl*this%Model%DiscretizedReach(i_reach)%ReachManning**2.0) &
                                 *dabs(velocity)/(height**(4.0_Dbl/3.0_Dbl))
 
           ! Find the BI
@@ -660,7 +659,7 @@ Results%ModelInfo = this%ModelInfo
 
           ! Source terms at the current cell/time
           SourceTerms%S%U(1) = 0.0_Dbl
-          SourceTerms%S%U(2) =-Gravity*height*(this%Model%CellSlope(i_Cell)-SourceTerms%S_f)
+          SourceTerms%S%U(2) =-Gravity*height*(this%Model%DiscretizedReach(i_reach)%CellSlope(i_Cell)-SourceTerms%S_f)
 
           ! The first contribution of the source term in the solution
           SourceTerms%Source_1%U(:) = &
@@ -687,12 +686,12 @@ Results%ModelInfo = this%ModelInfo
               velocity_interface = &
               0.5_Dbl*(Jacobian%U_up%U(2)/Jacobian%U_up%U(1)+Jacobian%U_dw%U(2)/Jacobian%U_dw%U(1))
 
-              SourceTerms%S_f_interface =this%Model%ManningCell(i_Cell)*velocity_interface &
+              SourceTerms%S_f_interface =this%Model%DiscretizedReach(i_reach)%ReachManning*velocity_interface &
                *dabs(velocity_interface) /( height_interface**(4.0_Dbl/3.0_Dbl))
 
               SourceTerms%S_interface%U(1) = 0.0_Dbl
               SourceTerms%S_interface%U(2) =-Gravity*height_interface &
-                  *(this%Model%InterfaceSlope(i_Cell+i_Interface-1_Tiny)-SourceTerms%S_f_interface)
+                  *(this%Model%DiscretizedReach(i_reach)%InterfaceSlope(i_Cell+i_Interface-1_Tiny)-SourceTerms%S_f_interface)
 
               SourceTerms%Source_2%U(:) = SourceTerms%Source_2%U(:) + 0.5_Dbl * (dt**2) / dx &
                                * ( Coefficient * matmul(Jacobian%A, SourceTerms%S_interface%U(:)))
@@ -791,7 +790,7 @@ Results%ModelInfo = this%ModelInfo
 
         !!$OMP END PARALLEL DO
         !$OMP DO
-        do i_Cell = 1_Lng, this%Model%NCells  ! Loop over cells except the boundary cells
+        do i_Cell = 1_Lng, this%Model%DiscretizedReach(i_reach)%NCells_reach  ! Loop over cells except the boundary cells
           Solution(i_reach)%UU(i_Cell) = Solution(i_reach)%UN(i_Cell)
         end do
         !$OMP END DO
@@ -847,10 +846,10 @@ Results%ModelInfo = this%ModelInfo
 
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeII == 2_tiny) then
             ! if the upstream node is a boundary condition/outlet
-            call Impose_BC_1D_dw_sub(Solution(i_reach)%UU(this%Model%NCells)%U(2),  &
+            call Impose_BC_1D_dw_sub(Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach)%U(2),  &
                                      AnalysisInfo%h_dw,                        &
-                                     Solution(i_reach)%UU(this%Model%NCells+1_Lng), &
-                                     Solution(i_reach)%UU(this%Model%NCells+2_Lng))
+                                     Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach+1_Lng), &
+                                     Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach+2_Lng))
           end if
 
       else if (this%Model%DiscretizedReach(i_reach)%Communication == 1_Tiny) then ! upstream half
@@ -895,9 +894,9 @@ Results%ModelInfo = this%ModelInfo
           ! Sending/Receiving cell info
           ! The downstream of this reach is on another rank
           sent(1+ 2_Lng*(Couter_ReachCut - 1_Lng))%U(:) =  &
-                                                 Solution(i_reach)%UU(this%Model%NCells)%U(:)
+                                                 Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach)%U(:)
           sent(2+ 2_Lng*(Couter_ReachCut - 1_Lng))%U(:) =  &
-                                                 Solution(i_reach)%UU(this%Model%NCells-1_Lng)%U(:)
+                                                 Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach-1_Lng)%U(:)
 
           call MPI_ISEND(sent(1+2_Lng*(Couter_ReachCut-1_Lng):2+2_Lng*(Couter_ReachCut-1_Lng)), 4,&
                          MPI_DOUBLE_PRECISION, this%Model%DiscretizedReach(i_reach)%CommRank,     &
@@ -952,10 +951,10 @@ Results%ModelInfo = this%ModelInfo
                     Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach+2))
           else if (this%Model%DiscretizedReach(i_reach)%BCNodeII == 2_tiny) then
             ! if the upstream node is a boundary condition/outlet
-            call Impose_BC_1D_dw_sub(Solution(i_reach)%UU(this%Model%NCells)%U(2),  &
+            call Impose_BC_1D_dw_sub(Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach)%U(2),  &
                                      AnalysisInfo%h_dw,                        &
-                                     Solution(i_reach)%UU(this%Model%NCells+1_Lng), &
-                                     Solution(i_reach)%UU(this%Model%NCells+2_Lng))
+                                     Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach+1_Lng), &
+                                     Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach+2_Lng))
           end if
       end if
 
@@ -973,8 +972,8 @@ Results%ModelInfo = this%ModelInfo
           call MPI_WAIT(request_recv(Couter_ReachCut), status , MPI_err)
 
           ! Substituting the received data in the solution array
-          Solution(i_reach)%UU(this%Model%NCells+1_Lng)%U(:) = recv(1+2_Lng*(Couter_ReachCut-1_Lng))%U(:)
-          Solution(i_reach)%UU(this%Model%NCells+2_Lng)%U(:) = recv(2+2_Lng*(Couter_ReachCut-1_Lng))%U(:)
+          Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach+1_Lng)%U(:) = recv(1+2_Lng*(Couter_ReachCut-1_Lng))%U(:)
+          Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach+2_Lng)%U(:) = recv(2+2_Lng*(Couter_ReachCut-1_Lng))%U(:)
 
         else if (this%Model%DiscretizedReach(i_reach)%Communication == 2_Tiny) then ! downstream half
                                                                       ! of this reach is on the rank
@@ -1640,10 +1639,10 @@ FroudeBottom = u_Bottom / dsqrt(Gravity*h_Bottom)
     ! Final values for the ghost cells:
     ! ghost cells
     ReachBottom_Cell_n1%U(1) = h_Bottom      ! height
-    ReachBottom_Cell_n1%U(2) = (Width_LeftReach*u_Left*h_Left + W_RightReach*u_Right*h_Right)/Width_BottomReach  ! uh
+    ReachBottom_Cell_n1%U(2) = (Width_LeftReach*u_Left*h_Left + Width_RightReach*u_Right*h_Right)/Width_BottomReach  ! uh
 
     ReachBottom_Cell_0%U(1)  = h_Bottom      ! height
-    ReachBottom_Cell_0%U(2)  = (Width_LeftReach*u_Left*h_Left + W_RightReach*u_Right*h_Right)/Width_BottomReach  ! uh
+    ReachBottom_Cell_0%U(2)  = (Width_LeftReach*u_Left*h_Left + Width_RightReach*u_Right*h_Right)/Width_BottomReach  ! uh
 
 !    ! Indicating the flow regime based on the Froude number- all less than one, sub-critical flow
     if (FroudeLeft < 1.0_dbl .and. FroudeRight < 1.0_dbl .and. FroudeBottom < 1.0_dbl) then
@@ -1875,9 +1874,6 @@ FroudeBottom = u_Bottom / dsqrt(Gravity*h_Bottom)
     ! computing the height of water at the left upstream reach based on the conservation of energy
     h_upstream_Left = h_Bottom + u_Bottom**2./(2.0_Dbl*Gravity) - u_Left**2./(2.0_Dbl*Gravity)
 
-    ! computing the height of water at the right upstream reach based on the conservation of energy
-    h_upstream_Right = h_Bottom + u_Bottom**2./(2.0_Dbl*Gravity) - u_Right**2./(2.0_Dbl*Gravity)
-
     ! Final values for the ghost cells:
     ! ghost cells for the left upstream reach
     ReachLeft_Cell_np1%U(1)  = h_upstream_Left          ! h height
@@ -1887,7 +1883,7 @@ FroudeBottom = u_Bottom / dsqrt(Gravity*h_Bottom)
     ReachLeft_Cell_np2%U(2)  = ReachLeft_Cell_n%U(2)    ! uh
 
 !    ! Indicating the flow regime based on the Froude number- all less than one, sub-critical flow
-    if (FroudeLeft < 1.0_dbl .and. FroudeRight < 1.0_dbl .and. FroudeBottom < 1.0_dbl) then
+    if (FroudeLeft < 1.0_dbl .and. FroudeBottom < 1.0_dbl) then
       ! case 1: Subcritical flow
       print*,"sub-critical flow"
 
@@ -1912,7 +1908,7 @@ FroudeBottom = u_Bottom / dsqrt(Gravity*h_Bottom)
 !      BottomReach%UU(0)%U(2)  =
 !
     ! Indicating the flow regime based on the Froude number- all Fr > 1, super-critical flow
-    else if (FroudeLeft > 1.0_dbl .and. FroudeRight > 1.0_dbl .and. FroudeBottom > 1.0_dbl) then
+    else if (FroudeLeft > 1.0_dbl .and. FroudeBottom > 1.0_dbl) then
       ! case 2: Supercritical flow
       print*,"super-critical flow"
 

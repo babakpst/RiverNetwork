@@ -19,7 +19,7 @@ type(ArgCommands)     :: Arguments  ! Holds the entered arguments from the comma
 type(Input_Data_tp)   :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
 
 ! Holds initial data required for array allocation
-type(AnalysisData_tp(TotalNNodes=:, TotalNReaches=:)), allocatable :: AnalysisInfo
+type(AnalysisData_tp) :: AnalysisInfo
 
 ! Holds the entire information required of the Model
 type(network_tp) :: Model
