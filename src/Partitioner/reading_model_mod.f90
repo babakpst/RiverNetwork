@@ -408,13 +408,18 @@ write(unit=UnFile, fmt="(' Node no. -- BC ')")
 
   end do
 
+write(unit=UnFile, fmt=*, asynchronous='no', iostat=IO_write, err=1006)
+write(unit=*     , fmt=*, asynchronous='no', iostat=IO_write, err=1006)
+
 UnFile = FileDataGeo
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+
   do i_Node = 1, this%Base_Geometry%NoNodes
+
     UnFile = FileDataGeo
-    read(unit=UnFile, fmt="(I23,F23.10)", advance='yes', asynchronous='no', iostat=IO_read, &
-                       err=1003, end=1004) T_Node, this%Q_Up(T_Node)
+    read(unit=UnFile, fmt=*, asynchronous='no', iostat=IO_read, err=1003, end=1004) &
+                        T_Node, this%Q_Up(T_Node)
     UnFile = FileInfo
     write(unit=UnFile, fmt="(' Flow rate at the upstream in the node', I23,' is: ', F23.10, &
     ' m/s3')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)T_Node,this%Q_Up(T_Node)
@@ -422,13 +427,17 @@ read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, e
     ' m/s3')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)T_Node,this%Q_Up(T_Node)
   end do
 
+write(unit=UnFile, fmt=*, asynchronous='no', iostat=IO_write, err=1006)
+write(unit=*     , fmt=*, asynchronous='no', iostat=IO_write, err=1006)
+
 UnFile = FileDataGeo
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
   do i_reach = 1, this%Base_Geometry%NoReaches
+
     UnFile = FileDataGeo
-    read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
-                      end=1004) T_Reach, this%CntrlV(T_Reach)
+    read(unit=UnFile, fmt=*, asynchronous='no', iostat=IO_read, err=1003, end=1004) &
+                                                                      T_Reach, this%CntrlV(T_Reach)
 
     UnFile = FileInfo
     write(unit=UnFile, &
@@ -440,13 +449,18 @@ read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, e
           advance='yes', asynchronous='no', iostat=IO_write, err=1006) T_Reach,this%CntrlV(T_Reach)
   end do
 
+
+write(unit=*     , fmt=*, asynchronous='no', iostat=IO_write, err=1006)
+write(unit=UnFile, fmt=*, asynchronous='no', iostat=IO_write, err=1006)
+
 UnFile = FileDataGeo
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+
   do i_reach = 1, this%Base_Geometry%NoReaches
     UnFile = FileDataGeo
-    read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
-                      end=1004) T_Reach, this%CntrlV_ratio(T_Reach)
+    read(unit=UnFile, fmt=*, asynchronous='no', iostat=IO_read, err=1003, end=1004) &
+                                                                T_Reach, this%CntrlV_ratio(T_Reach)
 
     UnFile = FileInfo
     write(unit=UnFile, &
@@ -458,6 +472,9 @@ read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, e
           advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
                                                                  T_Reach,this%CntrlV_ratio(T_Reach)
   end do
+
+write(unit=UnFile, fmt=*, asynchronous='no', iostat=IO_write, err=1006)
+write(unit=*     , fmt=*, asynchronous='no', iostat=IO_write, err=1006)
 
 ! - Closing the geometry file ---------------------------------------------------------------------
 write(*,        fmt="(A)") " -Closing the geometry file"

@@ -210,7 +210,7 @@ type partitioner_tp(edges, nodes)
   ! This reach holds information about each reach after partitioning. For each reach, the first and
   ! the second col, holds the rank in which the first and the second node of this reach belongs to,
   ! respectively. The third and fourth col, holds the total number of cells corresponding to each
-  ! node. The 5th and 6th cols indicate the local reach number on the rank. If both node are on the
+  ! rank. The 5th and 6th cols indicate the local reach number on the rank. If both node are on the
   ! same rank, then we have a local number in the 5th col only, but if the reach is shared between
   ! For example, ... (to be continued) <modify>
   integer(kind=Lng), dimension(edges,6) :: ReachPartition
@@ -350,8 +350,18 @@ integer(kind=Lng)  :: tempCell      ! Temp var to hold no. of cells of each rank
 integer(kind=Lng)  :: Weights       ! Weight of each edge (= no. cells in the edge= reach)
 integer(kind=Lng)  :: NodeLocation  ! Temp var to hold the location of adjacent nodes in the graph
 
+
+
+integer(kind=Lng)  :: UpstreamI  ! holds the local no of upstream reach
+integer(kind=Lng)  :: UpstreamII ! holds the local no of upstream reach
+integer(kind=Lng)  :: Downstream ! holds the local no of downstream reach
+
 integer, target    :: NumberOfNodes ! saves total number of nodes
 integer, target    :: NumberOfRanks ! saves total number of ranks
+
+
+integer(kind=Lng)  :: counter_reach ! counting total number of reaches partitioned- to check the validity of the partitioning
+
 
 ! - integer Arrays --------------------------------------------------------------------------------
 integer(kind=Lng), dimension (Geometry%Base_Geometry%size,4) :: chunk
@@ -364,6 +374,8 @@ integer(kind=Lng), dimension (Geometry%Base_Geometry%size,4) :: chunk
 ! Indicates how many reaches exist on each rank, we need this for allocating memory in the
 ! simulator code.
 integer(kind=Lng), dimension (Geometry%Base_Geometry%size) :: NReachOnRanks
+
+! Holds total number of nodes on each rank
 integer(kind=Lng), dimension (Geometry%Base_Geometry%size) :: NNodesOnRanks
 
 ! This array holds all the reach numbers attached to each nodes. The assumption is that at most,
@@ -665,12 +677,11 @@ write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
     stop
   end if
 
-! <delete>
-print*," edgecut after:   ",  this%METIS4%edgecut
-print*," partitions after: "
- do i = 1, NumberOfNodes
-  write(*,fmt="(2I2)")i, this%part(i)
- end do
+
+! <delete> afte debugging
+!  do i = 1, NumberOfNodes
+!    write(*,fmt="(2I2)")i, this%part(i)
+!  end do
 
 ! - analyzing the partitioned graph
 ! In the following loop, we analyze the partitioning to see how many cells sits on each rank.
@@ -691,6 +702,7 @@ LocalNodeNumbering(:) = 0_Lng ! initializing local node numbering
 ReachAttachedToNode(:,3:) = -1_Lng  ! initialize
 ReachAttachedToNode(:,1:2)= 0_Lng   ! initialize, the first col will be used to count the number of
                                     ! reaches attached to this node.
+counter_reach = 0_Lng               ! this counter counts number of reaches that shared between ranks
 
 write(*,       *) " Analyzing the partitioned network ... "
 write(FileInfo,*) " Analyzing the partitioned network ... "
@@ -721,7 +733,7 @@ write(FileInfo,*) " Analyzing the partitioned network ... "
     ! The case that both nodes are on the same rank, i.e. the entire reach is one rank
     if (this%ReachPartition(i_reach,1) == this%ReachPartition(i_reach,2)) then
 
-      NReachOnRanks(this%ReachPartition(i_reach,1)) = this%ReachPartition(i_reach,1) + 1_Lng
+      NReachOnRanks(this%ReachPartition(i_reach,1)) = NReachOnRanks(this%ReachPartition(i_reach,1)) + 1_Lng
 
       ! no cells from this reach on this rank (the entire reach on one rank)
       this%ReachPartition(i_reach,3) = Discretization%DiscretizedReach(i_reach)%NCells_reach
@@ -736,8 +748,10 @@ write(FileInfo,*) " Analyzing the partitioned network ... "
     ! The case that the reach seats on two different ranks
     else
 
-      NReachOnRanks(this%ReachPartition(i_reach,1)) = this%ReachPartition(i_reach,1) + 1_Lng
-      NReachOnRanks(this%ReachPartition(i_reach,2)) = this%ReachPartition(i_reach,2) + 1_Lng
+      counter_reach = counter_reach + 1_Lng
+
+      NReachOnRanks(this%ReachPartition(i_reach,1)) = NReachOnRanks(this%ReachPartition(i_reach,1)) + 1_Lng
+      NReachOnRanks(this%ReachPartition(i_reach,2)) = NReachOnRanks(this%ReachPartition(i_reach,2)) + 1_Lng
 
       ! Local reach numberings on the ranks which the reach belongs to.
       this%ReachPartition(i_reach,5) = NReachOnRanks(this%ReachPartition(i_reach,1))
@@ -767,27 +781,40 @@ write(FileInfo,*) " Analyzing the partitioned network ... "
     end if
   end do
 
+! <delete> after  debugging
+!print*,"local reaches"
+!write(*,"(4I2)")NReachOnRanks
+!print*,"local numbering 5"
+!write(*,"(16I2)") this%ReachPartition(:,5)
+!print*,"local numbering 6"
+!write(*,"(16I2)") this%ReachPartition(:,6)
+
+! no. of cells on each rank, saved in col 4.
+chunk(:,4) = chunk(:,2) + chunk(:,3)
+
+  ! Checks
   ! check the number of reaches attached to each node. Now, the assumption is that there are at
   ! most only two upstream reaches and one downstream reach.
   do i_node = 1, Geometry%Base_Geometry%NoNodes
-    if (ReachAttachedToNode(i_node, 1) > 2_Lng ) then
+
+    ! <delete> after debugging
+    !write(*,"(A, 4I5)") "downstream:",i_node, ReachAttachedToNode(i_node, 1), ReachAttachedToNode(i_node, 3), ReachAttachedToNode(i_node, 4)
+    !write(*,"(A, 4I5)") "upstream:  ",i_node, ReachAttachedToNode(i_node, 2), ReachAttachedToNode(i_node, 7), ReachAttachedToNode(i_node, 8)
+
+    if (ReachAttachedToNode(i_node, 2) > 2_Lng ) then
       write(*, fmt="('Input error: At the time, the assumption is that there are only two upstream reaches')")
-      write(*, fmt="(' Node: ', I10, ' has:', I5, ' upstream reaches.' )") i_node,  ReachAttachedToNode(i_node, 1)
+      write(*, fmt="(' Node: ', I10, ' has:', I5, ' upstream reaches.' )") i_node,  ReachAttachedToNode(i_node, 2)
       stop
     end if
-    if (ReachAttachedToNode(i_node, 2) > 1_Lng ) then
+    if (ReachAttachedToNode(i_node, 1) > 1_Lng ) then
       write(*, fmt="('Input error: At the time, the assumption is that there are only one downstream reach.')")
       write(*, fmt="(' Node: ', I10, ' has:', I5, ' downstream reaches.' )") i_node,  ReachAttachedToNode(i_node, 1)
       stop
     end if
   end do
 
-! no. of cells on each rank, saved in col 4.
-chunk(:,4) = chunk(:,2) + chunk(:,3)
 
-
-! Checks
-  if ( sum(NReachOnRanks) /= Geometry%Base_Geometry%NoReaches ) then
+  if ( sum(NReachOnRanks)-counter_reach /= Geometry%Base_Geometry%NoReaches ) then
     call errorMessage(Geometry%Base_Geometry%NoReaches, sum(NReachOnRanks))
   end if
 
@@ -865,8 +892,13 @@ TotalCellCounter = 0_Lng
             RangeCell_II  = this%ReachPartition(i_reach,3)
             Communication = -1_Tiny ! no communication with other ranks. The entire rank sits on one rank.
             CommRank      = -1_Tiny ! The rank number that this reach will communicate.
-            BCNodeI       = Geometry%BoundaryCondition(RankNodeI)
-            BCNodeII      = Geometry%BoundaryCondition(RankNodeII)
+            BCNodeI       = Geometry%BoundaryCondition(NodeI)
+            BCNodeII      = Geometry%BoundaryCondition(NodeII)
+
+            UpstreamI  = ReachAttachedToNode(NodeI,  7)
+            UpstreamII = ReachAttachedToNode(NodeI,  8)
+            Downstream = ReachAttachedToNode(NodeII, 3)
+
 
           else if (RankNodeI /= RankNodeII) then
           ! In this case, each node of this reach belong to two different ranks, thus, we dedicate
@@ -900,22 +932,23 @@ TotalCellCounter = 0_Lng
           if (ReachAttachedToNode(NodeI, 7) == -1_Lng) then  ! There is no upstream reach for this node (a boundary condition node)
             ReachLeft = -1_Lng
           else  ! There is an upstream reach for this junction.
-            ReachLeft   = this%ReachPartition(ReachAttachedToNode(NodeI,  7), 6)
+            ReachLeft   = this%ReachPartition(ReachAttachedToNode(NodeI,  7), 5)
           end if
           ! upstream reach number 2 (ReachRight)
           if (ReachAttachedToNode(NodeI, 8) == -1_Lng) then  ! There is no upstream reach for this node (a boundary condition node)
             ReachRight = -1_Lng
           else  ! There is an upstream reach for this junction.
-            ReachRight = this%ReachPartition(ReachAttachedToNode(NodeI,  8), 6)
+            ReachRight = this%ReachPartition(ReachAttachedToNode(NodeI,  8), 5)
           end if
+
           ! downstream reach (ReachBottom)
           if (ReachAttachedToNode(NodeII, 3) == -1_Lng) then  ! There is no downstream reach for this node (a boundary condition node)
             ReachBottom = -1_Lng
-          else  ! There is an upstream reach for this junction.
-            ReachBottom = this%ReachPartition(ReachAttachedToNode(NodeI,  3), 5)
+          else  ! There is a downstream reach for this junction.
+            ReachBottom = this%ReachPartition(ReachAttachedToNode(NodeII,  3), 6)
           end if
 
-        write(unit=UnFile, fmt="(12I12, 3F35.20)", advance='yes', asynchronous='no', &
+        write(unit=UnFile, fmt="(14I12, 6F35.20)", advance='yes', asynchronous='no', &
               iostat=IO_write, err=1006)                                            &
               i_reach,          & ! global reach number, before partitioning
               Communication,    & ! indicates whether we will communicate with other ranks for this reach or not.
@@ -924,8 +957,17 @@ TotalCellCounter = 0_Lng
               BCNodeI, BCNodeII, & ! indicates the type of the boundary conditions of the two nodes attached to this reach.
               RangeCell_II - RangeCell_I + 1_Lng,                                   & ! total no. cells
 
-              ReachAttachedToNode(NodeI,  7), ReachAttachedToNode(NodeI, 8),        & ! the upstream reaches, global numbering
-              ReachAttachedToNode(NodeII, 3),                                       & ! the downstream reach, global numbering
+              UpstreamI, UpstreamII,        & ! the upstream reaches, global numbering
+              Downstream,                                      & ! the downstream reach, global numbering
+
+
+
+
+!              ReachAttachedToNode(this%ReachPartition(i_reach,6),  7), ReachAttachedToNode(this%ReachPartition(i_reach,6), 8),        & ! the upstream reaches, global numbering
+!              ReachAttachedToNode(this%ReachPartition(i_reach,5), 3),                                       & ! the downstream reach, global numbering
+
+
+
 
               ReachLeft, ReachRight, ReachBottom,                                   & ! local reach numbering of upstream and downstream reaches of this particular reach.
 
@@ -1008,6 +1050,7 @@ write(unit=UnFile, fmt="(2I23)", advance='yes', asynchronous='no', iostat=IO_wri
 CellCounter = 0_Lng ! To make sure that we count all the cell numbers in each rank
 ReachCounter= 0_Lng
 UnFile = FilePartition
+
   do i_reach = 1_Lng, Geometry%Base_Geometry%NoReaches
 
     ! The rank which the first node of this reach belongs to

@@ -365,9 +365,11 @@ write(FileInfo, fmt="(A)")" Loop over reaches to discretize the domain ..."
         this%DiscretizedReach(i_reach)%ZFull(i_Cell*2_Lng-1_Lng) = Height + 0.5_Dbl * Z_loss
         this%DiscretizedReach(i_reach)%ZFull(i_Cell*2_Lng      ) = Height
 
-        this%DiscretizedReach(i_reach)%ReachManning = Geometry%network(i_reach)%ReachManning
-        this%DiscretizedReach(i_reach)%ReachWidthCell = Geometry%network(i_reach)%ReachWidth
       end do
+
+    this%DiscretizedReach(i_reach)%ReachManning   = Geometry%network(i_reach)%ReachManning
+    this%DiscretizedReach(i_reach)%ReachWidthCell = Geometry%network(i_reach)%ReachWidth
+
 
     ! double check here to see what i_cell is
     this%DiscretizedReach(i_reach)%XFull(i_Cell*2_Lng+2_Lng)=XCoordinate+0.5_Dbl*CntrlVolumeLength

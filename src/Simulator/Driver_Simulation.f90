@@ -64,7 +64,7 @@ call MPI_Comm_Size(MPI_COMM_WORLD, ModelInfo%size, MPI_err) ! <MPI>
 call MPI_Comm_Rank(MPI_COMM_WORLD, ModelInfo%rank, MPI_err) ! <MPI>
 
 !write(*,fmt="Hello from rank: ", I6, "- We are a total of:", I6) rank,size
-if ( ModelInfo%rank == 0) write(*,fmt="(' ****** Total number of ranks: ', I6)") ModelInfo%size
+if (ModelInfo%rank == 0) write(*,fmt="(' ****** Total number of ranks: ', I6)") ModelInfo%size
 
 ! Time and Date signature =========================================================================
 call system_clock(TotalTime%startSys, TotalTime%clock_rate)
