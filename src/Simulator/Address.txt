@@ -11,5 +11,5 @@ Number of Analysis:
 1
 
 Names of the analysis files:
-EX3_case1
+Case2
 

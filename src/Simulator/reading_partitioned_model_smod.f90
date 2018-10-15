@@ -42,9 +42,9 @@ open(Unit=UnFile, file=trim(ModelInfo%ModelNameParallel)//'.par', &
 UnFile = FilePartition
 read(unit=UnFile, fmt="(4I23)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
      end=1004) &
-     this%TotalNumOfCellsOnThisRank, &
+     this%TotalNumOfCellsOnThisRank,   &
      this%TotalNumOfReachesOnThisRank, &
-     this%TotalNumOfNodesOnThisRank, &
+     this%TotalNumOfNodesOnThisRank,   &
      this%TotalNumOfReachesInTheNetwork
 
 write(*,        fmt="(A)") " -Allocating arrays for the discretized network ..."
@@ -55,9 +55,11 @@ if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
 this%NCutsOnRanks = 0_Lng  ! Initializing number of reach cuts
 
-  On_Reaches: do i_reach = 1, this%TotalNumOfCellsOnThisRank
+  On_Reaches: do i_reach = 1, this%TotalNumOfReachesOnThisRank
 
-    read(unit=UnFile, fmt="(2I23)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
+    write(*,fmt="(A,I6,A,I6,A,I6)") "Reading reach number:", i_reach, " out of:",this%TotalNumOfReachesOnThisRank,  "  on rank:", ModelInfo%rank
+
+    read(unit=UnFile, fmt="(14I12, 6F35.20)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
          end=1004) &
          this%DiscretizedReach(i_reach)%ReachNumber,    &!reach number in the unpartitioned network- global reach number
          this%DiscretizedReach(i_reach)%Communication,  &

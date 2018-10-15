@@ -44,7 +44,7 @@ read(FileAdr,*) this%InputDir;  !write(*,*) this%InputDir
 read(FileAdr,*)
 read(FileAdr,*)
 read(FileAdr,*) this%OutputDir; !write(*,*) this%OutputDir
- read(FileAdr,*)
+read(FileAdr,*)
 read(FileAdr,*)
 read(FileAdr,*) this%NumberOfAnalyses; !write(*,*) this%NumberOfAnalyses
 
@@ -206,21 +206,32 @@ write(unit=UnFile, fmt="(' The time step is: ', F23.10, ' s')", advance='yes', a
                    iostat=IO_write, err=1006) this%TimeStep
 write(unit=*,      fmt="(' The time step is: ', F23.10, ' s')") this%TimeStep
 
+
+print *," checkpoint 000"
+
 UnFile = UnInptAna
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(F23.10)", advance='yes', asynchronous='no', iostat=IO_read, &
                   err=1003, end=1004) this%h_dw
+
+print *," checkpoint 100"
+
 UnFile = FileInfo
 write(unit=UnFile, fmt="(' Downstream water depth is: ', F23.10, ' m')", advance='yes', &
                    asynchronous='no', iostat=IO_write, err=1006) this%h_dw
 write(unit=*,      fmt="(' Downstream water depth is: ', F23.10, ' m')") this%h_dw
+
+print *," checkpoint 200"
+
 
 UnFile = UnInptAna
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read, &
                   err=1003, end=1004) this%limiter
+
+print *," checkpoint 300"
 
 UnFile = FileInfo
 write(unit=UnFile, fmt="(' The limiter is: ', I10)", advance='yes', asynchronous='no', &
@@ -234,9 +245,9 @@ read(unit=UnFile, fmt="(I10)", advance='yes', asynchronous='no', iostat=IO_read,
                   err=1003, end=1004) this%Plot_Inc
 
 UnFile = FileInfo
-write(unit=UnFile, fmt="(' The limiter is: ', I10)", advance='yes', asynchronous='no', &
+write(unit=UnFile, fmt="(' The interval for results is: ', I10)", advance='yes', asynchronous='no', &
                    iostat=IO_write, err=1006) this%Plot_Inc
-write(unit=*,      fmt="(' The limiter is: ', I10)") this%Plot_Inc
+write(unit=*,      fmt="(' The interval for results is: ', I10)") this%Plot_Inc
 
 UnFile = UnInptAna
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
