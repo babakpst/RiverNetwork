@@ -356,6 +356,9 @@ integer(kind=Lng)  :: UpstreamI  ! holds the local no of upstream reach
 integer(kind=Lng)  :: UpstreamII ! holds the local no of upstream reach
 integer(kind=Lng)  :: Downstream ! holds the local no of downstream reach
 
+integer(kind=Lng)  :: LocalNodeOfReachI ! holds the local no of the upstream node- -1 if node is not on this rank
+integer(kind=Lng)  :: LocalNodeOfReachII! holds the local no of the downstream node- -1 if node is not on this rank
+
 integer, target    :: NumberOfNodes ! saves total number of nodes
 integer, target    :: NumberOfRanks ! saves total number of ranks
 
@@ -899,6 +902,9 @@ TotalCellCounter = 0_Lng
             UpstreamII = ReachAttachedToNode(NodeI,  8)
             Downstream = ReachAttachedToNode(NodeII, 3)
 
+            LocalNodeOfReachI  = LocalNodeNumbering(NodeI)
+            LocalNodeOfReachII = LocalNodeNumbering(NodeII)
+
 
           else if (RankNodeI /= RankNodeII) then
           ! In this case, each node of this reach belong to two different ranks, thus, we dedicate
@@ -914,6 +920,9 @@ TotalCellCounter = 0_Lng
               BCNodeI       = Geometry%BoundaryCondition(RankNodeI)
               BCNodeII      = -1_Tiny
 
+              LocalNodeOfReachI  = LocalNodeNumbering(NodeI)
+              LocalNodeOfReachII = -1_Lng
+
             else if ( INT4(RankNodeII) == i_rank) then
               RangeCell_I   = this%ReachPartition(i_reach,3) + 1_Lng
               RangeCell_II  = this%ReachPartition(i_reach,3)+this%ReachPartition(i_reach,4)
@@ -922,6 +931,10 @@ TotalCellCounter = 0_Lng
               CommRank      = RankNodeI
               BCNodeI       = -1_Tiny
               BCNodeII      = Geometry%BoundaryCondition(RankNodeII)
+
+              LocalNodeOfReachI  = -1_Lng
+              LocalNodeOfReachII = LocalNodeNumbering(NodeII)
+
             end if
           end if
 
@@ -959,14 +972,6 @@ TotalCellCounter = 0_Lng
 
               UpstreamI, UpstreamII,        & ! the upstream reaches, global numbering
               Downstream,                                      & ! the downstream reach, global numbering
-
-
-
-
-!              ReachAttachedToNode(this%ReachPartition(i_reach,6),  7), ReachAttachedToNode(this%ReachPartition(i_reach,6), 8),        & ! the upstream reaches, global numbering
-!              ReachAttachedToNode(this%ReachPartition(i_reach,5), 3),                                       & ! the downstream reach, global numbering
-
-
 
 
               ReachLeft, ReachRight, ReachBottom,                                   & ! local reach numbering of upstream and downstream reaches of this particular reach.

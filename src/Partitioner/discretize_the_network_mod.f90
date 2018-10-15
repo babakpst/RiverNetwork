@@ -154,7 +154,6 @@ real(kind=Dbl)    :: Z_loss            ! temp var. to hold loss of height in eac
 real(kind=Dbl)    :: TotalLength       ! Temp var
 real(kind=Dbl)    :: CntrlVolumeLength ! The length of control volume
 real(kind=Dbl)    :: XCoordinate       ! Temp var to compute the coordinate of the cell center
-real(kind=Dbl)    :: ProjectionLength  ! The horizontal length of the reach
 real(kind=Dbl)    :: RaisedHeight      ! A temporary variable that holds the difference in height
                                        ! between the upstream and downstream nodes in a reach
 
@@ -369,7 +368,7 @@ write(FileInfo, fmt="(A)")" Loop over reaches to discretize the domain ..."
 
     this%DiscretizedReach(i_reach)%ReachManning   = Geometry%network(i_reach)%ReachManning
     this%DiscretizedReach(i_reach)%ReachWidthCell = Geometry%network(i_reach)%ReachWidth
-
+    this%DiscretizedReach(i_reach)%CellPorjectionLength = CntrlVolumeLength
 
     ! double check here to see what i_cell is
     this%DiscretizedReach(i_reach)%XFull(i_Cell*2_Lng+2_Lng)=XCoordinate+0.5_Dbl*CntrlVolumeLength
