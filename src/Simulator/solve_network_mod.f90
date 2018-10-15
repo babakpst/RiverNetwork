@@ -320,6 +320,10 @@ write(FileInfo,*) " -Apply boundary condition to the solution ..."
 ! The ghost cells are located at the junctions, or the upstream node, or at the downstream node.
   do i_reach =1, this%Model%TotalNumOfReachesOnThisRank
 
+
+    write(*,       *) " -Boundary condition for reach: ", i_reach
+    write(FileInfo,*) " -Boundary condition for reach: ", i_reach
+
     NCellsOnTheReach = this%Model%DiscretizedReach(i_reach)%NCells_reach
 
     ! initialize the height part of the solution at time-step 0/ except the ghost cells.
@@ -565,6 +569,9 @@ write(FileInfo,*) " -Apply boundary condition to the solution ..."
       end if
 
   end do
+
+
+print*," begin passing number"
 
 ! substituting the sent messages to the solution
 Couter_ReachCut = 0_Lng
