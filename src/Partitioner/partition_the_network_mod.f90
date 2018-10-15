@@ -352,9 +352,9 @@ integer(kind=Lng)  :: NodeLocation  ! Temp var to hold the location of adjacent 
 
 
 
-integer(kind=Lng)  :: UpstreamI  ! holds the local no of upstream reach
-integer(kind=Lng)  :: UpstreamII ! holds the local no of upstream reach
-integer(kind=Lng)  :: Downstream ! holds the local no of downstream reach
+integer(kind=Lng)  :: UpstreamI  ! holds the local no of upstream reach  - -1 if upstream of this reach is not on this rank
+integer(kind=Lng)  :: UpstreamII ! holds the local no of upstream reach  - -1 if upstream of this reach is not on this rank
+integer(kind=Lng)  :: Downstream ! holds the local no of downstream reach- -1 if upstream of this reach is not on this rank
 
 integer(kind=Lng)  :: LocalNodeOfReachI ! holds the local no of the upstream node- -1 if node is not on this rank
 integer(kind=Lng)  :: LocalNodeOfReachII! holds the local no of the downstream node- -1 if node is not on this rank
@@ -905,6 +905,27 @@ TotalCellCounter = 0_Lng
             LocalNodeOfReachI  = LocalNodeNumbering(NodeI)
             LocalNodeOfReachII = LocalNodeNumbering(NodeII)
 
+              ! figuring out the local reach number for the upstream reaches and the downstream reaches of each reach
+              ! upstream reach number 1 (ReachLeft)
+              if (ReachAttachedToNode(NodeI, 7) == -1_Lng) then  ! There is no upstream reach for this node (a boundary condition node)
+                ReachLeft = -1_Lng
+              else  ! There is an upstream reach for this junction.
+                ReachLeft   = this%ReachPartition(ReachAttachedToNode(NodeI,  7), 5)
+              end if
+
+              ! upstream reach number 2 (ReachRight)
+              if (ReachAttachedToNode(NodeI, 8) == -1_Lng) then  ! There is no upstream reach for this node (a boundary condition node)
+                ReachRight = -1_Lng
+              else  ! There is an upstream reach for this junction.
+                ReachRight = this%ReachPartition(ReachAttachedToNode(NodeI,  8), 5)
+              end if
+
+              ! downstream reach (ReachBottom)
+              if (ReachAttachedToNode(NodeII, 3) == -1_Lng) then  ! There is no downstream reach for this node (a boundary condition node)
+                ReachBottom = -1_Lng
+              else  ! There is a downstream reach for this junction.
+                ReachBottom = this%ReachPartition(ReachAttachedToNode(NodeII,  3), 6)
+              end if
 
           else if (RankNodeI /= RankNodeII) then
           ! In this case, each node of this reach belong to two different ranks, thus, we dedicate
@@ -920,8 +941,30 @@ TotalCellCounter = 0_Lng
               BCNodeI       = Geometry%BoundaryCondition(RankNodeI)
               BCNodeII      = -1_Tiny
 
+              UpstreamI  = ReachAttachedToNode(NodeI,  7)
+              UpstreamII = ReachAttachedToNode(NodeI,  8)
+              Downstream = -1_Lng
+
               LocalNodeOfReachI  = LocalNodeNumbering(NodeI)
               LocalNodeOfReachII = -1_Lng
+
+                ! figuring out the local reach number for the upstream reaches and the downstream reaches of each reach
+                ! upstream reach number 1 (ReachLeft)
+                if (ReachAttachedToNode(NodeI, 7) == -1_Lng) then  ! There is no upstream reach for this node (a boundary condition node)
+                  ReachLeft = -1_Lng
+                else  ! There is an upstream reach for this junction.
+                  ReachLeft   = this%ReachPartition(ReachAttachedToNode(NodeI,  7), 5)
+                end if
+
+                ! upstream reach number 2 (ReachRight)
+                if (ReachAttachedToNode(NodeI, 8) == -1_Lng) then  ! There is no upstream reach for this node (a boundary condition node)
+                  ReachRight = -1_Lng
+                else  ! There is an upstream reach for this junction.
+                  ReachRight = this%ReachPartition(ReachAttachedToNode(NodeI,  8), 5)
+                end if
+
+              ! downstream reach (ReachBottom)
+              ReachBottom = -1_Lng
 
             else if ( INT4(RankNodeII) == i_rank) then
               RangeCell_I   = this%ReachPartition(i_reach,3) + 1_Lng
@@ -932,46 +975,43 @@ TotalCellCounter = 0_Lng
               BCNodeI       = -1_Tiny
               BCNodeII      = Geometry%BoundaryCondition(RankNodeII)
 
+              UpstreamI  = -1_Lng
+              UpstreamII = -1_Lng
+              Downstream = ReachAttachedToNode(NodeII, 3)
+
               LocalNodeOfReachI  = -1_Lng
               LocalNodeOfReachII = LocalNodeNumbering(NodeII)
+
+              ! figuring out the local reach number for the upstream reaches and the downstream reaches of each reach
+              ! upstream reach number 1 (ReachLeft)
+              ReachLeft   = -1_Lng
+
+              ! upstream reach number 2 (ReachRight)
+              ReachRight = -1_Lng
+
+                ! downstream reach (ReachBottom)
+                if (ReachAttachedToNode(NodeII, 3) == -1_Lng) then  ! There is no downstream reach for this node (a boundary condition node)
+                  ReachBottom = -1_Lng
+                else  ! There is a downstream reach for this junction.
+                  ReachBottom = this%ReachPartition(ReachAttachedToNode(NodeII,  3), 6)
+                end if
 
             end if
           end if
 
         ReachCounter = ReachCounter + 1_Lng
 
-          ! figuring out the local reach number for the upstream reaches and the downstream reaches of each reach
-          ! upstream reach number 1 (ReachLeft)
-          if (ReachAttachedToNode(NodeI, 7) == -1_Lng) then  ! There is no upstream reach for this node (a boundary condition node)
-            ReachLeft = -1_Lng
-          else  ! There is an upstream reach for this junction.
-            ReachLeft   = this%ReachPartition(ReachAttachedToNode(NodeI,  7), 5)
-          end if
-          ! upstream reach number 2 (ReachRight)
-          if (ReachAttachedToNode(NodeI, 8) == -1_Lng) then  ! There is no upstream reach for this node (a boundary condition node)
-            ReachRight = -1_Lng
-          else  ! There is an upstream reach for this junction.
-            ReachRight = this%ReachPartition(ReachAttachedToNode(NodeI,  8), 5)
-          end if
-
-          ! downstream reach (ReachBottom)
-          if (ReachAttachedToNode(NodeII, 3) == -1_Lng) then  ! There is no downstream reach for this node (a boundary condition node)
-            ReachBottom = -1_Lng
-          else  ! There is a downstream reach for this junction.
-            ReachBottom = this%ReachPartition(ReachAttachedToNode(NodeII,  3), 6)
-          end if
-
         write(unit=UnFile, fmt="(14I12, 6F35.20)", advance='yes', asynchronous='no', &
               iostat=IO_write, err=1006)                                            &
               i_reach,          & ! global reach number, before partitioning
               Communication,    & ! indicates whether we will communicate with other ranks for this reach or not.
               CommRank,         & ! if there is communication with other rank for this reach, this var indicates the rank number to which we need to communicate
-              LocalNodeNumbering(NodeI), LocalNodeNumbering(NodeII), & ! Local node numbers attached to this reach
+              LocalNodeOfReachI, LocalNodeOfReachII, & ! Local node numbers attached to this reach
               BCNodeI, BCNodeII, & ! indicates the type of the boundary conditions of the two nodes attached to this reach.
               RangeCell_II - RangeCell_I + 1_Lng,                                   & ! total no. cells
 
               UpstreamI, UpstreamII,        & ! the upstream reaches, global numbering
-              Downstream,                                      & ! the downstream reach, global numbering
+              Downstream,                   & ! the downstream reach, global numbering
 
 
               ReachLeft, ReachRight, ReachBottom,                                   & ! local reach numbering of upstream and downstream reaches of this particular reach.

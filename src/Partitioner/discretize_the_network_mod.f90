@@ -220,7 +220,8 @@ write(FileInfo, fmt="(A)")" Calculating the height of each node ... "
   end do
 
 ! setting the height of the output node - we assume that the height of drain node is zero
-this%NodeHeight(NetworkOutletNode) = 0.0_Dbl
+this%NodeHeight(:) = 0.0_Dbl
+!this%NodeHeight(NetworkOutletNode) = 0.0_Dbl
 
 allocate(UpstreamNodes(Geometry%Base_Geometry%NoNodes,Geometry%Base_Geometry%NoNodes), &
         stat=ERR_Alloc)
@@ -236,7 +237,7 @@ if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 ! method.
 
 ! initializing the nodes
-UpstreamNodes(:,:) = 0
+UpstreamNodes(:,:) = 0.0_Lng
 
 ! one level up: Initially, we go through all reaches and set the upstream node of each reach at the
 ! upstream of the drain node.
@@ -292,6 +293,12 @@ Max_Nodes = 0
 
 ! Now, that we have all the upstream nodes, we figure out the height of each node.
 ! The idea is that for each reach, we raise the height of the nodes on the upstream of that reach
+
+do i_Node2 = 1, Geometry%Base_Geometry%NoNodes   ! <delete>
+print*,"node height", i_Node2, this%NodeHeight(i_Node2)
+end do
+
+
   do i_reach = 1_Lng, Geometry%Base_Geometry%NoReaches
 
     ! The difference between the height of upstream and downstream nodes:
@@ -311,6 +318,14 @@ Max_Nodes = 0
         this%NodeHeight(i_Node) = this%NodeHeight(i_Node) + RaisedHeight
       end if
     end do
+
+print*," after reach", i_reach, RaisedHeight
+do i_Node2 = 1, Geometry%Base_Geometry%NoNodes   ! <delete>
+print*,"node height", i_Node2, this%NodeHeight(i_Node2)
+end do
+
+
+
   end do
 
 write(*,        fmt="(A)") " The height of each node calculated."
@@ -323,6 +338,11 @@ write(*,        fmt="(A)")" Loop over reaches to discretize the domain ..."
 write(FileInfo, fmt="(A)")" Loop over reaches to discretize the domain ..."
 
 
+do i_Node2 = 1, Geometry%Base_Geometry%NoNodes   ! <delete>
+print*,"node height", i_Node2, this%NodeHeight(i_Node2)
+end do
+
+  ! The main discretization loop
   do i_reach=1_Lng, Geometry%Base_Geometry%NoReaches  ! Loop over the reaches
 
     write(*,        fmt="(A, I10,A)")" -Discretizing reach no.: ", i_reach, " ..."
@@ -338,7 +358,10 @@ write(FileInfo, fmt="(A)")" Loop over reaches to discretize the domain ..."
     Z_loss = CntrlVolumeLength * Geometry%network(i_reach)%ReachSlope  ! Height loss in each cell
 
     ! The height of the upstream node
-    Height = this%NodeHeight( Geometry%network(i_reach)%ReachNodes(2))
+    Height = this%NodeHeight( Geometry%network(i_reach)%ReachNodes(1))
+
+    print*,"height", i_reach, Height
+
     ! we raise the initial height by half of Z_loss, which is equivalent to the height of
     ! an imaginary cell center just before the upstream node. To find the height of each cell
     ! thereafter, we reduce Z_loss from Height each time.
