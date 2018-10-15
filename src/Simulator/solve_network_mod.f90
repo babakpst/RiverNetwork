@@ -298,6 +298,10 @@ PrintResults = .false.
 SourceTerms%Identity(1,1) = 1.0_Dbl
 SourceTerms%Identity(2,2) = 1.0_Dbl
 
+
+write(*,       *) " -Allocating the solution ..."
+write(FileInfo,*) " -Allocating the solution ..."
+
 ! allocating the solution in each rank
   do i_reach =1, this%Model%TotalNumOfReachesOnThisRank
     allocate(                                                                                &
@@ -308,6 +312,9 @@ SourceTerms%Identity(2,2) = 1.0_Dbl
   end do
 
 Couter_ReachCut = 0_Lng
+
+write(*,       *) " -Apply boundary condition to the solution ..."
+write(FileInfo,*) " -Apply boundary condition to the solution ..."
 
 ! initializing the solution (height+velocity), at time step 0, including the ghost/junction cells.
 ! The ghost cells are located at the junctions, or the upstream node, or at the downstream node.
@@ -588,6 +595,9 @@ Couter_ReachCut = 0_Lng
   end do
 
 Results%ModelInfo = this%ModelInfo
+
+write(*,       *) " -Time marching ..."
+write(FileInfo,*) " -Time marching ..."
 
 !!$OMP PARALLEL default(private) SHARED(UN,UU,S, dt, dx, dtdx)                                                                                                          firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution,i_steps, NSteps)
 !$OMP PARALLEL default(none)  SHARED(UN,UU, dt, dx, dtdx) private(i_Cell,its,mts,height,velocity,Coefficient,height_interface, velocity_interface, speed, PrintResults) firstprivate(this,SourceTerms,LimiterFunc,Jacobian_neighbor,Jacobian,alpha, alpha_neighbor, alpha_tilda, Wave, Wave_neighbor, Wave_tilda, F_L, F_H, Delta_U,TempSolution,i_steps, NSteps, Results)
