@@ -212,7 +212,7 @@ integer(kind=Lng)  :: i_Cell    ! loop index over the Cells
 integer(kind=Lng)  :: i_steps   ! loop index over the number steps
 integer(kind=Lng)  :: NSteps    ! Total number of steps for time marching
 integer(kind=Lng)  :: i_reach   ! loop index over the reaches
-integer(kind=Lng)  :: Couter_ReachCut ! We use this var to manage send/receive requests
+integer(kind=Lng)  :: Counter_ReachCut ! We use this var to manage send/receive requests
 integer(kind=Lng)  :: UpstreamReachNumLeft ! The local reach number of the upstream reach attached to the current reach, left
 integer(kind=Lng)  :: UpstreamReachNumRight ! The local reach number of the upstream reach attached to the current reach, right
 integer(kind=Lng)  :: DownstreamReachNum ! The local reach number of the downstream reach attached to the current reach
@@ -298,33 +298,38 @@ PrintResults = .false.
 SourceTerms%Identity(1,1) = 1.0_Dbl
 SourceTerms%Identity(2,2) = 1.0_Dbl
 
-
 write(*,       *) " -Allocating the solution ..."
 write(FileInfo,*) " -Allocating the solution ..."
 
 ! allocating the solution in each rank
   do i_reach =1, this%Model%TotalNumOfReachesOnThisRank
-    allocate(                                                                                &
+    allocate(                                                                               &
       Solution(i_reach)%UU(-1_Lng:this%Model%DiscretizedReach(i_reach)%NCells_reach+2_Lng), &
       Solution(i_reach)%UN(-1_Lng:this%Model%DiscretizedReach(i_reach)%NCells_reach+2_Lng), &
                                                                                     stat=ERR_Alloc)
     if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
   end do
 
-Couter_ReachCut = 0_Lng
+Counter_ReachCut = 0_Lng
 
 write(*,       *) " -Apply boundary condition to the solution ..."
 write(FileInfo,*) " -Apply boundary condition to the solution ..."
+
+tag_recv(:) = 0
+tag_sent(:) = 0
+request_recv(:) = 0
+request_sent(:) = 0
 
 ! initializing the solution (height+velocity), at time step 0, including the ghost/junction cells.
 ! The ghost cells are located at the junctions, or the upstream node, or at the downstream node.
   do i_reach =1, this%Model%TotalNumOfReachesOnThisRank
 
 
-    write(*,       *) " -Boundary condition for reach: ", i_reach
-    write(FileInfo,*) " -Boundary condition for reach: ", i_reach
+    write(*,       *) " --------Boundary condition for reach: ", i_reach, this%ModelInfo%rank
+    write(FileInfo,*) " --------Boundary condition for reach: ", i_reach, this%ModelInfo%rank
 
     NCellsOnTheReach = this%Model%DiscretizedReach(i_reach)%NCells_reach
+
 
     ! initialize the height part of the solution at time-step 0/ except the ghost cells.
     ! This needs to be <modify>ied, if we have a different strategy
@@ -475,24 +480,28 @@ write(FileInfo,*) " -Apply boundary condition to the solution ..."
           end if
 
 
-          Couter_ReachCut = Couter_ReachCut + 1_Lng
+          Counter_ReachCut = Counter_ReachCut + 1_Lng
 
           ! communicate with the node that has the downstream part of this reach.
           ! Sending/Receiving cell info
           ! The downstream of this reach is on another rank
-          sent(1+ 2_Lng*(Couter_ReachCut - 1_Lng))%U(:) =  &
+          sent(1+ 2_Lng*(Counter_ReachCut - 1_Lng))%U(:) =  &
                                                  Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach)%U(:)
-          sent(2+ 2_Lng*(Couter_ReachCut - 1_Lng))%U(:) =  &
+          sent(2+ 2_Lng*(Counter_ReachCut - 1_Lng))%U(:) =  &
                                                  Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach-1_Lng)%U(:)
 
-          call MPI_ISEND(sent(1+2_Lng*(Couter_ReachCut-1_Lng):2+2_Lng*(Couter_ReachCut-1_Lng)), 4,&
-                         MPI_DOUBLE_PRECISION, this%Model%DiscretizedReach(i_reach)%CommRank,     &
-                         tag_sent(Couter_ReachCut), MPI_COMM_WORLD, request_sent(Couter_ReachCut),&
+          call MPI_ISEND(sent(1+2_Lng*(Counter_ReachCut-1_Lng):2+2_Lng*(Counter_ReachCut-1_Lng)), 4,&
+                         MPI_DOUBLE_PRECISION, this%Model%DiscretizedReach(i_reach)%CommRank-1,   &
+                         tag_sent(Counter_ReachCut), MPI_COMM_WORLD, request_sent(Counter_ReachCut),&
                          MPI_err)
-          call MPI_IRECV(recv(1+2_Lng*(Couter_ReachCut-1_Lng):2+2_Lng*(Couter_ReachCut-1_Lng)), 4,&
-                         MPI_DOUBLE_PRECISION, this%Model%DiscretizedReach(i_reach)%CommRank,     &
-                         tag_recv(Couter_ReachCut), MPI_COMM_WORLD, request_recv(Couter_ReachCut),&
+          call MPI_IRECV(recv(1+2_Lng*(Counter_ReachCut-1_Lng):2+2_Lng*(Counter_ReachCut-1_Lng)), 4,&
+                         MPI_DOUBLE_PRECISION, this%Model%DiscretizedReach(i_reach)%CommRank-1,   &
+                         tag_recv(Counter_ReachCut), MPI_COMM_WORLD, request_recv(Counter_ReachCut),&
                          MPI_err)
+
+
+          print*,"tag_request: ", request_sent, request_sent, tag_recv, tag_sent
+          print*,"sent item: ", sent(1+2_Lng*(Counter_ReachCut-1_Lng):2+2_Lng*(Counter_ReachCut-1_Lng))
 
       else if (this%Model%DiscretizedReach(i_reach)%Communication == 2_Tiny) then ! downstream half
                                                                   ! of this reach is on the rank
@@ -514,21 +523,24 @@ write(FileInfo,*) " -Apply boundary condition to the solution ..."
             stop
           end if
 
-          Couter_ReachCut = Couter_ReachCut + 1_Lng
+          Counter_ReachCut = Counter_ReachCut + 1_Lng
 
           ! communicate with the node that has the upstream part of this reach.
           ! Sending/Receiving cell info
           ! The upstream of this reach is on another rank
-          sent(1+ 2_Lng*(Couter_ReachCut - 1_Lng))%U(:) = Solution(i_reach)%UU(1)%U(:)
-          sent(2+ 2_Lng*(Couter_ReachCut - 1_Lng))%U(:) = Solution(i_reach)%UU(2)%U(:)
-          call MPI_ISEND(sent(1+2_Lng*(Couter_ReachCut-1_Lng):2+2_Lng*(Couter_ReachCut-1_Lng)), 4,&
-                         MPI_DOUBLE_PRECISION, this%Model%DiscretizedReach(i_reach)%CommRank,     &
-                         tag_sent(Couter_ReachCut), MPI_COMM_WORLD, request_sent(Couter_ReachCut),&
+          sent(1+ 2_Lng*(Counter_ReachCut - 1_Lng))%U(:) = Solution(i_reach)%UU(1)%U(:)
+          sent(2+ 2_Lng*(Counter_ReachCut - 1_Lng))%U(:) = Solution(i_reach)%UU(2)%U(:)
+          call MPI_ISEND(sent(1+2_Lng*(Counter_ReachCut-1_Lng):2+2_Lng*(Counter_ReachCut-1_Lng)), 4,&
+                         MPI_DOUBLE_PRECISION, this%Model%DiscretizedReach(i_reach)%CommRank-1,   &
+                         tag_sent(Counter_ReachCut), MPI_COMM_WORLD, request_sent(Counter_ReachCut),&
                          MPI_err)
-          call MPI_IRECV(recv(1+2_Lng*(Couter_ReachCut-1_Lng):2+2_Lng*(Couter_ReachCut-1_Lng)), 4,&
-                         MPI_DOUBLE_PRECISION, this%Model%DiscretizedReach(i_reach)%CommRank,     &
-                         tag_recv(Couter_ReachCut), MPI_COMM_WORLD, request_recv(Couter_ReachCut),&
+          call MPI_IRECV(recv(1+2_Lng*(Counter_ReachCut-1_Lng):2+2_Lng*(Counter_ReachCut-1_Lng)), 4,&
+                         MPI_DOUBLE_PRECISION, this%Model%DiscretizedReach(i_reach)%CommRank-1,   &
+                         tag_recv(Counter_ReachCut), MPI_COMM_WORLD, request_recv(Counter_ReachCut),&
                          MPI_err)
+
+          print*,"tag_request: ", request_sent, request_sent, tag_recv, tag_sent
+          print*,"sent item: ", sent(1+2_Lng*(Counter_ReachCut-1_Lng):2+2_Lng*(Counter_ReachCut-1_Lng))
 
         ! downstream node
           if (this%Model%DiscretizedReach(i_reach)%BCNodeII == -1_tiny) then
@@ -571,31 +583,41 @@ write(FileInfo,*) " -Apply boundary condition to the solution ..."
   end do
 
 
-print*," begin passing number"
+print*," +++++++++++++++++++++ begin passing number ++++++++++++++++++++++++++++++++++", Counter_ReachCut, this%ModelInfo%rank, this%Model%NCutsOnRanks
+
+! check on the number of communication with other ranks
+  if ( this%Model%NCutsOnRanks /= Counter_ReachCut) then
+    write(*,*)" Number of cuts on this rank does not match." , this%Model%NCutsOnRanks, Counter_ReachCut
+    stop
+  end if
+
 
 ! substituting the sent messages to the solution
-Couter_ReachCut = 0_Lng
+Counter_ReachCut = 0_Lng
   do i_reach =1, this%Model%TotalNumOfReachesOnThisRank
+
+    write(*,       *) " *********** wait for reach: ", i_reach, this%ModelInfo%rank
+    write(FileInfo,*) " *********** wait for reach: ", i_reach, this%ModelInfo%rank
 
       if (this%Model%DiscretizedReach(i_reach)%Communication == 1_Tiny) then ! upstream half
                                                                    ! of this reach is on the rank
-        Couter_ReachCut = Couter_ReachCut + 1_Lng
-        call MPI_WAIT(request_sent(Couter_ReachCut), status , MPI_err)
-        call MPI_WAIT(request_recv(Couter_ReachCut), status , MPI_err)
+        Counter_ReachCut = Counter_ReachCut + 1_Lng
+        call MPI_WAIT(request_sent(Counter_ReachCut), status , MPI_err)
+        call MPI_WAIT(request_recv(Counter_ReachCut), status , MPI_err)
 
         ! Substituting the received data in the solution array
-        Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach+1_Lng)%U(:) = recv(1+2_Lng*(Couter_ReachCut-1_Lng))%U(:)
-        Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach+2_Lng)%U(:) = recv(2+2_Lng*(Couter_ReachCut-1_Lng))%U(:)
+        Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach+1_Lng)%U(:) = recv(1+2_Lng*(Counter_ReachCut-1_Lng))%U(:)
+        Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach+2_Lng)%U(:) = recv(2+2_Lng*(Counter_ReachCut-1_Lng))%U(:)
 
       else if (this%Model%DiscretizedReach(i_reach)%Communication == 2_Tiny) then ! downstream half
                                                                     ! of this reach is on the rank
-        Couter_ReachCut = Couter_ReachCut + 1_Lng
-        call MPI_WAIT(request_sent(Couter_ReachCut), status , MPI_err)
-        call MPI_WAIT(request_recv(Couter_ReachCut), status , MPI_err)
+        Counter_ReachCut = Counter_ReachCut + 1_Lng
+        call MPI_WAIT(request_sent(Counter_ReachCut), status , MPI_err)
+        call MPI_WAIT(request_recv(Counter_ReachCut), status , MPI_err)
 
         ! Substituting the received data in the solution array
-        Solution(i_reach)%UU(0)%U(:)  = recv(1+ 2_Lng*(Couter_ReachCut - 1_Lng))%U(:)
-        Solution(i_reach)%UU(-1)%U(:) = recv(2+ 2_Lng*(Couter_ReachCut - 1_Lng))%U(:)
+        Solution(i_reach)%UU(0)%U(:)  = recv(1+ 2_Lng*(Counter_ReachCut - 1_Lng))%U(:)
+        Solution(i_reach)%UU(-1)%U(:) = recv(2+ 2_Lng*(Counter_ReachCut - 1_Lng))%U(:)
 
       end if
 
@@ -618,7 +640,7 @@ write(FileInfo,*) " -Time marching ..."
   ! Time marching
   Time_Marching: do i_steps = 1_Lng, NSteps +1_Lng
 
-    Couter_ReachCut = 0_Lng
+    Counter_ReachCut = 0_Lng
     ! Solving the equation for each reach
       On_Reaches: do i_reach =1, this%Model%TotalNumOfReachesOnThisRank
 
@@ -905,24 +927,28 @@ write(FileInfo,*) " -Time marching ..."
         ! downstream cells
           ! get the solution from the rank that has the downstream
 
-          Couter_ReachCut = Couter_ReachCut + 1_Lng
+          Counter_ReachCut = Counter_ReachCut + 1_Lng
 
           ! communicate with the node that has the downstream part of this reach.
           ! Sending/Receiving cell info
           ! The downstream of this reach is on another rank
-          sent(1+ 2_Lng*(Couter_ReachCut - 1_Lng))%U(:) =  &
+          sent(1+ 2_Lng*(Counter_ReachCut - 1_Lng))%U(:) =  &
                                                  Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach)%U(:)
-          sent(2+ 2_Lng*(Couter_ReachCut - 1_Lng))%U(:) =  &
+          sent(2+ 2_Lng*(Counter_ReachCut - 1_Lng))%U(:) =  &
                                                  Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach-1_Lng)%U(:)
 
-          call MPI_ISEND(sent(1+2_Lng*(Couter_ReachCut-1_Lng):2+2_Lng*(Couter_ReachCut-1_Lng)), 4,&
-                         MPI_DOUBLE_PRECISION, this%Model%DiscretizedReach(i_reach)%CommRank,     &
-                         tag_sent(Couter_ReachCut), MPI_COMM_WORLD, request_sent(Couter_ReachCut),&
+          call MPI_ISEND(sent(1+2_Lng*(Counter_ReachCut-1_Lng):2+2_Lng*(Counter_ReachCut-1_Lng)), 4,&
+                         MPI_DOUBLE_PRECISION, this%Model%DiscretizedReach(i_reach)%CommRank-1,     &
+                         tag_sent(Counter_ReachCut), MPI_COMM_WORLD, request_sent(Counter_ReachCut),&
                          MPI_err)
-          call MPI_IRECV(recv(1+2_Lng*(Couter_ReachCut-1_Lng):2+2_Lng*(Couter_ReachCut-1_Lng)), 4,&
-                         MPI_DOUBLE_PRECISION, this%Model%DiscretizedReach(i_reach)%CommRank,     &
-                         tag_recv(Couter_ReachCut), MPI_COMM_WORLD, request_recv(Couter_ReachCut),&
+          call MPI_IRECV(recv(1+2_Lng*(Counter_ReachCut-1_Lng):2+2_Lng*(Counter_ReachCut-1_Lng)), 4,&
+                         MPI_DOUBLE_PRECISION, this%Model%DiscretizedReach(i_reach)%CommRank-1,     &
+                         tag_recv(Counter_ReachCut), MPI_COMM_WORLD, request_recv(Counter_ReachCut),&
                          MPI_err)
+
+          print*,"tag_request: ", request_sent, request_sent, tag_recv, tag_sent
+          print*,"sent item: ", sent(1+2_Lng*(Counter_ReachCut-1_Lng):2+2_Lng*(Counter_ReachCut-1_Lng))
+
 
       else if (this%Model%DiscretizedReach(i_reach)%Communication == 2_Tiny) then ! downstream half
                                                                   ! of this reach is on the rank
@@ -936,21 +962,24 @@ write(FileInfo,*) " -Time marching ..."
         ! upstream cells
         ! get the solution from the rank that has the upstream
 
-          Couter_ReachCut = Couter_ReachCut + 1_Lng
+          Counter_ReachCut = Counter_ReachCut + 1_Lng
 
           ! communicate with the node that has the upstream part of this reach.
           ! Sending/Receiving cell info
           ! The upstream of this reach is on another rank
-          sent(1+ 2_Lng*(Couter_ReachCut - 1_Lng))%U(:) = Solution(i_reach)%UU(1)%U(:)
-          sent(2+ 2_Lng*(Couter_ReachCut - 1_Lng))%U(:) = Solution(i_reach)%UU(2)%U(:)
-          call MPI_ISEND(sent(1+2_Lng*(Couter_ReachCut-1_Lng):2+2_Lng*(Couter_ReachCut-1_Lng)), 4,&
-                         MPI_DOUBLE_PRECISION, this%Model%DiscretizedReach(i_reach)%CommRank,     &
-                         tag_sent(Couter_ReachCut), MPI_COMM_WORLD, request_sent(Couter_ReachCut),&
+          sent(1+ 2_Lng*(Counter_ReachCut - 1_Lng))%U(:) = Solution(i_reach)%UU(1)%U(:)
+          sent(2+ 2_Lng*(Counter_ReachCut - 1_Lng))%U(:) = Solution(i_reach)%UU(2)%U(:)
+          call MPI_ISEND(sent(1+2_Lng*(Counter_ReachCut-1_Lng):2+2_Lng*(Counter_ReachCut-1_Lng)), 4,&
+                         MPI_DOUBLE_PRECISION, this%Model%DiscretizedReach(i_reach)%CommRank-1,     &
+                         tag_sent(Counter_ReachCut), MPI_COMM_WORLD, request_sent(Counter_ReachCut),&
                          MPI_err)
-          call MPI_IRECV(recv(1+2_Lng*(Couter_ReachCut-1_Lng):2+2_Lng*(Couter_ReachCut-1_Lng)), 4,&
-                         MPI_DOUBLE_PRECISION, this%Model%DiscretizedReach(i_reach)%CommRank,     &
-                         tag_recv(Couter_ReachCut), MPI_COMM_WORLD, request_recv(Couter_ReachCut),&
+          call MPI_IRECV(recv(1+2_Lng*(Counter_ReachCut-1_Lng):2+2_Lng*(Counter_ReachCut-1_Lng)), 4,&
+                         MPI_DOUBLE_PRECISION, this%Model%DiscretizedReach(i_reach)%CommRank-1,     &
+                         tag_recv(Counter_ReachCut), MPI_COMM_WORLD, request_recv(Counter_ReachCut),&
                          MPI_err)
+
+          print*,"tag_request: ", request_sent, request_sent, tag_recv, tag_sent
+          print*,"sent item: ", sent(1+2_Lng*(Counter_ReachCut-1_Lng):2+2_Lng*(Counter_ReachCut-1_Lng))
 
         ! downstream node
           if (this%Model%DiscretizedReach(i_reach)%BCNodeII == 0_tiny) then
@@ -979,28 +1008,28 @@ write(FileInfo,*) " -Time marching ..."
     end do On_Reaches
 
   ! substituting the sent messages to the solution
-  Couter_ReachCut = 0_Lng
+  Counter_ReachCut = 0_Lng
     do i_reach =1, this%Model%TotalNumOfReachesOnThisRank
 
         if (this%Model%DiscretizedReach(i_reach)%Communication == 1_Tiny) then ! upstream half
                                                                      ! of this reach is on the rank
-          Couter_ReachCut = Couter_ReachCut + 1_Lng
-          call MPI_WAIT(request_sent(Couter_ReachCut), status , MPI_err)
-          call MPI_WAIT(request_recv(Couter_ReachCut), status , MPI_err)
+          Counter_ReachCut = Counter_ReachCut + 1_Lng
+          call MPI_WAIT(request_sent(Counter_ReachCut), status , MPI_err)
+          call MPI_WAIT(request_recv(Counter_ReachCut), status , MPI_err)
 
           ! Substituting the received data in the solution array
-          Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach+1_Lng)%U(:) = recv(1+2_Lng*(Couter_ReachCut-1_Lng))%U(:)
-          Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach+2_Lng)%U(:) = recv(2+2_Lng*(Couter_ReachCut-1_Lng))%U(:)
+          Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach+1_Lng)%U(:) = recv(1+2_Lng*(Counter_ReachCut-1_Lng))%U(:)
+          Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach+2_Lng)%U(:) = recv(2+2_Lng*(Counter_ReachCut-1_Lng))%U(:)
 
         else if (this%Model%DiscretizedReach(i_reach)%Communication == 2_Tiny) then ! downstream half
                                                                       ! of this reach is on the rank
-          Couter_ReachCut = Couter_ReachCut + 1_Lng
-          call MPI_WAIT(request_sent(Couter_ReachCut), status , MPI_err)
-          call MPI_WAIT(request_recv(Couter_ReachCut), status , MPI_err)
+          Counter_ReachCut = Counter_ReachCut + 1_Lng
+          call MPI_WAIT(request_sent(Counter_ReachCut), status , MPI_err)
+          call MPI_WAIT(request_recv(Counter_ReachCut), status , MPI_err)
 
           ! Substituting the received data in the solution array
-          Solution(i_reach)%UU(0)%U(:)  = recv(1+ 2_Lng*(Couter_ReachCut - 1_Lng))%U(:)
-          Solution(i_reach)%UU(-1)%U(:) = recv(2+ 2_Lng*(Couter_ReachCut - 1_Lng))%U(:)
+          Solution(i_reach)%UU(0)%U(:)  = recv(1+ 2_Lng*(Counter_ReachCut - 1_Lng))%U(:)
+          Solution(i_reach)%UU(-1)%U(:) = recv(2+ 2_Lng*(Counter_ReachCut - 1_Lng))%U(:)
 
         end if
 
@@ -1261,6 +1290,11 @@ real(kind=Dbl), dimension(2,2) :: A_dw  ! the average discharge at the interface
 
     ! Computing the eigenvalues
     c = dsqrt (Gravity * h_ave)   ! wave speed
+
+
+    print*,"inside the jacobian: ", h_ave, u_ave !u_ave, c
+
+
     this%Lambda%U(1) = u_ave - c
     this%Lambda%U(2) = u_ave + c
 

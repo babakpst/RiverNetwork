@@ -868,7 +868,6 @@ TotalCellCounter = 0_Lng
                    NNodesOnRanks(i_rank),  &   ! Total number of nodes on this rank
                    Geometry%Base_Geometry%NoReaches  ! Total Num Of Cells In The Network
 
-
     CellCounter = 0_Lng ! To make sure that we count all the cell numbers in each rank
     ReachCounter= 0_Lng
     UnFile = FilePartition
