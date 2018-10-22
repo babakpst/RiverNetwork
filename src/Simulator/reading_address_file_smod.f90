@@ -168,9 +168,24 @@ Directory=MakeDirQQ(trim(AdjustL(ModelInfo%OutputDir))//'/'// &
      write(FileInfo, fmt="(A)") "The output folder for this analysis already exists." ;
   end if ;
 
+
+Directory=MakeDirQQ(trim(AdjustL(ModelInfo%OutputDir))//'/'// &
+                    trim(AdjustL(ModelInfo%AnalysesNames(i_analyses)))//'_s'// &
+                    trim(AdjustL(ModelInfo%IndexSize))//'/'//'_r'// &
+                    trim(AdjustL(ModelInfo%IndexRank)))
+  if (Directory) then ;
+     write(*,       fmt="(A)") "The output folder for this analysis created." ;
+     write(FileInfo,fmt="(A)") "The output folder for this analysis created." ;
+  Else ;
+     write(*,        fmt="(A)") "The output folder for this analysis already exists." ;
+     write(FileInfo, fmt="(A)") "The output folder for this analysis already exists." ;
+  end if ;
+
 ModelInfo%AnalysisOutputDir=trim(AdjustL(ModelInfo%OutputDir))//'/'//&
                             trim(AdjustL(ModelInfo%AnalysesNames(i_analyses)))//'_s'// &
-                            trim(AdjustL(ModelInfo%IndexSize))
+                            trim(AdjustL(ModelInfo%IndexSize))//'/'//'_r'// &
+                            trim(AdjustL(ModelInfo%IndexRank))
+
 
 UnFile = UnInptAna
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)

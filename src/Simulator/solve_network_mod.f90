@@ -663,37 +663,26 @@ write(FileInfo,*) " -Time marching ..."
               print*, "----------------Step:", i_steps, &
                      real(TotalTime%endSys-TotalTime%startSys)/real(TotalTime%clock_rate)
           end if
-
-        ! <modify> check the allocation
-        !Results%U(:) = Solution(i_reach)%UU(-1:this%Model%NCells+2)
-        !call Results%plot_results(i_steps)
-        !$ end if
       end if
 
       ! Solving the equation for each reach
       On_Reaches: do i_reach =1, this%Model%TotalNumOfReachesOnThisRank
 
-        ! write down data for visualization
-        if (mod(i_steps,AnalysisInfo%Plot_Inc)==1 .or. PrintResults) then
-          !$ if (ITS==0) then
-            if ( this%ModelInfo%rank == 0) then
-                call system_clock(TotalTime%endSys, TotalTime%clock_rate)
-                print*, "----------------Step:", i_steps, &
-                       real(TotalTime%endSys-TotalTime%startSys)/real(TotalTime%clock_rate)
-            end if
+          ! write down data for visualization
+          if (mod(i_steps,AnalysisInfo%Plot_Inc)==1 .or. PrintResults) then
 
-          ! <modify> check the allocation
-          !Results%U(:) = Solution(i_reach)%UU(-1:this%Model%NCells+2)
-          !call Results%plot_results(i_steps)
-          !$ end if
-        end if
+            allocate(Results%U(-1:this%Model%DiscretizedReach(i_reach)%NCells_reach+2), stat=ERR_Alloc)
+            if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
+            Results%NCells = this%Model%DiscretizedReach(i_reach)%NCells_reach
+            Results%reach  = i_reach
+            Results%step   = i_steps
 
 
 
-
-
-
-
+            Results%U(:) = Solution(i_reach)%UU(-1:this%Model%DiscretizedReach(i_reach)%NCells_reach+2)
+            call Results%plot_results()
+            deallocate(Results%U)
+          end if
 
         UpstreamReachNumLeft   = this%Model%DiscretizedReach(i_reach)%UpstreamReaches(1,2)
         UpstreamReachNumRight  = this%Model%DiscretizedReach(i_reach)%UpstreamReaches(2,2)

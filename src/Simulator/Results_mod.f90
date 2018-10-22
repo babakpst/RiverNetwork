@@ -68,6 +68,8 @@ private
 
 type Plot_Results_1D_limiter_tp
   integer(kind=Lng) :: NCells
+  integer(kind=Lng) :: reach
+  integer(kind=Lng) :: step
 
   type(vector), dimension(:), allocatable :: U  ! This vector holds the solution at previous step,
                                             ! the first term holds "h" and the second holds "uh"
@@ -108,7 +110,7 @@ contains
 !
 !##################################################################################################
 
-subroutine Plot_Results_1D_limiter_sub(this, i_step)
+subroutine Plot_Results_1D_limiter_sub(this)
 
 ! Libraries =======================================================================================
 
@@ -120,7 +122,6 @@ implicit none
 ! Global variables ================================================================================
 
 ! - integer variables -----------------------------------------------------------------------------
-integer(kind=Lng), intent(in) :: i_step
 
 ! - types -----------------------------------------------------------------------------------------
 class(Plot_Results_1D_limiter_tp) :: this
@@ -134,6 +135,7 @@ integer(kind=Smll) :: IO_write       ! Used for IOSTAT: Input/Output Status in t
 integer(kind=Lng)  :: i_points       ! Loop index on the points
 
 ! - character variables ---------------------------------------------------------------------------
+character (kind = 1, Len = 30) :: reachfile
 character (kind = 1, Len = 30) :: extfile
 
 ! code ============================================================================================
@@ -146,9 +148,10 @@ UnFile = FileResults
 !write(*,       *) " -Writing down the results in the .Res file ... "
 !write(FileInfo,*) " -Writing down the results in the .Res file ... "
 
-write (extfile,*) i_step
+write (reachfile,*) this%reach
+write (extfile,*) this%step
 
-open(unit=UnFile, file=trim(this%ModelInfo%ModelNameParallel)//'_'//trim(ADJUSTL(extfile))//'.Res', &
+open(unit=UnFile, file=trim(this%ModelInfo%ModelNameParallel)//'_R'//trim(ADJUSTL(reachfile))//'_S'//trim(ADJUSTL(extfile))//'.Res', &
 err=1001, iostat=IO_File, access='sequential', action='write', asynchronous='no', blank='NULL', &
 blocksize=0, defaultfile=trim(this%ModelInfo%AnalysisOutputDir), dispose='keep', form='formatted',&
  position='asis', status='replace')
@@ -161,7 +164,7 @@ write(unit=UnFile,fmt="(I20)",advance='yes',asynchronous='no',iostat=IO_write,er
 write(unit=UnFile,fmt="(' h--uh ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
 
   !do i_points = -1_Lng, this%NCells+2
-  do i_points = 1_Lng, this%NCells
+  do i_points = -1_Lng, this%NCells+2
     write(unit=UnFile, fmt="(I6, 2F30.15)", advance='yes', asynchronous='no', &
      iostat=IO_write, err=1006) i_points, this%U(i_points)%U(1), this%U(i_points)%U(2)
   end do
