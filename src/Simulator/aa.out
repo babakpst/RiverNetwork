@@ -3,6 +3,12 @@
   Initializing MPI ...
   Initializing MPI ...
  ****** Total number of ranks:      4
+ -Reading Address.txt file ...
+ -Reading Address.txt file ...
+ 
+  Subroutine < Input_Address_sub >: 
+ 
+  Subroutine < Input_Address_sub >: 
  
  
  ==========================================================
@@ -19,15 +25,9 @@
                    Version:  3.00
  
  ==========================================================
- -Reading Address.txt file ...
  ==========================================================
  
  -Reading Address.txt file ...
- -Reading Address.txt file ...
- 
-  Subroutine < Input_Address_sub >: 
- 
-  Subroutine < Input_Address_sub >: 
  
   Subroutine < Input_Address_sub >: 
  The model directory is: /h1/babak/Documents/Goofy/input/Network_EX2/Model                                                                                                     
@@ -46,6 +46,13 @@
  The analysis name is: /h1/babak/Documents/Goofy/input/Network_EX2/Analysis                                                                                                  
  The input file name is: Network_EX2                                                                                                                                           
  -Creating the output folders ...
+ The result folder already exists.
+ The output directory is: /h1/babak/Documents/Goofy/output/Network_EX2                                                                                                          
+ The name of the model file is: Network_EX2_s4_p3                                                                                                                                     
+ -Closing the address file
+  End Subroutine < Input_Address_sub >
+ 
+ -Creating the info.txt file in the output folder ...
  The result folder already exists.
  The output directory is: /h1/babak/Documents/Goofy/output/Network_EX2                                                                                                          
  The name of the model file is: Network_EX2_s4_p0                                                                                                                                     
@@ -67,13 +74,6 @@
   End Subroutine < Input_Address_sub >
  
  -Creating the info.txt file in the output folder ...
- The result folder already exists.
- The output directory is: /h1/babak/Documents/Goofy/output/Network_EX2                                                                                                          
- The name of the model file is: Network_EX2_s4_p3                                                                                                                                     
- -Closing the address file
-  End Subroutine < Input_Address_sub >
- 
- -Creating the info.txt file in the output folder ...
  End Subroutine < InfBasic >
  -Reading the input file ...
  
@@ -89,45 +89,45 @@
  
   Subroutine < Input_sub >: 
  -Opening the input file ...
- -Allocating arrays for the discretized network ...
- -Allocating arrays for the discretized network ...
-Reading reach number:     1 out of:     5  on rank:     1
-Reading reach number:     1 out of:     5  on rank:     0
  End Subroutine < InfBasic >
  -Reading the input file ...
  
   Subroutine < Input_sub >: 
  -Opening the input file ...
- -Allocating arrays for the discretized network ...
-Reading reach number:     1 out of:     3  on rank:     2
  -Allocating arrays for the discretized network ...
 Reading reach number:     1 out of:     5  on rank:     3
-Reading reach number:     2 out of:     5  on rank:     1
+ -Allocating arrays for the discretized network ...
+Reading reach number:     1 out of:     5  on rank:     0
+ -Allocating arrays for the discretized network ...
+Reading reach number:     1 out of:     5  on rank:     1
+ -Allocating arrays for the discretized network ...
+Reading reach number:     1 out of:     3  on rank:     2
 Reading reach number:     2 out of:     5  on rank:     3
+Reading reach number:     2 out of:     5  on rank:     1
 Reading reach number:     2 out of:     5  on rank:     0
-Reading reach number:     2 out of:     3  on rank:     2
 Reading reach number:     3 out of:     5  on rank:     3
+Reading reach number:     2 out of:     3  on rank:     2
 Reading reach number:     3 out of:     5  on rank:     0
 Reading reach number:     3 out of:     5  on rank:     1
 Reading reach number:     4 out of:     5  on rank:     0
-Reading reach number:     4 out of:     5  on rank:     1
-Reading reach number:     5 out of:     5  on rank:     1
-Reading reach number:     3 out of:     3  on rank:     2
 Reading reach number:     4 out of:     5  on rank:     3
+Reading reach number:     4 out of:     5  on rank:     1
+Reading reach number:     3 out of:     3  on rank:     2
+Reading reach number:     5 out of:     5  on rank:     1
+ -Closing the input file
+  End Subroutine < Input_sub >
+ 
+ -Analyse no.         1
+ 
+  Subroutine < Input_Analysis_sub >: 
+ -Opening the analysis file ...
  -Closing the input file
 Reading reach number:     5 out of:     5  on rank:     0
- -Closing the input file
   End Subroutine < Input_sub >
  
  -Analyse no.         1
- 
-  Subroutine < Input_Analysis_sub >: 
- -Opening the analysis file ...
-  End Subroutine < Input_sub >
- 
- -Analyse no.         1
- 
  -Creating the output folder for this analysis ...
+ 
   Subroutine < Input_Analysis_sub >: 
  -Opening the analysis file ...
  -Creating the output folder for this analysis ...
@@ -141,62 +141,49 @@ The output folder for this analysis already exists.
  The junction model type is:          1
   End Subroutine < Input_Analysis_sub >
  
-The output folder for this analysis already exists.
- The Analysis type is:          2
- The total simulation time is:          400.0000000000 s
- The time step is:            0.0010000000 s
- Downstream water depth is:            1.2500000000 m
- The limiter is:          1
-  subroutine < solve_the_network_sub >: 
-  -Applying initial conditions ...
-  -Allocating the solution ...
- The interval for results is:        100
- The junction model type is:          1
-  End Subroutine < Input_Analysis_sub >
- 
-  -Apply boundary condition to the solution ...
-  --------Boundary condition for reach:                      1           1
-  --------Boundary condition for reach:                      2           1
-  --------Boundary condition for reach:                      3           1
-  --------Boundary condition for reach:                      4           1
-  --------Boundary condition for reach:                      5           1
-  subroutine < solve_the_network_sub >: 
-  -Applying initial conditions ...
-  -Allocating the solution ...
-  --------Boundary condition for reach:                      1           1
- sub-critical flow
-  -Apply boundary condition to the solution ...
-  --------Boundary condition for reach:                      1           2
-  --------Boundary condition for reach:                      2           2
-  --------Boundary condition for reach:                      2           1
- sub-critical flow
-  --------Boundary condition for reach:                      3           2
-  --------Boundary condition for reach:                      1           2
- sub-critical flow
- sub-critical flow
-  --------Boundary condition for reach:                      3           1
- sub-critical flow
-  --------Boundary condition for reach:                      4           1
- sub-critical flow
-  --------Boundary condition for reach:                      5           1
-  --------Boundary condition for reach:                      2           2
- sub-critical flow
-  --------Boundary condition for reach:                      3           2
- sub-critical flow
-  +++++++++++++++++++++ begin passing number ++++++++++++++++++++++++++++++++++
-                     2           1                     2
- sub-critical flow
-  +++++++++++++++++++++ begin passing number ++++++++++++++++++++++++++++++++++
-                     1           2                     1
- -Closing the input file
-  End Subroutine < Input_sub >
- 
- -Analyse no.         1
- 
-  Subroutine < Input_Analysis_sub >: 
- -Opening the analysis file ...
- -Creating the output folder for this analysis ...
 Reading reach number:     5 out of:     5  on rank:     3
+  subroutine < solve_the_network_sub >: 
+  -Applying initial conditions ...
+The output folder for this analysis already exists.
+  -Allocating the solution ...
+ The Analysis type is:          2
+  -Apply boundary condition to the solution ...
+  --------Boundary condition for reach:                      1           2
+  --------Boundary condition for reach:                      2           2
+ The total simulation time is:          400.0000000000 s
+  --------Boundary condition for reach:                      3           2
+  --------Boundary condition for reach:                      1           2
+  --------Boundary condition for reach:                      2           2
+ The time step is:            0.0010000000 s
+ Downstream water depth is:            1.2500000000 m
+ The limiter is:          1
+  --------Boundary condition for reach:                      3           2
+ The interval for results is:        100
+ The junction model type is:          1
+  End Subroutine < Input_Analysis_sub >
+ 
+  subroutine < solve_the_network_sub >: 
+  -Applying initial conditions ...
+  -Allocating the solution ...
+  -Apply boundary condition to the solution ...
+  --------Boundary condition for reach:                      1           1
+  --------Boundary condition for reach:                      2           1
+  --------Boundary condition for reach:                      3           1
+  --------Boundary condition for reach:                      4           1
+  --------Boundary condition for reach:                      5           1
+  --------Boundary condition for reach:                      1           1
+  --------Boundary condition for reach:                      2           1
+  --------Boundary condition for reach:                      3           1
+  --------Boundary condition for reach:                      4           1
+  --------Boundary condition for reach:                      5           1
+ -Closing the input file
+  End Subroutine < Input_sub >
+ 
+ -Analyse no.         1
+ 
+  Subroutine < Input_Analysis_sub >: 
+ -Opening the analysis file ...
+ -Creating the output folder for this analysis ...
 The output folder for this analysis already exists.
  The Analysis type is:          2
  The total simulation time is:          400.0000000000 s
@@ -217,18 +204,10 @@ The output folder for this analysis already exists.
   --------Boundary condition for reach:                      4           0
   --------Boundary condition for reach:                      5           0
   --------Boundary condition for reach:                      1           0
- sub-critical flow
   --------Boundary condition for reach:                      2           0
- sub-critical flow
   --------Boundary condition for reach:                      3           0
- sub-critical flow
   --------Boundary condition for reach:                      4           0
- sub-critical flow
- sub-critical flow
   --------Boundary condition for reach:                      5           0
- sub-critical flow
-  +++++++++++++++++++++ begin passing number ++++++++++++++++++++++++++++++++++
-                     1           0                     1
  -Closing the input file
   End Subroutine < Input_sub >
  
@@ -257,58 +236,21 @@ The output folder for this analysis already exists.
   --------Boundary condition for reach:                      4           3
   --------Boundary condition for reach:                      5           3
   --------Boundary condition for reach:                      1           3
- sub-critical flow
   --------Boundary condition for reach:                      2           3
- sub-critical flow
   --------Boundary condition for reach:                      3           3
- sub-critical flow
   --------Boundary condition for reach:                      4           3
- sub-critical flow
   --------Boundary condition for reach:                      5           3
- sub-critical flow
- sub-critical flow
-  +++++++++++++++++++++ begin passing number ++++++++++++++++++++++++++++++++++
-                     2           3                     2
   -Time marching ...
- ----------------Step:                     1  1.9105000E-02
- calculating reach no:                     1  on rank no.:            0
+ ----------------Step:                     1  1.9431001E-02
   -Time marching ...
- calculating reach no:                     1  on rank no.:            1
   -Time marching ...
- calculating reach no:                     1  on rank no.:            2
   -Time marching ...
- calculating reach no:                     1  on rank no.:            3
- sub-critical flow
- calculating reach no:                     2  on rank no.:            3
- mixed regime flow
- calculating reach no:                     2  on rank no.:            1
- sub-critical flow
- calculating reach no:                     3  on rank no.:            3
- mixed regime flow
- sub-critical flow
- calculating reach no:                     3  on rank no.:            1
- sub-critical flow
- calculating reach no:                     4  on rank no.:            3
- sub-critical flow
- calculating reach no:                     4  on rank no.:            1
- sub-critical flow
- calculating reach no:                     5  on rank no.:            1
- sub-critical flow
- calculating reach no:                     5  on rank no.:            3
- sub-critical flow
-  wait section                     1           1
-  wait section                     2           1
-  wait section                     3           1
-  wait section                     4           1
-  wait section                     5           1
- sub-critical flow
- sub-critical flow
-  wait section                     1           3
-  wait section                     2           3
-
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 174
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
+ ----------------Step:                   101  7.8450002E-02
+ ----------------Step:                   201  0.1188860    
+ ----------------Step:                   301  0.1598110    
+ ----------------Step:                   401  0.2011630    
+ ----------------Step:                   501  0.2430280    
+ ----------------Step:                   601  0.2850110    
+  Something is wrong. Check the limiter subroutine.
+  The eigenvalue is wrong (most probably NaN):     1                     NaN
+                     1           3

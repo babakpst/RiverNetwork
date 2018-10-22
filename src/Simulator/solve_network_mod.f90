@@ -341,6 +341,7 @@ request_sent(:) = 0   ! initialize the tag for MPI send/recv
 
   end do
 
+
   do i_reach =1, this%Model%TotalNumOfReachesOnThisRank
 
 
@@ -350,17 +351,9 @@ request_sent(:) = 0   ! initialize the tag for MPI send/recv
     NCellsOnTheReach = this%Model%DiscretizedReach(i_reach)%NCells_reach
 
 
-
-
     UpstreamReachNumLeft   = this%Model%DiscretizedReach(i_reach)%UpstreamReaches(1,2)
     UpstreamReachNumRight  = this%Model%DiscretizedReach(i_reach)%UpstreamReaches(2,2)
     DownstreamReachNum     = this%Model%DiscretizedReach(i_reach)%DownstreamReaches(1,2)
-
-
-
-    !print * , "solution before is:", this%ModelInfo%rank, i_reach, Solution(i_reach)%UU(:)
-
-
 
       ! working on the ghost cells, or on the junction nodes, for each reach
       if (this%Model%DiscretizedReach(i_reach)%Communication == -1_Tiny) then
@@ -597,9 +590,6 @@ request_sent(:) = 0   ! initialize the tag for MPI send/recv
 
   end do
 
-
-print*," +++++++++++++++++++++ begin passing number ++++++++++++++++++++++++++++++++++", Counter_ReachCut, this%ModelInfo%rank, this%Model%NCutsOnRanks
-
 ! check on the number of communication with other ranks
   if ( this%Model%NCutsOnRanks /= Counter_ReachCut) then
     write(*,*)" Number of cuts on this rank does not match." , this%Model%NCutsOnRanks, Counter_ReachCut
@@ -680,20 +670,40 @@ write(FileInfo,*) " -Time marching ..."
         !$ end if
       end if
 
-    ! Solving the equation for each reach
+      ! Solving the equation for each reach
       On_Reaches: do i_reach =1, this%Model%TotalNumOfReachesOnThisRank
 
-        !print * , "solution is:", this%ModelInfo%rank, i_reach, Solution(i_reach)%UU(:)
+        ! write down data for visualization
+        if (mod(i_steps,AnalysisInfo%Plot_Inc)==1 .or. PrintResults) then
+          !$ if (ITS==0) then
+            if ( this%ModelInfo%rank == 0) then
+                call system_clock(TotalTime%endSys, TotalTime%clock_rate)
+                print*, "----------------Step:", i_steps, &
+                       real(TotalTime%endSys-TotalTime%startSys)/real(TotalTime%clock_rate)
+            end if
+
+          ! <modify> check the allocation
+          !Results%U(:) = Solution(i_reach)%UU(-1:this%Model%NCells+2)
+          !call Results%plot_results(i_steps)
+          !$ end if
+        end if
 
 
-        print*, "calculating reach no:", i_reach, " on rank no.: ", this%ModelInfo%rank
+
+
+
+
+
+
+        UpstreamReachNumLeft   = this%Model%DiscretizedReach(i_reach)%UpstreamReaches(1,2)
+        UpstreamReachNumRight  = this%Model%DiscretizedReach(i_reach)%UpstreamReaches(2,2)
+        DownstreamReachNum     = this%Model%DiscretizedReach(i_reach)%DownstreamReaches(1,2)
 
         dx     = this%Model%DiscretizedReach(i_reach)%LengthCell(1)
         dtdx = dt / dx
 
-
           !$OMP DO
-          do i_Cell = 1_Lng, this%Model%DiscretizedReach(i_reach)%NCells_reach  ! Loop over cells except the boundary cells
+          On_Cells: do i_Cell = 1_Lng, this%Model%DiscretizedReach(i_reach)%NCells_reach  ! Loop over cells except the boundary cells
 
             !print*, "=============Cell:", i_Cell, ITS
             !print*, "=============Cell:", i_Cell
@@ -734,7 +744,8 @@ write(FileInfo,*) " -Time marching ..."
             SourceTerms%Source_1%U(:) = &
                  dt * (SourceTerms%S%U(:) - 0.5_Dbl * matmul(SourceTerms%B(:,:), Solution(i_reach)%UU(i_Cell)%U(:)))
 
-              ON_Interface:  do i_Interface = 1, 2 !first one is on i-1/2, the second one is on i+1/2
+
+              On_Interface:  do i_Interface = 1, 2 !first one is on i-1/2, the second one is on i+1/2
 
                 ! Compute the jump (U_i- U_i-1)
                 Delta_U%U(:) =Solution(i_reach)%UU(i_Cell+(i_Interface-1_Lng))%U(:)-Solution(i_reach)%UU(i_Cell+(i_Interface-2_Lng))%U(:)
@@ -767,7 +778,7 @@ write(FileInfo,*) " -Time marching ..."
 
                 if ( alpha%U(1) ==0.0_Dbl .and. alpha%U(2) ==0.0_Dbl) cycle
 
-                  ON_Eigenvalues: do i_eigen = 1_Tiny, 2_Tiny
+                  On_Eigenvalues: do i_eigen = 1_Tiny, 2_Tiny
 
                     Wave%U(:) = alpha%U(i_eigen) * Jacobian%R(:,i_eigen)
 
@@ -846,8 +857,8 @@ write(FileInfo,*) " -Time marching ..."
                     F_H%U(:) = F_H%U(:) + Coefficient * 0.5_Dbl * dabs(Jacobian%Lambda%U(i_eigen) ) &
                                * (1.0_Dbl-dtdx*dabs(Jacobian%Lambda%U(i_eigen)))*Wave_tilda%U(:)
 
-                  end do ON_Eigenvalues
-              end do ON_Interface
+                  end do On_Eigenvalues
+              end do On_Interface
 
             ! Final update the results
             TempSolution%U(:) = Solution(i_reach)%UU(i_cell)%U(:) - dtdx * F_L%U(:) - dtdx * F_H%U(:) &
@@ -855,7 +866,7 @@ write(FileInfo,*) " -Time marching ..."
 
             Solution(i_reach)%UN(i_cell)%U(:) = matmul(SourceTerms%BI(:,:), TempSolution%U(:))
 
-          end do
+          end do On_Cells
           !$OMP END DO
 
           !!$OMP END PARALLEL DO
@@ -865,7 +876,6 @@ write(FileInfo,*) " -Time marching ..."
           end do
           !$OMP END DO
 
-
           !$OMP single
           ! apply boundary condition
           ! The following section is basically, the identical to the section above. Before the loops.
@@ -873,6 +883,7 @@ write(FileInfo,*) " -Time marching ..."
           if (this%Model%DiscretizedReach(i_reach)%Communication == -1_Tiny) then
             ! no communication with other ranks, the entire reach is on this rank.
             ! There are 2 ghost cells at each ends of this reach, where the nodes are located.
+
 
               ! upstream node --
               if (this%Model%DiscretizedReach(i_reach)%BCNodeI == 0_tiny) then
@@ -922,6 +933,8 @@ write(FileInfo,*) " -Time marching ..."
                                          Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach+2_Lng))
               end if
 
+
+
           else if (this%Model%DiscretizedReach(i_reach)%Communication == 1_Tiny) then ! upstream half
                                                                        ! of this reach is on the rank
             ! We need to communicate with the rank that holds the downstream of this reach,
@@ -955,6 +968,8 @@ write(FileInfo,*) " -Time marching ..."
                                          Solution(i_reach)%UU(-1_Lng), Solution(i_reach)%UU(0_Lng))
               end if
 
+
+
             ! downstream cells
               ! get the solution from the rank that has the downstream
 
@@ -977,6 +992,7 @@ write(FileInfo,*) " -Time marching ..."
                              tag_recv(Counter_ReachCut), MPI_COMM_WORLD, request_recv(Counter_ReachCut),&
                              MPI_err)
 
+
           else if (this%Model%DiscretizedReach(i_reach)%Communication == 2_Tiny) then ! downstream half
                                                                       ! of this reach is on the rank
             ! We need to communicate with the rank that holds the upstream of this reach,
@@ -990,6 +1006,7 @@ write(FileInfo,*) " -Time marching ..."
             ! get the solution from the rank that has the upstream
 
               Counter_ReachCut = Counter_ReachCut + 1_Lng
+
 
               ! communicate with the node that has the upstream part of this reach.
               ! Sending/Receiving cell info
@@ -1026,26 +1043,23 @@ write(FileInfo,*) " -Time marching ..."
                                          Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach+1_Lng), &
                                          Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach+2_Lng))
               end if
+
           end if
 
       !$OMP end single
       end do On_Reaches
 
-
-
     ! substituting the sent messages to the solution
     Counter_ReachCut = 0_Lng
       do i_reach =1, this%Model%TotalNumOfReachesOnThisRank
 
-
-        print*," wait section", i_reach, this%ModelInfo%rank
-
-
           if (this%Model%DiscretizedReach(i_reach)%Communication == 1_Tiny) then ! upstream half
                                                                        ! of this reach is on the rank
+
             Counter_ReachCut = Counter_ReachCut + 1_Lng
-            call MPI_WAIT(request_sent(Counter_ReachCut), status , MPI_err)
+
             call MPI_WAIT(request_recv(Counter_ReachCut), status , MPI_err)
+            call MPI_WAIT(request_sent(Counter_ReachCut), status , MPI_err)
 
             ! Substituting the received data in the solution array
             Solution(i_reach)%UU(this%Model%DiscretizedReach(i_reach)%NCells_reach+1_Lng)%U(:) = recv(1+2_Lng*(Counter_ReachCut-1_Lng))%U(:)
@@ -1053,12 +1067,14 @@ write(FileInfo,*) " -Time marching ..."
 
           else if (this%Model%DiscretizedReach(i_reach)%Communication == 2_Tiny) then ! downstream half
                                                                         ! of this reach is on the rank
+
             Counter_ReachCut = Counter_ReachCut + 1_Lng
-            call MPI_WAIT(request_sent(Counter_ReachCut), status , MPI_err)
+
             call MPI_WAIT(request_recv(Counter_ReachCut), status , MPI_err)
+            call MPI_WAIT(request_sent(Counter_ReachCut), status , MPI_err)
 
             ! Substituting the received data in the solution array
-            Solution(i_reach)%UU(0)%U(:)  = recv(1+ 2_Lng*(Counter_ReachCut - 1_Lng))%U(:)
+            Solution(i_reach)%UU(0 )%U(:) = recv(1+ 2_Lng*(Counter_ReachCut - 1_Lng))%U(:)
             Solution(i_reach)%UU(-1)%U(:) = recv(2+ 2_Lng*(Counter_ReachCut - 1_Lng))%U(:)
 
           end if
@@ -1735,7 +1751,7 @@ FroudeBottom = u_Bottom / dsqrt(Gravity*h_Bottom)
 !    ! Indicating the flow regime based on the Froude number- all less than one, sub-critical flow
     if (FroudeLeft < 1.0_dbl .and. FroudeRight < 1.0_dbl .and. FroudeBottom < 1.0_dbl) then
       ! case 1: Subcritical flow
-      print*,"sub-critical flow"
+      !print*,"sub-critical flow"
 
 
 !      ! Final values for the ghost cells:
@@ -1760,7 +1776,7 @@ FroudeBottom = u_Bottom / dsqrt(Gravity*h_Bottom)
     ! Indicating the flow regime based on the Froude number- all Fr > 1, super-critical flow
     else if (FroudeLeft > 1.0_dbl .and. FroudeRight > 1.0_dbl .and. FroudeBottom > 1.0_dbl) then
       ! case 2: Supercritical flow
-      print*,"super-critical flow"
+      !print*,"super-critical flow"
 
 !      ! Final values for the ghost cells:
 !      LeftReach%UU(n+1)%U(1)  =
@@ -1783,7 +1799,7 @@ FroudeBottom = u_Bottom / dsqrt(Gravity*h_Bottom)
 !
     else
       ! case 3: Mixed flow regime
-      print*,"mixed regime flow"
+      !print*,"mixed regime flow"
 !
 !      ! Final values for the ghost cells:
 !      LeftReach%UU(n+1)%U(1)  =
@@ -1973,7 +1989,7 @@ FroudeBottom = u_Bottom / dsqrt(Gravity*h_Bottom)
 !    ! Indicating the flow regime based on the Froude number- all less than one, sub-critical flow
     if (FroudeLeft < 1.0_dbl .and. FroudeBottom < 1.0_dbl) then
       ! case 1: Subcritical flow
-      print*,"sub-critical flow"
+      !print*,"sub-critical flow"
 
 
 !      ! Final values for the ghost cells:
@@ -1998,7 +2014,7 @@ FroudeBottom = u_Bottom / dsqrt(Gravity*h_Bottom)
     ! Indicating the flow regime based on the Froude number- all Fr > 1, super-critical flow
     else if (FroudeLeft > 1.0_dbl .and. FroudeBottom > 1.0_dbl) then
       ! case 2: Supercritical flow
-      print*,"super-critical flow"
+      !print*,"super-critical flow"
 
 !      ! Final values for the ghost cells:
 !      LeftReach%UU(n+1)%U(1)  =
@@ -2021,7 +2037,7 @@ FroudeBottom = u_Bottom / dsqrt(Gravity*h_Bottom)
 !
     else
       ! case 3: Mixed flow regime
-      print*,"mixed regime flow"
+      !print*,"mixed regime flow"
 !
 !      ! Final values for the ghost cells:
 !      LeftReach%UU(n+1)%U(1)  =
