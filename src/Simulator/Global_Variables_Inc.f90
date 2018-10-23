@@ -12,16 +12,17 @@ integer(kind=Smll) :: ii, jj             ! Loop index
 integer :: MPI_err
 
 ! - Type ------------------------------------------------------------------------------------------
-type(TimeDate_tp) :: TimeDate       ! Indicates the time and date of simulation
-type(Timer_tp)    :: InputTime, SimulationTime, TotalTime ! Holds the running time
+type(TimeDate_tp)     :: TimeDate       ! Indicates the time and date of simulation
+type(Timer_tp)        :: InputTime, SimulationTime, TotalTime ! Holds the running time
 
 type(ArgCommands)     :: Arguments  ! Holds the entered arguments from the command line
 type(Input_Data_tp)   :: ModelInfo  ! Holds info. (name, dir, output dir) of the model
 
-! Holds initial data required for array allocation
-type(AnalysisData_tp) :: AnalysisInfo
 
-! Holds the entire information required of the Model
-type(network_tp) :: Model
+type(AnalysisData_tp) :: AnalysisInfo ! Holds initial data required for array allocation
+
+
+type(network_tp)      :: Model ! Holds the entire information required of the Model (network)
+
 type(SolverWithLimiter_tp)  :: Experiment_TypeII !info to solve shallow water equation with limiter
 

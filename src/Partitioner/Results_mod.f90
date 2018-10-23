@@ -49,11 +49,13 @@ type Plot_domain_1D_tp(NCells)
   integer(kind=Lng), len :: NCells =0_lng
 
   real(kind=DBL), dimension(NCells) :: XCoor      ! Location of cell centers
+  real(kind=DBL), dimension(NCells) :: YCoor      ! Bathymetry
   real(kind=DBL), dimension(NCells) :: ZCoor      ! Bathymetry
   real(kind=DBL), dimension(NCells) :: CellSlope  ! Slope of the domain at the locaiton of
                                                   ! cell center
-
   Character(kind = 1, len = 20) :: IndexSize !Size no in the Char. fmt to add to input file Name
+  Character(kind = 1, len = 20) :: IndexRank !rank no in the Char. fmt to add to input file Name
+  Character(kind = 1, len =100) :: IndexReach!reach no in the Char. fmt to add to input file Name
 
   contains
     procedure plot => Plot_Domain_1D_sub
@@ -121,9 +123,12 @@ write(FileInfo,*) " subroutine < Plot_Domain_1D_sub >: "
 write(*,       *) " -Writing down the domain in the .Domain file ... "
 write(FileInfo,*) " -Writing down the domain in the .Domain file ... "
 
+
+print*,trim(ModelInfo%OutputDir)
+
 UnFile = FileDomain
 open(unit=UnFile, &
-     file=trim(ModelInfo%ModelName)//'_s'//trim(adjustL(this%IndexSize))//'.Domain', Err=1001,&
+     file=trim(ModelInfo%ModelName)//'_s'//trim(adjustL(this%IndexSize))//'_r'//trim(adjustL(this%IndexRank))//'_R'//trim(adjustL(this%IndexReach))//'.Domain', Err=1001,&
      iostat=IO_File, access='sequential', action='write', asynchronous='no', blank='NULL', &
      blocksize=0, defaultfile=trim(ModelInfo%OutputDir), dispose='keep', form='formatted', &
      position='asis', status='replace')
@@ -135,12 +140,12 @@ write(unit=UnFile, fmt="(' Number of points: ')",   advance='yes', asynchronous=
       iostat=IO_write, err=1006)
 write(unit=UnFile, fmt="(I20)",                     advance='yes', asynchronous='no', &
       iostat=IO_write, err=1006) this%NCells
-write(unit=UnFile, fmt="(' x   --      z ')",       advance='yes', asynchronous='no', &
+write(unit=UnFile, fmt="(' x   --      y      --        z ')",       advance='yes', asynchronous='no', &
       iostat=IO_write, err=1006)
 
   do i_points = 1_Lng, this%NCells
-    write(unit=UnFile, fmt="(i16,3F16.5)", advance='yes', asynchronous='no', iostat=IO_write, &
-          err=1006) i_points, this%XCoor(i_points), this%ZCoor(i_points), this%CellSlope(i_points)
+    write(unit=UnFile, fmt="(I16,4F16.5)", advance='yes', asynchronous='no', iostat=IO_write, &
+          err=1006) i_points, this%XCoor(i_points), this%YCoor(i_points), this%ZCoor(i_points), this%CellSlope(i_points)
   end do
 
 write(*,       *) " Domain coordinates was written successfully in the file. "

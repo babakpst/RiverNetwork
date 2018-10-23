@@ -94,7 +94,7 @@ allocate(Arguments%Length(Arguments%ArgCount), Arguments%Arg(Arguments%ArgCount)
 write(*,         fmt="(A)") " -Reading Address.txt file ..."
 !write(FileInfo, fmt="(A)") " -Reading Address.txt file ..."
 
-call ModelInfo%Input()
+call ModelInfo%Input()  ! reading the address file
 
 ! Opening the information File --------------------------------------------------------------------
 write(*,        fmt="(A)") " -Creating the info.txt file in the output folder ..."
@@ -128,7 +128,7 @@ call InputTime%stop()
     call AnalysisInfo%Analysis(i_analyses, ModelInfo)
 
     ! Writing the address file for Python script visualizer
-    !call ModelInfo%visualizer(AnalysisInfo,i_analyses)   !  <modify>   !!!!!!!!!!!!!!!!!!!!!!!!!!!
+    call ModelInfo%visualizer(AnalysisInfo,i_analyses)
 
     ! Analysis ====================================================================================
       select case(AnalysisInfo%AnalysisType)

@@ -290,6 +290,9 @@ Return
 
 end procedure Input_Analysis_sub
 
+
+
+
 !##################################################################################################
 !##################################################################################################
 module procedure Python_Visualizer_sub
@@ -345,6 +348,12 @@ write(unit=UnFile, fmt="(' No. of ranks: ')", advance='yes', asynchronous='no', 
       iostat=IO_write, err=1006)
 write(unit=UnFile,fmt="(I20)",advance='yes',asynchronous='no', &
       iostat=IO_write,err=1006) this%size
+write(unit=UnFile,fmt="(' ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
+
+write(unit=UnFile, fmt="(' rank no.: ')", advance='yes', asynchronous='no', &
+      iostat=IO_write, err=1006)
+write(unit=UnFile,fmt="(I20)",advance='yes',asynchronous='no', &
+      iostat=IO_write,err=1006) this%rank
 write(unit=UnFile,fmt="(' ')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
 
 

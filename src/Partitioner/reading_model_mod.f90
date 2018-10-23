@@ -339,7 +339,11 @@ UnFile = FileDataGeo
     this%network(reach_no)%ReachAngle(2),     & ! angles of the junctions of the reach
     this%network(reach_no)%JunctionLength(1), & ! Length of the reach at each junction
     this%network(reach_no)%JunctionLength(2)    ! Length of the reach at each junction
+
+    this%network(reach_no)%ReachSlope = - this%network(reach_no)%ReachSlope
   end do
+
+
 
 ! Reading Boundary conditions - free nodes vs junction nodes
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)

@@ -98,7 +98,6 @@ enum, bind(C)
   enumerator:: FileDomain    !=601 output file containing the domain(.domain)
   enumerator:: FileResults   !=602 output file containing results (.res)
   enumerator:: FilePythonAddress !=603 output file for visualizer script in python (.VisPy)
-
 end enum
 
 ! Analysis case number ============================================================================

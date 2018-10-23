@@ -42,7 +42,6 @@ module Discretize_the_network_mod
 use Parameters_mod
 use Input_mod, only: Input_Data_tp
 use Model_mod, only: Geometry_tp
-use Results_mod, only: Plot_domain_1D_tp
 use messages_and_errors_mod
 
 implicit none
@@ -160,7 +159,7 @@ real(kind=Dbl)    :: RaisedHeight      ! A temporary variable that holds the dif
 logical           :: check_iteration   ! a check parameter on the while loop to make sure that
                                        ! all the upstream nodes are copied
 ! - type ------------------------------------------------------------------------------------------
-type(Plot_domain_1D_tp(NCells=:)), allocatable :: Plot ! Plots the discretized domain
+
 
 ! code ============================================================================================
 write(*,       *) " subroutine < Discretize_network_sub >: "
@@ -303,7 +302,7 @@ end do
 
     ! The difference between the height of upstream and downstream nodes:
     ! (Multiplying the length of each reach by its slope)
-    RaisedHeight =  Geometry%network(i_reach)%ReachLength * Geometry%network(i_reach)%ReachSlope
+    RaisedHeight = - Geometry%network(i_reach)%ReachLength * Geometry%network(i_reach)%ReachSlope
 
     ! raising the upstream nodes:
     UpperNode = Geometry%network(i_reach)%ReachNodes(1) ! the node at the upstream of the reach
@@ -355,7 +354,7 @@ end do
 
     write(*,fmt="(A,I5,A,F23.10)")" Cell length in the reach ", i_reach," is:", CntrlVolumeLength
 
-    Z_loss = CntrlVolumeLength * Geometry%network(i_reach)%ReachSlope  ! Height loss in each cell
+    Z_loss =- CntrlVolumeLength * Geometry%network(i_reach)%ReachSlope  ! Height loss in each cell
 
     ! The height of the upstream node
     Height = this%NodeHeight( Geometry%network(i_reach)%ReachNodes(1))
@@ -403,21 +402,6 @@ end do
 
 write(*,        fmt="(' Discretization was successful. ')")
 write(FileInfo, fmt="(' Discretization was successful. ')")
-
-write(*,        fmt="(' -Plotting the discretized domain ... ')")
-write(FileInfo, fmt="(' -Plotting the discretized domain ... ')")
-
-!! Plot the discretized domain (cell centers)
-!allocate(Plot_domain_1D_tp(i_Cell) :: Plot, stat=ERR_Alloc)
-!if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
-
-!! Filling the coordinates for plot
-!Plot%XCoor(:)      = this%XCell(:)
-!Plot%ZCoor(:)      = this%ZCell(:)
-!Plot%CellSlope(:)  = this%CellSlope(:)
-!Plot%IndexSize     = Geometry%IndexSize
-
-!call Plot%plot(ModelInfo)
 
 write(*,       *) " end subroutine < Discretize_network_sub >"
 write(FileInfo,*) " end subroutine < Discretize_network_sub >"

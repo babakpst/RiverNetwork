@@ -45,9 +45,11 @@ module Network_Partitioner_mod
 use Parameters_mod
 use messages_and_errors_mod
 use Discretize_the_network_mod, only: DiscretizedNetwork_tp
-use Input_mod, only: Input_Data_tp
-use Model_mod, only: Geometry_tp
+use Input_mod,                  only: Input_Data_tp
+use Model_mod,                  only: Geometry_tp
+use Results_mod,                only: Plot_domain_1D_tp
 use iso_c_binding
+
 
 implicit none
 
@@ -394,12 +396,14 @@ integer(kind=Lng), dimension (Geometry%Base_Geometry%NoNodes) :: LocalNodeNumber
 
 ! - character variables ---------------------------------------------------------------------------
 Character(kind = 1, len = 20) :: IndexRank ! Rank no in the Char. fmt to add to the input file Name
+Character(kind = 1, len = 100) :: IndexReach ! Reach no in the Char. fmt to add to the input file Name
 
 logical :: Balanced_load
 
 ! We use this linked list to figure out how many nodes are connected to each node.
 type(NodeConncetivityArray_tp), allocatable, dimension(:) :: NodeConnectivity ! Linked list
 type(NodeConncetivity_tp), pointer :: Temp ! This is a temporary type to create the linked list
+type(Plot_domain_1D_tp(NCells=:)), allocatable :: Plot ! Plots the discretized domain
 
 ! code ============================================================================================
 write(*,        fmt="(A)") " subroutine < Network_Partitioner_Sub >: "
@@ -872,7 +876,7 @@ TotalCellCounter = 0_Lng
     ReachCounter= 0_Lng
     UnFile = FilePartition
 
-      do i_reach = 1_Lng, Geometry%Base_Geometry%NoReaches
+      On_Reaches: do i_reach = 1_Lng, Geometry%Base_Geometry%NoReaches
 
         NodeI = Geometry%network(i_reach)%ReachNodes(1) ! upstream node number for this reach
         NodeII= Geometry%network(i_reach)%ReachNodes(2) ! downstream node number for this reach
@@ -1038,7 +1042,28 @@ TotalCellCounter = 0_Lng
         write(unit=UnFile, fmt="(F35.20)", &
               advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
               Discretization%DiscretizedReach(i_reach)%InterfaceSlope(i_cells+1_Lng)
-      end do
+
+        write(*,        fmt="(' -create the discretized domain file for visualization ... ')")
+        write(FileInfo, fmt="(' -create the discretized domain file for visualization ... ')")
+
+        ! Print the discretized domain (cell centers) for all reaches in the domain file for visualization in Python
+        allocate(Plot_domain_1D_tp(RangeCell_II - RangeCell_I+1) :: Plot, stat=ERR_Alloc)
+        if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
+
+        ! Filling the coordinates for plot
+        Plot%XCoor(:)      = Discretization%DiscretizedReach(i_reach)%XCell(RangeCell_I:RangeCell_II)
+        Plot%YCoor(:)      = Discretization%DiscretizedReach(i_reach)%YCell(RangeCell_I:RangeCell_II)
+        Plot%ZCoor(:)      = Discretization%DiscretizedReach(i_reach)%ZCell(RangeCell_I:RangeCell_II)
+        Plot%CellSlope(:)  = Discretization%DiscretizedReach(i_reach)%CellSlope(RangeCell_I:RangeCell_II)
+        Plot%IndexSize = Geometry%Base_Geometry%IndexSize
+        Plot%IndexRank = IndexRank
+        write(IndexReach, *) ReachCounter ! Converts Rank to Character format for the file Name
+        Plot%IndexReach = IndexReach
+
+        call Plot%plot(ModelInfo)
+        deallocate(Plot)
+
+      end do On_Reaches
 
     TotalCellCounter = TotalCellCounter + CellCounter
 
