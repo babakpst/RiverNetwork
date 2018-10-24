@@ -40,7 +40,7 @@ def main(arg):
 
   # input section =================================================================================
   InputName = "Network_EX2_Case2_s4.VisPy"
-  LocalReachNumberToPlot = 1
+  LocalReachNumberToPlot = 2
   rank = 1
 
   # reading data for the network on this partition ================================================
