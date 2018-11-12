@@ -714,11 +714,10 @@ write(FileInfo,*) " -Time marching ..."
 
             SourceTerms%B(1,1) = 0.0_Dbl
             SourceTerms%B(2,1) =  &
-                     - Gravity * (this%Model%DiscretizedReach(i_reach)%CellSlope(i_Cell) + (7.0_Dbl/3.0_Dbl) * SourceTerms%S_f)
+                     + Gravity * (this%Model%DiscretizedReach(i_reach)%CellSlope(i_Cell) + (7.0_Dbl/3.0_Dbl) * SourceTerms%S_f)
 
             SourceTerms%B(1,2) = 0.0_Dbl
-            SourceTerms%B(2,2) = (2.0_Dbl*this%Model%DiscretizedReach(i_reach)%ReachManning**2.0) &
-                                  *dabs(velocity)/(height**(4.0_Dbl/3.0_Dbl))
+            SourceTerms%B(2,2) = (2.0_Dbl*Gravity*  SourceTerms%S_f) /velocity
 
             ! Find the BI
             SourceTerms%BI(:,:) = SourceTerms%Identity - 0.5_Dbl * dt * SourceTerms%B(:,:)

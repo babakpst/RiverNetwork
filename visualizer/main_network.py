@@ -40,8 +40,8 @@ def main(arg):
 
   # input section =================================================================================
   InputName = "Network_EX2_Case2_s4.VisPy"
-  LocalReachNumberToPlot = 2
-  rank = 1
+  LocalReachNumberToPlot = 5
+  rank = 0
 
   # reading data for the network on this partition ================================================
   Infofile = open(InputName,"r")
@@ -157,6 +157,7 @@ def main(arg):
   # ploting the results
   h = np.zeros (npoints, dtype=np.float)
   uh= np.zeros (npoints, dtype=np.float)
+  u = np.zeros (npoints, dtype=np.float)
 
   for ii in range(1,nstep,dataFile):
     print("{:} {} {:} {}".format(" printing figure: ", ii, " out of: ", nstep))
@@ -178,6 +179,7 @@ def main(arg):
       Temp = Temp.split()
       h[jj] = float(Temp[1])
       uh[jj] = float(Temp[2])
+      u[jj] = uh[jj] /h[jj]
 
     fig = plt.figure()
 
@@ -202,13 +204,13 @@ def main(arg):
     ax2 = fig.add_subplot(212)
     ax2.grid(True, color='k')   
     #ax1.plot(X_Arr, Q_Arr, label ="Water flow" , color = "c", linewidth = 2.0)
-    ax2.plot (x, uh[:], label ="Water flow" , color = "c", linewidth = 2.0)
+    ax2.plot (x, u[:], label ="Water flow" , color = "c", linewidth = 2.0)
     
-    title_string = ( 'UH(T) - Time = %8.3f' % ( ii*DT ) )
+    title_string = ( 'U(T) - Time = %8.3f' % ( ii*DT ) )
     plt.title(title_string, fontsize = 16)
 
     plt.xlabel ( 'X',  fontsize=12)
-    plt.ylabel ( 'UH(X,T)',  fontsize=12)
+    plt.ylabel ( 'U(X,T)',  fontsize=12)
     plt.xticks(xTick)
 
     #mng = plt.get_current_fig_manager()
