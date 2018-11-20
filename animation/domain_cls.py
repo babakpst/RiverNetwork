@@ -35,8 +35,8 @@ class domain_cls:
     print("")
     print(" ========== Reads domain form file... ==========")
 
-    Input = open("EX1_Limiter.Domain","r")
-  #  Input = open("EX1.Domain","r")
+    Input = open("EX5_s4.Domain","r")
+    #Input = open("EX1_Limiter_s4.Domain","r")
     Temp = Input.readline().rstrip("\n")  # 1
     Temp = Input.readline().rstrip("\n")  # 1
     self.npoints = int(Input.readline().rstrip("\n"))  # 1

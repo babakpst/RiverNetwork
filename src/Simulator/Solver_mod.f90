@@ -281,11 +281,12 @@ SourceTerms%Identity(2,2) = 1.0_Dbl
 ! <modify>
 UU(1:this%Model%NCells)%U(1) = this%AnalysisInfo%CntrlV -    this%Model%ZCell(:)
 
-!if ( this%ModelInfo%rank == 0 .or. this%ModelInfo%rank == 1) then
-!UU(1:this%Model%NCells)%U(1) = this%AnalysisInfo%CntrlV
-!else if ( this%ModelInfo%rank == 2 .or. this%ModelInfo%rank == 3) then
-!UU(1:this%Model%NCells)%U(1) = this%AnalysisInfo%h_dw
-!end if
+! This if for dam break example
+!  if ( this%ModelInfo%rank == 0 .or. this%ModelInfo%rank == 1) then
+!    UU(1:this%Model%NCells)%U(1) = this%AnalysisInfo%CntrlV
+!  else if ( this%ModelInfo%rank == 2 .or. this%ModelInfo%rank == 3) then
+!    UU(1:this%Model%NCells)%U(1) = this%AnalysisInfo%h_dw
+!  end if
 
 
 UU(:)%U(2) = 0.0_Dbl
@@ -759,6 +760,10 @@ class(LimiterFunc_tp) :: this
 
   select case (this%limiter_Type)
 
+    case(-1)  ! Lax-Wendroff
+      this%phi = 1.0_Dbl
+    case(0)  ! upwind
+      this%phi = 0.0_Dbl
     case(1)  ! minmod: most diffusive
       this%phi = dmax1(  0.0_Dbl, dmin1( 1.0_Dbl, this%theta )  )
     case(2)  !superbee

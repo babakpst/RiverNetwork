@@ -299,7 +299,7 @@ write(FileInfo,*) " Subroutine < Input_Analysis_sub >: "
 
 
 ! Opening the input file for this specific simulation
-write(*,        fmt="(A)") " -Opening the analysis file ..."
+write(*,        fmt="(A)") " -Opening the analysis file ...",trim(ModelInfo%AnalysisDir), trim(ModelInfo%AnalysesNames(i_analyses))//'.Analysis'
 write(FileInfo, fmt="(A)") " -Opening the analysis file ..."
 
 UnFile=UnInptAna

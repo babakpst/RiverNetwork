@@ -270,8 +270,8 @@ CellCounter = 0_Lng
 
           do jj = 1_Lng, Geometry%ReachDisc(i_reach)
             CellCounter = CellCounter + 1_Lng
-            !Z_loss = Domain_Func_1D(XCoordinate)
-            Z_loss = Domain_Func_1D_MacDonald(XCoordinate)
+            Z_loss = Domain_Func_1D(XCoordinate)
+            !Z_loss = Domain_Func_1D_MacDonald(XCoordinate)
 
             this%LengthCell(CellCounter,1) = dsqrt(ProjectionLength**2 + Z_loss**2)
             this%LengthCell(CellCounter,2) = ProjectionLength
@@ -279,17 +279,18 @@ CellCounter = 0_Lng
             this%X_Full(CellCounter*2_Lng)       = XCoordinate - 0.5_Dbl * ProjectionLength
             this%X_Full(CellCounter*2_Lng+1_Lng) = XCoordinate
 
+            this%SlopeCell(CellCounter)  = Domain_Func_1D_D(XCoordinate)
+            this%SlopeInter(CellCounter) = Domain_Func_1D_D(XCoordinate-0.5_Dbl * ProjectionLength)
 
-            !this%SlopeCell(CellCounter)  = Domain_Func_1D_D(XCoordinate)
-            !this%SlopeInter(CellCounter) = Domain_Func_1D_D(XCoordinate-0.5_Dbl * ProjectionLength)
-            this%SlopeCell(CellCounter)  = Domain_Func_1D_MacDonald_D(XCoordinate)
-            this%SlopeInter(CellCounter) = Domain_Func_1D_MacDonald_D(XCoordinate-0.5_Dbl * ProjectionLength)
+
+            !this%SlopeCell(CellCounter)  = Domain_Func_1D_MacDonald_D(XCoordinate)
+            !this%SlopeInter(CellCounter) = Domain_Func_1D_MacDonald_D(XCoordinate-0.5_Dbl * ProjectionLength)
             this%ZCell(CellCounter)      = Height + Z_loss
-            !this%ZFull(CellCounter*2)    = Height &
-            !                             + Domain_Func_1D(XCoordinate - 0.5_Dbl * ProjectionLength)
-
             this%ZFull(CellCounter*2)    = Height &
-                                         + Domain_Func_1D_MacDonald(XCoordinate - 0.5_Dbl * ProjectionLength)
+                                         + Domain_Func_1D(XCoordinate - 0.5_Dbl * ProjectionLength)
+
+            !this%ZFull(CellCounter*2)    = Height &
+            !                             + Domain_Func_1D_MacDonald(XCoordinate - 0.5_Dbl * ProjectionLength)
 
             this%ZFull(CellCounter*2+1)  = Height + Z_loss
             this%ManningCell(CellCounter)= Geometry%ReachManning(i_reach)

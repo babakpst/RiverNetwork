@@ -48,10 +48,9 @@ class animate_class():
     xx= np.zeros (self.Domain.npoints, dtype=np.float)
     h = self.Domain.z+h
 
-
     fig, ax = plt.subplots()
     ax.grid(True, color='k')   
-    ax = plt.axes(xlim=(0, 25), ylim=(0, 3.0))
+    ax = plt.axes(xlim=(0, 200), ylim=(0, 1.2))
     title_string = ( 'h(t)' )
     plt.title(title_string, fontsize = 16)
 
@@ -66,27 +65,37 @@ class animate_class():
     def init():
       line.set_data([], [])
       return line,
+
+
     
     #def update(num, xx, uh, line):
     def update( num):
-      FileName ="EX1_Case1/EX1_Limiter_" + str(num*100 + 1) + ".Res"
-      File_Input = open(FileName,"r")
-      print(num,FileName)
 
       xx = self.Domain.x
-      for jj in range(self.Domain.npoints):
+      nsize = 4
+      total_in_rank = self.Domain.npoints / nsize
+
+      for irank in range(nsize):
+        FileName ="EX5_Case1_s4/EX5_s4_p"+str(irank) + "_"+ str(num*100 + 1) + ".Res"
+        File_Input = open(FileName,"r")
+        print(num,FileName)
+        Temp = File_Input.readline().rstrip("\n")
         Temp = File_Input.readline().rstrip("\n")    
-        Temp = Temp.split()
-        h[jj] =  float(Temp[1])+ self.Domain.z[jj]
-        uh[jj] = float(Temp[2])
+        Temp = File_Input.readline().rstrip("\n")        
+        Temp = File_Input.readline().rstrip("\n")        
+        for jj in range(irank*100, irank*100 + total_in_rank):
+          Temp = File_Input.readline().rstrip("\n")    
+          Temp = Temp.split()
+          h[jj] =  float(Temp[1])+ self.Domain.z[jj]
+          uh[jj] = float(Temp[2])
 
       line.set_data(xx, h)
       return line,
 
     #anim = animation.FuncAnimation(fig, update, len(xx), fargs=[xx, uh, line], interval=25, blit=True)
-    anim = animation.FuncAnimation(fig, update, init_func=init,frames=500, interval=1, blit=True)
+    anim = animation.FuncAnimation(fig, update, init_func=init,frames=200, interval=1, blit=True)
     #anim = animation.FuncAnimation(fig, update, init_func=init,frames=349, interval=1)
 
-    anim.save('EX1_Limiter.mp4', fps=5, extra_args=['-vcodec', 'libx264'])
+    anim.save('EX5_Dam.mp4', fps=3, extra_args=['-vcodec', 'libx264'])
     plt.show(block=False) # <modify> See why the execution stops when the the command gets here. 
 

@@ -1,5 +1,5 @@
 Input file name:
-EX6
+EX5_Limiter
 
 Input directory:
 "/h1/babak/Documents/Goofy/input"
@@ -11,6 +11,8 @@ Number of Analysis:
 1
 
 Names of the analysis files:
-EX6_case1
+EX1_case1
 
 
+! -------------
+EX6
