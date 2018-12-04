@@ -80,7 +80,7 @@ def main(arg):
   # Directories:
   fileNameDir = os.path.join("..", "output", fileName)
   fileName_domain = os.path.join(fileNameDir,fileName+ "_s"+ str(size)+".Domain")
-
+  print(fileName_domain)
   # Creating the output directory
   OutDir = os.path.join(fileName, analysisName + "_s"+ str(size),"" )
   directory = os.path.dirname(OutDir)
@@ -136,6 +136,7 @@ def main(arg):
 
   plt.close(fig)  
 
+  # plot all slides 
   for ii in range(1,nstep,dataFile):
     print("{:} {} {:} {}".format(" printing figure: ", ii, " out of: ", nstep))
     count = -1
