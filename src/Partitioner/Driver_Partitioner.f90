@@ -23,14 +23,13 @@
 ! V2.00: 04/17/2018  - Developing the partitioner code.
 ! V2.20: 05/30/2018  - Initializing objects/types
 ! V3.00: 07/10/2018  - Network partitioning
+! V3.10: 01/18/2019  - Visualization using Paraview, XDMF, and HDF5
 !
 ! File version $Id: $
 ! $Id: $
 !
-! Last update: 07/10/2018
+! Last update: 01/18/2019
 !
-! ================================ Global   V A R I A B L E S =====================================
-!  . . . . . . . . . . . . . . . . Variables . . . . . . . . . . . . . . . . . . . . . . . . . . .
 !
 !##################################################################################################
 
@@ -38,7 +37,6 @@ program Partitioner_program_for_Solving_Shallow_Water_Equation
 
 
 ! Libraries =======================================================================================
-!#include "metis.h"
 use ifport
 
 ! Defined Modules =================================================================================
@@ -51,19 +49,19 @@ use Network_Partitioner_mod
 use messages_and_errors_mod
 
 ! Global Variables ================================================================================
-Implicit None
+implicit none
 
-Include 'Global_Variables_Inc.f90'   ! All Global Variables are defined/described in this File
+include 'Global_Variables_Inc.f90'   ! All Global Variables are defined/described in this File
 ModelInfo%Version = 2.0_SGL          ! Reports the version of the code
 
 ! Time and Date signature =========================================================================
-Call cpu_time(SimulationTime%Time_Start)
-Call GETDAT(TimeDate%Year, TimeDate%Month, TimeDate%Day)
-Call GETTIM(TimeDate%Hour, TimeDate%Minute, TimeDate%Seconds, TimeDate%S100th)
+call cpu_time(SimulationTime%Time_Start)
+call GETDAT(TimeDate%Year, TimeDate%Month, TimeDate%Day)
+call GETTIM(TimeDate%Hour, TimeDate%Minute, TimeDate%Seconds, TimeDate%S100th)
 
 call Header(ModelInfo%Version) ! Writes info on screen.
 
-! Getting entered arguments =======================================================================
+! Getting arguments entered in the terminal =======================================================
 Arguments%ArgCount = command_argument_count()
 
 ! Allocating arg arrays
@@ -80,7 +78,7 @@ allocate(Arguments%Length(Arguments%ArgCount), &
   end do
 
 ! Directories, input, and output Files ============================================================
-! Address File ------------------------------------------------------------------------------------
+! Reading Address File ----------------------------------------------------------------------------
 write(*,         fmt="(A)") " -Reading Address.txt file ..."
 !write(FileInfo, fmt="(A)") " -Reading Address.txt file ..."
 
@@ -101,7 +99,7 @@ Call Info(TimeDate, ModelInfo)
 
 Call cpu_time(SimulationTime%Input_Starts)
 
-! Reading model data ==============================================================================
+! Reading model data from filename.dataModel =======================================================
 write(*,        fmt="(A)") " -Reading the initial data file ..."
 write(FileInfo, fmt="(A)") " -Reading the initial data file ..."
 
@@ -109,7 +107,7 @@ write(FileInfo, fmt="(A)") " -Reading the initial data file ..."
 !Geometry=Geometry_tp(NCells_Reach=null(), ReachType=null(), ReachLength=null(), ReachSlope=null(), &
 !                       ReachManning=null(), ReachWidth=null(), ReachWidth=null() )
 
-! Reading basic data: -----------------------------------------------------------------------------
+! Reading basic data (from .dataModel): -----------------------------------------------------------
 call Geometry%Base_Geometry%initial_network_info(ModelInfo)
 
 ! Allocating required arrays
@@ -124,7 +122,7 @@ allocate(Geometry%network(Geometry%Base_Geometry%NoReaches), &
          stat=Err_Alloc)
   if (Err_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
-! Reading input arrays ----------------------------------------------------------------------------
+! Reading the geometry of the network (input arrays) from .Geo ------------------------------------
 write(*,        fmt="(A)") " -Reading arrays form data file ..."
 write(FileInfo, fmt="(A)") " -Reading arrays form data file ..."
 
