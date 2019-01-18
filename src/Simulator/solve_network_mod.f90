@@ -626,7 +626,6 @@ Counter_ReachCut = 0_Lng
 
       end if
 
-
       !do i_eigen=-1,this%Model%DiscretizedReach(i_reach)%NCells_reach+2_Lng
       !  write(*, fmt="(A,3I5,2F23.10)") "solution is:", this%ModelInfo%rank, i_reach, i_eigen, Solution(i_reach)%UU(i_eigen)%U(1), Solution(i_reach)%UU(i_eigen)%U(2)
       !end do
@@ -636,7 +635,6 @@ Counter_ReachCut = 0_Lng
 Results%ModelInfo = this%ModelInfo
 
 call MPI_Barrier(MPI_COMM_WORLD, MPI_err)
-
 
 write(*,       *) " -Time marching ..."
 write(FileInfo,*) " -Time marching ..."
