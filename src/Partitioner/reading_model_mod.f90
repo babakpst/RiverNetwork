@@ -67,9 +67,6 @@ type reach_tp
   real(kind=DBL) :: ReachWidth   = 0.0_dbl ! Stores the width of each reach
                                          ! (we assume constant channel width in each reach)
 
-  real(kind=DBL), dimension(2) :: ReachAngle=0.0_dbl ! Stores the orientation of the reach
-                                                     ! in comparison to the vertical axis
-
   real(kind=DBL), dimension(2) :: JunctionLength=0.0_dbl ! Length of the junction
 end type reach_tp
 
@@ -335,8 +332,6 @@ UnFile = FileDataGeo
     this%network(reach_no)%ReachWidth,        & ! width of the channel-constant width in each reach
     this%network(reach_no)%ReachNodes(1),     & ! nodes of the reach
     this%network(reach_no)%ReachNodes(2),     & ! nodes of the reach
-    this%network(reach_no)%ReachAngle(1),     & ! angles of the junctions of the reach
-    this%network(reach_no)%ReachAngle(2),     & ! angles of the junctions of the reach
     this%network(reach_no)%JunctionLength(1), & ! Length of the reach at each junction
     this%network(reach_no)%JunctionLength(2)    ! Length of the reach at each junction
 
@@ -371,7 +366,7 @@ write(unit=UnFile, fmt="(' Reach no. -- Length -- no. of cells -- reach type (st
 
   do i_reach= 1, this%Base_Geometry%NoReaches
     ! writing the network on screen
-    write(unit=*,      fmt="(I7, F23.10, I5, I3, 3F23.10, 2I7, 2F23.10, 2F23.10)") i_reach, &
+    write(unit=*,      fmt="(I7, F23.10, I5, I3, 3F23.10, 2I7, 2F23.10)") i_reach, &
     this%network(reach_no)%ReachLength, & ! Length of the reach
     this%network(reach_no)%NCells_Reach, &  ! no. of cells in each reach- constant length
     this%network(reach_no)%ReachType, &   ! type of the reach - straight 0, from function 1
@@ -379,10 +374,9 @@ write(unit=UnFile, fmt="(' Reach no. -- Length -- no. of cells -- reach type (st
     this%network(reach_no)%ReachManning, &! Manning's number of each reach
     this%network(reach_no)%ReachWidth, &  ! width of channel- constant channel width in each reach
     this%network(reach_no)%ReachNodes(1:2), & ! nodes of the reach
-    this%network(reach_no)%ReachAngle(1:2), & ! angles of the junctions of the reach
     this%network(reach_no)%JunctionLength(1:2) ! Length of the reach at each junction
     ! writing the network in the info file
-    write(unit=UnFile, fmt="(I7, F23.10, I5, I3, 3F23.10, 2I7, 2F23.10, 2F23.10)") i_reach, &
+    write(unit=UnFile, fmt="(I7, F23.10, I5, I3, 3F23.10, 2I7, 2F23.10)") i_reach, &
     this%network(reach_no)%ReachLength, & ! Length of the reach
     this%network(reach_no)%NCells_Reach, &  ! no. of cells in each reach- constant length
     this%network(reach_no)%ReachType, &   ! type of the reach - straight 0, from function 1
@@ -390,7 +384,6 @@ write(unit=UnFile, fmt="(' Reach no. -- Length -- no. of cells -- reach type (st
     this%network(reach_no)%ReachManning, &! Manning's number of each reach
     this%network(reach_no)%ReachWidth, &  ! width of channel- constant channel width in each reach
     this%network(reach_no)%ReachNodes(1:2), & ! nodes of the reach
-    this%network(reach_no)%ReachAngle(1:2), & ! angles of the junctions of the reach
     this%network(reach_no)%JunctionLength(1:2) ! Length of the reach at each junction
   end do
 
