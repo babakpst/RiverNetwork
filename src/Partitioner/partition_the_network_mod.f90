@@ -320,9 +320,9 @@ integer(kind=Shrt) :: CommRank      ! indicates the rank number that a reach nee
 ! upstream reaches (ReachLeft and ReachRight) and one downstream reach (ReachBottom). In order to
 ! define the local reach numbering for these three reaches at each junction, we define the
 ! following variables.
-integer(kind=Lng)  :: ReachLeft     ! The local reach number on the rank for one of the upstream reaches at the junction
-integer(kind=Lng)  :: ReachRight    ! The local reach number on the rank for the other the upstream reaches at the junction
-integer(kind=Lng)  :: ReachBottom   ! The local reach number on the rank for downstream reach at the junction
+integer(kind=Lng)  :: ReachLeft     ! local reach no on the rank for one of upstrm reaches at the junction
+integer(kind=Lng)  :: ReachRight    ! local reach no on the rank for the other upstrm reaches at the junction
+integer(kind=Lng)  :: ReachBottom   ! local reach no on the rank for dwnstrm reach at the junction
 
 integer(kind=Lng)  :: CellCounter   ! Counter for cells on each partition
 integer(kind=Lng)  :: TotalCellCounter ! Counter for the total number of cells
@@ -353,19 +353,23 @@ integer(kind=Lng)  :: Weights       ! Weight of each edge (= no. cells in the ed
 integer(kind=Lng)  :: NodeLocation  ! Temp var to hold the location of adjacent nodes in the graph
 
 
+! holds the local no of upstream reach  - -1 if upstream of this reach is not on this rank
+integer(kind=Lng)  :: UpstreamI
+! holds the local no of upstream reach  - -1 if upstream of this reach is not on this rank
+integer(kind=Lng)  :: UpstreamII
+! holds the local no of downstream reach- -1 if upstream of this reach is not on this rank
+integer(kind=Lng)  :: Downstream
 
-integer(kind=Lng)  :: UpstreamI  ! holds the local no of upstream reach  - -1 if upstream of this reach is not on this rank
-integer(kind=Lng)  :: UpstreamII ! holds the local no of upstream reach  - -1 if upstream of this reach is not on this rank
-integer(kind=Lng)  :: Downstream ! holds the local no of downstream reach- -1 if upstream of this reach is not on this rank
-
-integer(kind=Lng)  :: LocalNodeOfReachI ! holds the local no of the upstream node- -1 if node is not on this rank
-integer(kind=Lng)  :: LocalNodeOfReachII! holds the local no of the downstream node- -1 if node is not on this rank
+! holds the local no of the upstream node- -1 if node is not on this rank
+integer(kind=Lng)  :: LocalNodeOfReachI
+! holds the local no of the downstream node- -1 if node is not on this rank
+integer(kind=Lng)  :: LocalNodeOfReachII
 
 integer, target    :: NumberOfNodes ! saves total number of nodes
 integer, target    :: NumberOfRanks ! saves total number of ranks
 
-
-integer(kind=Lng)  :: counter_reach ! counting total number of reaches partitioned- to check the validity of the partitioning
+! counting total number of reaches partitioned- to check the validity of the partitioning
+integer(kind=Lng)  :: counter_reach
 
 
 ! - integer Arrays --------------------------------------------------------------------------------
@@ -396,7 +400,7 @@ integer(kind=Lng), dimension (Geometry%Base_Geometry%NoNodes) :: LocalNodeNumber
 
 ! - character variables ---------------------------------------------------------------------------
 Character(kind = 1, len = 20) :: IndexRank ! Rank no in the Char. fmt to add to the input file Name
-Character(kind = 1, len = 100) :: IndexReach ! Reach no in the Char. fmt to add to the input file Name
+Character(kind = 1, len = 100) :: IndexReach ! Reach no in the Char fmt to add to input file Name
 
 logical :: Balanced_load
 
@@ -709,7 +713,7 @@ LocalNodeNumbering(:) = 0_Lng ! initializing local node numbering
 ReachAttachedToNode(:,3:) = -1_Lng  ! initialize
 ReachAttachedToNode(:,1:2)= 0_Lng   ! initialize, the first col will be used to count the number of
                                     ! reaches attached to this node.
-counter_reach = 0_Lng               ! this counter counts number of reaches that shared between ranks
+counter_reach = 0_Lng               ! this counter counts n. of reaches that shared between ranks
 
 write(*,       *) " Analyzing the partitioned network ... "
 write(FileInfo,*) " Analyzing the partitioned network ... "
@@ -740,7 +744,8 @@ write(FileInfo,*) " Analyzing the partitioned network ... "
     ! The case that both nodes are on the same rank, i.e. the entire reach is one rank
     if (this%ReachPartition(i_reach,1) == this%ReachPartition(i_reach,2)) then
 
-      NReachOnRanks(this%ReachPartition(i_reach,1)) = NReachOnRanks(this%ReachPartition(i_reach,1)) + 1_Lng
+      NReachOnRanks(this%ReachPartition(i_reach,1)) = &
+                                              NReachOnRanks(this%ReachPartition(i_reach,1)) + 1_Lng
 
       ! no cells from this reach on this rank (the entire reach on one rank)
       this%ReachPartition(i_reach,3) = Discretization%DiscretizedReach(i_reach)%NCells_reach
@@ -757,8 +762,10 @@ write(FileInfo,*) " Analyzing the partitioned network ... "
 
       counter_reach = counter_reach + 1_Lng
 
-      NReachOnRanks(this%ReachPartition(i_reach,1)) = NReachOnRanks(this%ReachPartition(i_reach,1)) + 1_Lng
-      NReachOnRanks(this%ReachPartition(i_reach,2)) = NReachOnRanks(this%ReachPartition(i_reach,2)) + 1_Lng
+      NReachOnRanks(this%ReachPartition(i_reach,1)) = &
+                                              NReachOnRanks(this%ReachPartition(i_reach,1)) + 1_Lng
+      NReachOnRanks(this%ReachPartition(i_reach,2)) = &
+                                              NReachOnRanks(this%ReachPartition(i_reach,2)) + 1_Lng
 
       ! Local reach numberings on the ranks which the reach belongs to.
       this%ReachPartition(i_reach,5) = NReachOnRanks(this%ReachPartition(i_reach,1))
@@ -768,7 +775,8 @@ write(FileInfo,*) " Analyzing the partitioned network ... "
           ! even no. of cells in this reach:
           tempCell = Discretization%DiscretizedReach(i_reach)%NCells_reach /2_Lng
 
-          ! no. of cells from this reach on this rank(upstream is on one rank and downstream is on another)
+          ! no. of cells from this reach on this rank
+          ! (upstream is on one rank and downstream is on another)
           this%ReachPartition(i_reach,3) = tempCell
           this%ReachPartition(i_reach,4) = tempCell
 
@@ -778,7 +786,8 @@ write(FileInfo,*) " Analyzing the partitioned network ... "
           ! odd no. of cells in this reach
           tempCell = (Discretization%DiscretizedReach(i_reach)%NCells_reach -1_Lng)/2_Lng
 
-          ! no. of cells from this reach on this rank(upstream is on one rank and downstream is on another)
+          ! no. of cells from this reach on this rank
+          ! (upstream is on one rank and downstream is on another)
           this%ReachPartition(i_reach,3) = tempCell
           this%ReachPartition(i_reach,4) = tempCell+1_Lng
 
@@ -788,14 +797,6 @@ write(FileInfo,*) " Analyzing the partitioned network ... "
     end if
   end do
 
-! <delete> after  debugging
-!print*,"local reaches"
-!write(*,"(4I2)")NReachOnRanks
-!print*,"local numbering 5"
-!write(*,"(16I2)") this%ReachPartition(:,5)
-!print*,"local numbering 6"
-!write(*,"(16I2)") this%ReachPartition(:,6)
-
 ! no. of cells on each rank, saved in col 4.
 chunk(:,4) = chunk(:,2) + chunk(:,3)
 
@@ -804,18 +805,21 @@ chunk(:,4) = chunk(:,2) + chunk(:,3)
   ! most only two upstream reaches and one downstream reach.
   do i_node = 1, Geometry%Base_Geometry%NoNodes
 
-    ! <delete> after debugging
-    !write(*,"(A, 4I5)") "downstream:",i_node, ReachAttachedToNode(i_node, 1), ReachAttachedToNode(i_node, 3), ReachAttachedToNode(i_node, 4)
-    !write(*,"(A, 4I5)") "upstream:  ",i_node, ReachAttachedToNode(i_node, 2), ReachAttachedToNode(i_node, 7), ReachAttachedToNode(i_node, 8)
+
 
     if (ReachAttachedToNode(i_node, 2) > 2_Lng ) then
-      write(*, fmt="('Input error: At the time, the assumption is that there are only two upstream reaches')")
-      write(*, fmt="(' Node: ', I10, ' has:', I5, ' upstream reaches.' )") i_node,  ReachAttachedToNode(i_node, 2)
+      write(*, fmt="('Input error: At the time, the assumption is that there are only two &
+                      upstream reaches')")
+
+      write(*, fmt="(' Node: ', I10, ' has:', I5, ' upstream reaches.' )")  &
+                                                            i_node,  ReachAttachedToNode(i_node, 2)
       stop
     end if
     if (ReachAttachedToNode(i_node, 1) > 1_Lng ) then
-      write(*, fmt="('Input error: At the time, the assumption is that there are only one downstream reach.')")
-      write(*, fmt="(' Node: ', I10, ' has:', I5, ' downstream reaches.' )") i_node,  ReachAttachedToNode(i_node, 1)
+      write(*, fmt="('Input error: At the time, the assumption is that there are only one &
+                      downstream reach.')")
+      write(*, fmt="(' Node: ', I10, ' has:', I5, ' downstream reaches.' )") &
+                                                            i_node,  ReachAttachedToNode(i_node, 1)
       stop
     end if
   end do
@@ -1024,8 +1028,8 @@ TotalCellCounter = 0_Lng
               Discretization%DiscretizedReach(i_reach)%CellPorjectionLength,        &
 
               Geometry%Q_Up(NodeI),                                                 & ! the discharge, if this upstream node is an inlet boundary condition,
-              Geometry%CntrlV(i_reach),                                             & ! the initial control volume
-              Geometry%CntrlV_ratio(i_reach)
+              Geometry%network(i_reach)%CntrlV,                                     & ! the initial control volume
+              Geometry%network(i_reach)%CntrlV_ratio
 
           do i_cells = RangeCell_I, RangeCell_II
 

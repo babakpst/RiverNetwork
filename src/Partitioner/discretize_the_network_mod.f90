@@ -17,10 +17,11 @@
 ! V2.10: 05/24/2018 - modifying for MPI
 ! V2.20: 05/30/2018 - Initializing types
 ! V3.20: 06/20/2018 - network discretization
+! V3.30: 01/23/2019 - modifications for paraview
 !
 ! File version $Id $
 !
-! Last update: 06/20/2018
+! Last update: 01/23/2018
 !
 ! ================================ S U B R O U T I N E ============================================
 ! Discretize_1D:  Discretizes the 1D model.
@@ -293,10 +294,6 @@ Max_Nodes = 0
 ! Now, that we have all the upstream nodes, we figure out the height of each node.
 ! The idea is that for each reach, we raise the height of the nodes on the upstream of that reach
 
-do i_Node2 = 1, Geometry%Base_Geometry%NoNodes   ! <delete>
-print*,"node height", i_Node2, this%NodeHeight(i_Node2)
-end do
-
 
   do i_reach = 1_Lng, Geometry%Base_Geometry%NoReaches
 
@@ -318,13 +315,6 @@ end do
       end if
     end do
 
-print*," after reach", i_reach, RaisedHeight
-do i_Node2 = 1, Geometry%Base_Geometry%NoNodes   ! <delete>
-print*,"node height", i_Node2, this%NodeHeight(i_Node2)
-end do
-
-
-
   end do
 
 write(*,        fmt="(A)") " The height of each node calculated."
@@ -336,10 +326,6 @@ write(FileInfo, fmt="(A)") " The height of each node calculated."
 write(*,        fmt="(A)")" Loop over reaches to discretize the domain ..."
 write(FileInfo, fmt="(A)")" Loop over reaches to discretize the domain ..."
 
-
-do i_Node2 = 1, Geometry%Base_Geometry%NoNodes   ! <delete>
-print*,"node height", i_Node2, this%NodeHeight(i_Node2)
-end do
 
   ! The main discretization loop
   do i_reach=1_Lng, Geometry%Base_Geometry%NoReaches  ! Loop over the reaches
@@ -358,8 +344,6 @@ end do
 
     ! The height of the upstream node
     Height = this%NodeHeight( Geometry%network(i_reach)%ReachNodes(1))
-
-    print*,"height", i_reach, Height
 
     ! we raise the initial height by half of Z_loss, which is equivalent to the height of
     ! an imaginary cell center just before the upstream node. To find the height of each cell
