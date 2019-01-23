@@ -18,8 +18,8 @@ Reach no. -- no. of cells -- reach type (straight(0) or based on a funciton(1)) 
 14              700             0                                                     0.001    0.000               1.0                 16 3                            0   0                         1.5                              0.0
 15              800             0                                                     0.001    0.000               1.0                 3 4                             0   0                         1.5                              0.0
 
-Horizontal coordinates of the nodes: (comment: Upstream boundary condition, constant flow (m^3/s) for each node (put zero if not an inlet BC):)
-Node no. -- Coordinates -- Boundary Conditions -- Upstream Boundary condition 
+Nodes
+Node no. -- Coordinates -- Boundary Conditions -- Upstream Boundary condition (Upstream boundary condition, constant flow (m^3/s) for each node (put zero if not an inlet BC))
 1           -570 2170        0                            0.0
 2           0 1600           0                            0.0
 3           570 2970         0                            0.0

@@ -75,10 +75,15 @@ end type reach_tp
 
 ! Contains all information about the geometry of the domain. (input)
 type Geometry_tp
-  integer(kind=Tiny), allocatable, dimension(:) :: BoundaryCondition ! Holds BC: 0 for free nodes
-                                                                     !           1 for junction
-  ! Upstream boundary condition, constant flow (m^3/s)
+
+  ! Holds BC: 0 for free nodes, 1 for junction - size: Node
+  integer(kind=Tiny), allocatable, dimension(:) :: BoundaryCondition
+
+  ! Upstream boundary condition, constant flow (m^3/s) - size: Node
   real(kind=DBL), allocatable, dimension(:) :: Q_Up
+
+  ! Coordinates of nodes (We only save x and y coordinates)- size: Node, 2
+  real(kind=DBL), allocatable, dimension(:,:) :: NodeCoor
 
   type(reach_tp), allocatable, dimension(:) :: network ! The size of this array is NoReaches
   type(Base_Geometry_tp)                    :: Base_Geometry
@@ -284,9 +289,7 @@ integer(kind=Smll) :: IO_write ! Used for IOSTAT - Input Output Status - in the 
 integer(kind=Lng)  :: i_reach  ! loop index on the number of reaches
 integer(kind=Lng)  :: reach_no ! temp var to read the reach no.
 integer(kind=Lng)  :: i_Node   ! loop index on the node number in the network
-
-integer(kind=Lng)  :: T_Node    ! temp variable to read the node number
-integer(kind=Lng)  :: T_Reach   ! temp variable to read the reach number
+integer(kind=Lng)  :: Node_no    ! temp variable to read the node number
 
 ! code ============================================================================================
 write(*,       *)
@@ -335,31 +338,20 @@ UnFile = FileDataGeo
     this%network(reach_no)%ReachSlope = - this%network(reach_no)%ReachSlope
   end do
 
-! Reading the coordinates of the nodes
+! Reading node properties
+UnFile = FileDataGeo
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+
+
+! Reading Boundary conditions - free nodes vs junction nodes
   do i_Node = 1, this%Base_Geometry%NoNodes
-
-
+    read(unit=UnFile, fmt=*, advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)&
+              Node_no, & ! Node number
+              NodeCoor(Node_no,1), NodeCoor(Node_no,2), & ! x-y coordinate of the node
+              this%BoundaryCondition(i_Node), &           ! the boundary condition of the nodes
+              this%Q_Up(Node_no)                          ! flow at upstream
   end do
-
-
-
-
-! Calculating the Length of the reach
-this%network(reach_no)%ReachLength = ...
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 ! writing the network in the info file
 write(unit=*,      fmt="('')")
@@ -410,91 +402,8 @@ write(unit=UnFile, fmt="(' Reach no. -- Length -- no. of cells -- reach type (st
     this%network(reach_no)%CntrlV_ratio         ! ratio of the change of Cntrl Volume in the reach
   end do
 
-
-
-
-
-
-
-
-
-
-UnFile = FileDataGeo
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-  do i_reach = 1, this%Base_Geometry%NoReaches
-
-    UnFile = FileDataGeo
-    read(unit=UnFile, fmt=*, asynchronous='no', iostat=IO_read, err=1003, end=1004) &
-                                                                      T_Reach, this%CntrlV(T_Reach)
-
-    UnFile = FileInfo
-    write(unit=UnFile, &
-          fmt="(' The control Volume of the reach no.: ', I23,' is: ', F23.10,' m^3')",&
-          advance='yes', asynchronous='no', iostat=IO_write, err=1006) T_Reach,this%CntrlV(T_Reach)
-
-    write(unit=*,   &
-          fmt="(' The control Volume of the reach no.: ', I23,' is: ', F23.10,' m^3')",&
-          advance='yes', asynchronous='no', iostat=IO_write, err=1006) T_Reach,this%CntrlV(T_Reach)
-  end do
-
-
-write(unit=*     , fmt=*, asynchronous='no', iostat=IO_write, err=1006)
-write(unit=UnFile, fmt=*, asynchronous='no', iostat=IO_write, err=1006)
-
-
-
-
-
-
-
-UnFile = FileDataGeo
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-
-  do i_reach = 1, this%Base_Geometry%NoReaches
-    UnFile = FileDataGeo
-    read(unit=UnFile, fmt=*, asynchronous='no', iostat=IO_read, err=1003, end=1004) &
-                                                                T_Reach, this%CntrlV_ratio(T_Reach)
-
-    UnFile = FileInfo
-    write(unit=UnFile, &
-          fmt="(' The control Volume of the reach no.: ', I23,' is: ', F23.10,' m^3')",&
-          advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
-                                                                 T_Reach,this%CntrlV_ratio(T_Reach)
-    write(unit=*,  &
-          fmt="(' The control Volume of the reach no.: ', I23,' is: ', F23.10,' m^3')",&
-          advance='yes', asynchronous='no', iostat=IO_write, err=1006) &
-                                                                 T_Reach,this%CntrlV_ratio(T_Reach)
-  end do
-
-write(unit=UnFile, fmt=*, asynchronous='no', iostat=IO_write, err=1006)
-write(unit=*     , fmt=*, asynchronous='no', iostat=IO_write, err=1006)
-
-
-
-
-
-
-
-
-
-
-
-!!!!!!!!!!!!!!!!!!
-
-
-! Reading Boundary conditions - free nodes vs junction nodes
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-UnFile = FileDataGeo
-  do i_Node = 1, this%Base_Geometry%NoNodes
-    read(unit=UnFile, fmt="(I2)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
-                                                            end=1004)this%BoundaryCondition(i_Node)
-  end do
-
 write(unit=*,      fmt="('')")
-write(unit=*,      fmt="(' Boundary conditions: ')")
+write(unit=*,      fmt="(' Nodes: ')")
 write(unit=*,      fmt="(' Node no. -- BC ')")
 
 UnFile = FileInfo
@@ -517,29 +426,26 @@ write(unit=*     , fmt=*, asynchronous='no', iostat=IO_write, err=1006)
 
 !!!!!!!!!!!!!!!
 
-UnFile = FileDataGeo
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-
   do i_Node = 1, this%Base_Geometry%NoNodes
-    UnFile = FileDataGeo
-    read(unit=UnFile, fmt=*, asynchronous='no', iostat=IO_read, err=1003, end=1004) &
-                        T_Node, this%Q_Up(T_Node)
+
     UnFile = FileInfo
     write(unit=UnFile, fmt="(' Flow rate at the upstream in the node', I23,' is: ', F23.10, &
-    ' m/s3')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)T_Node,this%Q_Up(T_Node)
+    ' m/s3')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)Node_no,this%Q_Up(Node_no)
     write(unit=*     , fmt="(' Flow rate at the upstream in the node', I23,' is: ', F23.10, &
-    ' m/s3')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)T_Node,this%Q_Up(T_Node)
+    ' m/s3')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)Node_no,this%Q_Up(Node_no)
   end do
 
 write(unit=UnFile, fmt=*, asynchronous='no', iostat=IO_write, err=1006)
 write(unit=*     , fmt=*, asynchronous='no', iostat=IO_write, err=1006)
 
 
-!!!!!!!!!!!!!!!!!!!!!!!!11
+!!!!!!!!!!!!!!!!!!!!!!!!
 
 
 
+
+! Calculating the Length of the reach
+this%network(reach_no)%ReachLength = ...
 
 
 

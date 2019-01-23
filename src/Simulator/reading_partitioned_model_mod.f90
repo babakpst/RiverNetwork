@@ -82,9 +82,9 @@ type DiscretizedReach_tp
   real(kind=DBL) :: ReachWidthCell       = 0.0_dbl ! the Width a the reach, the assumption is that the width of the reach is constant
   real(kind=DBL) :: CellPorjectionLength = 0.0_dbl ! the length of each cell in the horizontal dir.
 
-  real(kind=DBL) :: Q_Up = 0.0_dbl                 ! the input discharge at the inlet node,
-  real(kind=DBL) :: CntrlV = 0.0_dbl               ! the initial control volume of the reach
-  real(kind=DBL) :: CntrlV_ratio = 0.0_dbl         !
+  real(kind=DBL) :: Q_Up = 0.0_dbl         ! input discharge at the inlet node,
+  real(kind=DBL) :: CntrlV = 0.0_dbl       ! initial control volume of the reach
+  real(kind=DBL) :: CntrlV_ratio = 0.0_dbl ! ratio of change of cntl vol in the length of the reach
 
   real(kind=DBL), allocatable, dimension(:) :: LengthCell     ! the length of each cell
   real(kind=DBL), allocatable, dimension(:) :: CellSlope      ! slope of each cell at the center
