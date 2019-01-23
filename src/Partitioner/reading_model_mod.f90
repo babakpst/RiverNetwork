@@ -67,23 +67,18 @@ type reach_tp
   real(kind=DBL) :: ReachWidth   = 0.0_dbl ! Stores the width of each reach
                                          ! (we assume constant channel width in each reach)
 
+  real(kind=DBL) :: CntrlV = 0.0_dbl  ! Initial control volume
+  real(kind=DBL) :: CntrlV_ratio = 0.0_dbl ! Initial control volume ration, used to initialize data
+
   real(kind=DBL), dimension(2) :: JunctionLength=0.0_dbl ! Length of the junction
 end type reach_tp
-
 
 ! Contains all information about the geometry of the domain. (input)
 type Geometry_tp
   integer(kind=Tiny), allocatable, dimension(:) :: BoundaryCondition ! Holds BC: 0 for free nodes
                                                                      !           1 for junction
-
   ! Upstream boundary condition, constant flow (m^3/s)
   real(kind=DBL), allocatable, dimension(:) :: Q_Up
-
-  real(kind=DBL), allocatable, dimension(:) :: CntrlV       ! Initial control volume
-
-  ! Initial control volume ration, used to initialize data
-  real(kind=DBL), allocatable, dimension(:) :: CntrlV_ratio
-
 
   type(reach_tp), allocatable, dimension(:) :: network ! The size of this array is NoReaches
   type(Base_Geometry_tp)                    :: Base_Geometry
@@ -324,7 +319,6 @@ UnFile = FileDataGeo
     read(unit=UnFile, fmt=*, asynchronous='no', iostat=IO_read,  &
     err=1003, end=1004) &
     reach_no,  & ! reach no.
-    this%network(reach_no)%ReachLength,       & ! Length of the reach
     this%network(reach_no)%NCells_Reach,      & ! no. of cells in each reach- constant length
     this%network(reach_no)%ReachType,         & ! type of the reach - straight 0, from function 1
     this%network(reach_no)%ReachSlope,        & ! slopes of each reach
@@ -333,40 +327,62 @@ UnFile = FileDataGeo
     this%network(reach_no)%ReachNodes(1),     & ! nodes of the reach
     this%network(reach_no)%ReachNodes(2),     & ! nodes of the reach
     this%network(reach_no)%JunctionLength(1), & ! Length of the reach at each junction
-    this%network(reach_no)%JunctionLength(2)    ! Length of the reach at each junction
+    this%network(reach_no)%JunctionLength(2), & ! Length of the reach at each junction
+    this%network(reach_no)%CntrlV,            & ! Initial control volume of the reach
+    this%network(reach_no)%CntrlV_ratio         ! ratio of the change of Cntrl Volume in the reach
 
+    ! modifying the sign of the slope
     this%network(reach_no)%ReachSlope = - this%network(reach_no)%ReachSlope
   end do
 
-
-
-! Reading Boundary conditions - free nodes vs junction nodes
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-UnFile = FileDataGeo
+! Reading the coordinates of the nodes
   do i_Node = 1, this%Base_Geometry%NoNodes
-    read(unit=UnFile, fmt="(I2)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
-                                                            end=1004)this%BoundaryCondition(i_Node)
+
+
   end do
+
+
+
+
+! Calculating the Length of the reach
+this%network(reach_no)%ReachLength = ...
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ! writing the network in the info file
 write(unit=*,      fmt="('')")
 write(unit=*,      fmt="(' Network:')")
 write(unit=*,      fmt="(' Reach no. -- Length -- no. of cells -- reach type (straight(0) or &
                           based on a function(1)) -- slope -- Mannings number -- width of channel&
-                          -- nodes(start, end) -- angles(start, end) -- &
-                          Length in junction(start, end)')")
+                          -- nodes(start, end) --  &
+                          Length in junction(start, end) -- Initial control volume &
+                          -- Control volume ratio ')")
 UnFile = FileInfo
 write(unit=UnFile, fmt="('')")
 write(unit=UnFile, fmt="(' Network:')")
 write(unit=UnFile, fmt="(' Reach no. -- Length -- no. of cells -- reach type (straight(0) or &
                           based on a function(1)) -- slope -- Mannings number -- width of channel&
-                          -- nodes(start, end) -- angles(start, end) -- &
-                          Length in junction(start, end)')")
+                          -- nodes(start, end) -- &
+                          Length in junction(start, end) -- Initial control volume &
+                          -- Control volume ratio ')")
 
   do i_reach= 1, this%Base_Geometry%NoReaches
+
     ! writing the network on screen
-    write(unit=*,      fmt="(I7, F23.10, I5, I3, 3F23.10, 2I7, 2F23.10)") i_reach, &
+    write(unit=*,     fmt="(I7, F23.10, I5, I3, 3F23.10, 2I7, 2F23.10, I17, F23.10, I17, F23.10)")&
+    i_reach, &
     this%network(reach_no)%ReachLength, & ! Length of the reach
     this%network(reach_no)%NCells_Reach, &  ! no. of cells in each reach- constant length
     this%network(reach_no)%ReachType, &   ! type of the reach - straight 0, from function 1
@@ -375,8 +391,13 @@ write(unit=UnFile, fmt="(' Reach no. -- Length -- no. of cells -- reach type (st
     this%network(reach_no)%ReachWidth, &  ! width of channel- constant channel width in each reach
     this%network(reach_no)%ReachNodes(1:2), & ! nodes of the reach
     this%network(reach_no)%JunctionLength(1:2) ! Length of the reach at each junction
+    this%network(reach_no)%CntrlV,            & ! Initial control volume of the reach
+    this%network(reach_no)%CntrlV_ratio         ! ratio of the change of Cntrl Volume in the reach
+
+
     ! writing the network in the info file
-    write(unit=UnFile, fmt="(I7, F23.10, I5, I3, 3F23.10, 2I7, 2F23.10)") i_reach, &
+    write(unit=UnFile,fmt="(I7, F23.10, I5, I3, 3F23.10, 2I7, 2F23.10, I17, F23.10, I17, F23.10)")&
+    i_reach, &
     this%network(reach_no)%ReachLength, & ! Length of the reach
     this%network(reach_no)%NCells_Reach, &  ! no. of cells in each reach- constant length
     this%network(reach_no)%ReachType, &   ! type of the reach - straight 0, from function 1
@@ -385,47 +406,18 @@ write(unit=UnFile, fmt="(' Reach no. -- Length -- no. of cells -- reach type (st
     this%network(reach_no)%ReachWidth, &  ! width of channel- constant channel width in each reach
     this%network(reach_no)%ReachNodes(1:2), & ! nodes of the reach
     this%network(reach_no)%JunctionLength(1:2) ! Length of the reach at each junction
+    this%network(reach_no)%CntrlV,            & ! Initial control volume of the reach
+    this%network(reach_no)%CntrlV_ratio         ! ratio of the change of Cntrl Volume in the reach
   end do
 
-write(unit=*,      fmt="('')")
-write(unit=*,      fmt="(' Boundary conditions: ')")
-write(unit=*,      fmt="(' Node no. -- BC ')")
 
-UnFile = FileInfo
-write(unit=UnFile, fmt="('')")
-write(unit=UnFile, fmt="(' Boundary conditions: ')")
-write(unit=UnFile, fmt="(' Node no. -- BC ')")
 
-  do i_Node= 1, this%Base_Geometry%NoNodes
-    ! writing the boundary conditions on screen
-    write(unit=*,      fmt="(I10, I2)") i_Node, this%BoundaryCondition(i_Node)
 
-    ! writing the boundary conditions in the info file
-    write(unit=UnFile, fmt="(I10, I2)") i_Node, this%BoundaryCondition(i_Node)
 
-  end do
 
-write(unit=UnFile, fmt=*, asynchronous='no', iostat=IO_write, err=1006)
-write(unit=*     , fmt=*, asynchronous='no', iostat=IO_write, err=1006)
 
-UnFile = FileDataGeo
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
-read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 
-  do i_Node = 1, this%Base_Geometry%NoNodes
 
-    UnFile = FileDataGeo
-    read(unit=UnFile, fmt=*, asynchronous='no', iostat=IO_read, err=1003, end=1004) &
-                        T_Node, this%Q_Up(T_Node)
-    UnFile = FileInfo
-    write(unit=UnFile, fmt="(' Flow rate at the upstream in the node', I23,' is: ', F23.10, &
-    ' m/s3')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)T_Node,this%Q_Up(T_Node)
-    write(unit=*     , fmt="(' Flow rate at the upstream in the node', I23,' is: ', F23.10, &
-    ' m/s3')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)T_Node,this%Q_Up(T_Node)
-  end do
-
-write(unit=UnFile, fmt=*, asynchronous='no', iostat=IO_write, err=1006)
-write(unit=*     , fmt=*, asynchronous='no', iostat=IO_write, err=1006)
 
 UnFile = FileDataGeo
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
@@ -450,6 +442,12 @@ read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, e
 write(unit=*     , fmt=*, asynchronous='no', iostat=IO_write, err=1006)
 write(unit=UnFile, fmt=*, asynchronous='no', iostat=IO_write, err=1006)
 
+
+
+
+
+
+
 UnFile = FileDataGeo
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
@@ -472,6 +470,79 @@ read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, e
 
 write(unit=UnFile, fmt=*, asynchronous='no', iostat=IO_write, err=1006)
 write(unit=*     , fmt=*, asynchronous='no', iostat=IO_write, err=1006)
+
+
+
+
+
+
+
+
+
+
+
+!!!!!!!!!!!!!!!!!!
+
+
+! Reading Boundary conditions - free nodes vs junction nodes
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+UnFile = FileDataGeo
+  do i_Node = 1, this%Base_Geometry%NoNodes
+    read(unit=UnFile, fmt="(I2)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, &
+                                                            end=1004)this%BoundaryCondition(i_Node)
+  end do
+
+write(unit=*,      fmt="('')")
+write(unit=*,      fmt="(' Boundary conditions: ')")
+write(unit=*,      fmt="(' Node no. -- BC ')")
+
+UnFile = FileInfo
+write(unit=UnFile, fmt="('')")
+write(unit=UnFile, fmt="(' Boundary conditions: ')")
+write(unit=UnFile, fmt="(' Node no. -- BC ')")
+
+  do i_Node= 1, this%Base_Geometry%NoNodes
+    ! writing the boundary conditions on screen
+    write(unit=*,      fmt="(I10, I2)") i_Node, this%BoundaryCondition(i_Node)
+
+    ! writing the boundary conditions in the info file
+    write(unit=UnFile, fmt="(I10, I2)") i_Node, this%BoundaryCondition(i_Node)
+
+  end do
+
+write(unit=UnFile, fmt=*, asynchronous='no', iostat=IO_write, err=1006)
+write(unit=*     , fmt=*, asynchronous='no', iostat=IO_write, err=1006)
+
+
+!!!!!!!!!!!!!!!
+
+UnFile = FileDataGeo
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+
+  do i_Node = 1, this%Base_Geometry%NoNodes
+    UnFile = FileDataGeo
+    read(unit=UnFile, fmt=*, asynchronous='no', iostat=IO_read, err=1003, end=1004) &
+                        T_Node, this%Q_Up(T_Node)
+    UnFile = FileInfo
+    write(unit=UnFile, fmt="(' Flow rate at the upstream in the node', I23,' is: ', F23.10, &
+    ' m/s3')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)T_Node,this%Q_Up(T_Node)
+    write(unit=*     , fmt="(' Flow rate at the upstream in the node', I23,' is: ', F23.10, &
+    ' m/s3')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)T_Node,this%Q_Up(T_Node)
+  end do
+
+write(unit=UnFile, fmt=*, asynchronous='no', iostat=IO_write, err=1006)
+write(unit=*     , fmt=*, asynchronous='no', iostat=IO_write, err=1006)
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!11
+
+
+
+
+
+
 
 ! - Closing the geometry file ---------------------------------------------------------------------
 write(*,        fmt="(A)") " -Closing the geometry file"
