@@ -289,7 +289,10 @@ integer(kind=Smll) :: IO_write ! Used for IOSTAT - Input Output Status - in the 
 integer(kind=Lng)  :: i_reach  ! loop index on the number of reaches
 integer(kind=Lng)  :: reach_no ! temp var to read the reach no.
 integer(kind=Lng)  :: i_Node   ! loop index on the node number in the network
-integer(kind=Lng)  :: Node_no    ! temp variable to read the node number
+integer(kind=Lng)  :: Node_no  ! temp variable to read the node number
+
+! - real Variables --------------------------------------------------------------------------------
+real(kind=DBL) :: Length       ! The temp var to compute the length of each reach
 
 ! code ============================================================================================
 write(*,       *)
@@ -353,6 +356,18 @@ read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, e
               this%Q_Up(Node_no)                          ! flow at upstream
   end do
 
+! Calculating the Length of the reach
+  do i_reach= 1, this%Base_Geometry%NoReaches
+    Length = dsqrt( &
+    (NodeCoor(this%network(i_reach)%ReachNodes(2),1)- &
+     NodeCoor(this%network(i_reach)%ReachNodes(1),1))**2 &
+     + (NodeCoor(this%network(i_reach)%ReachNodes(2), 2) - &
+        NodeCoor(this%network(i_reach)%ReachNodes(1), 2) )**2  )
+    this%network(reach_no)%ReachLength = Length
+  end
+
+
+
 ! writing the network in the info file
 write(unit=*,      fmt="('')")
 write(unit=*,      fmt="(' Network:')")
@@ -404,50 +419,33 @@ write(unit=UnFile, fmt="(' Reach no. -- Length -- no. of cells -- reach type (st
 
 write(unit=*,      fmt="('')")
 write(unit=*,      fmt="(' Nodes: ')")
-write(unit=*,      fmt="(' Node no. -- BC ')")
+write(unit=*,      fmt="(' Node no. -- Coordinates -- BC -- Upstream BC ')")
 
 UnFile = FileInfo
 write(unit=UnFile, fmt="('')")
-write(unit=UnFile, fmt="(' Boundary conditions: ')")
-write(unit=UnFile, fmt="(' Node no. -- BC ')")
+write(unit=UnFile, fmt="(' Nodes: ')")
+write(unit=UnFile, fmt="(' Node no. -- Coordinates -- BC -- Upstream BC ')")
 
   do i_Node= 1, this%Base_Geometry%NoNodes
+
     ! writing the boundary conditions on screen
-    write(unit=*,      fmt="(I10, I2)") i_Node, this%BoundaryCondition(i_Node)
+    write(unit=*, fmt="(I10, 2X, 2F23.10, 2X, I2, 2X, F23.10)") &
+          i_Node, &
+          this%NodeCoor(i_Node,1),  this%NodeCoor(i_Node,2), &
+          this%BoundaryCondition(i_Node), &
+          this%Q_Up(i_Node)
 
     ! writing the boundary conditions in the info file
-    write(unit=UnFile, fmt="(I10, I2)") i_Node, this%BoundaryCondition(i_Node)
+    write(unit=UnFile, fmt="(I10, 2X, 2F23.10, 2X, I2, 2X, F23.10)") &
+          i_Node, &
+          this%NodeCoor(i_Node,1),  this%NodeCoor(i_Node,2), &
+          this%BoundaryCondition(i_Node), &
+          this%Q_Up(i_Node)
 
   end do
 
 write(unit=UnFile, fmt=*, asynchronous='no', iostat=IO_write, err=1006)
 write(unit=*     , fmt=*, asynchronous='no', iostat=IO_write, err=1006)
-
-
-!!!!!!!!!!!!!!!
-
-  do i_Node = 1, this%Base_Geometry%NoNodes
-
-    UnFile = FileInfo
-    write(unit=UnFile, fmt="(' Flow rate at the upstream in the node', I23,' is: ', F23.10, &
-    ' m/s3')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)Node_no,this%Q_Up(Node_no)
-    write(unit=*     , fmt="(' Flow rate at the upstream in the node', I23,' is: ', F23.10, &
-    ' m/s3')", advance='yes', asynchronous='no', iostat=IO_write, err=1006)Node_no,this%Q_Up(Node_no)
-  end do
-
-write(unit=UnFile, fmt=*, asynchronous='no', iostat=IO_write, err=1006)
-write(unit=*     , fmt=*, asynchronous='no', iostat=IO_write, err=1006)
-
-
-!!!!!!!!!!!!!!!!!!!!!!!!
-
-
-
-
-! Calculating the Length of the reach
-this%network(reach_no)%ReachLength = ...
-
-
 
 
 ! - Closing the geometry file ---------------------------------------------------------------------
