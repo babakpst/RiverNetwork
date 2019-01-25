@@ -103,7 +103,6 @@ this%NCutsOnRanks = 0_Lng  ! Initializing number of reach cuts
     this%DiscretizedReach(i_reach)%InterfaceSlope(this%DiscretizedReach(i_reach)%NCells_reach+1), &
 
     this%DiscretizedReach(i_reach)%ZCell(this%DiscretizedReach(i_reach)%NCells_reach),            &
-    this%DiscretizedReach(i_reach)%YCell(this%DiscretizedReach(i_reach)%NCells_reach),            &
     this%DiscretizedReach(i_reach)%XCell(this%DiscretizedReach(i_reach)%NCells_reach),            &
     stat=ERR_Alloc)
 
@@ -111,13 +110,12 @@ this%NCutsOnRanks = 0_Lng  ! Initializing number of reach cuts
 
     UnFile = FilePartition
       do i_cells = 1_Lng, this%DiscretizedReach(i_reach)%NCells_reach
-        read(unit=UnFile, fmt="(6F35.20)", advance='yes', asynchronous='no', iostat=IO_read, &
+        read(unit=UnFile, fmt="(5F35.20)", advance='yes', asynchronous='no', iostat=IO_read, &
         err=1003, end=1004) &
         this%DiscretizedReach(i_reach)%LengthCell    (i_cells),  &
         this%DiscretizedReach(i_reach)%CellSlope     (i_cells),  &
         this%DiscretizedReach(i_reach)%InterfaceSlope(i_cells),  &
         this%DiscretizedReach(i_reach)%ZCell         (i_cells),  &
-        this%DiscretizedReach(i_reach)%YCell         (i_cells),  &
         this%DiscretizedReach(i_reach)%XCell         (i_cells)
       end do
     read(unit=UnFile, fmt="(F35.20)", advance='yes', asynchronous='no', iostat=IO_read, &

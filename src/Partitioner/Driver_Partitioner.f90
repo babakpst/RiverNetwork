@@ -47,6 +47,8 @@ use Model_mod, only: Geometry_tp
 use Discretize_the_network_mod, only: DiscretizedNetwork_tp
 use Network_Partitioner_mod
 use messages_and_errors_mod
+use paraview_mod
+
 
 ! Global Variables ================================================================================
 implicit none
@@ -163,6 +165,12 @@ call NetworkPartitioner%Partition(Geometry, Discretization, ModelInfo)
 ! Deallocating arrays
 DEallocate(Arguments%Length, Arguments%Arg, Arguments%Argstatus,      stat = ERR_DeAlloc )
   if (ERR_DeAlloc /= 0) call error_in_deallocation(ERR_DeAlloc)
+
+
+! Generating Geometry files for visualization with Paraview =======================================
+
+call paraview_Geometry_sub()
+
 
 ! Running time of the code ========================================================================
 Call cpu_time(SimulationTime%Time_End)
