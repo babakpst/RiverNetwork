@@ -20,6 +20,10 @@ type(ArgCommands)   :: Arguments      ! Holds the entered arguments from the com
 type(timing_tp)     :: SimulationTime ! Holds the run time
 type(Geometry_tp)   :: Geometry       ! Holds information about the geometry of the domain
 type(DiscretizedNetwork_tp) :: Discretization ! Holds the discretized network
+
+! Holds information for writing geometry file for Paraview
+type(NetworkGeometry_tp(nReaches:)), allocatable :: Paraview
+
 ! This class handles the network partitioner.
 type(partitioner_tp(edges=:, nodes=:)), allocatable :: NetworkPartitioner
 

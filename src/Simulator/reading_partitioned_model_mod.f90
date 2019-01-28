@@ -92,11 +92,9 @@ type DiscretizedReach_tp
 
   ! coordinate
   real(kind=DBL), allocatable, dimension(:) :: ZCell     ! bottom elev. at the center of each cell
-  real(kind=DBL), allocatable, dimension(:) :: YCell     ! the coordinates of the cell center
   real(kind=DBL), allocatable, dimension(:) :: XCell     ! the coordinates of the cell center
 
   !real(kind=DBL), allocatable, dimension(:) :: ZFull    ! bottom elevation at cells and interfaces
-  !real(kind=DBL), allocatable, dimension(:) :: YFull    ! coordinates at cells and interfaces
   !real(kind=DBL), allocatable, dimension(:) :: XFull    ! coordinates at cells and interfaces
 end type DiscretizedReach_tp
 

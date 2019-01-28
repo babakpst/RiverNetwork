@@ -24,6 +24,7 @@ SOURCESF=	Parameters_mod.f90 \
 					Results_mod.f90 \
 					discretize_the_network_mod.f90 \
 					partition_the_network_mod.f90 \
+          Paraview_mod.f90 \
 					Driver_Partitioner.f90
 
 OBJSF=$(SOURCESF:%.F90=%.o)

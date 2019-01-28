@@ -49,7 +49,6 @@ type Plot_domain_1D_tp(NCells)
   integer(kind=Lng), len :: NCells =0_lng
 
   real(kind=DBL), dimension(NCells) :: XCoor      ! Location of cell centers
-  real(kind=DBL), dimension(NCells) :: YCoor      ! Bathymetry
   real(kind=DBL), dimension(NCells) :: ZCoor      ! Bathymetry
   real(kind=DBL), dimension(NCells) :: CellSlope  ! Slope of the domain at the locaiton of
                                                   ! cell center
@@ -144,8 +143,8 @@ write(unit=UnFile, fmt="(' x   --      y      --        z ')",       advance='ye
       iostat=IO_write, err=1006)
 
   do i_points = 1_Lng, this%NCells
-    write(unit=UnFile, fmt="(I16,4F16.5)", advance='yes', asynchronous='no', iostat=IO_write, &
-          err=1006) i_points, this%XCoor(i_points), this%YCoor(i_points), this%ZCoor(i_points), this%CellSlope(i_points)
+    write(unit=UnFile, fmt="(I16,3F16.5)", advance='yes', asynchronous='no', iostat=IO_write, &
+          err=1006) i_points, this%XCoor(i_points), this%ZCoor(i_points), this%CellSlope(i_points)
   end do
 
 write(*,       *) " Domain coordinates was written successfully in the file. "

@@ -1034,13 +1034,12 @@ TotalCellCounter = 0_Lng
           do i_cells = RangeCell_I, RangeCell_II
 
             CellCounter = CellCounter + 1_Lng
-            write(unit=UnFile, fmt="(6F35.20)", &
+            write(unit=UnFile, fmt="(5F35.20)", &
                   advance='yes', asynchronous='no', iostat=IO_write, err=1006)       &
                   Discretization%DiscretizedReach(i_reach)%LengthCell    (i_cells),  &
                   Discretization%DiscretizedReach(i_reach)%CellSlope     (i_cells),  &
                   Discretization%DiscretizedReach(i_reach)%InterfaceSlope(i_cells),  &
                   Discretization%DiscretizedReach(i_reach)%ZCell         (i_cells),  &
-                  Discretization%DiscretizedReach(i_reach)%YCell         (i_cells),  &
                   Discretization%DiscretizedReach(i_reach)%XCell         (i_cells)
           end do
         write(unit=UnFile, fmt="(F35.20)", &
@@ -1056,7 +1055,6 @@ TotalCellCounter = 0_Lng
 
         ! Filling the coordinates for plot
         Plot%XCoor(:)      = Discretization%DiscretizedReach(i_reach)%XCell(RangeCell_I:RangeCell_II)
-        Plot%YCoor(:)      = Discretization%DiscretizedReach(i_reach)%YCell(RangeCell_I:RangeCell_II)
         Plot%ZCoor(:)      = Discretization%DiscretizedReach(i_reach)%ZCell(RangeCell_I:RangeCell_II)
         Plot%CellSlope(:)  = Discretization%DiscretizedReach(i_reach)%CellSlope(RangeCell_I:RangeCell_II)
         Plot%IndexSize = Geometry%Base_Geometry%IndexSize
@@ -1152,13 +1150,12 @@ UnFile = FilePartition
       do i_cells = RangeCell_I, RangeCell_II
 
         CellCounter = CellCounter + 1_Lng
-        write(unit=UnFile, fmt="(6F35.20)", &
+        write(unit=UnFile, fmt="(5F35.20)", &
               advance='yes', asynchronous='no', iostat=IO_write, err=1006)       &
               Discretization%DiscretizedReach(i_reach)%LengthCell    (i_cells),  &
               Discretization%DiscretizedReach(i_reach)%CellSlope     (i_cells),  &
               Discretization%DiscretizedReach(i_reach)%InterfaceSlope(i_cells),  &
               Discretization%DiscretizedReach(i_reach)%ZCell         (i_cells),  &
-              Discretization%DiscretizedReach(i_reach)%YCell         (i_cells),  &
               Discretization%DiscretizedReach(i_reach)%XCell         (i_cells)
       end do
     write(unit=UnFile, fmt="(F35.20)", &

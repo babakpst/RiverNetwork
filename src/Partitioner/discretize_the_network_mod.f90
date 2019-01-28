@@ -58,11 +58,9 @@ type DiscretizedReach_tp
 
   ! coordinate
   real(kind=DBL), allocatable, dimension(:) :: ZCell     ! bottom elev. at the center of each cell
-  real(kind=DBL), allocatable, dimension(:) :: YCell     ! the coordinates of the cell center
   real(kind=DBL), allocatable, dimension(:) :: XCell     ! the coordinates of the cell center
 
   real(kind=DBL), allocatable, dimension(:) :: ZFull     ! bottom elevation at cells and interfaces
-  real(kind=DBL), allocatable, dimension(:) :: YFull     ! coordinates at cells and interfaces
   real(kind=DBL), allocatable, dimension(:) :: XFull     ! coordinates at cells and interfaces
 
   real(kind=DBL) :: ReachManning          ! the Manning's number of each cell
@@ -196,10 +194,8 @@ write(FileInfo, fmt="(A)") " -Allocating some arrays ... "
     this%DiscretizedReach(i_reach)%CellSlope     (No_CellsReach),             &
     this%DiscretizedReach(i_reach)%InterfaceSlope(No_CellsReach+1),           &
     this%DiscretizedReach(i_reach)%ZCell         (No_CellsReach),             &
-    this%DiscretizedReach(i_reach)%YCell         (No_CellsReach),             &
     this%DiscretizedReach(i_reach)%XCell         (No_CellsReach),             &
     this%DiscretizedReach(i_reach)%ZFull         (No_CellsReach*2_Lng+1_Lng), &
-    this%DiscretizedReach(i_reach)%YFull         (No_CellsReach*2_Lng+1_Lng), &
     this%DiscretizedReach(i_reach)%XFull         (No_CellsReach*2_Lng+1_Lng), &
     this%DiscretizedReach(i_reach)%LengthCell    (No_CellsReach),             &
     stat=ERR_Alloc)
