@@ -37,3 +37,7 @@ Node no. -- Coordinates -- Boundary Conditions -- Upstream Boundary condition (U
 15          0 0              2                            0.0
 16          1070 3470        0                            0.0
 
+
+
+
+On nodes: Write the upstream node first, followed by the downstream node

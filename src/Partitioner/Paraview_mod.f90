@@ -101,11 +101,19 @@ class( NetworGeometry_tp(nReaches=*) ), intent(inout) :: this
 ! - integer variables -----------------------------------------------------------------------------
 integer(kind=Lng) :: i_Reach ! loop index for reach numbers
 integer(kind=Lng) :: No_CellsReach ! no. of cells in the each reach
+integer(kind=Lng) :: Noode_I  ! node number of the reach
+integer(kind=Lng) :: Noode_II ! node number of the reach
 
 
 ! - real variables --------------------------------------------------------------------------------
-real(kind=Dbl)    ::
+real(kind=Dbl)    :: x1, y1, x2, y2 ! coordinates of the two nodes of the reach
+
+real(kind=Dbl)    :: cell_length_x ! the length of the cell in each reach in the x dir
+real(kind=Dbl)    :: cell_length_y ! the length of the cell in each reach in the y dir
+
+
 ! - type ------------------------------------------------------------------------------------------
+
 
 
 ! code ============================================================================================
@@ -128,13 +136,38 @@ write(FileInfo,*) " -..."
     stat=ERR_Alloc)
     if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
-  end do
-
-! Calculating the coordinates of the cells in each reach
-  do i_Reach = 1, nReaches
 
 
+    ! Calculating the coordinates of the cells in each reach
 
+    ! finding the nodes of the reach
+    Node_I  = Geometry%network(i_Reach)%ReachNodes(1)   ! upstream node
+    Node_II = Geometry%network(i_Reach)%ReachNodes(2)   ! downstream node
+
+    ! Coordinates of the nodes
+    x1 = Geometry%NodeCoor(Node_I, 1)
+    y1 = Geometry%NodeCoor(Node_I, 2)
+
+    x2 = Geometry%NodeCoor(Node_II, 1)
+    y2 = Geometry%NodeCoor(Node_II, 2)
+
+    ! finding the number of divisions of the reach
+    nDivision = Geometry%network(i_Reach)%NCells_Reach
+
+    ! calculating the horizontal and vertical coordinates of the cell centers
+    cell_length_x = (x2 - x1) / nDivision
+    cell_length_y = (y2 - y1) / nDivision
+
+
+
+    this%NetworkGeometry(i_reach)%ZCell(
+
+
+
+
+
+
+    ! We already calculated the height of cell centers in the discretization module.
 
 
   end do
