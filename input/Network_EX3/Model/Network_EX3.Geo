@@ -1,7 +1,7 @@
 Name: network_ex1
 
 Network data
-Reach no. -- no. of cells -- reach type (straight(0) or based on a funciton(1)) -- slope -- Manning's number -- width of channel -- nodes(start, end) --  Length in juction(start, end) -- Initial control volume (V = L * B * h) -- Control volume ratio
+Reach no. -- no. of cells -- reach type (straight(0) or based on a funciton(1)) -- slope -- Manning's number -- width of channel--nodes(upstream, downstream)--Length in juction(start, end) -- Initial control volume (V = L * B * h) -- Control volume ratio
 1               800             0                                                     0.002    0.000               1.0                 13 15                           0   0                         1.5                              0.0
 2               800             0                                                     0.001    0.000               1.0                 4 2                             0   0                         1.5                              0.0
 3               800             0                                                     0.001    0.000               1.0                 14 13                           0   0                         1.5                              0.0

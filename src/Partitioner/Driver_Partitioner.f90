@@ -47,7 +47,7 @@ use Model_mod, only: Geometry_tp
 use Discretize_the_network_mod, only: DiscretizedNetwork_tp
 use Network_Partitioner_mod
 use messages_and_errors_mod
-use Paraview_mod
+use Paraview_mod, only: NetworkGeometry_tp
 
 ! Global Variables ================================================================================
 implicit none
@@ -166,11 +166,21 @@ DEallocate(Arguments%Length, Arguments%Arg, Arguments%Argstatus,      stat = ERR
 
 
 ! Generating Geometry files for visualization with Paraview =======================================
-allocate(NetworGeometry_tp(nReaches=Geometry%Base_Geometry%NoReaches):: Paraview, stat = ERR_Alloc)
+allocate(NetworkGeometry_tp(nReaches=Geometry%Base_Geometry%NoReaches):: Paraview, stat = ERR_Alloc)
   if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
 ! Calculating the coordinates of each cell in each reach of the network
-call Calc_Geometry()
+call Paraview%Calc_Geometry(Geometry, Discretization)
+
+
+
+
+
+
+
+
+
+
 
 
 ! Running time of the code ========================================================================

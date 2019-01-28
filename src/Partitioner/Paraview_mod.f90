@@ -11,10 +11,11 @@
 !
 ! ================================ V E R S I O N ==================================================
 ! V0.00: 01/24/2019 - Start the module.
+! V0.01: 01/28/2019 - compiled successfully for the first time.
 !
 ! File version $Id $
 !
-! Last update: 01/25/2019
+! Last update: 01/28/2019
 !
 ! ================================ S U B R O U T I N E ============================================
 !
@@ -31,6 +32,9 @@ module Paraview_mod
 
 ! User defined modules ============================================================================
 use Parameters_mod
+use Model_mod, only: Geometry_tp
+use Discretize_the_network_mod, only: DiscretizedNetwork_tp
+use messages_and_errors_mod
 
 
 implicit none
@@ -48,7 +52,7 @@ type GeometryReach_tp
 end type GeometryReach_tp
 
 ! The class that holds all the coordinated in the entire network for each reach
-type NetworGeometry_tp(nReaches)
+type NetworkGeometry_tp(nReaches)
 
   integer(kind=Lng), len :: nReaches
 
@@ -56,11 +60,11 @@ type NetworGeometry_tp(nReaches)
   type(GeometryReach_tp), dimension(nReaches)  :: NetworkGeometry
 
   contains
-    procedure Calc_Geometry => paraview_Geometry_sub
-    procedure
-end type NetworGeometry_tp
+    procedure Calc_Geometry  => paraview_Geometry_sub
+    procedure Write_Geometry => paraview_HDF5_sub
+end type NetworkGeometry_tp
 
-public::
+public:: NetworkGeometry_tp
 
 contains
 
@@ -75,14 +79,15 @@ contains
 !
 ! ================================ V E R S I O N ==================================================
 ! V0.00: 01/24/2019 - File initiated.
+! V0.01: 01/28/2019 - Compiled successfully for the first time.
 !
 ! File version $Id $
 !
-! Last update: 01/25/2019
+! Last update: 01/28/2019
 !
 !##################################################################################################
 
-subroutine paraview_Geometry_sub (this, Geometry)
+subroutine paraview_Geometry_sub (this, Geometry, Discretization)
 
 ! Libraries =======================================================================================
 
@@ -93,17 +98,21 @@ implicit none
 ! Global variables ================================================================================
 
 ! - types -----------------------------------------------------------------------------------------
-type(Geometry_tp)   :: Geometry       ! Holds information about the geometry of the domain
+type(Geometry_tp), intent(in)   :: Geometry       ! Holds information about the geometry of the domain
+type(DiscretizedNetwork_tp), intent(in) :: Discretization ! Discretization
 
-class( NetworGeometry_tp(nReaches=*) ), intent(inout) :: this
+class(NetworkGeometry_tp(nReaches=*) ), intent(inout) :: this
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
-integer(kind=Lng) :: i_Reach ! loop index for reach numbers
+integer(kind=Lng) :: i_Reach       ! loop index for reach numbers
 integer(kind=Lng) :: No_CellsReach ! no. of cells in the each reach
-integer(kind=Lng) :: Noode_I  ! node number of the reach
-integer(kind=Lng) :: Noode_II ! node number of the reach
+integer(kind=Lng) :: i_cells       ! loop index for cell numbers
+integer(kind=Lng) :: Node_I        ! node number of the reach
+integer(kind=Lng) :: Node_II       ! node number of the reach
+integer(kind=Lng) :: nDivision     ! no of cells in each reach
 
+integer(kind=Smll) :: ERR_Alloc, ERR_DeAlloc ! Allocating and DeAllocating errors
 
 ! - real variables --------------------------------------------------------------------------------
 real(kind=Dbl)    :: x1, y1, x2, y2 ! coordinates of the two nodes of the reach
@@ -136,8 +145,6 @@ write(FileInfo,*) " -..."
     stat=ERR_Alloc)
     if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
-
-
     ! Calculating the coordinates of the cells in each reach
 
     ! finding the nodes of the reach
@@ -158,17 +165,14 @@ write(FileInfo,*) " -..."
     cell_length_x = (x2 - x1) / nDivision
     cell_length_y = (y2 - y1) / nDivision
 
-
-
-    this%NetworkGeometry(i_reach)%ZCell(
-
-
-
-
-
+      ! loop on the cells
+      Do i_cells = 1, nDivision
+        this%NetworkGeometry(i_reach)%XCell(i_cells) = x1 + cell_length_x * (i_cells - 0.5)
+        this%NetworkGeometry(i_reach)%YCell(i_cells) = y1 + cell_length_y * (i_cells - 0.5)
+      end do
 
     ! We already calculated the height of cell centers in the discretization module.
-
+    this%NetworkGeometry(i_reach)%ZCell(:) = Discretization%DiscretizedReach(i_reach)%ZCell(:)
 
   end do
 
@@ -183,20 +187,7 @@ write(*,       *)
 write(FileInfo,*)
 
 return
-end subroutine paraview_sub
-
-
-
-
-
-
-
-
-
-
-
-
-
+end subroutine paraview_Geometry_sub
 
 !##################################################################################################
 ! Purpose: This subroutine discretizes the geometry of the network  and creates geometry files.
@@ -227,18 +218,16 @@ implicit none
 ! Global variables ================================================================================
 
 ! - types -----------------------------------------------------------------------------------------
-
-
-class(  ), intent(inout) :: this
+class(NetworkGeometry_tp(nReaches=*) ), intent(inout) :: this
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
-integer(kind=Smll) ::
-
+!integer(kind=Smll) ::
 
 
 ! - real variables --------------------------------------------------------------------------------
-real(kind=Dbl)    ::
+!real(kind=Dbl)    ::
+
 ! - type ------------------------------------------------------------------------------------------
 
 
@@ -270,4 +259,5 @@ end subroutine paraview_HDF5_sub
 
 
 end module paraview_mod
+
 
