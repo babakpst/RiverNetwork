@@ -35,7 +35,7 @@ use Parameters_mod
 use Model_mod, only: Geometry_tp
 use Discretize_the_network_mod, only: DiscretizedNetwork_tp
 use messages_and_errors_mod
-
+use hdf5
 
 implicit none
 private
@@ -98,7 +98,7 @@ implicit none
 ! Global variables ================================================================================
 
 ! - types -----------------------------------------------------------------------------------------
-type(Geometry_tp), intent(in)   :: Geometry       ! Holds information about the geometry of the domain
+type(Geometry_tp), intent(in)   :: Geometry    ! Holds information about the geometry of the domain
 type(DiscretizedNetwork_tp), intent(in) :: Discretization ! Discretization
 
 class(NetworkGeometry_tp(nReaches=*) ), intent(inout) :: this
@@ -207,7 +207,7 @@ end subroutine paraview_Geometry_sub
 !
 !##################################################################################################
 
-subroutine paraview_HDF5_sub (this)
+subroutine paraview_HDF5_sub (this, Geometry)
 
 ! Libraries =======================================================================================
 
@@ -218,18 +218,33 @@ implicit none
 ! Global variables ================================================================================
 
 ! - types -----------------------------------------------------------------------------------------
+type(Geometry_tp), intent(in)   :: Geometry    ! Holds information about the geometry of the domain
 class(NetworkGeometry_tp(nReaches=*) ), intent(inout) :: this
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
-!integer(kind=Smll) ::
-
+integer(kind=Lng) :: i_rank ! loop index on the number of partitions
 
 ! - real variables --------------------------------------------------------------------------------
-!real(kind=Dbl)    ::
+real(kind=Dbl), dimension(:,:), allocatable :: dset_data_real ! Data buffers
+
+! - character variables ---------------------------------------------------------------------------
+character(kind = 1, len=3   ), parameter :: geo = "Geo"
+Character(kind = 1, len = 20 ):: IndexReach !Reach no in the Char. fmt to add to input file Name
+Character(kind = 1, len = 20 ):: IndexRank  !Rank no in the Char. fmt to add to input file Name
+
+! - HDF5 variables --------------------------------------------------------------------------------
+integer(HID_T) :: id_Geometry      ! the geometry h5 file
+
+integer(HID_T) :: dset_id_XYZ      ! data set for coordinates
+integer(HID_T) :: dset_id_CNN      ! data set for node connectivity
+
+integer(HID_T) :: dspace_id_XYZ    ! data space for coordinate
+integer(HID_T) :: dspace_id_CNN    ! data space for connectivity
+
+integer(HSIZE_T), dimension(2) :: dims  ! data set dimensions
 
 ! - type ------------------------------------------------------------------------------------------
-
 
 ! code ============================================================================================
 write(*,       *) " subroutine < paraview_HDF5_sub >: "
@@ -239,6 +254,59 @@ write(*,       *) " -..."
 write(FileInfo,*) " -..."
 
 ! creating the HDF5 files
+
+call h5open_f(error)
+
+
+  do i_rank = 1, Geometry%Base_Geometry%size
+
+    ! converting the rank number to character
+    write(IndexRank, *) i_rank        ! converts rank to Character format for the file Name
+
+      do i_reach = 1,
+
+    write(IndexReach, *) i_reach ! converts reach no. to Chr format for the file Name
+
+
+    ! Initialize the dset_data array
+    call h5fcreate_f(trim(geo)//'_Rank_'// trim(adjustL(IndexSize))// &
+                     '_Reach_'//trim(adjustL(IndexRank))//'.h5', &
+                     H5F_ACC_TRUNC_F, id_Geometry, error) ! Geometry file for the network
+
+    ! Create the dataspaces
+    ! Coordinate file for the main code(.XYZ)
+    dims(1) = 3   ! n dimension
+    dims(2) = 5   ! no of cells in each reach
+
+    call h5screate_simple_f(rank, dims, dspace_id_XYZ_1, error)
+    call h5dcreate_f(id_Geometry_1, "XYZ",  H5T_NATIVE_DOUBLE,  dspace_id_XYZ_1, dset_id_XYZ_1, error)
+
+    write (*,*)"writing coordinates ..."
+
+    allocate (dset_data_real( dims(1), dims(2) ) )
+
+
+
+
+  end do
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -180,7 +180,6 @@ write(FileInfo, fmt="(A)") " Calculating the total number of the cells in the do
 write(*,        fmt="(A,I15)") " Total number of cells: ", this%NCells
 write(FileInfo, fmt="(A,I15)") " Total number of cells: ", this%NCells
 
-
 write(*,        fmt="(A)") " -Allocating some arrays ... "
 write(FileInfo, fmt="(A)") " -Allocating some arrays ... "
 
@@ -222,7 +221,6 @@ this%NodeHeight(:) = 0.0_Dbl
 allocate(UpstreamNodes(Geometry%Base_Geometry%NoNodes,Geometry%Base_Geometry%NoNodes), &
         stat=ERR_Alloc)
 if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
-
 
 ! UpstreamNode shows the nodes located at the upstream of each node. Clearly, all nodes are at the
 ! upstream of the drainage node.
