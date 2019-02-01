@@ -207,7 +207,7 @@ end subroutine paraview_Geometry_sub
 !
 !##################################################################################################
 
-subroutine paraview_HDF5_sub (this, Geometry)
+subroutine paraview_HDF5_sub (this, Geometry, Discretization, NetworkPartitioner)
 
 ! Libraries =======================================================================================
 
@@ -219,11 +219,15 @@ implicit none
 
 ! - types -----------------------------------------------------------------------------------------
 type(Geometry_tp), intent(in)   :: Geometry    ! Holds information about the geometry of the domain
+type(DiscretizedNetwork_tp), intent(In) :: Discretization ! Holds the discretized network
+type(partitioner_tp(edges=*, nodes=*)), intent(in)    :: NetworkPartitioner
 class(NetworkGeometry_tp(nReaches=*) ), intent(inout) :: this
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
-integer(kind=Lng) :: i_rank ! loop index on the number of partitions
+integer(kind=Lng)  :: i_rank        ! loop index on the number of partitions
+integer(kind=Lng)  :: RankNodeI     ! Temp var to hold the rank no. of the firs node of each reach
+integer(kind=Lng)  :: RankNodeII    ! Temp var to hold the rank no. of the firs node of each reach
 
 ! - real variables --------------------------------------------------------------------------------
 real(kind=Dbl), dimension(:,:), allocatable :: dset_data_real ! Data buffers
@@ -258,14 +262,33 @@ write(FileInfo,*) " -..."
 call h5open_f(error)
 
 
-  do i_rank = 1, Geometry%Base_Geometry%size
+  do i_reach = 1, Geometry%Base_Geometry%NoReaches
+
+
+    ! The rank which the first node of this reach belongs to
+    RankNodeI  = NetworkPartitioner%ReachPartition(i_reach,1)
+
+    ! The rank which the second node of this reach belongs to
+    RankNodeII = NetworkPartitioner%ReachPartition(i_reach,2)
+
+      ! Check whether the entire reach belongs to one rank or two
+      if ( RankNodeI == RankNodeII ) then
+        ! the entire reach belongs to one reach
+
+        RangeCell_I   = 1_Lng
+        RangeCell_II  = NetworkPartitioner%ReachPartition(i_reach,3)
+
+
+      else if ( RankNodeI == RankNodeII ) then
+        ! this each is shared btw two ranks
+
+
+      end if
+
 
     ! converting the rank number to character
-    write(IndexRank, *) i_rank        ! converts rank to Character format for the file Name
-
-      do i_reach = 1,
-
-    write(IndexReach, *) i_reach ! converts reach no. to Chr format for the file Name
+    write(IndexRank, *) i_rank  ! converts rank to Character format for the file Name
+    write(IndexReach,*) i_reach ! converts reach no. to Chr format for the file Name
 
 
     ! Initialize the dset_data array
