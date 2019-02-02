@@ -757,7 +757,7 @@ write(FileInfo,*) " Analyzing the partitioned network ... "
 
       chunk(this%part(NodeI),2) = chunk(this%part(NodeI),2) + this%ReachPartition(i_reach,3)
 
-    ! The case that the reach seats on two different ranks
+    ! The case that the reach sits on two different ranks
     else
 
       counter_reach = counter_reach + 1_Lng
@@ -804,8 +804,6 @@ chunk(:,4) = chunk(:,2) + chunk(:,3)
   ! check the number of reaches attached to each node. Now, the assumption is that there are at
   ! most only two upstream reaches and one downstream reach.
   do i_node = 1, Geometry%Base_Geometry%NoNodes
-
-
 
     if (ReachAttachedToNode(i_node, 2) > 2_Lng ) then
       write(*, fmt="('Input error: At the time, the assumption is that there are only two &

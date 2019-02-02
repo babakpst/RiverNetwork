@@ -229,6 +229,8 @@ integer(kind=Lng)  :: i_rank        ! loop index on the number of partitions
 integer(kind=Lng)  :: RankNodeI     ! Temp var to hold the rank no. of the firs node of each reach
 integer(kind=Lng)  :: RankNodeII    ! Temp var to hold the rank no. of the firs node of each reach
 
+integer(kind=Shrt) :: rank = 2 ! Dataset rank
+
 ! - real variables --------------------------------------------------------------------------------
 real(kind=Dbl), dimension(:,:), allocatable :: dset_data_real ! Data buffers
 
@@ -272,29 +274,87 @@ call h5open_f(error)
     RankNodeII = NetworkPartitioner%ReachPartition(i_reach,2)
 
       ! Check whether the entire reach belongs to one rank or two
-      if ( RankNodeI == RankNodeII ) then
+      if (RankNodeI == RankNodeII ) then
         ! the entire reach belongs to one reach
+
+        write(IndexRank, *) RankNodeI ! converts rank to Character format for the file Name
+        write(IndexReach,*) i_reach   ! converts reach no. to Chr format for the file Name
+
+        ! creating the geometry hdf5 file each reach in each rank
+        call h5fcreate_f(trim(geo)//'_Rank_'// trim(adjustL(IndexRank))// &
+                     '_Reach_'//trim(adjustL(IndexReach))//'.h5', &
+                     H5F_ACC_TRUNC_F, id_Geometry, error)
+
+        ! Coordinate file for the main code(.XYZ)
+        dims(1) = 3  ! dimension
+        dims(2) = NetworkPartitioner%ReachPartition(i_reach,3) ! no. of cells from this reach on this rank
+
+        ! creating the data space for the coordinates of the cells
+        call h5screate_simple_f(rank, dims, dspace_id_XYZ, error)
+
+        ! creating the data set for the coordinates of the cells
+        call h5dcreate_f(id_Geometry, "XYZ",  H5T_NATIVE_DOUBLE, dspace_id_XYZ, dset_id_XYZ, error)
+
+        write (*,*)"writing coordinates for reach no.: ", i_reach
+
+
+allocate (dset_data_real( dims(1), dims(2) ) )
+
+dset_data_real (1, 1) = 0.0
+dset_data_real (1, 2) = 0.1
+dset_data_real (1, 3) = 0.2
+dset_data_real (1, 4) = 0.3
+dset_data_real (1, 5) = 0.4
+
+dset_data_real (2, 1) = 0.0
+dset_data_real (2, 2) = 0.3
+dset_data_real (2, 3) = 0.6
+dset_data_real (2, 4) = 0.9
+dset_data_real (2, 5) = 1.2
+
+dset_data_real (3, 1) = 0.1
+dset_data_real (3, 2) = 0.2
+dset_data_real (3, 3) = 0.3
+dset_data_real (3, 4) = 0.4
+dset_data_real (3, 5) = 0.5
+
+! Write the dataset- xyz
+call h5dwrite_f(dset_id_XYZ_1, H5T_NATIVE_DOUBLE, dset_data_real, dims, error)
+DeAllocate ( dset_data_real )
+
 
         RangeCell_I   = 1_Lng
         RangeCell_II  = NetworkPartitioner%ReachPartition(i_reach,3)
 
 
+
+
       else if ( RankNodeI == RankNodeII ) then
         ! this each is shared btw two ranks
+
+        write(IndexRank, *) RankNodeI ! converts rank to Character format for the file Name
+        write(IndexReach,*) i_reach   ! converts reach no. to Chr format for the file Name
+
+        ! creating the geometry hdf5 file each reach in each rank
+        call h5fcreate_f(trim(geo)//'_Rank_'// trim(adjustL(IndexRank))// &
+                     '_Reach_'//trim(adjustL(IndexReach))//'.h5', &
+                     H5F_ACC_TRUNC_F, id_Geometry, error)
+
+
+
+
+
+    write(IndexRank, *) i_rank  ! converts rank to Character format for the file Name
+    write(IndexReach,*) i_reach ! converts reach no. to Chr format for the file Name
 
 
       end if
 
 
     ! converting the rank number to character
-    write(IndexRank, *) i_rank  ! converts rank to Character format for the file Name
-    write(IndexReach,*) i_reach ! converts reach no. to Chr format for the file Name
 
 
-    ! Initialize the dset_data array
-    call h5fcreate_f(trim(geo)//'_Rank_'// trim(adjustL(IndexSize))// &
-                     '_Reach_'//trim(adjustL(IndexRank))//'.h5', &
-                     H5F_ACC_TRUNC_F, id_Geometry, error) ! Geometry file for the network
+
 
     ! Create the dataspaces
     ! Coordinate file for the main code(.XYZ)
