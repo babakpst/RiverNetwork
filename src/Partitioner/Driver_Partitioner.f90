@@ -170,7 +170,7 @@ allocate(NetworkGeometry_tp(nReaches=Geometry%Base_Geometry%NoReaches):: Paravie
   if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
 ! Calculating the coordinates of each cell in each reach of the network
-call Paraview%Calc_Geometry(Geometry, Discretization)
+call Paraview%Calc_Geometry(Geometry, Discretization, NetworkPartitioner)
 
 
 
