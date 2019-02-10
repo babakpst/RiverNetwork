@@ -166,22 +166,16 @@ DEallocate(Arguments%Length, Arguments%Arg, Arguments%Argstatus,      stat = ERR
 
 
 ! Generating Geometry files for visualization with Paraview =======================================
-allocate(NetworkGeometry_tp(nReaches=Geometry%Base_Geometry%NoReaches):: Paraview, stat = ERR_Alloc)
+print*, "allocating the paraview geometry", Geometry%Base_Geometry%NoReaches ! delete
+allocate(Paraview%GeometryReach(Geometry%Base_Geometry%NoReaches), stat = ERR_Alloc)
   if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
+print*, "done with allocating the paraview"
 
 ! Calculating the coordinates of each cell in each reach of the network
-call Paraview%Calc_Geometry(Geometry, Discretization, NetworkPartitioner)
+call Paraview%Calc_Geometry(Geometry, Discretization)
 
-
-
-
-
-
-
-
-
-
-
+! Writing the geometry hdf5 files
+call Paraview%Write_Geometry(Geometry, Discretization, NetworkPartitioner)
 
 ! Running time of the code ========================================================================
 Call cpu_time(SimulationTime%Time_End)

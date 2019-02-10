@@ -11,11 +11,11 @@
 !
 ! ================================ V E R S I O N ==================================================
 ! V0.00: 01/24/2019 - Start the module.
-! V0.01: 01/28/2019 - compiled successfully for the first time.
+! V0.01: 02/10/2019 - compiled successfully for the first time.
 !
 ! File version $Id $
 !
-! Last update: 01/28/2019
+! Last update: 02/10/2019
 !
 ! ================================ S U B R O U T I N E ============================================
 !
@@ -35,6 +35,7 @@ use Parameters_mod
 use Model_mod, only: Geometry_tp
 use Discretize_the_network_mod, only: DiscretizedNetwork_tp
 use messages_and_errors_mod
+use Network_Partitioner_mod
 use hdf5
 
 implicit none
@@ -43,21 +44,21 @@ private
 ! Coordinates corresponding to each reach of the network
 type GeometryReach_tp
 
-  real(kind=DBL), allocatable, dimension(:) :: ZCell !bottom elev. at the center of each cell
-  real(kind=DBL), allocatable, dimension(:) :: YCell !coordinates of the cell center for each reach
+  integer(kind=Lng) :: nCells  ! No. of cells in this reach  !<delete>
+
   real(kind=DBL), allocatable, dimension(:) :: XCell !coordinates of the cell center for each reach
+  real(kind=DBL), allocatable, dimension(:) :: YCell !coordinates of the cell center for each reach
+  real(kind=DBL), allocatable, dimension(:) :: ZCell !bottom elev. at the center of each cell
 
   contains
 
 end type GeometryReach_tp
 
 ! The class that holds all the coordinated in the entire network for each reach
-type NetworkGeometry_tp(nReaches)
-
-  integer(kind=Lng), len :: nReaches
+type NetworkGeometry_tp
 
   ! contains all the coordinates of all reaches of the network
-  type(GeometryReach_tp), dimension(nReaches)  :: GeometryReach
+  type(GeometryReach_tp), allocatable, dimension(:) :: GeometryReach
 
   contains
     procedure Calc_Geometry  => paraview_Geometry_sub
@@ -101,7 +102,7 @@ implicit none
 type(Geometry_tp), intent(in)   :: Geometry    ! Holds information about the geometry of the domain
 type(DiscretizedNetwork_tp), intent(in) :: Discretization ! Discretization
 
-class(NetworkGeometry_tp(nReaches=*) ), intent(inout) :: this
+class(NetworkGeometry_tp), intent(inout) :: this
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
@@ -120,25 +121,18 @@ real(kind=Dbl)    :: x1, y1, x2, y2 ! coordinates of the two nodes of the reach
 real(kind=Dbl)    :: cell_length_x ! the length of the cell in each reach in the x dir
 real(kind=Dbl)    :: cell_length_y ! the length of the cell in each reach in the y dir
 
-
 ! - type ------------------------------------------------------------------------------------------
-
-
 
 ! code ============================================================================================
 write(*,       *) " subroutine < paraview_Geometry_sub >: "
 write(FileInfo,*) " subroutine < paraview_Geometry_sub >: "
-
-write(*,       *) " -..."
-write(FileInfo,*) " -..."
-
 
 ! allocating the items for each reach.
   do i_reach= 1, Geometry%Base_Geometry%NoReaches
 
     No_CellsReach = Geometry%network(i_reach)%NCells_Reach
 
-    allocate(                                           &
+    allocate(                                         &
     this%GeometryReach(i_reach)%ZCell(No_CellsReach), &
     this%GeometryReach(i_reach)%YCell(No_CellsReach), &
     this%GeometryReach(i_reach)%XCell(No_CellsReach), &
@@ -146,7 +140,6 @@ write(FileInfo,*) " -..."
     if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
     ! Calculating the coordinates of the cells in each reach
-
     ! finding the nodes of the reach
     Node_I  = Geometry%network(i_Reach)%ReachNodes(1)   ! upstream node
     Node_II = Geometry%network(i_Reach)%ReachNodes(2)   ! downstream node
@@ -175,7 +168,6 @@ write(FileInfo,*) " -..."
     this%GeometryReach(i_reach)%ZCell(:) = Discretization%DiscretizedReach(i_reach)%ZCell(:)
 
   end do
-
 
 write(*,        fmt="(' Discretizing the network was successful. ')")
 write(FileInfo, fmt="(' Discretizing the network was successful. ')")
@@ -221,7 +213,7 @@ implicit none
 type(Geometry_tp), intent(in)   :: Geometry    ! Holds information about the geometry of the domain
 type(DiscretizedNetwork_tp), intent(In) :: Discretization ! Holds the discretized network
 type(partitioner_tp(edges=*, nodes=*)), intent(in)    :: NetworkPartitioner
-class(NetworkGeometry_tp(nReaches=*) ), intent(inout) :: this
+class(NetworkGeometry_tp), intent(inout) :: this
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
@@ -229,6 +221,8 @@ integer(kind=Tiny) :: nPartition    ! indicates whether a reach is divided btw t
                                     ! not (=1)
 
 integer(kind=Tiny) :: i_Partition   ! loop index on the division of a reach for a rank
+
+integer(kind=Smll) :: ERR_Alloc, ERR_DeAlloc ! Allocating and DeAllocating errors
 
 integer(kind=Lng)  :: i_rank        ! loop index on the number of partitions
 integer(kind=Lng)  :: i_reach       ! loop index on the reach number
@@ -240,9 +234,10 @@ integer(kind=Lng)  :: NoCellsReach  ! no. of cells from this reach on this rank
 integer(kind=Lng)  :: RangeCell_I   ! Temp var to hold the cell no. a reach on the current rank
 integer(kind=Lng)  :: RangeCell_II  ! Temp var to hold the cell no. a reach on the current rank
 
-integer(kind=Lng), dimension(:,:), allocatable :: dset_data_int  ! Data buffers
+integer(kind=Shrt), dimension(:,:), allocatable :: dset_data_int  ! Data buffers
 
 integer(kind=Shrt) :: rank = 2 ! Dataset rank
+integer :: error    ! Error flag
 
 ! - real variables --------------------------------------------------------------------------------
 real(kind=Dbl), dimension(:,:), allocatable :: dset_data_real ! Data buffers
@@ -270,11 +265,7 @@ integer(HSIZE_T), dimension(2) :: dims  ! data set dimensions
 write(*,       *) " subroutine < paraview_HDF5_sub >: "
 write(FileInfo,*) " subroutine < paraview_HDF5_sub >: "
 
-write(*,       *) " -..."
-write(FileInfo,*) " -..."
-
 ! creating the HDF5 files
-
 call h5open_f(error)
 
 
@@ -368,8 +359,7 @@ call h5open_f(error)
       call h5screate_simple_f(rank, dims, dspace_id_CNN, error)
 
       ! creating the data set for the connectivity of the cells
-      call h5dcreate_f(id_Geometry, "Connectivity", H5T_NATIVE_INTEGER, &
-                                                                dspace_id_CNN dset_id_CNN, error)
+      call h5dcreate_f(id_Geometry, "Connectivity", H5T_NATIVE_INTEGER, dspace_id_CNN, dset_id_CNN, error)
 
       allocate(dset_data_int( dims(1), dims(2)) , stat=ERR_Alloc)
       if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
