@@ -192,14 +192,15 @@ end subroutine paraview_Geometry_sub
 !
 ! ================================ V E R S I O N ==================================================
 ! V0.00: 01/24/2019 - File initiated.
+! V0.01: 02/10/2019 - Compiled successfully for the first time.
 !
 ! File version $Id $
 !
-! Last update: 01/25/2019
+! Last update: 02/10/2019
 !
 !##################################################################################################
 
-subroutine paraview_HDF5_sub (this, Geometry, Discretization, NetworkPartitioner)
+subroutine paraview_HDF5_sub (this, Geometry, Discretization, NetworkPartitioner, ModelInfo)
 
 ! Libraries =======================================================================================
 
@@ -210,6 +211,7 @@ implicit none
 ! Global variables ================================================================================
 
 ! - types -----------------------------------------------------------------------------------------
+type(Input_Data_tp), intent(In) :: ModelInfo ! Holds info. (name, dir, output dir) of the model
 type(Geometry_tp), intent(in)   :: Geometry    ! Holds information about the geometry of the domain
 type(DiscretizedNetwork_tp), intent(In) :: Discretization ! Holds the discretized network
 type(partitioner_tp(edges=*, nodes=*)), intent(in)    :: NetworkPartitioner
@@ -244,8 +246,8 @@ real(kind=Dbl), dimension(:,:), allocatable :: dset_data_real ! Data buffers
 
 ! - character variables ---------------------------------------------------------------------------
 character(kind = 1, len=3   ), parameter :: geo = "Geo"
-Character(kind = 1, len = 20 ):: IndexReach !Reach no in the Char. fmt to add to input file Name
-Character(kind = 1, len = 20 ):: IndexRank  !Rank no in the Char. fmt to add to input file Name
+Character(kind = 1, len = 100 ):: IndexReach !Reach no in the Char. fmt to add to input file Name
+Character(kind = 1, len = 100 ):: IndexRank  !Rank no in the Char. fmt to add to input file Name
 
 
 ! - HDF5 variables --------------------------------------------------------------------------------
@@ -268,7 +270,6 @@ write(FileInfo,*) " subroutine < paraview_HDF5_sub >: "
 ! creating the HDF5 files
 call h5open_f(error)
 
-
   do i_reach = 1, Geometry%Base_Geometry%NoReaches
 
     ! The rank which the first node of this reach belongs to
@@ -277,13 +278,11 @@ call h5open_f(error)
     ! The rank which the second node of this reach belongs to
     RankNodeII = NetworkPartitioner%ReachPartition(i_reach,2)
 
-
     if (RankNodeI == RankNodeII ) then
       nPartition = 1_Tiny
     else if (RankNodeI /= RankNodeII ) then
       nPartition = 2_Tiny
     end if
-
 
     ! Whether the reach is divided between the two ranks or not, we need to write the first part.
     ! If it happens that the reach is divided between two ranks, then we need to repeat the loop
@@ -300,7 +299,7 @@ call h5open_f(error)
           RangeCell_I  = 1_Lng
           RangeCell_II = NetworkPartitioner%ReachPartition(i_reach,3)
 
-        else if (i_Partition == 1_Tiny ) then
+        else if (i_Partition == 2_Tiny ) then
           ! the reach is divided btw two ranks, here we write the downstream section of the reach
 
           RankNo = RankNodeII ! the rank no. that this part of the reach belongs to
@@ -311,7 +310,6 @@ call h5open_f(error)
           RangeCell_II = NetworkPartitioner%ReachPartition(i_reach,3) + &
                                                        NetworkPartitioner%ReachPartition(i_reach,4)
 
-
         end if
 
       ! Converting numbers to char for the output file name (geometry)
@@ -319,10 +317,10 @@ call h5open_f(error)
       write(IndexReach,*) i_reach   ! converts reach no. to Chr format for the file Name
 
       ! creating the geometry hdf5 file each reach in each rank
-      call h5fcreate_f(trim(geo)//'_Rank_'// trim(adjustL(IndexRank))// &
-                   '_Reach_'//trim(adjustL(IndexReach))//'.h5', &
-                   H5F_ACC_TRUNC_F, id_Geometry, error)
 
+      call h5fcreate_f( trim(ModelInfo%InputDir)//'/'//trim(geo)//'_Rank_'// &
+                   trim(adjustL(IndexRank))//'_Reach_'//trim(adjustL(IndexReach))//'.h5', &
+                   H5F_ACC_TRUNC_F, id_Geometry, error)
 
       ! working on the coordinate section of the geometry file ---
       dims(1) = 3             ! dimension (3D)
@@ -344,11 +342,14 @@ call h5open_f(error)
       dset_data_real(3,:) = this%GeometryReach(i_reach)%ZCell(RangeCell_I:RangeCell_II)
 
       ! Write the dataset- xyz coordinates
-      write (*,*)"writing coordinates for reach no.: ", i_reach
+      write (*,fmt='("writing coordinates for reach no.: ", I6, " on the rank: ", I6)') &
+                                                                                    i_reach, RankNo
       call h5dwrite_f(dset_id_XYZ, H5T_NATIVE_DOUBLE, dset_data_real, dims, error)
 
       DEallocate(dset_data_real, stat = ERR_DeAlloc )
       if (ERR_DeAlloc /= 0) call error_in_deallocation(ERR_DeAlloc)
+
+
 
 
       ! working on the connectivity section of the geometry file ---
@@ -359,27 +360,29 @@ call h5open_f(error)
       call h5screate_simple_f(rank, dims, dspace_id_CNN, error)
 
       ! creating the data set for the connectivity of the cells
-      call h5dcreate_f(id_Geometry, "Connectivity", H5T_NATIVE_INTEGER, dspace_id_CNN, dset_id_CNN, error)
-
+      call h5dcreate_f(id_Geometry, "Connectivity", H5T_NATIVE_INTEGER, dspace_id_CNN, &
+                                                                               dset_id_CNN, error)
       allocate(dset_data_int( dims(1), dims(2)) , stat=ERR_Alloc)
       if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
       ! computing the reach connectivity
-      forall (i_cell = RankNodeI:RankNodeII) dset_data_int(1, i_cell) = i_cell - 1_Lng
+      forall (i_cell = 1:NoCellsReach) dset_data_int(1, i_cell) = i_cell - 1_Lng
+      !  do i_cell = 1, NoCellsReach
+      !    dset_data_int(1, i_cell ) = i_cell - 1_Lng
+      !  end do
 
       ! Write the dataset- connectivity
-      write (*,*)"writing connectivity for reach no.: ", i_reach
+      write (*,fmt='( "writing connectivity for reach no.: ", I6, " on the rank: ", I6 )') &
+                                                                                    i_reach, RankNo
       call h5dwrite_f(dset_id_CNN, H5T_NATIVE_INTEGER, dset_data_int, dims, error)
 
       DEallocate(dset_data_int, stat = ERR_DeAlloc )
       if (ERR_DeAlloc /= 0) call error_in_deallocation(ERR_DeAlloc)
 
-
       ! closing the hdf5 files
       call h5dclose_f(dset_id_XYZ, error)
       call h5dclose_f(dset_id_CNN, error)
       call h5fclose_f(id_Geometry, error)
-
     end do
 
   end do
@@ -398,9 +401,6 @@ write(FileInfo,*)
 
 return
 end subroutine paraview_HDF5_sub
-
-
-
 
 end module paraview_mod
 
