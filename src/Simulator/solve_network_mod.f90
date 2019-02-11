@@ -308,7 +308,9 @@ write(*,       *) " -Allocating the solution ..."
 write(FileInfo,*) " -Allocating the solution ..."
 
 ! allocating paraview array for visualization with Paraview
-allocate(Paraview%ResultReach(this%Model%TotalNumOfReachesOnThisRank), stat = ERR_Alloc)
+allocate(Paraview%ResultReach(this%Model%TotalNumOfReachesOnThisRank),  &
+         Paraview%NoCells(this%Model%TotalNumOfReachesOnThisRank),
+         stat = ERR_Alloc)
 if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
 ! allocating memory
@@ -325,6 +327,9 @@ if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
     allocate(Paraview%ResultReach(i_reach)%U(this%Model%DiscretizedReach(i_reach)%NCells_reach),
           stat = ERR_Alloc)
     if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
+
+    ! setting no. cells on each reach of this rank
+    Paraview%NoCells(i_reach) = this%Model%DiscretizedReach(i_reach)%NCells_reach
 
   end do
 
@@ -611,7 +616,6 @@ request_sent(:) = 0   ! initialize the tag for MPI send/recv
     stop
   end if
 
-
 ! substituting the sent messages to the solution
 Counter_ReachCut = 0_Lng
   do i_reach =1, this%Model%TotalNumOfReachesOnThisRank
@@ -648,6 +652,13 @@ Counter_ReachCut = 0_Lng
   end do
 
 Results%ModelInfo = this%ModelInfo
+
+
+! preparing data for Paraview class
+Paraview%RankNo    = this%ModelInfo%rank
+Paraview%Size      = this%ModelInfo%size
+Paraview%nReach    = this%Model%TotalNumOfReachesOnThisRank
+Paraview%OutputDir = this%ModelInfo%OutputDir
 
 call MPI_Barrier(MPI_COMM_WORLD, MPI_err)
 
@@ -686,13 +697,6 @@ write(FileInfo,*) " -Time marching ..."
 
           ! writing the results in the hdf5 files
           call Paraview%Results()
-
-
-
-
-
-
-
 
       end if
 

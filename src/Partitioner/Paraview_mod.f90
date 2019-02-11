@@ -247,10 +247,9 @@ integer :: error    ! Error flag
 real(kind=Dbl), dimension(:,:), allocatable :: dset_data_real ! Data buffers
 
 ! - character variables ---------------------------------------------------------------------------
-character(kind = 1, len=3   ), parameter :: geo = "Geo"
+character(kind = 1, len = 3   ), parameter :: geo = "Geo"
 Character(kind = 1, len = 100 ):: IndexReach !Reach no in the Char. fmt to add to input file Name
 Character(kind = 1, len = 100 ):: IndexRank  !Rank no in the Char. fmt to add to input file Name
-
 
 ! - HDF5 variables --------------------------------------------------------------------------------
 integer(HID_T) :: id_Geometry      ! the geometry h5 file
@@ -263,7 +262,6 @@ integer(HID_T) :: dspace_id_CNN    ! data space for connectivity
 
 integer(HSIZE_T), dimension(2) :: dims  ! data set dimensions
 
-! - type ------------------------------------------------------------------------------------------
 
 ! code ============================================================================================
 write(*,       *) " subroutine < paraview_HDF5_sub >: "
@@ -318,8 +316,7 @@ call h5open_f(error)
       write(IndexRank, *) RankNo    ! converts rank to Character format for the file Name
       write(IndexReach,*) i_reach   ! converts reach no. to Chr format for the file Name
 
-      ! creating the geometry hdf5 file each reach in each rank
-
+      ! creating the geometry hdf5 file for each reach in each rank
       call h5fcreate_f( trim(ModelInfo%InputDir)//'/'//trim(geo)//'_Rank_'// &
                    trim(adjustL(IndexRank))//'_Reach_'//trim(adjustL(IndexReach))//'.h5', &
                    H5F_ACC_TRUNC_F, id_Geometry, error)
