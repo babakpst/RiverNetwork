@@ -28,9 +28,15 @@
 
 module ParaviewOutput_mod
 
-use
+! Libraries =======================================================================================
+use hdf5
 
+! User defined modules ============================================================================
+use messages_and_errors_mod
 
+implicit none
+
+private
 type ResultReach_tp
   real(kind=DBL), allocatable, dimenison(:) :: height
   real(kind=DBL), allocatable, dimenison(:) :: velocity
@@ -44,10 +50,12 @@ type ResultNetwork_tp(nReaches)
   type(ResultReach_tp), dimension(nReaches)  :: ResultReach
 
   contains
-    procedure
+    procedure Wrapper   => Wrapper_File_Creator_sub
+    procedure ReachFile => Reach_File_Creator_sub
+    procedure Results   => Result_File_Creator_sub
 end type
 
-
+public:: ResultNetwork_tp
 
 contains
 
@@ -120,20 +128,37 @@ end subroutine Reach_File_Creator_sub
 
 subroutine Result_File_Creator_sub()
 
+! Libraries =======================================================================================
+
+! User defined modules ============================================================================
+
+implicit none
+
+! Global variables ================================================================================
+
+! - types -----------------------------------------------------------------------------------------
+
+! Local variables =================================================================================
+
+! code ============================================================================================
+!write(*,       *) " subroutine < Result_File_Creator_sub >: "
+!write(FileInfo,*) " subroutine < Result_File_Creator_sub >: "
+
+
+
+
+
+
+
+!write(*,       *) " end subroutine < Result_File_Creator_sub >"
+!write(FileInfo,*) " end subroutine < Result_File_Creator_sub >"
+
+write(*,       *)
+write(FileInfo,*)
+
+return
+
 end subroutine Result_File_Creator_sub
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 end module ParaviewOutput_mod

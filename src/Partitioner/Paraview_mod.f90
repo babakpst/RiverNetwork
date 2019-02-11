@@ -29,13 +29,14 @@
 module Paraview_mod
 
 ! Libraries =======================================================================================
+use hdf5
 
 ! User defined modules ============================================================================
 use Parameters_mod
 use Model_mod, only: Geometry_tp
 use Discretize_the_network_mod, only: DiscretizedNetwork_tp
 use messages_and_errors_mod
-use hdf5
+
 
 implicit none
 private
@@ -128,10 +129,6 @@ real(kind=Dbl)    :: cell_length_y ! the length of the cell in each reach in the
 ! code ============================================================================================
 write(*,       *) " subroutine < paraview_Geometry_sub >: "
 write(FileInfo,*) " subroutine < paraview_Geometry_sub >: "
-
-write(*,       *) " -..."
-write(FileInfo,*) " -..."
-
 
 ! allocating the items for each reach.
   do i_reach= 1, Geometry%Base_Geometry%NoReaches
@@ -368,30 +365,7 @@ DeAllocate ( dset_data_real )
 
     allocate (dset_data_real( dims(1), dims(2) ) )
 
-
-
-
   end do
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 write(*,        fmt="(' Creating the geometry files for Paraview was successful. ')")
