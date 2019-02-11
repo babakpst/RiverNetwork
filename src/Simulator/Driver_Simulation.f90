@@ -25,10 +25,11 @@
 ! V2.10: 04/23/2018  - Time module
 ! V3.00: 05/16/2018  - MPI parallelization
 ! V3.10: 07/30/2018  - accommodating the simulator with the network partitioner
+! V3.20: 02/11/2019  - adding paraview module for visualization
 !
 ! File version $Id $
 !
-! Last update: 07/30/2018
+! Last update: 02/11/2019
 !
 ! ================================ Global   V A R I A B L E S =====================================
 !  . . . . . . . . . . . . . . . . Variables . . . . . . . . . . . . . . . . . . . . . . . . . . .
