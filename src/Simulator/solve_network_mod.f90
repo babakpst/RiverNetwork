@@ -21,10 +21,11 @@
 ! V3.10: 05/25/2018 - Modifications
 ! V3.20: 05/29/2018 - Modifications
 ! V4.00: 08/01/2018 - Solving network
+! V4.00: 02/11/2019 - adding paraview module for visualization
 !
 ! File version $Id $
 !
-! Last update: 10/09/2018
+! Last update: 02/11/2019
 !
 ! ================================ S U B R O U T I N E ============================================
 ! - Solver_1D_with_Limiter_sub: Solves the 1D shallow water equation, with limiter.
@@ -53,6 +54,7 @@ use Input_mod
 use reading_network_mod,  only: network_tp
 use Timer_mod
 use messages_and_errors_mod
+use ParaviewOutput_mod, only:ResultNetwork_tp
 
 implicit none
 private
@@ -168,10 +170,11 @@ contains
 ! V2.00: 05/09/2018 - Performance
 ! V3.00: 05/16/2018 - MPI
 ! V4.00: 08/01/2018 - Solving the network
+! V4.01: 02/11/2019 - Adding Paraview module
 !
 ! File version $Id $
 !
-! Last update: 10/09/2018
+! Last update: 02/11/2019
 !
 ! ================================ L O C A L   V A R I A B L E S ==================================
 ! (Refer to the main code to see the list of imported variables)
@@ -269,6 +272,9 @@ type(vector), dimension(2*this%Model%NCutsOnRanks) :: sent, recv
 ! solution at time steps n and n+1
 type(solutionAtTimeSteps), dimension(this%Model%TotalNumOfReachesOnThisRank) :: Solution
 
+! holds information for visualization with Paraview
+type(ResultNetwork_tp):: Paraview
+
 ! code ============================================================================================
 write(*,       *) " subroutine < solve_the_network_sub >: "
 write(FileInfo,*) " subroutine < solve_the_network_sub >: "
@@ -301,13 +307,27 @@ SourceTerms%Identity(2,2) = 1.0_Dbl
 write(*,       *) " -Allocating the solution ..."
 write(FileInfo,*) " -Allocating the solution ..."
 
-! allocating the solution in each rank
+! allocating paraview array for visualization with Paraview
+allocate(Paraview%ResultReach(this%Model%TotalNumOfReachesOnThisRank), stat = ERR_Alloc)
+if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
+
+! allocating memory
   do i_reach =1, this%Model%TotalNumOfReachesOnThisRank
+
+    ! allocating the solution in each rank
     allocate(                                                                               &
       Solution(i_reach)%UU(-1_Lng:this%Model%DiscretizedReach(i_reach)%NCells_reach+2_Lng), &
       Solution(i_reach)%UN(-1_Lng:this%Model%DiscretizedReach(i_reach)%NCells_reach+2_Lng), &
                                                                                     stat=ERR_Alloc)
     if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
+
+    ! allocating paraview arrays for each reach for visualization with Paraview
+    allocate(
+          Paraview%ResultReach(i_reach)%height(this%Model%DiscretizedReach(i_reach)%NCells_reach),
+          Paraview%ResultReach(i_reach)%height(this%Model%DiscretizedReach(i_reach)%NCells_reach),
+             stat = ERR_Alloc)
+    if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
+
   end do
 
 Counter_ReachCut = 0_Lng
@@ -323,7 +343,6 @@ request_sent(:) = 0   ! initialize the tag for MPI send/recv
 ! initializing the solution (height+velocity), at time step 0, including the ghost/junction cells.
 ! The ghost cells are located at the junctions, or the upstream node, or at the downstream node.
   do i_reach =1, this%Model%TotalNumOfReachesOnThisRank
-
 
     write(*,       *) " --------Boundary condition for reach: ", i_reach, this%ModelInfo%rank
     write(FileInfo,*) " --------Boundary condition for reach: ", i_reach, this%ModelInfo%rank
@@ -341,15 +360,13 @@ request_sent(:) = 0   ! initialize the tag for MPI send/recv
 
   end do
 
-
+! working on the boundary conditions at the ghost cells
   do i_reach =1, this%Model%TotalNumOfReachesOnThisRank
-
 
     write(*,       *) " --------Boundary condition for reach: ", i_reach, this%ModelInfo%rank
     write(FileInfo,*) " --------Boundary condition for reach: ", i_reach, this%ModelInfo%rank
 
     NCellsOnTheReach = this%Model%DiscretizedReach(i_reach)%NCells_reach
-
 
     UpstreamReachNumLeft   = this%Model%DiscretizedReach(i_reach)%UpstreamReaches(1,2)
     UpstreamReachNumRight  = this%Model%DiscretizedReach(i_reach)%UpstreamReaches(2,2)
@@ -669,17 +686,22 @@ write(FileInfo,*) " -Time marching ..."
           ! write down data for visualization
           if (mod(i_steps,AnalysisInfo%Plot_Inc)==1 .or. PrintResults) then
 
+            ! writing the results for visualization in python - <modify>
             allocate(Results%U(-1:this%Model%DiscretizedReach(i_reach)%NCells_reach+2), stat=ERR_Alloc)
             if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
             Results%NCells = this%Model%DiscretizedReach(i_reach)%NCells_reach
             Results%reach  = i_reach
             Results%step   = i_steps
-
-
-
             Results%U(:) = Solution(i_reach)%UU(-1:this%Model%DiscretizedReach(i_reach)%NCells_reach+2)
             call Results%plot_results()
             deallocate(Results%U)
+
+            ! writing the results for paraview
+
+
+
+
+
           end if
 
         UpstreamReachNumLeft   = this%Model%DiscretizedReach(i_reach)%UpstreamReaches(1,2)
@@ -1647,13 +1669,6 @@ subroutine Junction_simulation_flow_combination_upstream( &
              ReachLeft_Cell_n, ReachRight_Cell_n, ReachBottom_Cell_1, &
              ReachBottom_Cell_0, ReachBottom_Cell_n1)
 
-
-
-
-
-
-
-
 ! Libraries =======================================================================================
 
 ! User defined modules ============================================================================
@@ -2131,6 +2146,7 @@ end subroutine Junction_simulation_flow_combination_downstream
 
 
 end module Solver_mod
+
 
 
 

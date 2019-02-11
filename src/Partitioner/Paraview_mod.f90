@@ -36,12 +36,9 @@ use Parameters_mod
 use Model_mod, only: Geometry_tp
 use Discretize_the_network_mod, only: DiscretizedNetwork_tp
 use messages_and_errors_mod
-<<<<<<< HEAD
+
 use Network_Partitioner_mod
 use hdf5
-=======
-
->>>>>>> network_paraview_v2
 
 implicit none
 private
@@ -384,7 +381,7 @@ call h5open_f(error)
       DEallocate(dset_data_int, stat = ERR_DeAlloc )
       if (ERR_DeAlloc /= 0) call error_in_deallocation(ERR_DeAlloc)
 
-<<<<<<< HEAD
+
       ! closing the hdf5 files
       call h5dclose_f(dset_id_XYZ, error)
       call h5dclose_f(dset_id_CNN, error)
@@ -395,7 +392,7 @@ call h5open_f(error)
 
 ! closing the hdf5 library
 call h5close_f(error)
-=======
+
     ! Create the dataspaces
     ! Coordinate file for the main code(.XYZ)
     dims(1) = 3   ! n dimension
@@ -410,7 +407,7 @@ call h5close_f(error)
 
   end do
 
->>>>>>> network_paraview_v2
+
 
 write(*,        fmt="(' Creating the geometry files for Paraview was successful. ')")
 write(FileInfo, fmt="(' Creating the geometry files for Paraview was successful. ')")

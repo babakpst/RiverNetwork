@@ -38,16 +38,16 @@ implicit none
 
 private
 type ResultReach_tp
+
+  ! contains the solution of this reach, size: no. of cells on this reach
   real(kind=DBL), allocatable, dimenison(:) :: height
   real(kind=DBL), allocatable, dimenison(:) :: velocity
 end type ResultReach_tp
 
-type ResultNetwork_tp(nReaches)
+type ResultNetwork_tp
 
-  integer(kind=Lng), len :: nReaches
-
-  ! contains all the coordinates of all reaches of the network
-  type(ResultReach_tp), dimension(nReaches)  :: ResultReach
+  ! contains all the coordinates of all reaches of the network, size: no. of Reaches on this rank
+  type(ResultReach_tp), allocatable, dimension(:)  :: ResultReach
 
   contains
     procedure Wrapper   => Wrapper_File_Creator_sub
@@ -145,7 +145,7 @@ implicit none
 !write(FileInfo,*) " subroutine < Result_File_Creator_sub >: "
 
 
-! creating the hdf5, result files
+
 
 
 
