@@ -351,10 +351,7 @@ call h5open_f(error)
       DEallocate(dset_data_real, stat = ERR_DeAlloc )
       if (ERR_DeAlloc /= 0) call error_in_deallocation(ERR_DeAlloc)
 
-
-
-
-      ! working on the connectivity section of the geometry file ---
+     ! working on the connectivity section of the geometry file ---
       dims(1) = 1             ! dimension
       dims(2) = NoCellsReach  ! no. of cells from this reach on this rank
 
@@ -381,7 +378,6 @@ call h5open_f(error)
       DEallocate(dset_data_int, stat = ERR_DeAlloc )
       if (ERR_DeAlloc /= 0) call error_in_deallocation(ERR_DeAlloc)
 
-
       ! closing the hdf5 files
       call h5dclose_f(dset_id_XYZ, error)
       call h5dclose_f(dset_id_CNN, error)
@@ -392,21 +388,6 @@ call h5open_f(error)
 
 ! closing the hdf5 library
 call h5close_f(error)
-
-    ! Create the dataspaces
-    ! Coordinate file for the main code(.XYZ)
-    dims(1) = 3   ! n dimension
-    dims(2) = 5   ! no of cells in each reach
-
-    call h5screate_simple_f(rank, dims, dspace_id_XYZ_1, error)
-    call h5dcreate_f(id_Geometry_1, "XYZ",  H5T_NATIVE_DOUBLE,  dspace_id_XYZ_1, dset_id_XYZ_1, error)
-
-    write (*,*)"writing coordinates ..."
-
-    allocate (dset_data_real( dims(1), dims(2) ) )
-
-  end do
-
 
 
 write(*,        fmt="(' Creating the geometry files for Paraview was successful. ')")

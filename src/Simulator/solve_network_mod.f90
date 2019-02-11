@@ -322,10 +322,8 @@ if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
     if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
     ! allocating paraview arrays for each reach for visualization with Paraview
-    allocate(
-          Paraview%ResultReach(i_reach)%height(this%Model%DiscretizedReach(i_reach)%NCells_reach),
-          Paraview%ResultReach(i_reach)%height(this%Model%DiscretizedReach(i_reach)%NCells_reach),
-             stat = ERR_Alloc)
+    allocate(Paraview%ResultReach(i_reach)%U(this%Model%DiscretizedReach(i_reach)%NCells_reach),
+          stat = ERR_Alloc)
     if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
   end do
@@ -678,6 +676,24 @@ write(FileInfo,*) " -Time marching ..."
               print*, "----------------Step:", i_steps, &
                      real(TotalTime%endSys-TotalTime%startSys)/real(TotalTime%clock_rate)
           end if
+
+          ! writing the results for paraview ---
+
+          ! putting the results in the paraview array
+          Paraview%step = i_steps-1_Lng
+          Paraview%ResultReach(:)%U(:) = &
+          Solution(:)%UU(1:this%Model%DiscretizedReach(i_reach)%NCells_reach)
+
+          ! writing the results in the hdf5 files
+          call Paraview%Results()
+
+
+
+
+
+
+
+
       end if
 
       ! Solving the equation for each reach
@@ -695,13 +711,6 @@ write(FileInfo,*) " -Time marching ..."
             Results%U(:) = Solution(i_reach)%UU(-1:this%Model%DiscretizedReach(i_reach)%NCells_reach+2)
             call Results%plot_results()
             deallocate(Results%U)
-
-            ! writing the results for paraview
-
-
-
-
-
           end if
 
         UpstreamReachNumLeft   = this%Model%DiscretizedReach(i_reach)%UpstreamReaches(1,2)

@@ -33,6 +33,7 @@ use hdf5
 
 ! User defined modules ============================================================================
 use messages_and_errors_mod
+use Parameters_mod
 
 implicit none
 
@@ -40,20 +41,23 @@ private
 type ResultReach_tp
 
   ! contains the solution of this reach, size: no. of cells on this reach
-  real(kind=DBL), allocatable, dimenison(:) :: height
-  real(kind=DBL), allocatable, dimenison(:) :: velocity
+  ! the first element U(1) is height and the second term is U(2) is uh
+  type(vector), allocatable, dimension(:) :: U
 end type ResultReach_tp
 
 type ResultNetwork_tp
+
+  ! holds the time step
+  integer(kind=Lng) :: step
 
   ! contains all the coordinates of all reaches of the network, size: no. of Reaches on this rank
   type(ResultReach_tp), allocatable, dimension(:)  :: ResultReach
 
   contains
-    procedure Wrapper   => Wrapper_File_Creator_sub
-    procedure ReachFile => Reach_File_Creator_sub
-    procedure Results   => Result_File_Creator_sub
-end type
+    procedure Wrapper   => Wrapper_File_Creator_sub ! wrapper file
+    procedure ReachFile => Reach_File_Creator_sub   ! local xdmf file
+    procedure Results   => Result_File_Creator_sub  ! hdf5 creator
+end type ResultNetwork_tp
 
 public:: ResultNetwork_tp
 
@@ -126,7 +130,7 @@ end subroutine Reach_File_Creator_sub
 !
 !##################################################################################################
 
-subroutine Result_File_Creator_sub()
+subroutine Result_File_Creator_sub(this)
 
 ! Libraries =======================================================================================
 
@@ -137,6 +141,7 @@ implicit none
 ! Global variables ================================================================================
 
 ! - types -----------------------------------------------------------------------------------------
+class(ResultNetwork_tp) :: this
 
 ! Local variables =================================================================================
 
