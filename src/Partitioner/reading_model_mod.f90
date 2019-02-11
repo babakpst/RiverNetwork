@@ -340,12 +340,17 @@ UnFile = FileDataGeo
     this%network(reach_no)%ReachSlope = - this%network(reach_no)%ReachSlope
   end do
 
+print*, " Done with reaches."
+print*, " Reading nodes ..."
+
 ! Reading node properties
 UnFile = FileDataGeo
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
+read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 
   do i_Node = 1, this%Base_Geometry%NoNodes
+    print*, " reading node no.: ", i_Node
     read(unit=UnFile, fmt=*, asynchronous='no', iostat=IO_read, err=1003, end=1004)&
               Node_no, & ! Node number
               this%NodeCoor(Node_no,1), this%NodeCoor(Node_no,2), & ! x-y coordinate of the node
@@ -354,13 +359,14 @@ read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, e
   end do
 
 ! Calculating the Length of the reach
+print*, " Calculating the length of each reach ..."
   do i_reach= 1, this%Base_Geometry%NoReaches
     Length = dsqrt( &
     (this%NodeCoor(this%network(i_reach)%ReachNodes(2),1)- &
      this%NodeCoor(this%network(i_reach)%ReachNodes(1),1))**2 &
      + (this%NodeCoor(this%network(i_reach)%ReachNodes(2), 2) - &
         this%NodeCoor(this%network(i_reach)%ReachNodes(1), 2) )**2  )
-    this%network(reach_no)%ReachLength = Length
+    this%network(i_reach)%ReachLength = Length
   end do
 
 
@@ -385,33 +391,33 @@ write(unit=UnFile, fmt="(' Reach no. -- Length -- no. of cells -- reach type (st
   do i_reach= 1, this%Base_Geometry%NoReaches
 
     ! writing the network on screen
-    write(unit=*,     fmt="(I7, F23.10, I5, I3, 3F23.10, 2I7, 2F23.10, I17, F23.10, I17, F23.10)")&
+    write(unit=*,     fmt="(I7, F23.10, I5, I3, 3F23.10, 2I7, 2F23.10, F23.10, F23.10)")&
     i_reach, &
-    this%network(reach_no)%ReachLength, & ! Length of the reach
-    this%network(reach_no)%NCells_Reach, &  ! no. of cells in each reach- constant length
-    this%network(reach_no)%ReachType, &   ! type of the reach - straight 0, from function 1
-    this%network(reach_no)%ReachSlope, &  ! slopes of each reach
-    this%network(reach_no)%ReachManning, &! Manning's number of each reach
-    this%network(reach_no)%ReachWidth, &  ! width of channel- constant channel width in each reach
-    this%network(reach_no)%ReachNodes(1:2), &   ! nodes of the reach
-    this%network(reach_no)%JunctionLength(1:2), & ! Length of the reach at each junction
-    this%network(reach_no)%CntrlV,            & ! Initial control volume of the reach
-    this%network(reach_no)%CntrlV_ratio         ! ratio of the change of Cntrl Volume in the reach
+    this%network(i_reach)%ReachLength, & ! Length of the reach
+    this%network(i_reach)%NCells_Reach, &  ! no. of cells in each reach- constant length
+    this%network(i_reach)%ReachType, &   ! type of the reach - straight 0, from function 1
+    this%network(i_reach)%ReachSlope, &  ! slopes of each reach
+    this%network(i_reach)%ReachManning, &! Manning's number of each reach
+    this%network(i_reach)%ReachWidth, &  ! width of channel- constant channel width in each reach
+    this%network(i_reach)%ReachNodes(1:2), &   ! nodes of the reach
+    this%network(i_reach)%JunctionLength(1:2), & ! Length of the reach at each junction
+    this%network(i_reach)%CntrlV,            & ! Initial control volume of the reach
+    this%network(i_reach)%CntrlV_ratio         ! ratio of the change of Cntrl Volume in the reach
 
 
     ! writing the network in the info file
-    write(unit=UnFile,fmt="(I7, F23.10, I5, I3, 3F23.10, 2I7, 2F23.10, I17, F23.10, I17, F23.10)")&
+    write(unit=UnFile,fmt="(I7, F23.10, I5, I3, 3F23.10, 2I7, 2F23.10, F23.10, F23.10)")&
     i_reach, &
-    this%network(reach_no)%ReachLength, &   ! Length of the reach
-    this%network(reach_no)%NCells_Reach, &  ! no. of cells in each reach- constant length
-    this%network(reach_no)%ReachType, &     ! type of the reach - straight 0, from function 1
-    this%network(reach_no)%ReachSlope, &    ! slopes of each reach
-    this%network(reach_no)%ReachManning, &  ! Manning's number of each reach
-    this%network(reach_no)%ReachWidth, &  ! width of channel- constant channel width in each reach
-    this%network(reach_no)%ReachNodes(1:2),&      ! nodes of the reach
-    this%network(reach_no)%JunctionLength(1:2), & ! Length of the reach at each junction
-    this%network(reach_no)%CntrlV,            &   ! Initial control volume of the reach
-    this%network(reach_no)%CntrlV_ratio           ! ratio of the change of Cntrl Volume in the reach
+    this%network(i_reach)%ReachLength, &   ! Length of the reach
+    this%network(i_reach)%NCells_Reach, &  ! no. of cells in each reach- constant length
+    this%network(i_reach)%ReachType, &     ! type of the reach - straight 0, from function 1
+    this%network(i_reach)%ReachSlope, &    ! slopes of each reach
+    this%network(i_reach)%ReachManning, &  ! Manning's number of each reach
+    this%network(i_reach)%ReachWidth, &  ! width of channel- constant channel width in each reach
+    this%network(i_reach)%ReachNodes(1:2),&      ! nodes of the reach
+    this%network(i_reach)%JunctionLength(1:2), & ! Length of the reach at each junction
+    this%network(i_reach)%CntrlV,            &   ! Initial control volume of the reach
+    this%network(i_reach)%CntrlV_ratio           ! ratio of the change of Cntrl Volume in the reach
   end do
 
 write(unit=*,      fmt="('')")

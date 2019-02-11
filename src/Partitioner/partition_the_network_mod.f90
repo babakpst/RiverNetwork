@@ -352,7 +352,6 @@ integer(kind=Lng)  :: tempCell      ! Temp var to hold no. of cells of each rank
 integer(kind=Lng)  :: Weights       ! Weight of each edge (= no. cells in the edge= reach)
 integer(kind=Lng)  :: NodeLocation  ! Temp var to hold the location of adjacent nodes in the graph
 
-
 ! holds the local no of upstream reach  - -1 if upstream of this reach is not on this rank
 integer(kind=Lng)  :: UpstreamI
 ! holds the local no of upstream reach  - -1 if upstream of this reach is not on this rank

@@ -22,7 +22,7 @@ type(Geometry_tp)   :: Geometry       ! Holds information about the geometry of 
 type(DiscretizedNetwork_tp) :: Discretization ! Holds the discretized network
 
 ! Holds information for writing geometry file for Paraview
-type(NetworkGeometry_tp(nReaches:)), allocatable :: Paraview
+type(NetworkGeometry_tp) :: Paraview
 
 ! This class handles the network partitioner.
 type(partitioner_tp(edges=:, nodes=:)), allocatable :: NetworkPartitioner

@@ -83,6 +83,7 @@ write(*,*)
 write(*,*)"=========================================================="
 write(*,*)"=========================================================="
 write(*,*)"     Numerical simulation of 2D Shallow water Equation"
+write(*,*)"               Partitioning using Metis "
 write(*,*)"             Developer: Babak Poursartip"
 write(*,*)"             Supervised by: Clint Dawson"
 write(*,*)
