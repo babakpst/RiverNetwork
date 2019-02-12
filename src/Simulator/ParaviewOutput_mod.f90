@@ -141,6 +141,7 @@ contains
 subroutine Result_File_Creator_sub(this)
 
 ! Libraries =======================================================================================
+use hdf5
 
 ! User defined modules ============================================================================
 
@@ -155,6 +156,8 @@ class(ResultNetwork_tp) :: this
 ! - integer variables -----------------------------------------------------------------------------
 integer(kind=Lng)  :: i_reach       ! loop index on the reach number
 integer(kind=Lng)  :: i_cell        ! loop index on the cell number
+
+integer(kind=Smll) :: ERR_Alloc, ERR_DeAlloc ! Allocating and DeAllocating errors
 
 integer(kind=Shrt) :: rank = 2 ! Dataset rank
 integer            :: error    ! Error flag
@@ -189,7 +192,7 @@ call h5open_f(error)
 
 ! Converting numbers to char for the output file name (results)
 write(IndexRank, *) this%RankNo    ! converts rank to Character format for the file Name
-write(IndexSize, *) this%SizeNo    ! converts size to Character format for the file Name
+write(IndexSize, *) this%Size      ! converts size to Character format for the file Name
 write(IndexStep, *) this%Step      ! converts step no. to Character format for the file Name
 
   do i_reach = 1, this%nReach
@@ -198,7 +201,7 @@ write(IndexStep, *) this%Step      ! converts step no. to Character format for t
     write(IndexReach,*) i_reach   ! converts reach no. to Chr format for the file Name
 
     ! creating the results hdf5 file for each reach in each rank
-    call h5fcreate_f(
+    call h5fcreate_f(  &
     trim( this%OutputDir)//'/'// &
     trim(res)//'_Ra_'//trim(adjustL(IndexRank))//'_'//trim(adjustL(IndexSize))// &
     '_Re_'//trim(adjustL(IndexReach))//&

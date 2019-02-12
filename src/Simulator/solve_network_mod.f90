@@ -309,7 +309,7 @@ write(FileInfo,*) " -Allocating the solution ..."
 
 ! allocating paraview array for visualization with Paraview
 allocate(Paraview%ResultReach(this%Model%TotalNumOfReachesOnThisRank),  &
-         Paraview%NoCells(this%Model%TotalNumOfReachesOnThisRank),
+         Paraview%NoCells(this%Model%TotalNumOfReachesOnThisRank), &
          stat = ERR_Alloc)
 if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
@@ -324,7 +324,7 @@ if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
     if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
     ! allocating paraview arrays for each reach for visualization with Paraview
-    allocate(Paraview%ResultReach(i_reach)%U(this%Model%DiscretizedReach(i_reach)%NCells_reach),
+    allocate(Paraview%ResultReach(i_reach)%U(this%Model%DiscretizedReach(i_reach)%NCells_reach), &
           stat = ERR_Alloc)
     if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
@@ -692,8 +692,10 @@ write(FileInfo,*) " -Time marching ..."
 
           ! putting the results in the paraview array
           Paraview%step = i_steps-1_Lng
-          Paraview%ResultReach(:)%U(:) = &
-          Solution(:)%UU(1:this%Model%DiscretizedReach(i_reach)%NCells_reach)
+            do i_reach = 1, this%Model%TotalNumOfReachesOnThisRank
+              Paraview%ResultReach(i_reach)%U(:) = &
+                Solution(i_reach)%UU(1:this%Model%DiscretizedReach(i_reach)%NCells_reach)
+            end do
 
           ! writing the results in the hdf5 files
           call Paraview%Results()
