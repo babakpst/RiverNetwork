@@ -702,7 +702,7 @@ write(FileInfo,*) " -Time marching ..."
             do i_reach = 1, this%Model%TotalNumOfReachesOnThisRank
               Paraview%ResultReach(i_reach)%U(:) = &
                 Solution(i_reach)%UU(1:this%Model%DiscretizedReach(i_reach)%NCells_reach)
-                print*," velocity: ", this%ModelInfo%rank, i_reach, Solution(i_reach)%UU(1)%U(2) ! <delete>
+                !write(*,fmt='(" velocity: ", 3I3, F10.2 )')i_steps, this%ModelInfo%rank, i_reach, Solution(i_reach)%UU(1)%U(2) ! <delete>
             end do
 
           ! writing the results in the hdf5 files
@@ -878,8 +878,8 @@ write(FileInfo,*) " -Time marching ..."
 
                       else
                         write(*,*)" Something is wrong. Check the limiter subroutine."
-                        write(*,fmt=*)" The eigenvalue is wrong (most probably NaN): " , &
-                                   i_eigen, Jacobian%Lambda%U(i_eigen), i_Cell, this%ModelInfo%rank
+                        write(*,fmt='("The eigenvalue is wrong (most probably NaN): ",5I5,F20.5)')&
+                        i_eigen,i_reach,i_Cell,i_steps,this%ModelInfo%rank,Jacobian%Lambda%U(i_eigen)
                         stop
                       end if
 
@@ -911,6 +911,16 @@ write(FileInfo,*) " -Time marching ..."
             ! Final update the results
             TempSolution%U(:) = Solution(i_reach)%UU(i_cell)%U(:) - dtdx*F_L%U(:)-dtdx * F_H%U(:) &
                                 + SourceTerms%Source_1%U(:) - SourceTerms%Source_2%U(:)
+
+
+            write(*,fmt='(9(2F10.2,6x))')Solution(i_reach)%UU(i_cell)%U(:), &
+                                        dtdx*F_L%U(:), &
+                                        dtdx * F_H%U(:), &
+                                        SourceTerms%Source_1%U(:), &
+                                        SourceTerms%Source_2%U(:), &
+                                        SourceTerms%S%U(:), &
+                                        SourceTerms%B(:,:), &
+                                        Solution(i_reach)%UU(i_Cell)%U(:)
 
             Solution(i_reach)%UN(i_cell)%U(:) = matmul(SourceTerms%BI(:,:), TempSolution%U(:))
 
@@ -1395,8 +1405,8 @@ real(kind=Dbl), dimension(2,2) :: A_dw  ! the average discharge at the interface
     ! Computing the eigenvalues
     c = dsqrt (Gravity * h_ave)   ! wave speed
 
-
-    !print*,"inside the jacobian: ", h_ave, u_ave !u_ave, c  ! <delete>
+    !write(*, fmt='("h uh: ", 4F10.4)') h_up, h_dw, u_up, u_dw ! do not <delete>
+    !print*,"inside the jacobian: ", h_ave, u_ave !u_ave, c  ! do not <delete>
 
 
     this%Lambda%U(1) = u_ave - c
