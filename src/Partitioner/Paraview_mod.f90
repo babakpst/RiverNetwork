@@ -36,12 +36,9 @@ use Parameters_mod
 use Model_mod, only: Geometry_tp
 use Discretize_the_network_mod, only: DiscretizedNetwork_tp
 use messages_and_errors_mod
-<<<<<<< HEAD
+
 use Network_Partitioner_mod
 use hdf5
-=======
-
->>>>>>> network_paraview_v2
 
 implicit none
 private
@@ -250,10 +247,9 @@ integer :: error    ! Error flag
 real(kind=Dbl), dimension(:,:), allocatable :: dset_data_real ! Data buffers
 
 ! - character variables ---------------------------------------------------------------------------
-character(kind = 1, len=3   ), parameter :: geo = "Geo"
+character(kind = 1, len = 3   ), parameter :: geo = "Geo"
 Character(kind = 1, len = 100 ):: IndexReach !Reach no in the Char. fmt to add to input file Name
 Character(kind = 1, len = 100 ):: IndexRank  !Rank no in the Char. fmt to add to input file Name
-
 
 ! - HDF5 variables --------------------------------------------------------------------------------
 integer(HID_T) :: id_Geometry      ! the geometry h5 file
@@ -266,7 +262,6 @@ integer(HID_T) :: dspace_id_CNN    ! data space for connectivity
 
 integer(HSIZE_T), dimension(2) :: dims  ! data set dimensions
 
-! - type ------------------------------------------------------------------------------------------
 
 ! code ============================================================================================
 write(*,       *) " subroutine < paraview_HDF5_sub >: "
@@ -321,8 +316,7 @@ call h5open_f(error)
       write(IndexRank, *) RankNo    ! converts rank to Character format for the file Name
       write(IndexReach,*) i_reach   ! converts reach no. to Chr format for the file Name
 
-      ! creating the geometry hdf5 file each reach in each rank
-
+      ! creating the geometry hdf5 file for each reach in each rank
       call h5fcreate_f( trim(ModelInfo%InputDir)//'/'//trim(geo)//'_Rank_'// &
                    trim(adjustL(IndexRank))//'_Reach_'//trim(adjustL(IndexReach))//'.h5', &
                    H5F_ACC_TRUNC_F, id_Geometry, error)
@@ -354,10 +348,7 @@ call h5open_f(error)
       DEallocate(dset_data_real, stat = ERR_DeAlloc )
       if (ERR_DeAlloc /= 0) call error_in_deallocation(ERR_DeAlloc)
 
-
-
-
-      ! working on the connectivity section of the geometry file ---
+     ! working on the connectivity section of the geometry file ---
       dims(1) = 1             ! dimension
       dims(2) = NoCellsReach  ! no. of cells from this reach on this rank
 
@@ -384,7 +375,6 @@ call h5open_f(error)
       DEallocate(dset_data_int, stat = ERR_DeAlloc )
       if (ERR_DeAlloc /= 0) call error_in_deallocation(ERR_DeAlloc)
 
-<<<<<<< HEAD
       ! closing the hdf5 files
       call h5dclose_f(dset_id_XYZ, error)
       call h5dclose_f(dset_id_CNN, error)
@@ -395,22 +385,7 @@ call h5open_f(error)
 
 ! closing the hdf5 library
 call h5close_f(error)
-=======
-    ! Create the dataspaces
-    ! Coordinate file for the main code(.XYZ)
-    dims(1) = 3   ! n dimension
-    dims(2) = 5   ! no of cells in each reach
 
-    call h5screate_simple_f(rank, dims, dspace_id_XYZ_1, error)
-    call h5dcreate_f(id_Geometry_1, "XYZ",  H5T_NATIVE_DOUBLE,  dspace_id_XYZ_1, dset_id_XYZ_1, error)
-
-    write (*,*)"writing coordinates ..."
-
-    allocate (dset_data_real( dims(1), dims(2) ) )
-
-  end do
-
->>>>>>> network_paraview_v2
 
 write(*,        fmt="(' Creating the geometry files for Paraview was successful. ')")
 write(FileInfo, fmt="(' Creating the geometry files for Paraview was successful. ')")

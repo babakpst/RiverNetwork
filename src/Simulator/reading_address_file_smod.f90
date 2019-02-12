@@ -187,6 +187,26 @@ ModelInfo%AnalysisOutputDir=trim(AdjustL(ModelInfo%OutputDir))//'/'//&
                             trim(AdjustL(ModelInfo%IndexRank))
 
 
+write(*,        fmt="(A)") " -Creating the output folder for Paraview ..."
+write(FileInfo, fmt="(A)") " -Creating the output folder for Paraview ..."
+
+Directory=MakeDirQQ(trim(AdjustL(ModelInfo%OutputDir))//'/'// &
+                    trim(AdjustL(ModelInfo%AnalysesNames(i_analyses)))//'_s'// &
+                    trim(AdjustL(ModelInfo%IndexSize))//'/'//'pv')
+  if (Directory) then ;
+     write(*,       fmt="(A)") "The output folder for this analysis created." ;
+     write(FileInfo,fmt="(A)") "The output folder for this analysis created." ;
+  Else ;
+     write(*,        fmt="(A)") "The output folder for this analysis already exists." ;
+     write(FileInfo, fmt="(A)") "The output folder for this analysis already exists." ;
+  end if ;
+
+
+ModelInfo%ParaviewDir=trim(AdjustL(ModelInfo%OutputDir))//'/'//&
+                            trim(AdjustL(ModelInfo%AnalysesNames(i_analyses)))//'_s'// &
+                            trim(AdjustL(ModelInfo%IndexSize))//'/'//'pv'
+
+
 UnFile = UnInptAna
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 read(unit=UnFile, fmt="(A)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)

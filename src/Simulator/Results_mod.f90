@@ -151,10 +151,11 @@ UnFile = FileResults
 write (reachfile,*) this%reach
 write (extfile,*) this%step
 
-open(unit=UnFile, file=trim(this%ModelInfo%ModelNameParallel)//'_R'//trim(ADJUSTL(reachfile))//'_S'//trim(ADJUSTL(extfile))//'.Res', &
-err=1001, iostat=IO_File, access='sequential', action='write', asynchronous='no', blank='NULL', &
+open(unit=UnFile, file=trim(this%ModelInfo%ModelNameParallel)//'_R'&
+     //trim(ADJUSTL(reachfile))//'_S'//trim(ADJUSTL(extfile))//'.Res', &
+  err=1001, iostat=IO_File, access='sequential', action='write', asynchronous='no', blank='NULL', &
 blocksize=0, defaultfile=trim(this%ModelInfo%AnalysisOutputDir), dispose='keep', form='formatted',&
- position='asis', status='replace')
+position='asis', status='replace')
 
 UnFile = FileResults
 write(unit=UnFile,fmt="(' Results: ')",advance='yes',asynchronous='no', iostat=IO_write, err=1006)

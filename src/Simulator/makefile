@@ -10,11 +10,13 @@
 #
 # =================================================================================================
 
-# required loaded modules: c7 intel/17.0 mpich2/3.1.4
+# required loaded modules: c7 intel/17.0 mpich2/3.1.4 phdf5/1.8.15-patch1
 # to run the code: mpiexec -n 4 ./main
 
 #F90=mpif90 -CB
-F90=mpif90
+#F90=mpif90
+F90=h5pfc
+#F90=h5fc
 #F90=ifort
 #F90=ifort -pg  # profiler
 #F90= gfortran  # not working because of ifort module
@@ -34,22 +36,21 @@ SOURCESF=	Parameters_mod.f90 \
 					reading_partitioned_model_smod.f90 \
 					Inf_mod.f90 \
 					Results_mod.f90 \
+					ParaviewOutput_mod.f90 \
 					solve_network_mod.f90 \
 					Driver_Simulation.f90
 
 OBJSF=$(SOURCESF:%.F90=%.o)
 
-
+#-I${HDF5_INC} -L${HDF5_LIB}
 main:$(OBJSF)
 	@echo Linking...
-	$(F90) $(FFLAGS) $(OBJSF) -o main -I${MPI_DIR}
+	$(F90) $(FFLAGS) $(OBJSF) -o main -I${MPI_DIR} -I${HDF5_INC}
 	@echo Done!
 
 %.o   : %.F90
 	@echo Compiling...
 	$(F90) $(FFLAGS) -c $<
-
-
 
 # clean rule for object files
 cln  :
