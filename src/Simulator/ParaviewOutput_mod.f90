@@ -260,9 +260,6 @@ call h5close_f(error)
 !write(*,       *) " end subroutine < Result_File_Creator_sub >"
 !write(FileInfo,*) " end subroutine < Result_File_Creator_sub >"
 
-write(*,       *)
-write(FileInfo,*)
-
 return
 
 end subroutine Result_File_Creator_sub
