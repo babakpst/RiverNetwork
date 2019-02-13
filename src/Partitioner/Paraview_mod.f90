@@ -228,6 +228,9 @@ integer(kind=Tiny) :: i_Partition   ! loop index on the division of a reach for 
 
 integer(kind=Smll) :: ERR_Alloc, ERR_DeAlloc ! Allocating and DeAllocating errors
 
+integer(kind=Shrt) :: rank = 2 ! Dataset rank
+integer :: error    ! Error flag
+
 integer(kind=Lng)  :: i_rank        ! loop index on the number of partitions
 integer(kind=Lng)  :: i_reach       ! loop index on the reach number
 integer(kind=Lng)  :: i_cell        ! loop index on the cell number
@@ -238,10 +241,11 @@ integer(kind=Lng)  :: NoCellsReach  ! no. of cells from this reach on this rank
 integer(kind=Lng)  :: RangeCell_I   ! Temp var to hold the cell no. a reach on the current rank
 integer(kind=Lng)  :: RangeCell_II  ! Temp var to hold the cell no. a reach on the current rank
 
-integer(kind=Shrt), dimension(:,:), allocatable :: dset_data_int  ! Data buffers
+! Data buffer to hold int array for the geo file
+integer(kind=Shrt), dimension(:,:), allocatable :: dset_data_int
 
-integer(kind=Shrt) :: rank = 2 ! Dataset rank
-integer :: error    ! Error flag
+! holds record of reach no. for the hdf5 geo file name
+integer(kind=Lng), dimension(:), allocatable :: ReachNo
 
 ! - real variables --------------------------------------------------------------------------------
 real(kind=Dbl), dimension(:,:), allocatable :: dset_data_real ! Data buffers
@@ -269,6 +273,12 @@ write(FileInfo,*) " subroutine < paraview_HDF5_sub >: "
 
 ! creating the HDF5 files
 call h5open_f(error)
+
+allocate(ReachNo(Geometry%Base_Geometry%size) , stat=ERR_Alloc)
+if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
+
+! initialize the vector. This vector holds the reach number of each rank
+ReachNo(:) = 0
 
   do i_reach = 1, Geometry%Base_Geometry%NoReaches
 
@@ -299,6 +309,7 @@ call h5open_f(error)
           RangeCell_I  = 1_Lng
           RangeCell_II = NetworkPartitioner%ReachPartition(i_reach,3)
 
+
         else if (i_Partition == 2_Tiny ) then
           ! the reach is divided btw two ranks, here we write the downstream section of the reach
 
@@ -310,11 +321,18 @@ call h5open_f(error)
           RangeCell_II = NetworkPartitioner%ReachPartition(i_reach,3) + &
                                                        NetworkPartitioner%ReachPartition(i_reach,4)
 
+
         end if
 
+      ReachNo(RankNo) = ReachNo(RankNo) + 1
+
       ! Converting numbers to char for the output file name (geometry)
-      write(IndexRank, *) RankNo    ! converts rank to Character format for the file Name
-      write(IndexReach,*) i_reach   ! converts reach no. to Chr format for the file Name
+      write(IndexRank, *) RankNo-1    ! converts rank to Character format for the file Name
+      write(IndexReach,*) ReachNo(RankNo)   ! converts reach no. to Chr format for the file Name
+
+
+
+
 
       ! creating the geometry hdf5 file for each reach in each rank
       call h5fcreate_f( trim(ModelInfo%InputDir)//'/'//trim(geo)//'_Rank_'// &

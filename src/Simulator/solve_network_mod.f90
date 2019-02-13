@@ -667,7 +667,7 @@ Paraview%Size      = this%ModelInfo%size
 Paraview%nReach    = this%Model%TotalNumOfReachesOnThisRank
 Paraview%OutputDir = this%ModelInfo%ParaviewDir
 
-call MPI_Barrier(MPI_COMM_WORLD, MPI_err) ! <delete>
+!call MPI_Barrier(MPI_COMM_WORLD, MPI_err) ! <delete> - for debugging purposes
 
 write(*,       *) " -Time marching ..."
 write(FileInfo,*) " -Time marching ..."
