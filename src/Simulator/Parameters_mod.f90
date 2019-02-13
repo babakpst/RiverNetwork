@@ -87,6 +87,7 @@ enum, bind(C)
   enumerator:: FilePartition !=503 partitioned data (.par)
   enumerator:: UnInptAna     !=504 input file for analysis (.data)
   enumerator:: UnInptMat     !=505 input file for material property (.Mat)
+  enumerator:: FileXDMF      !=506 input file for material property (.Mat)
 end enum
 
 ! Debugging files

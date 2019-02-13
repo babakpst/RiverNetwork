@@ -12,10 +12,11 @@
 ! ================================ V E R S I O N ==================================================
 ! V0.00: 01/24/2019 - Start the module.
 ! V0.01: 02/10/2019 - compiled successfully for the first time.
+! V0.02: 02/13/2019 - final
 !
 ! File version $Id $
 !
-! Last update: 02/10/2019
+! Last update: 02/13/2019
 !
 ! ================================ S U B R O U T I N E ============================================
 !
@@ -254,6 +255,7 @@ real(kind=Dbl), dimension(:,:), allocatable :: dset_data_real ! Data buffers
 character(kind = 1, len = 3   ), parameter :: geo = "Geo"
 Character(kind = 1, len = 100 ):: IndexReach !Reach no in the Char. fmt to add to input file Name
 Character(kind = 1, len = 100 ):: IndexRank  !Rank no in the Char. fmt to add to input file Name
+Character(kind = 1, len = 100 ):: IndexSize  !Size no in the Char. fmt to add to input file Name
 
 ! - HDF5 variables --------------------------------------------------------------------------------
 integer(HID_T) :: id_Geometry      ! the geometry h5 file
@@ -309,7 +311,6 @@ ReachNo(:) = 0
           RangeCell_I  = 1_Lng
           RangeCell_II = NetworkPartitioner%ReachPartition(i_reach,3)
 
-
         else if (i_Partition == 2_Tiny ) then
           ! the reach is divided btw two ranks, here we write the downstream section of the reach
 
@@ -330,14 +331,11 @@ ReachNo(:) = 0
       write(IndexRank, *) RankNo-1    ! converts rank to Character format for the file Name
       write(IndexReach,*) ReachNo(RankNo)   ! converts reach no. to Chr format for the file Name
 
-
-
-
-
       ! creating the geometry hdf5 file for each reach in each rank
-      call h5fcreate_f( trim(ModelInfo%InputDir)//'/'//trim(geo)//'_Rank_'// &
-                   trim(adjustL(IndexRank))//'_Reach_'//trim(adjustL(IndexReach))//'.h5', &
-                   H5F_ACC_TRUNC_F, id_Geometry, error)
+      call h5fcreate_f(trim(ModelInfo%InputDir)//'/'//trim(geo)//'_Ra_'// &
+                 trim(adjustL(IndexRank))//'_'//trim(adjustL(Geometry%Base_Geometry%IndexSize))// &
+                 '_Re_'//trim(adjustL(IndexReach))//'.h5', &
+                 H5F_ACC_TRUNC_F, id_Geometry, error)
 
       ! working on the coordinate section of the geometry file ---
       dims(1) = 3             ! dimension (3D)
