@@ -305,8 +305,8 @@ dt     = AnalysisInfo%TimeStep
 !Jacobian_neighbor%option = 1
 
 LimiterFunc%limiter_Type = AnalysisInfo%limiter ! Define what limiter to use in the algorithm
-PrintResults = .true.
-!PrintResults = .false.
+!PrintResults = .true.
+PrintResults = .false.
 !SourceTerms%Identity(:,:) = 0.0_Dbl
 SourceTerms%Identity(1,1) = 1.0_Dbl
 SourceTerms%Identity(2,2) = 1.0_Dbl
@@ -691,7 +691,7 @@ write(FileInfo,*) " -Time marching ..."
         !$ if (ITS==0) then
           if ( this%ModelInfo%rank == 0) then
               call system_clock(TotalTime%endSys, TotalTime%clock_rate)
-              print*, "----------------Step:", i_steps, &
+              write(*,fmt='("----------------Step:", I20, F25.10 )') i_steps, &
                      real(TotalTime%endSys-TotalTime%startSys)/real(TotalTime%clock_rate)
           end if
 
@@ -761,7 +761,12 @@ write(FileInfo,*) " -Time marching ..."
                                                                (7.0_Dbl/3.0_Dbl) * SourceTerms%S_f)
 
             SourceTerms%B(1,2) = 0.0_Dbl
-            SourceTerms%B(2,2) = -(2.0_Dbl*Gravity*  SourceTerms%S_f) /velocity
+            SourceTerms%B(2,2) = &
+                        -(2.0_Dbl*this%Model%DiscretizedReach(i_reach)%ReachManning**2.0) &
+                                                        *dabs(velocity)/(height**(4.0_Dbl/3.0_Dbl))
+
+                        !-(2.0_Dbl*Gravity*  SourceTerms%S_f) /velocity
+                        ! do not use the above equation bcs of division by zero in case v=0
 
             ! Find the BI
             SourceTerms%BI(:,:) = SourceTerms%Identity - 0.5_Dbl * dt * SourceTerms%B(:,:)
@@ -912,15 +917,15 @@ write(FileInfo,*) " -Time marching ..."
             TempSolution%U(:) = Solution(i_reach)%UU(i_cell)%U(:) - dtdx*F_L%U(:)-dtdx * F_H%U(:) &
                                 + SourceTerms%Source_1%U(:) - SourceTerms%Source_2%U(:)
 
-
-            write(*,fmt='(9(2F10.2,6x))')Solution(i_reach)%UU(i_cell)%U(:), &
-                                        dtdx*F_L%U(:), &
-                                        dtdx * F_H%U(:), &
-                                        SourceTerms%Source_1%U(:), &
-                                        SourceTerms%Source_2%U(:), &
-                                        SourceTerms%S%U(:), &
-                                        SourceTerms%B(:,:), &
-                                        Solution(i_reach)%UU(i_Cell)%U(:)
+            ! do not <delete>, useful for debugging
+            !write(*,fmt='(9(2F10.2,6x))')Solution(i_reach)%UU(i_cell)%U(:), &
+            !                            dtdx*F_L%U(:), &
+            !                           dtdx * F_H%U(:), &
+            !                            SourceTerms%Source_1%U(:), &
+            !                            SourceTerms%Source_2%U(:), &
+            !                            SourceTerms%S%U(:), &
+            !                            SourceTerms%B(:,:), &
+            !                            Solution(i_reach)%UU(i_Cell)%U(:)
 
             Solution(i_reach)%UN(i_cell)%U(:) = matmul(SourceTerms%BI(:,:), TempSolution%U(:))
 
@@ -1405,6 +1410,7 @@ real(kind=Dbl), dimension(2,2) :: A_dw  ! the average discharge at the interface
     ! Computing the eigenvalues
     c = dsqrt (Gravity * h_ave)   ! wave speed
 
+    ! do not <delete>, useful for debugging purposes
     !write(*, fmt='("h uh: ", 4F10.4)') h_up, h_dw, u_up, u_dw ! do not <delete>
     !print*,"inside the jacobian: ", h_ave, u_ave !u_ave, c  ! do not <delete>
 
