@@ -50,9 +50,6 @@ type ResultNetwork_tp
 
 
   integer(kind=Lng) :: step     ! holds the time step
-
-  integer(kind=Lng) :: RankNo   ! holds the current Rank no.
-  integer(kind=Lng) :: Size     ! holds the size (no. of processors)
   integer(kind=Lng) :: nReach   ! holds no. of reaches on this rank
 
   ! holds no. of cells on each reach, size: nReach
@@ -61,6 +58,7 @@ type ResultNetwork_tp
   real(kind=Dbl) :: DT          ! time step of the simulation
 
   character(kind = 1, Len = 150) :: OutputDir  ! Directory of output files (Results)
+  Character(kind = 1, len = 200 ):: FileNameW !holds the file name the wrapper file
   Character(kind = 1, len = 200 ):: FileName   !holds the file name for both h5 and xdmf
 
   ! contains all the coordinates of all reaches of the network, size: no. of Reaches on this rank
@@ -132,7 +130,7 @@ write(FileInfo,*) " subroutine < Wrapper_File_begin_sub >: "
 ! opening the wrapper file for paraview
 UnFile = FileWrapper
 Open (Unit = UnFile, &
-      file = 'wrapper_'//trim(adjustL(this%FileName))//'.xmf', &
+      file = 'wrapper_'//trim(adjustL(this%FileNameW))//'.xmf', &
       err =  1001, iostat = IO_File, access = 'sequential', action='write', asynchronous='no', &
       blank = 'null', blocksize = 0, defaultfile= trim(this%OutputDir), Dispose = 'keep', &
       form = 'formatted', position = 'asis', status ='replace') ;
@@ -144,6 +142,8 @@ write(UnFile, fmt='(A10)', advance='yes', asynchronous='no', iostat=IO_Write, er
 "  <Domain>"
 write(UnFile, fmt='(A57)', advance='yes', asynchronous='no', iostat=IO_Write, err=1006) &
 "    <Grid GridType='Collection' CollectionType='Spatial'>"
+write(UnFile, fmt='(" ")', advance='yes', asynchronous='no', iostat=IO_Write,err=1006)
+
 
 write(*,       *) " end subroutine < Wrapper_File_begin_sub >"
 write(FileInfo,*) " end subroutine < Wrapper_File_begin_sub >"
@@ -208,10 +208,11 @@ integer(kind=Smll) :: IO_write      ! Used for iostat: Input/Output Status in th
 write(*,       *) " subroutine < Wrapper_File_close_sub >: "
 write(FileInfo,*) " subroutine < Wrapper_File_close_sub >: "
 
-
+UnFile = FileWrapper
+write(UnFile, fmt='(" ")', advance='yes', asynchronous='no', iostat=IO_Write,err=1006)
 write(UnFile, fmt='(A11)', advance='yes', asynchronous='no', iostat=IO_Write,err=1006)"    </Grid>"
 write(UnFile, fmt='(A11)', advance='yes', asynchronous='no', iostat=IO_Write,err=1006)"  </Domain>"
-write(UnFile, fmt='(A63)', advance='yes', asynchronous='no', iostat=IO_Write,err=1006)"</Xdmf>"
+write(UnFile, fmt='(A7)', advance='yes', asynchronous='no', iostat=IO_Write,err=1006)"</Xdmf>"
 
 ! closing the file
 close(unit=UnFile, status="keep", err=1002, iostat=IO_File)
@@ -457,7 +458,7 @@ implicit none
 ! Global variables ================================================================================
 
 ! - types -----------------------------------------------------------------------------------------
-class(ResultNetwork_tp) :: this
+class(ResultNetwork_tp), intent(inout) :: this
 
 ! Local variables =================================================================================
 ! - integer variables -----------------------------------------------------------------------------
@@ -475,8 +476,6 @@ real(kind=Dbl), dimension(:,:), allocatable :: dset_data_real ! Data buffers
 ! - character variables ---------------------------------------------------------------------------
 character(kind = 1, len = 3   ), parameter :: res = "Res"
 Character(kind = 1, len = 100 ):: IndexReach !Reach no in the Char. fmt to add to input file Name
-Character(kind = 1, len = 100 ):: IndexRank  !Rank no in the Char. fmt to add to input file Name
-Character(kind = 1, len = 100 ):: IndexSize  !Size of the process in the Char. fmt to add ...
 Character(kind = 1, len = 100 ):: IndexStep  !Step no in the Char. fmt to add to input file Name
 
 ! - HDF5 variables --------------------------------------------------------------------------------
@@ -498,8 +497,6 @@ integer(HSIZE_T), dimension(2) :: dims  ! data set dimensions
 call h5open_f(error)
 
 ! Converting numbers to char for the output file name (results)
-write(IndexRank, *) this%RankNo    ! converts rank to Character format for the file Name
-write(IndexSize, *) this%Size      ! converts size to Character format for the file Name
 write(IndexStep, *) this%Step      ! converts step no. to Character format for the file Name
 
   do i_reach = 1, this%nReach
@@ -508,8 +505,7 @@ write(IndexStep, *) this%Step      ! converts step no. to Character format for t
     write(IndexReach,*) i_reach   ! converts reach no. to Chr format for the file Name
 
     ! Creating the file name
-    this%FileName = 'Ra_'//trim(adjustL(IndexRank))//'_'//trim(adjustL(IndexSize))// &
-               '_Re_'//trim(adjustL(IndexReach))// &
+    this%FileName = trim(adjustL(this%FileNameW))//'_Re_'//trim(adjustL(IndexReach))// &
                '_St_'//trim(adjustL(IndexStep))
 
     ! Creating the corresponding xdmf files

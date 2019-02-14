@@ -165,6 +165,7 @@ call InputTime%stop()
   end do
 
 ! Deallocating arrays
+
 DEallocate(Arguments%Length, Arguments%Arg, Arguments%Argstatus,      stat = ERR_DeAlloc )
 if (ERR_DeAlloc /= 0) call error_in_deallocation(ERR_DeAlloc)
 

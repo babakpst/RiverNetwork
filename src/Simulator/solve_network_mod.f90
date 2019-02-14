@@ -21,11 +21,11 @@
 ! V3.10: 05/25/2018 - Modifications
 ! V3.20: 05/29/2018 - Modifications
 ! V4.00: 08/01/2018 - Solving network
-! V4.00: 02/11/2019 - adding paraview module for visualization
+! V4.00: 02/14/2019 - adding paraview module for visualization
 !
 ! File version $Id $
 !
-! Last update: 02/11/2019
+! Last update: 02/14/2019
 !
 ! ================================ S U B R O U T I N E ============================================
 ! - Solver_1D_with_Limiter_sub: Solves the 1D shallow water equation, with limiter.
@@ -245,6 +245,11 @@ real(kind=Dbl)     :: velocity ! velocity of water at the current cell/time
 
 real(kind=Dbl)     :: height_interface   ! height of water at the current interface/time
 real(kind=Dbl)     :: velocity_interface ! velocity of water at the current interface/time
+
+! - real variables --------------------------------------------------------------------------------
+Character(kind = 1, len = 100 ):: IndexRank  !Rank no in the Char. fmt to add to input file Name
+Character(kind = 1, len = 100 ):: IndexSize  !Size of the process in the Char. fmt to add ...
+
 
 ! - logical variables -----------------------------------------------------------------------------
 logical   :: PrintResults
@@ -662,11 +667,17 @@ Counter_ReachCut = 0_Lng
 Results%ModelInfo = this%ModelInfo
 
 ! preparing data for Paraview class
-Paraview%RankNo    = this%ModelInfo%rank
-Paraview%Size      = this%ModelInfo%size
+write(IndexRank, *) this%ModelInfo%rank    ! converts rank to Character format for the file Name
+write(IndexSize, *) this%ModelInfo%size    ! converts size to Character format for the file Name
 Paraview%nReach    = this%Model%TotalNumOfReachesOnThisRank
 Paraview%OutputDir = this%ModelInfo%ParaviewDir
 Paraview%DT        = dt
+Paraview%FileNameW = 'Ra_'//trim(adjustL(IndexRank))//'_'//trim(adjustL(IndexSize))
+
+! Creating the wrapper file for visualization in paraview
+  if ( this%ModelInfo%rank == 0) then
+    call Paraview%Wrapper_begin()
+  end if
 
 !call MPI_Barrier(MPI_COMM_WORLD, MPI_err) ! <delete> - for debugging purposes
 
@@ -726,7 +737,8 @@ write(FileInfo,*) " -Time marching ..."
             Results%U(:)   = &
                        Solution(i_reach)%UU(-1:this%Model%DiscretizedReach(i_reach)%NCells_reach+2)
             call Results%plot_results()
-            deallocate(Results%U)
+            deallocate(Results%U, stat=ERR_DeAlloc)
+            if (ERR_DeAlloc /= 0) call error_in_deallocation(ERR_DeAlloc)
           end if
 
         UpstreamReachNumLeft   = this%Model%DiscretizedReach(i_reach)%UpstreamReaches(1,2)
@@ -1155,12 +1167,12 @@ write(FileInfo,*) " -Time marching ..."
 
   end do Time_Marching
 
-
   !$OMP END PARALLEL
 
-! Deallocating
-deallocate(Results%U, stat=ERR_DeAlloc)
-if (ERR_DeAlloc /= 0) call error_in_deallocation(ERR_DeAlloc)
+! Closing the wrapper file for visualization in paraview
+  if ( this%ModelInfo%rank == 0) then
+    call Paraview%Wrapper_close()
+  end if
 
 write(*,       *) " end subroutine < solve_the_network_sub >"
 write(FileInfo,*) " end subroutine < solve_the_network_sub >"
