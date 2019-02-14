@@ -703,7 +703,6 @@ write(FileInfo,*) " -Time marching ..."
             do i_reach = 1, this%Model%TotalNumOfReachesOnThisRank
               Paraview%ResultReach(i_reach)%U(:) = &
                 Solution(i_reach)%UU(1:this%Model%DiscretizedReach(i_reach)%NCells_reach)
-                !write(*,fmt='(" velocity: ", 3I3, F10.2 )')i_steps, this%ModelInfo%rank, i_reach, Solution(i_reach)%UU(1)%U(2) ! <delete>
             end do
 
           ! writing the results in the hdf5 files

@@ -79,7 +79,6 @@ character(144),Parameter, Public:: Fmt_Element2="('Error in the element type. Th
 
 ! Unit NUMBERS OF EXTERNAL FILES ==================================================================
 
-! input files
 enum, bind(C)
   enumerator:: FileAdr=500   ! Address file that holds the model name & directories (.txt)
   enumerator:: FileDataModel !=501 Input file (.dataModel)
@@ -87,7 +86,8 @@ enum, bind(C)
   enumerator:: FilePartition !=503 partitioned data (.par)
   enumerator:: UnInptAna     !=504 input file for analysis (.data)
   enumerator:: UnInptMat     !=505 input file for material property (.Mat)
-  enumerator:: FileXDMF      !=506 input file for material property (.Mat)
+  enumerator:: FileXDMF      !=506 local xdmf file for each reach at each time step (.xmf)
+  enumerator:: FileWrapper   !=507 wrapper file for paraview (.xmf)
 end enum
 
 ! Debugging files

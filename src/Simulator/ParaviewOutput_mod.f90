@@ -48,6 +48,7 @@ end type ResultReach_tp
 
 type ResultNetwork_tp
 
+
   integer(kind=Lng) :: step     ! holds the time step
 
   integer(kind=Lng) :: RankNo   ! holds the current Rank no.
@@ -59,8 +60,8 @@ type ResultNetwork_tp
 
   real(kind=Dbl) :: DT          ! time step of the simulation
 
-
-  character (kind = 1, Len = 150) :: OutputDir     ! Directory of output files (Results)
+  character(kind = 1, Len = 150) :: OutputDir  ! Directory of output files (Results)
+  Character(kind = 1, len = 200 ):: FileName   !holds the file name for both h5 and xdmf
 
   ! contains all the coordinates of all reaches of the network, size: no. of Reaches on this rank
   type(ResultReach_tp), allocatable, dimension(:)  :: ResultReach
@@ -68,7 +69,7 @@ type ResultNetwork_tp
   contains
     ! creating the wrapper file
     procedure Wrapper_begin  => Wrapper_File_begin_sub  ! writing the header of the wrapper file
-    procedure Wrapper_close  => Wrapper_File_close_sub  ! writing the closing of the wrapper file
+    procedure Wrapper_close  => Wrapper_File_close_sub  ! writing the footer of the wrapper file
     procedure Wrapper_body   => Wrapper_File_body_sub   ! writing the body of the wrapper file
                                                         ! which includes the name of local xdmf
                                                         ! files for each reach of the rank in each
@@ -119,15 +120,30 @@ implicit none
 class(ResultNetwork_tp) :: this
 
 ! Local variables =================================================================================
+! - integer variables -----------------------------------------------------------------------------
+integer(kind=Smll) :: UnFile        ! Holds Unit of a file for error message
+integer(kind=Smll) :: IO_File       ! For iostat: Input Output Status in OPEN command
+integer(kind=Smll) :: IO_write      ! Used for iostat: Input/Output Status in the write command
 
 ! code ============================================================================================
 write(*,       *) " subroutine < Wrapper_File_begin_sub >: "
 write(FileInfo,*) " subroutine < Wrapper_File_begin_sub >: "
 
+! opening the wrapper file for paraview
+UnFile = FileWrapper
+Open (Unit = UnFile, &
+      file = 'wrapper_'//trim(adjustL(this%FileName))//'.xmf', &
+      err =  1001, iostat = IO_File, access = 'sequential', action='write', asynchronous='no', &
+      blank = 'null', blocksize = 0, defaultfile= trim(this%OutputDir), Dispose = 'keep', &
+      form = 'formatted', position = 'asis', status ='replace') ;
 
 
-
-
+write(UnFile, fmt='(A63)', advance='yes', asynchronous='no', iostat=IO_Write, err=1006) &
+"<Xdmf xmlns:xi='http://www.w3.org/2003/XInclude' Version='2.2'>"
+write(UnFile, fmt='(A10)', advance='yes', asynchronous='no', iostat=IO_Write, err=1006) &
+"  <Domain>"
+write(UnFile, fmt='(A57)', advance='yes', asynchronous='no', iostat=IO_Write, err=1006) &
+"    <Grid GridType='Collection' CollectionType='Spatial'>"
 
 write(*,       *) " end subroutine < Wrapper_File_begin_sub >"
 write(FileInfo,*) " end subroutine < Wrapper_File_begin_sub >"
@@ -136,12 +152,23 @@ write(*,       *)
 write(FileInfo,*)
 
 return
+
+! errors ==========================================================================================
+! Opening statement errors
+1001 call errorMessage(UnFile, IO_File)
+
+! Close statement errors
+1002 call error_in_closing_a_file(UnFile, IO_File)
+
+! write statement errors
+1006 call error_in_writing(UnFile, IO_write)
+
 end subroutine Wrapper_File_begin_sub
 
 !##################################################################################################
 ! Purpose: This subroutine creates the wrapper file for paraview that contains all reaches in all
 !          ranks for all time steps.
-!          This subroutine writes down the final commands and closes the wrapper file.
+!          This subroutine writes down the footer and closes the wrapper file.
 !
 ! Developed by: Babak Poursartip
 ! Supervised by: Clint Dawson
@@ -179,6 +206,8 @@ write(FileInfo,*) " subroutine < Wrapper_File_close_sub >: "
 
 
 
+!! closing the file
+!close(unit=UnFile, status="keep", err=1002, iostat=IO_File)
 
 
 
@@ -264,7 +293,7 @@ end subroutine Wrapper_File_body_sub
 !
 !##################################################################################################
 
-subroutine Reach_File_Creator_sub(this, FileName, NCells)
+subroutine Reach_File_Creator_sub(this, NCells)
 
 ! Libraries =======================================================================================
 
@@ -275,9 +304,6 @@ implicit none
 ! Global variables ================================================================================
 ! - integer variables -----------------------------------------------------------------------------
 integer(kind=Lng) :: NCells      ! No cells in the reach
-
-! - character variables ---------------------------------------------------------------------------
-Character(kind = 1, len = 200 ):: FileName   !holds the file name for both h5 and xdmf
 
 ! - types -----------------------------------------------------------------------------------------
 class(ResultNetwork_tp) :: this
@@ -297,41 +323,71 @@ real(kind=Dbl) :: TimeStep
 
 ! opening the file
 UnFile = FileXDMF
-open(unit=UnFile, &
-     file=trim(adjustL(FileName))//'.xmf', &
-     err=1001, iostat=IO_File, access='sequential', action='write', asynchronous='no', &
-     blank='NULL', blocksize=0, defaultfile=trim(this%OutputDir), dispose='keep', &
+open(unit = UnFile, &
+     file = trim(adjustL(this%FileName))//'.xmf', &
+     err = 1001, iostat=IO_File, access='sequential', action='write', asynchronous='no', &
+     blank='null', blocksize=0, defaultfile=trim(this%OutputDir), dispose='keep', &
      form='formatted', position='asis', status='replace')
 
-write(UnFile,fmt='(A54)', advance = 'YES', asynchronous = 'NO', iostat = IO_Write, err = 1006 ) "<Grid GridType='Collection' CollectionType='Temporal'>"
-write(UnFile,fmt='(A27)', advance = 'YES', asynchronous = 'NO', iostat = IO_Write, err = 1006 ) "  <Grid GridType='Uniform'>"
-write(UnFile,fmt='(" ")', advance = 'YES', asynchronous = 'NO', iostat = IO_Write, err = 1006 )
+!----------
+write(UnFile, fmt='(A54)', advance='yes', asynchronous='no', iostat=IO_Write, err=1006) &
+"<Grid GridType='Collection' CollectionType='Temporal'>"
+write(UnFile, fmt='(A27)', advance='yes', asynchronous='no', iostat=IO_Write, err=1006) &
+ "  <Grid GridType='Uniform'>"
+write(UnFile, fmt='(" ")', advance='yes', asynchronous='no', iostat=IO_Write, err=1006)
 
-write(UnFile,fmt='(A17, F23.10, A4)', advance = 'YES', asynchronous = 'NO', iostat = IO_Write, err = 1006 ) "    <Time Value='", this%DT*this%step, "' />"
-write(UnFile,fmt='("")', advance = 'YES', asynchronous = 'NO', iostat = IO_Write, err = 1006 )
+!----------
+write(UnFile, fmt='(A17, F23.10, A4)', advance='yes', asynchronous='no', iostat=IO_Write,err=1006)&
+"    <Time Value='", this%DT*this%step, "' />"
+write(UnFile,fmt='(" ")', advance='yes', asynchronous='no', iostat=IO_Write, err=1006)
 
-write(UnFile,fmt='(A55, I23, A23)', advance = 'YES', asynchronous = 'NO', iostat = IO_Write, err = 1006 ) "    <Topology TopologyType='Polyline' NodesPerElement='", NCells, "' NumberOfElements='1'>"
-write(UnFile,fmt='(A30, I23, A31, A, A24)', advance = 'YES', asynchronous = 'NO', iostat = IO_Write, err = 1006 ) "      <DataItem Dimensions='1 ", NCells, "' DataType='Int' Format='HDF'> ", "Geo_"//trim(adjustL(FileName))//'.h5', ":Connectivity</DataItem>"
-write(UnFile,fmt='(A15)', advance = 'YES', asynchronous = 'NO', iostat = IO_Write, err = 1006 ) "    </Topology>"
-write(UnFile,fmt='(" ")', advance = 'YES', asynchronous = 'NO', iostat = IO_Write, err = 1006 )
+!----------
+write(UnFile, fmt='(A55, I23, A23)', advance='yes', asynchronous='no', iostat=IO_Write, err=1006) &
+"    <Topology TopologyType='Polyline' NodesPerElement='", NCells, "' NumberOfElements='1'>"
+write(UnFile, fmt='(A30, I23, A31, A, A24)', advance='yes', asynchronous='no', &
+iostat=IO_Write, err=1006) &
+ "      <DataItem Dimensions='1 ", NCells, "' DataType='Int' Format='HDF'> ", &
+  "Geo_"//trim(adjustL(this%FileName))//'.h5', ":Connectivity</DataItem>"
+write(UnFile, fmt='(A15)', advance='yes', asynchronous='no', iostat=IO_Write, err=1006) &
+"    </Topology>"
+write(UnFile, fmt='(" ")', advance='yes', asynchronous='no', iostat=IO_Write, err=1006)
 
-write(UnFile,fmt='(A32)', advance = 'YES', asynchronous = 'NO', iostat = IO_Write, err = 1006 ) "    <Geometry GeometryType='XY'>"
-write(UnFile,fmt='(A28, I23, A51, A, A15)', advance = 'YES', asynchronous = 'NO', iostat = IO_Write, err = 1006 ) "      <DataItem Dimensions='", NCells, " 2' NumberType='Float' Precision='8' Format='HDF'> ", "Geo_"//trim(adjustL(FileName))//'.h5', ":XYZ</DataItem>"
-write(UnFile,fmt='(A15)', advance = 'YES', asynchronous = 'NO', iostat = IO_Write, err = 1006 ) "    </Geometry>"
-write(UnFile,fmt='(" ")', advance = 'YES', asynchronous = 'NO', iostat = IO_Write, err = 1006 )
+!----------
+write(UnFile,fmt='(A32)', advance='yes', asynchronous='no', iostat=IO_Write, err=1006) &
+"    <Geometry GeometryType='XY'>"
+write(UnFile,fmt='(A28, I23, A51, A, A15)', advance='yes', asynchronous='no', &
+iostat=IO_Write, err=1006) &
+"      <DataItem Dimensions='", NCells, " 2' NumberType='Float' Precision='8' Format='HDF'> ", &
+"Geo_"//trim(adjustL(this%FileName))//'.h5', ":XYZ</DataItem>"
+write(UnFile,fmt='(A15)', advance='yes', asynchronous='no', iostat=IO_Write, err=1006) &
+"    </Geometry>"
+write(UnFile,fmt='(" ")', advance='yes', asynchronous='no', iostat=IO_Write, err=1006)
 
-write(UnFile,fmt='(A66)', advance = 'YES', asynchronous = 'NO', iostat = IO_Write, err = 1006 ) "    <Attribute Name='height' AttributeType='Scalar' Center='Node'>"
-write(UnFile,fmt='(A28, I23, A51, A, A18)', advance = 'YES', asynchronous = 'NO', iostat = IO_Write, err = 1006 ) "      <DataItem Dimensions='", NCells, " 1' NumberType='Float' Precision='8' Format='HDF'> ", "Res_"//trim(adjustL(FileName))//'.h5', ":height</DataItem>"
-write(UnFile,fmt='(A16)', advance = 'YES', asynchronous = 'NO', iostat = IO_Write, err = 1006 ) "    </Attribute>"
-write(UnFile,fmt='(" ")', advance = 'YES', asynchronous = 'NO', iostat = IO_Write, err = 1006 )
+!----------
+write(UnFile,fmt='(A66)', advance='yes', asynchronous='no', iostat=IO_Write, err=1006) &
+"    <Attribute Name='height' AttributeType='Scalar' Center='Node'>"
+write(UnFile,fmt='(A28, I23, A51, A, A18)', advance='yes', asynchronous='no', &
+iostat=IO_Write, err=1006) &
+"      <DataItem Dimensions='", NCells, " 1' NumberType='Float' Precision='8' Format='HDF'> ", &
+"Res_"//trim(adjustL(this%FileName))//'.h5', ":height</DataItem>"
+write(UnFile,fmt='(A16)', advance='yes', asynchronous='no', iostat=IO_Write, err=1006) &
+"    </Attribute>"
+write(UnFile,fmt='(" ")', advance='yes', asynchronous='no', iostat=IO_Write, err=1006)
 
-write(UnFile,fmt='(A68)', advance = 'YES', asynchronous = 'NO', iostat = IO_Write, err = 1006 ) "    <Attribute Name='velocity' AttributeType='Scalar' Center='Node'>"
-write(UnFile,fmt='(A28, I23, A51, A, A20)', advance = 'YES', asynchronous = 'NO', iostat = IO_Write, err = 1006 ) "      <DataItem Dimensions='", NCells, " 1' NumberType='Float' Precision='8' Format='HDF'> ", "Res_"//trim(adjustL(FileName))//'.h5', ":velocity</DataItem>"
-write(UnFile,fmt='(A16)', advance = 'YES', asynchronous = 'NO',                 iostat = IO_Write, err = 1006 ) "    </Attribute>"
-write(UnFile,fmt='(" ")', advance = 'YES', asynchronous = 'NO',                 iostat = IO_Write, err = 1006 )
+!----------
+write(UnFile,fmt='(A68)', advance='yes', asynchronous='no', iostat=IO_Write, err=1006) &
+"    <Attribute Name='velocity' AttributeType='Scalar' Center='Node'>"
+write(UnFile,fmt='(A28, I23, A51, A, A20)', advance='yes', asynchronous='no', &
+iostat=IO_Write, err=1006) &
+"      <DataItem Dimensions='", NCells, " 1' NumberType='Float' Precision='8' Format='HDF'> ", &
+"Res_"//trim(adjustL(this%FileName))//'.h5', ":velocity</DataItem>"
+write(UnFile,fmt='(A16)', advance='yes', asynchronous='no', iostat=IO_Write, err=1006) &
+"    </Attribute>"
+write(UnFile,fmt='(" ")', advance='yes', asynchronous='no', iostat=IO_Write, err=1006)
 
-write(UnFile,fmt='(A9)', advance = 'YES', asynchronous = 'NO', iostat = IO_Write, err = 1006 ) "  </Grid>"
-write(UnFile,fmt='(A7)', advance = 'YES', asynchronous = 'NO', iostat = IO_Write, err = 1006 ) "</Grid>"
+!----------
+write(UnFile,fmt='(A9)', advance='yes', asynchronous='no', iostat=IO_Write, err=1006) "  </Grid>"
+write(UnFile,fmt='(A7)', advance='yes', asynchronous='no', iostat=IO_Write, err=1006) "</Grid>"
 
 ! closing the file
 close(unit=UnFile, status="keep", err=1002, iostat=IO_File)
@@ -407,7 +463,6 @@ Character(kind = 1, len = 100 ):: IndexReach !Reach no in the Char. fmt to add t
 Character(kind = 1, len = 100 ):: IndexRank  !Rank no in the Char. fmt to add to input file Name
 Character(kind = 1, len = 100 ):: IndexSize  !Size of the process in the Char. fmt to add ...
 Character(kind = 1, len = 100 ):: IndexStep  !Step no in the Char. fmt to add to input file Name
-Character(kind = 1, len = 200 ):: FileName   !holds the file name for both h5 and xdmf
 
 ! - HDF5 variables --------------------------------------------------------------------------------
 integer(HID_T) :: id_Results            ! the result h5 file
@@ -438,16 +493,17 @@ write(IndexStep, *) this%Step      ! converts step no. to Character format for t
     write(IndexReach,*) i_reach   ! converts reach no. to Chr format for the file Name
 
     ! Creating the file name
-    FileName = 'Ra_'//trim(adjustL(IndexRank))//'_'//trim(adjustL(IndexSize))// &
+    this%FileName = 'Ra_'//trim(adjustL(IndexRank))//'_'//trim(adjustL(IndexSize))// &
                '_Re_'//trim(adjustL(IndexReach))// &
                '_St_'//trim(adjustL(IndexStep))
 
     ! Creating the corresponding xdmf files
-    call this%ReachFile(FileName, this%NoCells(i_reach))
+    call this%ReachFile(this%NoCells(i_reach))
 
 
     ! creating the results hdf5 file for each reach in each rank
-    call h5fcreate_f(trim(this%OutputDir)//'/'//trim(res)//'_'//trim(adjustL(FileName))//'.h5', &
+    call h5fcreate_f(trim(this%OutputDir)//'/'//trim(res)//'_'&
+                     //trim(adjustL(this%FileName))//'.h5', &
                       H5F_ACC_TRUNC_F, id_Results, error)
 
     ! working on the height solution --
