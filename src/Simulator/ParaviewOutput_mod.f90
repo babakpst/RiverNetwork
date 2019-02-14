@@ -296,21 +296,8 @@ write(IndexStep, *) this%Step      ! converts step no. to Character format for t
                '_Re_'//trim(adjustL(IndexReach))// &
                '_St_'//trim(adjustL(IndexStep))
 
-
-
-
-
-
     ! Creating the corresponding xdmf files
     call this%ReachFile(FileName, this%NoCells(i_reach))
-
-
-
-
-
-
-
-
 
 
     ! creating the results hdf5 file for each reach in each rank
