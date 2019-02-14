@@ -199,17 +199,22 @@ implicit none
 class(ResultNetwork_tp) :: this
 
 ! Local variables =================================================================================
+! - integer variables -----------------------------------------------------------------------------
+integer(kind=Smll) :: UnFile        ! Holds Unit of a file for error message
+integer(kind=Smll) :: IO_File       ! For iostat: Input Output Status in OPEN command
+integer(kind=Smll) :: IO_write      ! Used for iostat: Input/Output Status in the write command
 
 ! code ============================================================================================
 write(*,       *) " subroutine < Wrapper_File_close_sub >: "
 write(FileInfo,*) " subroutine < Wrapper_File_close_sub >: "
 
 
+write(UnFile, fmt='(A11)', advance='yes', asynchronous='no', iostat=IO_Write,err=1006)"    </Grid>"
+write(UnFile, fmt='(A11)', advance='yes', asynchronous='no', iostat=IO_Write,err=1006)"  </Domain>"
+write(UnFile, fmt='(A63)', advance='yes', asynchronous='no', iostat=IO_Write,err=1006)"</Xdmf>"
 
-!! closing the file
-!close(unit=UnFile, status="keep", err=1002, iostat=IO_File)
-
-
+! closing the file
+close(unit=UnFile, status="keep", err=1002, iostat=IO_File)
 
 write(*,       *) " end subroutine < Wrapper_File_close_sub >"
 write(FileInfo,*) " end subroutine < Wrapper_File_close_sub >"
@@ -218,6 +223,16 @@ write(*,       *)
 write(FileInfo,*)
 
 return
+! errors ==========================================================================================
+! Opening statement errors
+1001 call errorMessage(UnFile, IO_File)
+
+! Close statement errors
+1002 call error_in_closing_a_file(UnFile, IO_File)
+
+! write statement errors
+1006 call error_in_writing(UnFile, IO_write)
+
 end subroutine Wrapper_File_close_sub
 
 !##################################################################################################
