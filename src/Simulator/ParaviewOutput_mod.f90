@@ -66,8 +66,18 @@ type ResultNetwork_tp
   type(ResultReach_tp), allocatable, dimension(:)  :: ResultReach
 
   contains
-    !procedure Wrapper   => Wrapper_File_Creator_sub ! wrapper file
+    ! creating the wrapper file
+    procedure Wrapper_begin  => Wrapper_File_begin_sub  ! writing the header of the wrapper file
+    procedure Wrapper_close  => Wrapper_File_close_sub  ! writing the closing of the wrapper file
+    procedure Wrapper_body   => Wrapper_File_body_sub   ! writing the body of the wrapper file
+                                                        ! which includes the name of local xdmf
+                                                        ! files for each reach of the rank in each
+                                                        ! time step
+
+    ! creating the local xdmf files for each reach of the rank at each time step
     procedure ReachFile => Reach_File_Creator_sub   ! local xdmf file
+
+    ! creating the result files in hdf5
     procedure Results   => Result_File_Creator_sub  ! hdf5 creator
 end type ResultNetwork_tp
 
@@ -78,6 +88,7 @@ contains
 !##################################################################################################
 ! Purpose: This subroutine creates the wrapper file for paraview that contains all reaches in all
 !          ranks for all time steps.
+!          This subroutine opens the file and writes down the header.
 !
 ! Developed by: Babak Poursartip
 ! Supervised by: Clint Dawson
@@ -87,17 +98,152 @@ contains
 !
 ! ================================ V E R S I O N ==================================================
 ! V0.00: 02/11/2019 - File initiated.
-! V0.01: 02/11/2019 - Compiled successfully for the first time.
+! V0.01: 02/14/2019 - Compiled successfully for the first time- happy Valentine.
 !
 ! File version $Id $
 !
-! Last update: 02/11/2019
+! Last update: 02/14/2019
 !
 !##################################################################################################
 
-!subroutine Wrapper_File_Creator_sub()
+subroutine Wrapper_File_begin_sub(this)
 
-!end subroutine Wrapper_File_Creator_sub
+! Libraries =======================================================================================
+
+! User defined modules ============================================================================
+
+implicit none
+
+! Global variables ================================================================================
+! - types -----------------------------------------------------------------------------------------
+class(ResultNetwork_tp) :: this
+
+! Local variables =================================================================================
+
+! code ============================================================================================
+write(*,       *) " subroutine < Wrapper_File_begin_sub >: "
+write(FileInfo,*) " subroutine < Wrapper_File_begin_sub >: "
+
+
+
+
+
+
+write(*,       *) " end subroutine < Wrapper_File_begin_sub >"
+write(FileInfo,*) " end subroutine < Wrapper_File_begin_sub >"
+
+write(*,       *)
+write(FileInfo,*)
+
+return
+end subroutine Wrapper_File_begin_sub
+
+!##################################################################################################
+! Purpose: This subroutine creates the wrapper file for paraview that contains all reaches in all
+!          ranks for all time steps.
+!          This subroutine writes down the final commands and closes the wrapper file.
+!
+! Developed by: Babak Poursartip
+! Supervised by: Clint Dawson
+!
+! The Institute for Computational Engineering and Sciences (ICES)
+! The University of Texas at Austin
+!
+! ================================ V E R S I O N ==================================================
+! V0.00: 02/11/2019 - File initiated.
+! V0.01: 02/14/2019 - Compiled successfully for the first time- happy Valentine.
+!
+! File version $Id $
+!
+! Last update: 02/14/2019
+!
+!##################################################################################################
+
+subroutine Wrapper_File_close_sub(this)
+
+! Libraries =======================================================================================
+
+! User defined modules ============================================================================
+
+implicit none
+
+! Global variables ================================================================================
+! - types -----------------------------------------------------------------------------------------
+class(ResultNetwork_tp) :: this
+
+! Local variables =================================================================================
+
+! code ============================================================================================
+write(*,       *) " subroutine < Wrapper_File_close_sub >: "
+write(FileInfo,*) " subroutine < Wrapper_File_close_sub >: "
+
+
+
+
+
+
+write(*,       *) " end subroutine < Wrapper_File_close_sub >"
+write(FileInfo,*) " end subroutine < Wrapper_File_close_sub >"
+
+write(*,       *)
+write(FileInfo,*)
+
+return
+end subroutine Wrapper_File_close_sub
+
+!##################################################################################################
+! Purpose: This subroutine creates the wrapper file for paraview that contains all reaches in all
+!          ranks for all time steps.
+!          This subroutine writes down the body of the wrapper file which includes the name of the
+!          local xdmf files. Rank 0 writes a line for each reach in a rank at each time step.
+!
+! Developed by: Babak Poursartip
+! Supervised by: Clint Dawson
+!
+! The Institute for Computational Engineering and Sciences (ICES)
+! The University of Texas at Austin
+!
+! ================================ V E R S I O N ==================================================
+! V0.00: 02/11/2019 - File initiated.
+! V0.01: 02/14/2019 - Compiled successfully for the first time- happy Valentine.
+!
+! File version $Id $
+!
+! Last update: 02/14/2019
+!
+!##################################################################################################
+
+subroutine Wrapper_File_body_sub(this)
+
+! Libraries =======================================================================================
+
+! User defined modules ============================================================================
+
+implicit none
+
+! Global variables ================================================================================
+! - types -----------------------------------------------------------------------------------------
+class(ResultNetwork_tp) :: this
+
+! Local variables =================================================================================
+
+! code ============================================================================================
+write(*,       *) " subroutine < Wrapper_File_body_sub >: "
+write(FileInfo,*) " subroutine < Wrapper_File_body_sub >: "
+
+
+
+
+
+
+write(*,       *) " end subroutine < Wrapper_File_body_sub >"
+write(FileInfo,*) " end subroutine < Wrapper_File_body_sub >"
+
+write(*,       *)
+write(FileInfo,*)
+
+return
+end subroutine Wrapper_File_body_sub
 
 !##################################################################################################
 ! Purpose: This subroutine creates xdmf file for each reach in each rank for each time step.
