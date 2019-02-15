@@ -51,9 +51,14 @@ type ResultNetwork_tp
 
   integer(kind=Lng) :: step     ! holds the time step
   integer(kind=Lng) :: nReach   ! holds no. of reaches on this rank
+  integer(kind=Lng) :: RankNo   ! holds the current Rank no.
+  integer(kind=Lng) :: Size     ! holds the size (no. of processors)
 
   ! holds no. of cells on each reach, size: nReach
   integer(kind=Lng), allocatable, dimension(:) :: NoCells
+
+  ! holds no. of reaches on all ranks, needed for paraveiw
+  integer(kind=Lng), allocatable, dimension(:) :: NoReachonRanks
 
   real(kind=Dbl) :: DT          ! time step of the simulation
 
@@ -123,9 +128,16 @@ integer(kind=Smll) :: UnFile        ! Holds Unit of a file for error message
 integer(kind=Smll) :: IO_File       ! For iostat: Input Output Status in OPEN command
 integer(kind=Smll) :: IO_write      ! Used for iostat: Input/Output Status in the write command
 
+! - character variables ---------------------------------------------------------------------------
+Character(kind = 1, len = 100 ):: IndexSize  !Size of the process in the Char. fmt to add ...
+
 ! code ============================================================================================
 write(*,       *) " subroutine < Wrapper_File_begin_sub >: "
 write(FileInfo,*) " subroutine < Wrapper_File_begin_sub >: "
+
+write(IndexSize, *) this%Size
+
+this%FileNameW = 'Size_'//trim(adjustL(IndexSize))
 
 ! opening the wrapper file for paraview
 UnFile = FileWrapper
@@ -271,23 +283,62 @@ implicit none
 class(ResultNetwork_tp) :: this
 
 ! Local variables =================================================================================
+! - integer variables -----------------------------------------------------------------------------
+integer(kind=Smll) :: UnFile        ! Holds Unit of a file for error message
+integer(kind=Smll) :: IO_File       ! For iostat: Input Output Status in OPEN command
+integer(kind=Smll) :: IO_write      ! Used for iostat: Input/Output Status in the write command
+
+integer(kind=Lng)  :: i_reach       ! loop index on the number of reaches
+integer(kind=Lng)  :: i_rank        ! loop index on the number of ranks
+
+! - character variables ---------------------------------------------------------------------------
+Character(kind = 1, len = 100 ):: IndexReach !Reach no in the Char. fmt to add to input file Name
+Character(kind = 1, len = 100 ):: IndexRank  !Rank no in the Char. fmt to add to input file Name
+Character(kind = 1, len = 100 ):: IndexSize  !Size of the process in the Char. fmt to add ...
+Character(kind = 1, len = 100 ):: IndexStep  !Step no in the Char. fmt to add to input file Name
+
+Character(kind = 1, len = 200 ):: FileName   !holds the file name for both h5 and xdmf
 
 ! code ============================================================================================
-write(*,       *) " subroutine < Wrapper_File_body_sub >: "
-write(FileInfo,*) " subroutine < Wrapper_File_body_sub >: "
+!write(*,       *) " subroutine < Wrapper_File_body_sub >: "
+!write(FileInfo,*) " subroutine < Wrapper_File_body_sub >: "
 
+UnFile = FileWrapper
 
+! Converting numbers to char for the output file name (results)
+write(IndexSize, *) this%Size      ! converts size to Character format for the file Name
+write(IndexStep, *) this%Step      ! converts step no. to Character format for the file
 
+  do i_rank = 1, this%Size
+    write(IndexRank, *) i_rank-1    ! converts rank to Character format for the file Name
 
+      do i_reach = 1, this%NoReachonRanks(i_rank)
+        write(IndexReach,*) i_reach        ! converts reach no. to Chr format for the file Name
 
+        FileName = 'Ra_'//trim(adjustL(IndexRank))//'_'//trim(adjustL(IndexSize))// &
+               '_Re_'//trim(adjustL(IndexReach))// &
+               '_St_'//trim(adjustL(IndexStep))//'.xmf'
 
-write(*,       *) " end subroutine < Wrapper_File_body_sub >"
-write(FileInfo,*) " end subroutine < Wrapper_File_body_sub >"
+        write(UnFile, fmt='(A18,A200,A3)', advance='yes', asynchronous='no', iostat=IO_Write,  &
+        err=1006) "<xi:include href='", FileName, "'/>"
 
-write(*,       *)
-write(FileInfo,*)
+      end do
+  end do
+
+!write(*,       *) " end subroutine < Wrapper_File_body_sub >"
+!write(FileInfo,*) " end subroutine < Wrapper_File_body_sub >"
 
 return
+! errors ==========================================================================================
+! Opening statement errors
+1001 call errorMessage(UnFile, IO_File)
+
+! Close statement errors
+1002 call error_in_closing_a_file(UnFile, IO_File)
+
+! write statement errors
+1006 call error_in_writing(UnFile, IO_write)
+
 end subroutine Wrapper_File_body_sub
 
 !##################################################################################################
@@ -476,6 +527,8 @@ real(kind=Dbl), dimension(:,:), allocatable :: dset_data_real ! Data buffers
 ! - character variables ---------------------------------------------------------------------------
 character(kind = 1, len = 3   ), parameter :: res = "Res"
 Character(kind = 1, len = 100 ):: IndexReach !Reach no in the Char. fmt to add to input file Name
+Character(kind = 1, len = 100 ):: IndexRank  !Rank no in the Char. fmt to add to input file Name
+Character(kind = 1, len = 100 ):: IndexSize  !Size of the process in the Char. fmt to add ...
 Character(kind = 1, len = 100 ):: IndexStep  !Step no in the Char. fmt to add to input file Name
 
 ! - HDF5 variables --------------------------------------------------------------------------------
@@ -497,6 +550,8 @@ integer(HSIZE_T), dimension(2) :: dims  ! data set dimensions
 call h5open_f(error)
 
 ! Converting numbers to char for the output file name (results)
+write(IndexRank, *) this%RankNo    ! converts rank to Character format for the file Name
+write(IndexSize, *) this%Size      ! converts size to Character format for the file Name
 write(IndexStep, *) this%Step      ! converts step no. to Character format for the file Name
 
   do i_reach = 1, this%nReach
@@ -505,7 +560,8 @@ write(IndexStep, *) this%Step      ! converts step no. to Character format for t
     write(IndexReach,*) i_reach   ! converts reach no. to Chr format for the file Name
 
     ! Creating the file name
-    this%FileName = trim(adjustL(this%FileNameW))//'_Re_'//trim(adjustL(IndexReach))// &
+    this%FileName = 'Ra_'//trim(adjustL(IndexRank))//'_'//trim(adjustL(IndexSize))// &
+               '_Re_'//trim(adjustL(IndexReach))// &
                '_St_'//trim(adjustL(IndexStep))
 
     ! Creating the corresponding xdmf files

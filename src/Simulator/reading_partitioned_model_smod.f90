@@ -20,6 +20,7 @@ integer(kind=Smll) :: IO_File                ! For IOSTAT: Input Output status i
 integer(kind=Smll) :: IO_read                ! Holds error of read statements
 integer(kind=Smll) :: IO_write               ! Used for IOSTAT in the write statement:In/Out Status
 integer(kind=Smll) :: i_reach                ! loop index on the number of reaches
+integer(kind=Smll) :: i_rank                 ! loop index on the number of ranks
 integer(kind=Lng)  :: i_cells                ! loop index on the number of reaches
 
 ! code ============================================================================================
@@ -50,8 +51,19 @@ read(unit=UnFile, fmt="(4I23)", advance='yes', asynchronous='no', iostat=IO_read
 write(*,        fmt="(A)") " -Allocating arrays for the discretized network ..."
 write(FileInfo, fmt="(A)") " -Allocating arrays for the discretized network ..."
 
-allocate(this%DiscretizedReach( this%TotalNumOfReachesOnThisRank), stat=ERR_Alloc)
+
+allocate(this%DiscretizedReach(this%TotalNumOfReachesOnThisRank), &
+         this%NoReachonRanks(ModelInfo%size), &
+        stat=ERR_Alloc)
 if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
+
+
+! reading total no of reaches on each rank, needed for paraview
+  do i_rank = 1_Lng, ModelInfo%size
+    read(unit=UnFile, fmt="(I23)", advance='no', asynchronous='no', iostat=IO_read, err=1003, &
+     end=1004) this%NoReachonRanks(i_rank)
+  end do
+read(unit=UnFile, fmt="(I23)", advance='yes', asynchronous='no', iostat=IO_read, err=1003, end=1004)
 
 this%NCutsOnRanks = 0_Lng  ! Initializing number of reach cuts
 

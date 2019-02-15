@@ -871,7 +871,14 @@ TotalCellCounter = 0_Lng
                    chunk(i_rank,4),        &   ! Total number of cells on this rank
                    NReachOnRanks(i_rank),  &   ! Total number of reaches on this rank
                    NNodesOnRanks(i_rank),  &   ! Total number of nodes on this rank
-                   Geometry%Base_Geometry%NoReaches  ! Total Num Of Cells In The Network
+                   Geometry%Base_Geometry%NoReaches  ! Total Num Of reaches in The Network
+
+      do i = 1_Shrt, Geometry%Base_Geometry%size
+        ! writing total number of reaches on each rank, we need this for paraview
+        write(unit=UnFile, fmt="(I23)", advance='no', asynchronous='no', iostat=IO_write,  &
+                                                                        err=1006) NReachOnRanks(i)
+      end do
+    write(unit=UnFile, fmt="", advance='yes', asynchronous='no', iostat=IO_write, err=1006)
 
     CellCounter = 0_Lng ! To make sure that we count all the cell numbers in each rank
     ReachCounter= 0_Lng

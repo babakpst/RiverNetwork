@@ -117,6 +117,9 @@ type network_tp
   ! Total number of reaches  in the network
   integer(kind=Lng) :: TotalNumOfReachesInTheNetwork = 0_Lng
 
+  ! no. of reaches on each rank, needed for paraview
+  integer(kind=Lng), allocatable, dimension(:) :: NoReachonRanks
+
   ! To hold the discretization of each reach. The size of this type is equal to the no of reaches.
   type(DiscretizedReach_tp), allocatable, dimension(:) :: DiscretizedReach
 

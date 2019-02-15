@@ -246,11 +246,6 @@ real(kind=Dbl)     :: velocity ! velocity of water at the current cell/time
 real(kind=Dbl)     :: height_interface   ! height of water at the current interface/time
 real(kind=Dbl)     :: velocity_interface ! velocity of water at the current interface/time
 
-! - real variables --------------------------------------------------------------------------------
-Character(kind = 1, len = 100 ):: IndexRank  !Rank no in the Char. fmt to add to input file Name
-Character(kind = 1, len = 100 ):: IndexSize  !Size of the process in the Char. fmt to add ...
-
-
 ! - logical variables -----------------------------------------------------------------------------
 logical   :: PrintResults
 
@@ -322,6 +317,7 @@ write(FileInfo,*) " -Allocating the solution ..."
 ! allocating paraview array for visualization with Paraview
 allocate(Paraview%ResultReach(this%Model%TotalNumOfReachesOnThisRank),  &
          Paraview%NoCells(this%Model%TotalNumOfReachesOnThisRank), &
+         Paraview%NoReachonRanks(this%ModelInfo%size), &
          stat = ERR_Alloc)
 if (ERR_Alloc /= 0) call error_in_allocation(ERR_Alloc)
 
@@ -667,12 +663,12 @@ Counter_ReachCut = 0_Lng
 Results%ModelInfo = this%ModelInfo
 
 ! preparing data for Paraview class
-write(IndexRank, *) this%ModelInfo%rank    ! converts rank to Character format for the file Name
-write(IndexSize, *) this%ModelInfo%size    ! converts size to Character format for the file Name
+Paraview%RankNo    = this%ModelInfo%rank
+Paraview%Size      = this%ModelInfo%size
 Paraview%nReach    = this%Model%TotalNumOfReachesOnThisRank
 Paraview%OutputDir = this%ModelInfo%ParaviewDir
 Paraview%DT        = dt
-Paraview%FileNameW = 'Ra_'//trim(adjustL(IndexRank))//'_'//trim(adjustL(IndexSize))
+Paraview%NoReachonRanks(:) = this%Model%NoReachonRanks(:)
 
 ! Creating the wrapper file for visualization in paraview
   if ( this%ModelInfo%rank == 0) then
@@ -701,24 +697,26 @@ write(FileInfo,*) " -Time marching ..."
       ! write down data for visualization
       if (mod(i_steps,AnalysisInfo%Plot_Inc)==1 .or. PrintResults) then
         !$ if (ITS==0) then
+
+        Paraview%step = i_steps-1_Lng
           if ( this%ModelInfo%rank == 0) then
               call system_clock(TotalTime%endSys, TotalTime%clock_rate)
               write(*,fmt='("----------------Step:", I20, F25.10 )') i_steps, &
                      real(TotalTime%endSys-TotalTime%startSys)/real(TotalTime%clock_rate)
+
+            ! writing the name of local xdmf file in the wrapper file
+            call Paraview%Wrapper_body()
+
           end if
 
-          ! writing the results for paraview ---
+        ! putting the results in the paraview array
+          do i_reach = 1, this%Model%TotalNumOfReachesOnThisRank
+            Paraview%ResultReach(i_reach)%U(:) = &
+              Solution(i_reach)%UU(1:this%Model%DiscretizedReach(i_reach)%NCells_reach)
+          end do
 
-          ! putting the results in the paraview array
-          Paraview%step = i_steps-1_Lng
-            do i_reach = 1, this%Model%TotalNumOfReachesOnThisRank
-              Paraview%ResultReach(i_reach)%U(:) = &
-                Solution(i_reach)%UU(1:this%Model%DiscretizedReach(i_reach)%NCells_reach)
-            end do
-
-          ! writing the results in the hdf5 files
-          call Paraview%Results()
-
+        ! writing the results in the hdf5 files
+        call Paraview%Results()
       end if
 
       ! Solving the equation for each reach
