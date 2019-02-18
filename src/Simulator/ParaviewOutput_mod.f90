@@ -603,7 +603,7 @@ write(IndexStep, *) this%Step      ! converts step no. to Character format for t
     call h5screate_simple_f(rank, dims, dspace_id_velocity, error)
 
     ! creating the data set for the velocity solution
-    call h5dcreate_f(id_Results, "velocity", H5T_NATIVE_INTEGER, dspace_id_velocity, &
+    call h5dcreate_f(id_Results, "velocity", H5T_NATIVE_DOUBLE, dspace_id_velocity, &
                                                                           dset_id_velocity, error)
 
     ! transferring heights from the paraview class to hdf5 file
