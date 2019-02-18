@@ -701,8 +701,9 @@ write(FileInfo,*) " -Time marching ..."
         Paraview%step = i_steps-1_Lng
           if ( this%ModelInfo%rank == 0) then
               call system_clock(TotalTime%endSys, TotalTime%clock_rate)
-              write(*,fmt='("----------------Step:", I20, F25.10 )') i_steps, &
-                     real(TotalTime%endSys-TotalTime%startSys)/real(TotalTime%clock_rate)
+              write(*,fmt='("------Step:", I20, "Elapsed time: ", F23.5, " Simulation time: " )') &
+                    i_steps, i_steps*dt, &
+                    real(TotalTime%endSys-TotalTime%startSys)/real(TotalTime%clock_rate)
 
             ! writing the name of local xdmf file in the wrapper file
             call Paraview%Wrapper_body()
