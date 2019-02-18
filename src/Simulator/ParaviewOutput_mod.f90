@@ -48,7 +48,6 @@ end type ResultReach_tp
 
 type ResultNetwork_tp
 
-
   integer(kind=Lng) :: step     ! holds the time step
   integer(kind=Lng) :: nReach   ! holds no. of reaches on this rank
   integer(kind=Lng) :: RankNo   ! holds the current Rank no.
@@ -63,7 +62,8 @@ type ResultNetwork_tp
   real(kind=Dbl) :: DT          ! time step of the simulation
 
   character(kind = 1, Len = 150) :: OutputDir  ! Directory of output files (Results)
-  Character(kind = 1, len = 200 ):: FileNameW !holds the file name the wrapper file
+  Character(kind = 1, len = 200 ):: FileNameW  !holds the file name the wrapper file
+  Character(kind = 1, len = 200 ):: FileNameG  !holds the file name the Geometry files
   Character(kind = 1, len = 200 ):: FileName   !holds the file name for both h5 and xdmf
 
   ! contains all the coordinates of all reaches of the network, size: no. of Reaches on this rank
@@ -150,8 +150,8 @@ Open (Unit = UnFile, &
 
 write(UnFile, fmt='(A63)', advance='yes', asynchronous='no', iostat=IO_Write, err=1006) &
 "<Xdmf xmlns:xi='http://www.w3.org/2003/XInclude' Version='2.2'>"
-write(UnFile, fmt='(A10)', advance='yes', asynchronous='no', iostat=IO_Write, err=1006) &
-"  <Domain>"
+write(UnFile, fmt='(A20)', advance='yes', asynchronous='no', iostat=IO_Write, err=1006) &
+"  <Domain Name='1D'>"
 write(UnFile, fmt='(A57)', advance='yes', asynchronous='no', iostat=IO_Write, err=1006) &
 "    <Grid GridType='Collection' CollectionType='Spatial'>"
 write(UnFile, fmt='(" ")', advance='yes', asynchronous='no', iostat=IO_Write,err=1006)
@@ -319,8 +319,8 @@ write(IndexStep, *) this%Step      ! converts step no. to Character format for t
                '_Re_'//trim(adjustL(IndexReach))// &
                '_St_'//trim(adjustL(IndexStep))//'.xmf'
 
-        write(UnFile, fmt='(A18,A200,A3)', advance='yes', asynchronous='no', iostat=IO_Write,  &
-        err=1006) "<xi:include href='", FileName, "'/>"
+        write(UnFile, fmt='(A18,A,A3)', advance='yes', asynchronous='no', iostat=IO_Write,  &
+        err=1006) "<xi:include href='", trim(adjustL(FileName)), "'/>"
 
       end do
   end do
@@ -399,8 +399,8 @@ open(unit = UnFile, &
 !----------
 write(UnFile, fmt='(A54)', advance='yes', asynchronous='no', iostat=IO_Write, err=1006) &
 "<Grid GridType='Collection' CollectionType='Temporal'>"
-write(UnFile, fmt='(A27)', advance='yes', asynchronous='no', iostat=IO_Write, err=1006) &
- "  <Grid GridType='Uniform'>"
+write(UnFile, fmt='(A43)', advance='yes', asynchronous='no', iostat=IO_Write, err=1006) &
+ "  <Grid Name='Polyline' GridType='Uniform'>"
 write(UnFile, fmt='(" ")', advance='yes', asynchronous='no', iostat=IO_Write, err=1006)
 
 !----------
@@ -409,23 +409,23 @@ write(UnFile, fmt='(A17, F23.10, A4)', advance='yes', asynchronous='no', iostat=
 write(UnFile,fmt='(" ")', advance='yes', asynchronous='no', iostat=IO_Write, err=1006)
 
 !----------
-write(UnFile, fmt='(A55, I23, A23)', advance='yes', asynchronous='no', iostat=IO_Write, err=1006) &
-"    <Topology TopologyType='Polyline' NodesPerElement='", NCells, "' NumberOfElements='1'>"
+write(UnFile, fmt='(A55, I23, A38)', advance='yes', asynchronous='no', iostat=IO_Write, err=1006) &
+"    <Topology TopologyType='Polyline' NodesPerElement='", NCells, "' NumberOfElements='1'> BaseOffset='1'"
 write(UnFile, fmt='(A30, I23, A31, A, A24)', advance='yes', asynchronous='no', &
 iostat=IO_Write, err=1006) &
  "      <DataItem Dimensions='1 ", NCells, "' DataType='Int' Format='HDF'> ", &
-  "Geo_"//trim(adjustL(this%FileName))//'.h5', ":Connectivity</DataItem>"
+  trim(adjustL(this%FileNameG))//'.h5', ":Connectivity</DataItem>"
 write(UnFile, fmt='(A15)', advance='yes', asynchronous='no', iostat=IO_Write, err=1006) &
 "    </Topology>"
 write(UnFile, fmt='(" ")', advance='yes', asynchronous='no', iostat=IO_Write, err=1006)
 
 !----------
-write(UnFile,fmt='(A32)', advance='yes', asynchronous='no', iostat=IO_Write, err=1006) &
-"    <Geometry GeometryType='XY'>"
+write(UnFile,fmt='(A33)', advance='yes', asynchronous='no', iostat=IO_Write, err=1006) &
+"    <Geometry GeometryType='XYZ'>"
 write(UnFile,fmt='(A28, I23, A51, A, A15)', advance='yes', asynchronous='no', &
 iostat=IO_Write, err=1006) &
-"      <DataItem Dimensions='", NCells, " 2' NumberType='Float' Precision='8' Format='HDF'> ", &
-"Geo_"//trim(adjustL(this%FileName))//'.h5', ":XYZ</DataItem>"
+"      <DataItem Dimensions='", NCells, " 3' NumberType='Float' Precision='8' Format='HDF'> ", &
+trim(adjustL(this%FileNameG))//'.h5', ":XYZ</DataItem>"
 write(UnFile,fmt='(A15)', advance='yes', asynchronous='no', iostat=IO_Write, err=1006) &
 "    </Geometry>"
 write(UnFile,fmt='(" ")', advance='yes', asynchronous='no', iostat=IO_Write, err=1006)
@@ -558,6 +558,10 @@ write(IndexStep, *) this%Step      ! converts step no. to Character format for t
 
     ! Converting numbers to char for the output file name (results)
     write(IndexReach,*) i_reach   ! converts reach no. to Chr format for the file Name
+
+    ! Creating the file name
+    this%FileNameG = 'Geo_Ra_'//trim(adjustL(IndexRank))//'_'//trim(adjustL(IndexSize))// &
+               '_Re_'//trim(adjustL(IndexReach))
 
     ! Creating the file name
     this%FileName = 'Ra_'//trim(adjustL(IndexRank))//'_'//trim(adjustL(IndexSize))// &

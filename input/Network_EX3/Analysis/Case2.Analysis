@@ -3,8 +3,8 @@ Name: ex3 - Flow over a hump with shock
 Analysis type: 1: 1D lax-wendroff  - 2: Lax-Wendroff with limiter
 2
 
-Total run time (in seconds):  400.0
-2.0    
+Total run time (in seconds):  
+400.0    
 
 Time step (in seconds):
 0.0001

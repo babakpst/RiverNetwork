@@ -32,31 +32,81 @@
 			<Add option="-Wall" />
 		</Compiler>
 		<Unit filename="src/Partitioner/Address.txt" />
-		<Unit filename="src/Partitioner/Driver_Partitioner.f90" />
-		<Unit filename="src/Partitioner/Global_Variables_Inc.f90" />
-		<Unit filename="src/Partitioner/Inf_mod.f90" />
-		<Unit filename="src/Partitioner/Parameters_mod.f90" />
-		<Unit filename="src/Partitioner/Results_mod.f90" />
-		<Unit filename="src/Partitioner/discretize_the_network_mod.f90" />
+		<Unit filename="src/Partitioner/Driver_Partitioner.f90">
+			<Option weight="7" />
+		</Unit>
+		<Unit filename="src/Partitioner/Global_Variables_Inc.f90">
+			<Option weight="0" />
+		</Unit>
+		<Unit filename="src/Partitioner/Inf_mod.f90">
+			<Option weight="3" />
+		</Unit>
+		<Unit filename="src/Partitioner/Parameters_mod.f90">
+			<Option weight="0" />
+		</Unit>
+		<Unit filename="src/Partitioner/Paraview_mod.f90">
+			<Option weight="6" />
+		</Unit>
+		<Unit filename="src/Partitioner/Results_mod.f90">
+			<Option weight="3" />
+		</Unit>
+		<Unit filename="src/Partitioner/discretize_the_network_mod.f90">
+			<Option weight="4" />
+		</Unit>
 		<Unit filename="src/Partitioner/makefile" />
-		<Unit filename="src/Partitioner/messages_and_errors_mod.f90" />
-		<Unit filename="src/Partitioner/partition_the_network_mod.f90" />
-		<Unit filename="src/Partitioner/reading_address_file_mod.f90" />
-		<Unit filename="src/Partitioner/reading_model_mod.f90" />
+		<Unit filename="src/Partitioner/messages_and_errors_mod.f90">
+			<Option weight="1" />
+		</Unit>
+		<Unit filename="src/Partitioner/partition_the_network_mod.f90">
+			<Option weight="5" />
+		</Unit>
+		<Unit filename="src/Partitioner/reading_address_file_mod.f90">
+			<Option weight="2" />
+		</Unit>
+		<Unit filename="src/Partitioner/reading_model_mod.f90">
+			<Option weight="3" />
+		</Unit>
 		<Unit filename="src/Simulator/Address.txt" />
-		<Unit filename="src/Simulator/Driver_Simulation.f90" />
-		<Unit filename="src/Simulator/Global_Variables_Inc.f90" />
-		<Unit filename="src/Simulator/Inf_mod.f90" />
-		<Unit filename="src/Simulator/Parameters_mod.f90" />
-		<Unit filename="src/Simulator/Results_mod.f90" />
-		<Unit filename="src/Simulator/Timer_mod.f90" />
+		<Unit filename="src/Simulator/Driver_Simulation.f90">
+			<Option weight="5" />
+		</Unit>
+		<Unit filename="src/Simulator/Global_Variables_Inc.f90">
+			<Option weight="0" />
+		</Unit>
+		<Unit filename="src/Simulator/Inf_mod.f90">
+			<Option weight="3" />
+		</Unit>
+		<Unit filename="src/Simulator/Parameters_mod.f90">
+			<Option weight="0" />
+		</Unit>
+		<Unit filename="src/Simulator/ParaviewOutput_mod.f90">
+			<Option weight="2" />
+		</Unit>
+		<Unit filename="src/Simulator/Results_mod.f90">
+			<Option weight="3" />
+		</Unit>
+		<Unit filename="src/Simulator/Timer_mod.f90">
+			<Option weight="1" />
+		</Unit>
 		<Unit filename="src/Simulator/makefile" />
-		<Unit filename="src/Simulator/messages_and_errors_mod.f90" />
-		<Unit filename="src/Simulator/reading_address_file_mod.f90" />
-		<Unit filename="src/Simulator/reading_address_file_smod.f90" />
-		<Unit filename="src/Simulator/reading_partitioned_model_mod.f90" />
-		<Unit filename="src/Simulator/reading_partitioned_model_smod.f90" />
-		<Unit filename="src/Simulator/solve_network_mod.f90" />
+		<Unit filename="src/Simulator/messages_and_errors_mod.f90">
+			<Option weight="1" />
+		</Unit>
+		<Unit filename="src/Simulator/reading_address_file_mod.f90">
+			<Option weight="2" />
+		</Unit>
+		<Unit filename="src/Simulator/reading_address_file_smod.f90">
+			<Option weight="3" />
+		</Unit>
+		<Unit filename="src/Simulator/reading_partitioned_model_mod.f90">
+			<Option weight="3" />
+		</Unit>
+		<Unit filename="src/Simulator/reading_partitioned_model_smod.f90">
+			<Option weight="4" />
+		</Unit>
+		<Unit filename="src/Simulator/solve_network_mod.f90">
+			<Option weight="4" />
+		</Unit>
 		<Extensions>
 			<envvars />
 			<code_completion />
