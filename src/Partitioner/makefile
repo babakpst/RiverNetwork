@@ -9,6 +9,10 @@
 # Last Update  : 02/13/2018
 #
 # =================================================================================================
+
+# required modules c7 intel/17.0 hdf5/1.8.15-patch1
+
+
 #METIS_DIR=/workspace/source/metis-5.1.0
 METIS_DIR=/workspace/source/metis-4.0.3
 

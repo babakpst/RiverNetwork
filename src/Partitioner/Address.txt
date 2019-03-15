@@ -1,5 +1,5 @@
 Input file name:
-Network_EX3
+Network_EX4
 
 Input directory:
 "/h1/babak/Documents/Goofy/input"

@@ -10,7 +10,7 @@
 #
 # =================================================================================================
 
-# required loaded modules: c7 intel/17.0 mpich2/3.1.4 phdf5/1.8.15-patch1
+#module load c7 intel/17.0 mpich2/3.1.4 phdf5/1.8.15-patch1
 # to run the code: mpiexec -n 4 ./main
 
 #F90=mpif90 -CB

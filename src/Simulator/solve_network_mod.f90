@@ -1085,7 +1085,6 @@ write(FileInfo,*) " -Time marching ..."
 
               Counter_ReachCut = Counter_ReachCut + 1_Lng
 
-
               ! communicate with the node that has the upstream part of this reach.
               ! Sending/Receiving cell info
               ! The upstream of this reach is on another rank
@@ -1314,6 +1313,10 @@ class(LimiterFunc_tp), intent(inout) :: this
 
   select case (this%limiter_Type)
 
+    case(-1)  ! Lax-Wendroff
+      this%phi = 1.0_Dbl
+    case(0)  ! upwind
+      this%phi = 0.0_Dbl
     case(1)  ! minmod: most diffusive
       this%phi = dmax1(  0.0_Dbl, dmin1( 1.0_Dbl, this%theta )  )
     case(2)  !superbee
@@ -1333,7 +1336,6 @@ class(LimiterFunc_tp), intent(inout) :: this
       write(*, Fmt_End);  read(*,*);   stop;
 
   end select
-
 
 !write(*,       *) " end subroutine < Limiters_sub >"
 !write(FileInfo,*) " end subroutine < Limiters_sub >"
@@ -1820,10 +1822,12 @@ FroudeBottom = u_Bottom / dsqrt(Gravity*h_Bottom)
     ! Final values for the ghost cells:
     ! ghost cells
     ReachBottom_Cell_n1%U(1) = h_Bottom      ! height
+    !ReachBottom_Cell_n1%U(1) = max(h_Left,h_Right)  ! height
     ReachBottom_Cell_n1%U(2) = &
          (Width_LeftReach*u_Left*h_Left + Width_RightReach*u_Right*h_Right)/Width_BottomReach  ! uh
 
     ReachBottom_Cell_0%U(1)  = h_Bottom      ! height
+    !ReachBottom_Cell_0%U(1)  = max(h_Left,h_Right)      ! height
     ReachBottom_Cell_0%U(2)  = &
          (Width_LeftReach*u_Left*h_Left + Width_RightReach*u_Right*h_Right)/Width_BottomReach  ! uh
 
@@ -2036,6 +2040,10 @@ real(kind=Dbl) :: FroudeBottom ! Froude number at the top cell of the bottom rea
 
 
 ! code ============================================================================================
+
+!write(*,       *) " subroutine < Junction_simulation_flow_combination_downstream >: "
+!write(FileInfo,*) " subroutine < Junction_simulation_flow_combination_downstream >: "
+
 ! defining the velocity and the height at first/last cells
 h_Left   =  ReachLeft_Cell_n%U(1)
 u_Left   =  ReachLeft_Cell_n%U(2)/ReachLeft_Cell_n%U(1)
@@ -2059,10 +2067,12 @@ FroudeBottom = u_Bottom / dsqrt(Gravity*h_Bottom)
 
     ! Final values for the ghost cells:
     ! ghost cells for the left upstream reach
-    ReachLeft_Cell_np1%U(1)  = h_upstream_Left          ! h height
+    !ReachLeft_Cell_np1%U(1)  = h_upstream_Left          ! h height
+    ReachLeft_Cell_np1%U(1)  = h_Bottom          ! h height
     ReachLeft_Cell_np1%U(2)  = ReachLeft_Cell_n%U(2)    ! uh
 
-    ReachLeft_Cell_np2%U(1)  = h_upstream_Left          ! height
+    !ReachLeft_Cell_np2%U(1)  = h_upstream_Left          ! height
+    ReachLeft_Cell_np2%U(1)  = h_Bottom          ! height
     ReachLeft_Cell_np2%U(2)  = ReachLeft_Cell_n%U(2)    ! uh
 
 !    ! Indicating the flow regime based on the Froude number- all less than one, sub-critical flow

@@ -370,7 +370,6 @@ integer, target    :: NumberOfRanks ! saves total number of ranks
 ! counting total number of reaches partitioned- to check the validity of the partitioning
 integer(kind=Lng)  :: counter_reach
 
-
 ! - integer Arrays --------------------------------------------------------------------------------
 integer(kind=Lng), dimension (Geometry%Base_Geometry%size,4) :: chunk
                          ! share of the network cells for each rank
@@ -799,6 +798,20 @@ write(FileInfo,*) " Analyzing the partitioned network ... "
 ! no. of cells on each rank, saved in col 4.
 chunk(:,4) = chunk(:,2) + chunk(:,3)
 
+print*,"reach attached node"
+  do i_node = 1, Geometry%Base_Geometry%NoNodes
+    write(*,fmt="( 11I4 )") i_node, ReachAttachedToNode(i_node,1:10)
+  end do
+print*,"end reach attached node"
+
+print*,"reach Partition"
+  do  i_reach = 1_Lng, Geometry%Base_Geometry%NoReaches
+    write(*,fmt="( 3I4 )") i_reach, this%ReachPartition(i_reach, 5) , this%ReachPartition(i_reach, 6)
+  end do
+print*,"end reach Partition"
+
+
+
   ! Checks
   ! check the number of reaches attached to each node. Now, the assumption is that there are at
   ! most only two upstream reaches and one downstream reach.
@@ -935,7 +948,7 @@ TotalCellCounter = 0_Lng
               if (ReachAttachedToNode(NodeII, 3) == -1_Lng) then  ! There is no downstream reach for this node (a boundary condition node)
                 ReachBottom = -1_Lng
               else  ! There is a downstream reach for this junction.
-                ReachBottom = this%ReachPartition(ReachAttachedToNode(NodeII,  3), 6)
+                ReachBottom = this%ReachPartition(ReachAttachedToNode(NodeII,  3), 5)
               end if
 
           else if (RankNodeI /= RankNodeII) then
@@ -1004,7 +1017,7 @@ TotalCellCounter = 0_Lng
                 if (ReachAttachedToNode(NodeII, 3) == -1_Lng) then  ! There is no downstream reach for this node (a boundary condition node)
                   ReachBottom = -1_Lng
                 else  ! There is a downstream reach for this junction.
-                  ReachBottom = this%ReachPartition(ReachAttachedToNode(NodeII,  3), 6)
+                  ReachBottom = this%ReachPartition(ReachAttachedToNode(NodeII,  3), 5)
                 end if
 
             end if

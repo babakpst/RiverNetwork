@@ -367,6 +367,7 @@ print*, " Calculating the length of each reach ..."
      + (this%NodeCoor(this%network(i_reach)%ReachNodes(2), 2) - &
         this%NodeCoor(this%network(i_reach)%ReachNodes(1), 2) )**2  )
     this%network(i_reach)%ReachLength = Length
+    print *, i_reach, Length
   end do
 
 

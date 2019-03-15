@@ -1,0 +1,23 @@
+Name: ex3 - Flow over a hump with shock
+
+Analysis type: 1: 1D lax-wendroff  - 2: Lax-Wendroff with limiter
+2
+
+Total run time (in seconds): 400
+3600.0
+
+Time step (in seconds):
+0.1
+
+Downstream water depth (in meters):
+4.00
+ 
+Limiter type
+0
+
+Plot results Increments (Plot_Inc)
+25
+
+Junction type simulation 1: Energy based method, 2: Momentum based method
+1
+
