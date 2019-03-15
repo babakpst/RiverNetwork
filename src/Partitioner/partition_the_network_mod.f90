@@ -687,10 +687,11 @@ write(FileInfo, fmt="(A)") " -Graph partitioning using METIS_PartGraphKway ... "
   end if
 
 
-! <delete> afte debugging
-!  do i = 1, NumberOfNodes
-!    write(*,fmt="(2I2)")i, this%part(i)
-!  end do
+! <delete> after debugging
+print*, "Partitioning ... "
+  do i = 1, NumberOfNodes
+    write(*,fmt="(2I2)")i, this%part(i)
+  end do
 
 ! - analyzing the partitioned graph
 ! In the following loop, we analyze the partitioning to see how many cells sits on each rank.
@@ -934,14 +935,14 @@ TotalCellCounter = 0_Lng
               if (ReachAttachedToNode(NodeI, 7) == -1_Lng) then  ! There is no upstream reach for this node (a boundary condition node)
                 ReachLeft = -1_Lng
               else  ! There is an upstream reach for this junction.
-                ReachLeft   = this%ReachPartition(ReachAttachedToNode(NodeI,  7), 5)
+                ReachLeft   = this%ReachPartition(ReachAttachedToNode(NodeI,  7), 6)
               end if
 
               ! upstream reach number 2 (ReachRight)
               if (ReachAttachedToNode(NodeI, 8) == -1_Lng) then  ! There is no upstream reach for this node (a boundary condition node)
                 ReachRight = -1_Lng
               else  ! There is an upstream reach for this junction.
-                ReachRight = this%ReachPartition(ReachAttachedToNode(NodeI,  8), 5)
+                ReachRight = this%ReachPartition(ReachAttachedToNode(NodeI,  8), 6)
               end if
 
               ! downstream reach (ReachBottom)
@@ -977,14 +978,14 @@ TotalCellCounter = 0_Lng
                 if (ReachAttachedToNode(NodeI, 7) == -1_Lng) then  ! There is no upstream reach for this node (a boundary condition node)
                   ReachLeft = -1_Lng
                 else  ! There is an upstream reach for this junction.
-                  ReachLeft   = this%ReachPartition(ReachAttachedToNode(NodeI,  7), 5)
+                  ReachLeft   = this%ReachPartition(ReachAttachedToNode(NodeI,  7), 6)
                 end if
 
                 ! upstream reach number 2 (ReachRight)
                 if (ReachAttachedToNode(NodeI, 8) == -1_Lng) then  ! There is no upstream reach for this node (a boundary condition node)
                   ReachRight = -1_Lng
                 else  ! There is an upstream reach for this junction.
-                  ReachRight = this%ReachPartition(ReachAttachedToNode(NodeI,  8), 5)
+                  ReachRight = this%ReachPartition(ReachAttachedToNode(NodeI,  8), 6)
                 end if
 
               ! downstream reach (ReachBottom)
