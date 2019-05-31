@@ -773,7 +773,7 @@ write(FileInfo,*) " -Time marching ..."
 
             SourceTerms%B(1,2) = 0.0_Dbl
             SourceTerms%B(2,2) = &
-                        -(2.0_Dbl*this%Model%DiscretizedReach(i_reach)%ReachManning**2.0) &
+                        -Gravity*(2.0_Dbl*this%Model%DiscretizedReach(i_reach)%ReachManning**2.0) &
                                                         *dabs(velocity)/(height**(4.0_Dbl/3.0_Dbl))
 
                         !-(2.0_Dbl*Gravity*  SourceTerms%S_f) /velocity
